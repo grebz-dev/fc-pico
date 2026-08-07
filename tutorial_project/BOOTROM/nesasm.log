@@ -1,0 +1,15 @@
+NES Assembler (v2.51+autozp beta3+1)
+
+pass 1
+pass 2
+segment usage:
+
+      ZP    -
+     BSS    -
+				    USED/FREE
+BANK   0                               0/8192
+BANK   1                               0/8192
+BANK   2                            1855/6337
+BANK   3                            5610/2582
+				    ---- ----
+				       8K   8K

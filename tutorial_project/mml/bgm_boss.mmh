@@ -1,0 +1,117 @@
+
+//BGM(1) {
+BGM(0) {
+
+
+
+
+TR1 t130 l16 v15
+TR2      l16 v15
+TR3      l16 v15
+TR4      l16 v15
+//TR5      l16 v15
+
+
+
+
+TR1 L
+	v4  q2 E@1001
+	o1 l16
+
+	En*
+	
+	Ev2000
+	Em3000
+	v12
+	[
+	a4.&a8.a>ce d+4.<b8.>c8.
+	
+	d4.&d8.dfa g+4.f8d8<b8
+	]2
+
+TR3 L
+	o5 q16 l16
+	[
+	[$kon a $dof e c <$kon a> $dof c e]4
+	[$kon >d< $dof g+ f $kon d $dof f g+]4
+	]2
+
+// ハイハット＆スネア
+TR4 L o5
+//	q16 l16
+	l16  v12
+	[
+
+	[ <$h c r $h c $s c r $h c> ]7
+	<$h c $s c $h c $s c $h c $s c>
+	
+	]2
+
+/*
+TR5 L
+	 o7  Rm0
+	 l16
+	[
+	[ aaa aaa aaa aaa  ]2
+	>
+	[ ddd ddd ddd ddd ]2
+	<
+	]2
+*/
+
+// Bメロ部分 ---------------------------
+TR1 
+	Ev2000
+
+	  q2 E@1001
+	l16
+	[
+	
+	En4000
+	o4 	v12 a  r 
+	En*
+	o1 a > c < a a
+	aaa>d<aa
+	aaa>d+<aa
+
+	En4000
+	o4 	v12
+	g r g r g+ r
+
+	o4 	v12 a  r 
+	En*
+	o1 a > c < a a
+	aaa>d<aa
+	aaa>d+<aa
+	> e d+ d c+ c < b
+	
+	] 2
+	
+
+TR3 
+	o5 q32 l16
+	<
+	[
+	$kon a $dof a a > $kon c < $dof a a 
+	$kon a $dof a a > $kon d < $dof a a 
+	$kon a $dof a a > $kon d+ < $dof a a 
+	$kon > e d+ d c+ c < b
+	]4
+	
+
+TR4 
+	o5 l16  v12
+	[
+	[ <$h c $h c $h c $s c $h c $h c> ]7
+	<$h c $s c $h c $s c $h c $s c>
+	]2
+
+/*
+TR5
+	[
+	[ aaa aaa aaa aaa  ]4
+	]2
+*/
+
+}
+

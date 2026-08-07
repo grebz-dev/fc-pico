@@ -1,0 +1,98 @@
+
+BGM(2) {
+
+
+
+
+TR1 t120 l16 v15
+TR2      l16 v15
+TR3      l16 v15
+TR4      l16 v15
+//TR5      l16 v15
+
+// イントロ部分
+TR1  
+	v6  q2 E@1002
+	En4000
+
+	o5 l16
+	d ^ ^ d d d
+	< a ^ > d ^ f+ ^
+	
+	e ^ ^ e e e
+	< b ^ > e ^ g+ ^
+
+	b ^ ^ ^ ^ ^ 
+	^ ^ ^ r r r
+
+
+TR2  
+	v5  q2 E@1002
+	En4000
+
+	o3 q16 l16
+	d ^ ^ ^ ^ ^
+	d ^ d ^ d ^
+
+	e ^ ^ ^ ^ ^
+	e ^ e ^ e ^
+
+	e ^ ^ ^ ^ ^
+	^ ^ ^ ^ ^ ^
+
+
+
+TR3 
+
+	o4 q16 l16
+	d f+ a > d f+ a >
+	d < a f+ d < a f+
+
+	o4
+	e g+ b > e g+ b >
+	e < b g+ e < b g+
+
+	o3
+	e g+ b > e g+ b >
+	e g+ b > e g+ b >
+
+
+
+TR4 
+	o5 l16  v12
+//	[ <$h c $h c $h c $s c $h c $h c> ]6
+	[ r r r r r r ]6
+
+
+
+/*
+TR5 o5  Rm0
+	[ddd]4
+	[eee]8
+*/
+
+// ループ部分
+TR1  L
+	v3  q2 E@1001
+	o3 l16
+	[ d r d d r d] 8
+	
+
+TR3 L
+	o4 q16 l16
+	<
+	[$kon d r $kon d $kon d r $kon d]7
+	$kon d $son d $kon d $son d $kon d $son d
+
+TR4 L
+	o5 l16  v12
+	[ <$h c $h c $h c $s c $h c $h c> ]7
+	<$h c $s c $h c $s c $h c $s c>
+
+/*
+TR5 L o5
+	[ddd]16
+*/
+
+}
+

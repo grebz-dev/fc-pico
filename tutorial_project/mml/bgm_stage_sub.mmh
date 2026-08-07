@@ -1,0 +1,6 @@
+$drum_pt0 {
+	o5 l16  v12
+	[ <$kon $h c $h c $kon $h c $s c $h c $kon $h c> ]7
+	<$kon $h c $s c $kon $h c $s c $h c $s c>
+}
+
