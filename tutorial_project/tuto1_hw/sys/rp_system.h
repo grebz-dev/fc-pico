@@ -27,6 +27,8 @@
 #include "rp_nsfplayer.h"
 #include "rp_sound.h"
 
+#include "Obj3d.h"
+
 
 
 #define LOOP_MS 1
@@ -77,26 +79,24 @@
 //---------------------------------------
 // PICO->FC command
 //---------------------------------------
-enum{
-	PF_COM_NONE = 0,		// コマンドなし
-	PF_COM_DMOD = 1,		// 表示OFFにしてデータ転送モードへ
-	PF_COM_FDIN = 2,		// フェードイン	処理終了　FP_COM_ACK
-	PF_COM_FDOT = 3,		// フェードアウト	処理終了　FP_COM_ACK
+#define  PF_COM_NONE  0		// コマンドなし
+#define  PF_COM_DMOD  1		// 表示OFFにしてデータ転送モードへ
+#define  PF_COM_FDIN  2		// フェードイン	処理終了　FP_COM_ACK
+#define  PF_COM_FDOT  3		// フェードアウト	処理終了　FP_COM_ACK
 
-	PF_COM_SE   = 0x80,		// SEセット:0x80 + SE_NO
-	PF_COM_BGM  = 0xA0,		// BGMセット:BGM_NO
-	PF_COM_VRAM = 0xC0,		// VRAM 書き換え:adrH,ardL,dt
+#define  PF_COM_SE    0x80		// SEセット:0x80 + SE_NO
+#define  PF_COM_BGM   0xA0		// BGMセット:BGM_NO
+#define  PF_COM_VRAM  0xC0		// VRAM 書き換え:adrH,ardL,dt
 
 
 	// データモードコマンド
-	PF_DAT_VRAM = 0x80,		//  VRAM 書き換え:adrH,ardL,size,data....
-							//  --> size = 0 は256バイト 256バイト以上送りたい場合は分割して送る
-	PF_DAT_RAM  = 0x81, 	//  VRAM 書き換え:adrH,ardL,size,data....
+#define  PF_DAT_VRAM  0x80		//  VRAM 書き換え:adrH,ardL,size,data....
+								//  --> size = 0 は256バイト 256バイト以上送りたい場合は分割して送る
+#define  PF_DAT_RAM   0x81 		//  VRAM 書き換え:adrH,ardL,size,data....
 
-	PF_DAT_STEP = 0x82, 	//  データモードを抜けてファミコンの指定ステップへ
+#define  PF_DAT_STEP  0x82 		//  データモードを抜けてファミコンの指定ステップへ
 
-	PF_MAGIC_NO = 0xFC	// 受け取ったコマンドの可否チェックコード
-};
+#define  PF_MAGIC_NO  0xFC		// 受け取ったコマンドの可否チェックコード
 
 //---------------------------------------
 // FC->PICO command

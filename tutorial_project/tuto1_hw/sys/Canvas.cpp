@@ -153,12 +153,17 @@ void Canvas::drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
 //---- impact soft add -----
 
 // スプライト描画倍率セット
-void Canvas::setSprMG( float mgw, float mgh ) {
+void Canvas::setSprZoom( float mgw, float mgh ) {
 	Spr_mgw = mgw;
 	Spr_mgh = mgh;
 	Spr_mg = false;
 	if (mgw != 1.0f) Spr_mg = true;
 	if (mgh != 1.0f) Spr_mg = true;
+};
+
+// w値でスプライト描画倍率セット
+void Canvas::setSprZoomW( float w ) {
+	this->setSprZoom( w * Spr_mgw, w * Spr_mgw );
 };
 
 

@@ -120,19 +120,22 @@ void Obj3d::draw() {
 	reloadLookAt();
 
 	glTranslatef( m_x, m_y, m_z );
-
-	if ( m_angle_z != 0 ) {
-		glRotatef( 360.f * m_angle_z / 256 , 0.f, 0.f, 1.f);
-	}
-	if ( m_angle_y != 0 ) {
-		glRotatef( 360.f * m_angle_y / 256 , 0.f, 1.f, 0.f);
-	}
-	if ( m_angle_x != 0 ) {
-		glRotatef( 360.f * m_angle_x / 256 , 1.f, 0.f, 0.f);
-	}
-	
-	if ( m_scale != 1.f ) {
-		glScalef( m_scale, m_scale, m_scale);
+	if ( m_mode < OMD_2D ) {
+		if ( m_angle_z != 0 ) {
+			glRotatef( 360.f * m_angle_z / 256 , 0.f, 0.f, 1.f);
+		}
+		if ( m_angle_y != 0 ) {
+			glRotatef( 360.f * m_angle_y / 256 , 0.f, 1.f, 0.f);
+		}
+		if ( m_angle_x != 0 ) {
+			glRotatef( 360.f * m_angle_x / 256 , 1.f, 0.f, 0.f);
+		}
+		
+		if ( m_scale != 1.f ) {
+			glScalef( m_scale, m_scale, m_scale);
+		}
+	} else {
+		c.setSprZoom( m_scale, m_scale );
 	}
 
 	c.setDefCol( m_color );

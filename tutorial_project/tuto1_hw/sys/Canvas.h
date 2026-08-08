@@ -41,7 +41,10 @@ public:
 	};
 
    	// スプライト描画倍率セット
-    void setSprMG( float mgw, float mgh );
+    void setSprZoom( float mgw, float mgh );
+
+   	// w値でスプライト描画倍率セット
+    void setSprZoomW( float w );
 
    	// スプライト反転描画セット
     void setSprFlip( const uint8_t flip ) {

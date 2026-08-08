@@ -11,6 +11,8 @@ enum {
 	OMD_NONE = 0,
 	OMD_MODEL,		// モデル描画モード
 	OMD_CUBE,		// CUBE描画モード
+
+	OMD_2D,			// ---- 以下は2D描画モード ---
 	OMD_PSET,		// 点描画モード
 	OMD_SPR16,		// 16x16スプライト描画モード
 	OMD_SPR8,		// 8x8スプライト描画モード

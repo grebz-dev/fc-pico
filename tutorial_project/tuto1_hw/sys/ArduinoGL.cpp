@@ -587,8 +587,10 @@ void glEnd(void) {
 		if( isDispArea( aux ) ) {
             int px = (((aux->x + 1.0)/2.0) * (frameWidth - 1));
             int py = ((1.0 - ((aux->y + 1.0)/2.0)) * (frameHeight - 1));
-			c.setZval( glVertices[0].z );
+			glCanvas->setZval( glVertices[0].z );
 
+			glCanvas->setDitherNo( 0 );
+			glCanvas->setSprZoomW( 32.0f / glVertices[0].w );
 //			glCanvas->setPixel(px, py);
 //			glCanvas->drawSquare(px-7, py-7,px+8, py+8);
 			glCanvas->drawSPR16( px, py);
@@ -599,8 +601,12 @@ void glEnd(void) {
 		if( isDispArea( aux ) ) {
             int px = (((aux->x + 1.0)/2.0) * (frameWidth - 1));
             int py = ((1.0 - ((aux->y + 1.0)/2.0)) * (frameHeight - 1));
-			c.setZval( glVertices[0].z );
+			glCanvas->setDitherNo( 0 );
+			glCanvas->setSprZoomW( 32.0f / glVertices[0].w );
+			glCanvas->setZval( glVertices[0].z );
+//			glCanvas->setSprZoom( 1.0f,1.0f );
 			glCanvas->drawSPR8( px, py);
+
         }
 
     

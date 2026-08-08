@@ -23,7 +23,7 @@ extern void BLINK_LED();
 PWMAudio pwm( PWM_AUDIO_L );
 
 //BackgroundAudioMixer<640> mixer(pwm, 44100);
-ROMBackgroundAudioWAV wav;
+//ROMBackgroundAudioWAV wav;
 ROMBackgroundAudioMP3 BMP;
 
 
@@ -68,7 +68,6 @@ void rp_sound::jobSound() {
 #else
 		nsf.playBGM( m_BgmRQ );
 #endif
-
 	}
 	m_BgmRQ = 0;
 
