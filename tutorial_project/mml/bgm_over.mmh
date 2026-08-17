@@ -1,3 +1,10 @@
+/// @file bgm_over.mmh
+
+/// @brief Game-over jingle.
+/// @ingroup toolchain
+
+/// @brief Game-over jingle.
+/// @ingroup toolchain
 BGM(3) {
 
 

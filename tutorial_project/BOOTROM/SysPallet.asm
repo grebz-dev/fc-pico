@@ -1,14 +1,27 @@
+;/// @file SysPallet.asm
+;/// @brief Palette fade engine and the only writer of the hardware palette.
+;/// @ingroup bootrom
+;///
+;/// All palette changes go through the #PAL_WRK shadow; @ref transPALLET is what
+;/// moves them to `$3F00`, and it must run inside vertical blank.
+;///
+;/// Fades are computed per entry against a mask, so groups of colours can be
+;/// faded independently. Palette index `$0F` is special-cased as black.
 ;========================================
 ; Pallet System
 ;========================================
-DEF_FADE_SPD	equ 4	; デフォルトフェード速度
+DEF_FADE_SPD	equ 4   ;///< Default frames between fade steps. ; デフォルトフェード速度
 
 
 ;*****************************************
 ;黒フェードイン
 ;*****************************************
+;/// @brief Starts a fade in from black.
+;/// @ingroup bootrom
 SET_FADE_IN_B:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_IN_B, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_IN_B2:
 	ldy	#-$40
 	ldx	#$10
@@ -16,8 +29,12 @@ SET_FADE_IN_B2:
 ;*****************************************
 ;黒フェードアウト
 ;*****************************************
+;/// @brief Starts a fade out to black.
+;/// @ingroup bootrom
 SET_FADE_OUT_B:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_OUT_B, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_OUT_B2:
 	ldy	#0
 	ldx	#-$10
@@ -25,8 +42,12 @@ SET_FADE_OUT_B2:
 ;*****************************************
 ;白フェードイン
 ;*****************************************
+;/// @brief Starts a fade in from white.
+;/// @ingroup bootrom
 SET_FADE_IN_W:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_IN_W, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_IN_W2:
 	ldy	#$40
 	ldx	#-$10
@@ -34,11 +55,17 @@ SET_FADE_IN_W2:
 ;*****************************************
 ;白フェードアウト
 ;*****************************************
+;/// @brief Starts a fade out to white.
+;/// @ingroup bootrom
 SET_FADE_OUT_W:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_OUT_W, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_OUT_W2:
 	ldy	#0
 	ldx	#$10
+;/// @brief Common tail of the fade setters: stores the parameters and flags the palette dirty.
+;/// @ingroup bootrom
 fade_set_end:
 	sta PALFADE_TIME
 	sta	PALFADE_CNT
@@ -50,6 +77,8 @@ fade_set_end:
 ;*****************************************
 ;フェード終了待ち
 ;*****************************************
+;/// @brief Blocks until the running fade completes, re-enabling NMI first.
+;/// @ingroup bootrom
 WAIT_FADE_END:
 	lda  <FLG_2000
 	sta	 $2000				; このタイミングでNMI発生
@@ -65,6 +94,8 @@ WAIT_FADE_END:
 ;パレットフェードシステム
 ;*****************************************
 	
+;/// @brief Advances the fade by one step; called once per frame from the main loop.
+;/// @ingroup bootrom
 PAL_FADE_SYSTEM:
 	lda	PALFADE_TIME
 	beq	.ret		; フェードタイムが０なら何もしないでリターン
@@ -94,6 +125,8 @@ PAL_FADE_SYSTEM:
 ;*****************************************
 ;パレットＰＰＵ転送システム
 ;*****************************************
+;/// @brief Uploads #PAL_WRK to `$3F00`, applying the fade. @warning Must run inside vertical blank.
+;/// @ingroup bootrom
 transPALLET:
 	lda  <PAL_CHG_FG
 	beq  .end
@@ -145,6 +178,8 @@ transPALLET:
 	rts
 
 
+;/// @brief Bit masks selecting which palette group each fade step affects.
+;/// @ingroup bootrom
 tblFadeMask:
 	db  $01,$02,$04,$08,$10,$20,$40,$80
 

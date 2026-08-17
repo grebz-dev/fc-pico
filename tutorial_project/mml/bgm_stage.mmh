@@ -1,4 +1,9 @@
+/// @file bgm_stage.mmh
+/// @brief Stage music.
+/// @ingroup toolchain
 
+/// @brief Stage theme.
+/// @ingroup toolchain
 BGM(1) {
 //BGM(3) {
 

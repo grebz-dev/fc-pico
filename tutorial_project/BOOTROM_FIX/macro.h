@@ -1,6 +1,29 @@
+;/// @file macro.h
+;/// @brief The assembler macro library: arithmetic, VRAM access, strings and flow control.
+;/// @ingroup bootrom
+;///
+;/// nesasm has no inline functions, so anything that would be a small helper is a
+;/// macro here. The important groups are:
+;///
+;/// - **16-bit arithmetic** -- `LD_W`, `ADD_W`, `addw`, `subw`, `incw`, `decw`
+;/// - **VRAM addressing** -- `SET_VRAM_ADD2` and friends, which set `$2006`.
+;///   `SET_VRAM_ADD2 #$0800` is how the cartridge port is opened. @see @ref protocol
+;/// - **Display control** -- `DISP_ON`, `DISP_OFF`, made macros specifically to
+;///   avoid IRQ-line noise when rendering is toggled
+;/// - **Flow control** -- `TBL_JUMP` / `JPTBL` build jump tables by pushing an
+;///   address minus one and executing `RTS`
+;/// - **String drawing** -- `DRAW_STRING2` embeds its text inline and fakes a
+;///   return address so execution resumes past the data
+;///
+;/// @warning This file is **byte-identical** in `BOOTROM/` and `BOOTROM_FIX/`,
+;///          including this header. Edit both or neither. @see @ref conventions
+;/// @note The banking macros (`CHG_BANK_*`, `PUSH_BANK`, `POP_BANK`) and the
+;///       scanline-IRQ macros (`HIRQ_*`) are inert on this NROM cartridge.
 ;******************************************************************************
 ;	MOVE関係
 ;******************************************************************************
+;/// @brief Loads a 16-bit immediate into a zero-page word.
+;/// @ingroup bootrom
 LD_W MACRO
 	lda  \2
 	sta  \1
@@ -12,6 +35,8 @@ LD_W MACRO
 ;	算術関係
 ;******************************************************************************
 
+;/// @brief Adds a 16-bit value to a zero-page word.
+;/// @ingroup bootrom
 ADD_W MACRO
 	clc
 	lda  \1
@@ -25,6 +50,8 @@ ADD_W MACRO
 ;------------------------------------------------------------------------------
 ;				バイト足し演算
 ;------------------------------------------------------------------------------
+;/// @brief Adds an 8-bit value to a memory location.
+;/// @ingroup bootrom
 add	MACRO
 	clc
 	adc	\1
@@ -32,6 +59,8 @@ add	MACRO
 ;------------------------------------------------------------------------------
 ;				バイト引き演算
 ;------------------------------------------------------------------------------
+;/// @brief Subtracts an 8-bit value from a memory location.
+;/// @ingroup bootrom
 sub	MACRO
 	sec
 	sbc	\1
@@ -40,6 +69,8 @@ sub	MACRO
 ;				ワード足し演算
 ;				xy + \1\2 = xy
 ;------------------------------------------------------------------------------
+;/// @brief Adds a 16-bit value to a zero-page word, with carry.
+;/// @ingroup bootrom
 addw	MACRO
 	pha
 
@@ -61,6 +92,8 @@ addw	MACRO
 ;				ワード引き演算
 ;				xy - \1\2 = xy
 ;------------------------------------------------------------------------------
+;/// @brief Subtracts a 16-bit value from a zero-page word, with borrow.
+;/// @ingroup bootrom
 subw	MACRO
 	pha
 
@@ -79,6 +112,8 @@ subw	MACRO
 ;				ワードインクリメント
 ;				\1\2 + 1 = \1\2
 ;------------------------------------------------------------------------------
+;/// @brief Increments a 16-bit zero-page word.
+;/// @ingroup bootrom
 incw	MACRO
 	inc	\1
 	bne	.iend\@
@@ -92,6 +127,8 @@ incw	MACRO
 ;				ワードデクリメント
 ;				\1\2 - 1 = \1\2
 ;------------------------------------------------------------------------------
+;/// @brief Decrements a 16-bit zero-page word.
+;/// @ingroup bootrom
 decw	MACRO
 	lda	\1
 	bne	.dend\@
@@ -105,6 +142,8 @@ decw	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　AR に固定ワードセット
 ;------------------------------------------------------------------------------
+;/// @brief Loads an immediate into the #W_AR arithmetic register.
+;/// @ingroup bootrom
 SET_AR	MACRO
 	LDA	\1 & $ff
         STA	<W_AR
@@ -115,6 +154,8 @@ SET_AR	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　BR に固定ワードセット
 ;------------------------------------------------------------------------------
+;/// @brief Loads an immediate into the #W_BR arithmetic register.
+;/// @ingroup bootrom
 SET_BR	MACRO
 	LDA	\1 & $ff
         STA	<W_BR
@@ -125,6 +166,8 @@ SET_BR	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　AR にメモリー上のワード値セット
 ;------------------------------------------------------------------------------
+;/// @brief Loads #W_AR from a memory word.
+;/// @ingroup bootrom
 SET_AR_M	MACRO
 	LDA	\1
         STA	<W_AR
@@ -135,6 +178,8 @@ SET_AR_M	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　BR にメモリー上のワード値セット
 ;------------------------------------------------------------------------------
+;/// @brief Loads #W_BR from a memory word.
+;/// @ingroup bootrom
 SET_BR_M	MACRO
 	LDA	\1
         STA	<W_BR
@@ -147,6 +192,8 @@ SET_BR_M	MACRO
 ;				対象メモリーアドレス = \1
 ;				セットするビット     = \2
 ;------------------------------------------------------------------------------
+;/// @brief Sets the given bits in a memory location.
+;/// @ingroup bootrom
 SET_BIT		MACRO
 	LDA	\1
 	ORA	\2
@@ -158,6 +205,8 @@ SET_BIT		MACRO
 ;				対象メモリーアドレス = \1
 ;				クリアーするビット   = \2
 ;------------------------------------------------------------------------------
+;/// @brief Clears the given bits in a memory location.
+;/// @ingroup bootrom
 CLR_BIT		MACRO
 	LDA	\1
 	AND	$ff - \2
@@ -169,6 +218,8 @@ CLR_BIT		MACRO
 ;				対象メモリーアドレス = \1
 ;				チェックするビット   = \2
 ;------------------------------------------------------------------------------
+;/// @brief Tests the given bits in a memory location, setting Z accordingly.
+;/// @ingroup bootrom
 CHK_BIT		MACRO
 	LDA	\1
 	AND	\2
@@ -178,6 +229,8 @@ CHK_BIT		MACRO
 ;------------------------------------------------------------------------------
 ;				XYレジスタをスタックに退避
 ;------------------------------------------------------------------------------
+;/// @brief Pushes X and Y.
+;/// @ingroup bootrom
 phxy		MACRO
 	sta  <TMP_SYS
 	txa
@@ -190,6 +243,8 @@ phxy		MACRO
 ;------------------------------------------------------------------------------
 ;				XYレジスタをスタックから復帰
 ;------------------------------------------------------------------------------
+;/// @brief Pops Y and X, restoring the order pushed by @c phxy.
+;/// @ingroup bootrom
 plxy		MACRO
 	sta  <TMP_SYS
 	pla
@@ -202,6 +257,8 @@ plxy		MACRO
 ;------------------------------------------------------------------------------
 ;				SRC_ADRをスタックに退避
 ;------------------------------------------------------------------------------
+;/// @brief Pushes the 16-bit #SRC_ADR pointer.
+;/// @ingroup bootrom
 phSRC_ADR	MACRO
 	lda  <SRC_ADR+0
 	pha
@@ -212,6 +269,8 @@ phSRC_ADR	MACRO
 ;------------------------------------------------------------------------------
 ;				XYレジスタをスタックから復帰
 ;------------------------------------------------------------------------------
+;/// @brief Pops the 16-bit #SRC_ADR pointer.
+;/// @ingroup bootrom
 plSRC_ADR	MACRO
 	pla
 	sta  <SRC_ADR+1
@@ -229,6 +288,10 @@ plSRC_ADR	MACRO
 ;------------------------------------------------------------------------------
 ;				表示on
 ;------------------------------------------------------------------------------
+;/// @brief Enables rendering, waiting for a frame boundary first.
+;/// @note A macro rather than a call so that toggling rendering does not
+;///       disturb the IRQ line and put noise on screen.
+;/// @ingroup bootrom
 DISP_ON		MACRO
 	jsr  _disp_on_sub
 	ENDM
@@ -236,6 +299,8 @@ DISP_ON		MACRO
 ;------------------------------------------------------------------------------
 ;				表示on NO SP
 ;------------------------------------------------------------------------------
+;/// @brief Enables background rendering but leaves sprites disabled.
+;/// @ingroup bootrom
 DISP_ON_NSP		MACRO
 	jsr  _disp_on_sub2
 	ENDM
@@ -243,6 +308,10 @@ DISP_ON_NSP		MACRO
 ;------------------------------------------------------------------------------
 ;				表示off
 ;------------------------------------------------------------------------------
+;/// @brief Disables rendering, waiting for a frame boundary first.
+;/// @warning Required before bulk transfers: with rendering on there is not
+;///          enough `$2007` bandwidth. @see xPF_COM_DMOD
+;/// @ingroup bootrom
 DISP_OFF	MACRO
 	jsr  _disp_off_sub
 	ENDM
@@ -251,6 +320,12 @@ DISP_OFF	MACRO
 ;				VRAMアドレスセット
 ;				VRAMアドレス = \1(16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at a 16-bit address.
+;/// @warning `SET_VRAM_ADD2 #$0800` does **not** address video memory. It opens
+;///          the cartridge port: pattern-table space is decoded by the
+;///          cartridge, so the following `$2007` accesses reach the RP2350.
+;///          @see @ref protocol
+;/// @ingroup bootrom
 SET_VRAM_ADD2	MACRO
 	lda #HIGH (\1)
     sta $2006
@@ -263,6 +338,8 @@ SET_VRAM_ADD2	MACRO
 ;				VRAMアドレス = \1(16bit adr)
 ;				加算値 = \2
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at an address held in memory.
+;/// @ingroup bootrom
 SET_VRAM_ADD3	MACRO
 	clc
 	lda #LOW  (\1)
@@ -280,6 +357,8 @@ SET_VRAM_ADD3	MACRO
 ;				VRAMアドレス = \1(16bit adr)
 ;				加算値 = \2
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at an indexed address.
+;/// @ingroup bootrom
 SET_VRAM_ADD4	MACRO
 	clc
 	lda #LOW  (\1)
@@ -296,6 +375,8 @@ SET_VRAM_ADD4	MACRO
 ;				VRAMアドレスセット
 ;				VRAMアドレス = \1(16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at a nametable cell given as column and row.
+;/// @ingroup bootrom
 SET_VRAM_LOC	MACRO
 	lda #HIGH (\1)
     sta <TMP_ADR0+1
@@ -303,6 +384,8 @@ SET_VRAM_LOC	MACRO
     sta <TMP_ADR0+0
 	ENDM
 
+;/// @brief As @c SET_VRAM_LOC, adding an offset.
+;/// @ingroup bootrom
 SET_VRAM_LOC_ADD	MACRO
     lda <TMP_ADR0+1
     sta $2006
@@ -310,6 +393,8 @@ SET_VRAM_LOC_ADD	MACRO
     sta $2006
 	ENDM
 
+;/// @brief Advances the PPU address by one nametable row.
+;/// @ingroup bootrom
 ADD_VRAM_LOC_CR	MACRO
 	clc
 	lda  <TMP_ADR0+0
@@ -325,6 +410,8 @@ ADD_VRAM_LOC_CR	MACRO
 ;				VRAMアドレスセット
 ;				VRAMアドレス = \1(16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at page A, offset zero.
+;/// @ingroup bootrom
 SET_VRAM_ADD_A_00	MACRO
         STA  $2006
         LDA	#$00
@@ -338,6 +425,8 @@ SET_VRAM_ADD_A_00	MACRO
 ;				データアドレスセット
 ;				データアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Loads #SRC_ADR with an immediate address.
+;/// @ingroup bootrom
 SET_DATA_SRC	MACRO
 	lda	#LOW (\1)
 	sta	<SRC_ADR
@@ -349,6 +438,8 @@ SET_DATA_SRC	MACRO
 ;				データアドレスセット
 ;				データアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Loads #DST_ADR with an immediate address.
+;/// @ingroup bootrom
 SET_DATA_DST	MACRO
 	lda	#LOW (\1)
 	sta	<DST_ADR
@@ -362,6 +453,8 @@ SET_DATA_DST	MACRO
 ;				データアドレス = \1 (16bit adr)
 ;				データアドレス = \2 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Loads both #SRC_ADR and #DST_ADR for a copy.
+;/// @ingroup bootrom
 SET_DATA_ADR	MACRO
 	lda	#LOW (\2)
 	sta	\1
@@ -373,6 +466,8 @@ SET_DATA_ADR	MACRO
 ;				パレット転送
 ;				データアドレス = \1 (アドレス)
 ;------------------------------------------------------------------------------
+;/// @brief Uploads a 32-byte palette through #PAL_WRK. @see transPALLET
+;/// @ingroup bootrom
 TRANS_PAL	MACRO
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -385,6 +480,8 @@ TRANS_PAL	MACRO
 ;				ネームテーブル＆パレット転送
 ;				データアドレス = \1 (バンク付アドレス)
 ;------------------------------------------------------------------------------
+;/// @brief Copies a block of tile data into a nametable.
+;/// @ingroup bootrom
 DRAW_BG_DATA	MACRO
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -398,6 +495,8 @@ DRAW_BG_DATA	MACRO
 ;				ネームテーブル転送
 ;				データアドレス = \1 (バンク付アドレス)
 ;------------------------------------------------------------------------------
+;/// @brief As @c DRAW_BG_DATA, without setting the palette.
+;/// @ingroup bootrom
 DRAW_BG_DATA_NP	MACRO
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -419,6 +518,10 @@ DRAW_BG_DATA_NP	MACRO
 ;				文字列描画
 ;				\1 = 文字列
 ;------------------------------------------------------------------------------
+;/// @brief Draws a string literal written inline at the call site.
+;/// @details Pushes a fake return address so that execution resumes after the
+;///          embedded text rather than trying to run it.
+;/// @ingroup bootrom
 DRAW_STRING2 MACRO
 	LDA  #HIGH (.end\@ -1)
 	PHA
@@ -437,6 +540,8 @@ DRAW_STRING2 MACRO
 ;				文字列描画
 ;				データソースアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Draws a NUL-terminated string from a labelled address.
+;/// @ingroup bootrom
 DRAW_STRING	MACRO
 	lda	#\1 & $ff
 	STA	<SRC_ADR
@@ -449,6 +554,8 @@ DRAW_STRING	MACRO
 ;				文字列描画（クリアー切り替え付き）
 ;				データソースアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Draws a string using the system tile set.
+;/// @ingroup bootrom
 DRAW_STRING_S	MACRO
 	lda	#\1 & $ff
 	STA	<SRC_ADR
@@ -462,6 +569,8 @@ DRAW_STRING_S	MACRO
 ;				A reg = テーブル選択番号
 ;				テーブルデータアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Draws the string selected by an index into a table.
+;/// @ingroup bootrom
 DRAW_STRING_TBL_SEL	MACRO
 	ASL	A
 	TAX
@@ -473,6 +582,8 @@ DRAW_STRING_TBL_SEL	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
+;/// @brief Flags the palette shadow dirty so @ref transPALLET uploads it next vertical blank.
+;/// @ingroup bootrom
 PAL_CHG	MACRO
 	inc  <PAL_CHG_FG
 	ENDM
@@ -482,24 +593,32 @@ PAL_CHG	MACRO
 ;	RTS関係
 ;******************************************************************************
 
+;/// @brief Returns if the zero flag is set.
+;/// @ingroup bootrom
 rts_z	MACRO
 	bne .tbl\@
 	rts
 .tbl\@:
 	ENDM
 
+;/// @brief Returns if the zero flag is clear.
+;/// @ingroup bootrom
 rts_nz	MACRO
 	beq .tbl\@
 	rts
 .tbl\@:
 	ENDM
 
+;/// @brief Returns if the carry flag is set.
+;/// @ingroup bootrom
 rts_c	MACRO
 	bnc .tbl\@
 	rts
 .tbl\@:
 	ENDM
 
+;/// @brief Returns if the carry flag is clear.
+;/// @ingroup bootrom
 rts_nc	MACRO
 	bcs .tbl\@
 	rts
@@ -515,6 +634,10 @@ rts_nc	MACRO
 ;				テーブルジャンプ
 ;				A reg = ジャンプ先テーブル番号
 ;------------------------------------------------------------------------------
+;/// @brief Dispatches through the jump table that follows.
+;/// @details Pushes the target address minus one and executes `RTS`, which is
+;///          the standard 6502 idiom for an indexed jump.
+;/// @ingroup bootrom
 TBL_JUMP	MACRO
 	ASL	A
 	stx  <TMP_SYS
@@ -531,6 +654,8 @@ TBL_JUMP	MACRO
 ;------------------------------------------------------------------------------
 ;  テーブルジャンプ先　宣言用マクロ　スタックを使う場合ジャンプ先-1 をプッシュ
 ;------------------------------------------------------------------------------
+;/// @brief Declares one entry of a @c TBL_JUMP table.
+;/// @ingroup bootrom
 JPTBL	MACRO
 	DW	\1 -1
 	ENDM
@@ -539,6 +664,8 @@ JPTBL	MACRO
 ;				バンク付テーブルジャンプ
 ;				A reg = ジャンプ先テーブル番号
 ;------------------------------------------------------------------------------
+;/// @brief Bank-aware @c TBL_JUMP. @note Degenerates to a plain jump on this NROM cartridge.
+;/// @ingroup bootrom
 BNK_TBL_JUMP	MACRO
 	sta  <TMP_SYS
 	stx  <TMP_SYS2
@@ -563,6 +690,8 @@ BNK_TBL_JUMP	MACRO
 ;------------------------------------------------------------------------------
 ;  バンク付ジャンプ先テーブル
 ;------------------------------------------------------------------------------
+;/// @brief Declares one entry of a @c BNK_TBL_JUMP table.
+;/// @ingroup bootrom
 BNK_JPTBL2	MACRO
 	DW	(\1 -1)
 	DB  #BANK ( \1 ) / 2
@@ -592,6 +721,8 @@ BNK_JPTBL2	MACRO
 ;	DB  #BANK ( \1 ) / 2
 ;	ENDM
 
+;/// @brief Calls a routine in another bank. @note A plain `jsr` here; NROM has no banking.
+;/// @ingroup bootrom
 BNK_CALL	MACRO
 	jsr	\1
 	ENDM
@@ -600,6 +731,9 @@ BNK_CALL	MACRO
 ;=================================================================
 ; 				ジャンプベクターチェック付きCALL
 ;=================================================================
+;/// @brief Calls through a jump vector, first checking it holds a `JMP` opcode.
+;/// @note Guards against calling into an erased or unprogrammed ROM region.
+;/// @ingroup bootrom
 JVC_CALL MACRO
 	lda  \1
 	cmp  #$4C
@@ -611,6 +745,8 @@ JVC_CALL MACRO
 ;=================================================================
 ; 				ジャンプベクターチェック付きJMP Areg 破壊
 ;=================================================================
+;/// @brief Jumps through a validated jump vector. @see JVC_CALL
+;/// @ingroup bootrom
 JVC_JMP MACRO
 	lda  \1
 	cmp  #$4C
@@ -623,6 +759,8 @@ JVC_JMP MACRO
 ;=================================================================
 ; 				ジャンプベクターチェック付きJMP Xreg 破壊
 ;=================================================================
+;/// @brief Jumps through a validated jump vector selected by X.
+;/// @ingroup bootrom
 JVC_JMPX MACRO
 	ldx  \1
 	cpx  #$4C
@@ -635,6 +773,8 @@ JVC_JMPX MACRO
 ;=================================================================
 ; 				空のジャンプベクター
 ;=================================================================
+;/// @brief Placeholder jump vector for an entry that is not implemented.
+;/// @ingroup bootrom
 DMY_JVC_JMP MACRO
 	db $FF,$FF,$FF
 	ENDM
@@ -642,6 +782,8 @@ DMY_JVC_JMP MACRO
 ;=================================================================
 ; 				NMIユーザー処理登録用マクロ
 ;=================================================================
+;/// @brief Installs a user vertical-blank hook. @see NMI_CALL_ADR
+;/// @ingroup bootrom
 SET_NMI_CALL	MACRO
 	LDA	#HIGH (\1)
 	STA <NMI_CALL_ADR+1
@@ -655,6 +797,8 @@ SET_NMI_CALL	MACRO
 ;=================================================================
 ; 				NMIユーザー処理解除用マクロ
 ;=================================================================
+;/// @brief Removes the user vertical-blank hook.
+;/// @ingroup bootrom
 CLR_NMI_CALL	MACRO
 	LDA	#0
 	STA <NMI_CALL_ADR+1
@@ -667,6 +811,8 @@ CLR_NMI_CALL	MACRO
 ;------------------------------------------------------
 ; VRAM転送先アドレス指定マクロ
 ;------------------------------------------------------
+;/// @brief Sets the address for the VRAM transfer queue. @note Unused in this build.
+;/// @ingroup bootrom
 SET_VRAMT_ADR	MACRO
 	lda   #HIGH (\1)
 	jsr   writeVRAMT_DATA
@@ -680,6 +826,8 @@ SET_VRAMT_ADR	MACRO
 ;				A reg = テーブル選択番号
 ;				テーブルアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Selects a table entry by index.
+;/// @ingroup bootrom
 TBL_SELECT	MACRO
 	ASL	A
 	TAX
@@ -694,6 +842,8 @@ TBL_SELECT	MACRO
 ;				A reg = テーブル選択番号
 ;				テーブルアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Selects a table entry by index, 16-bit variant.
+;/// @ingroup bootrom
 TBL_SELECT2	MACRO
 	ASL	A
 	TAX
@@ -709,6 +859,8 @@ TBL_SELECT2	MACRO
 ; H-IRQ用マクロ
 ;-------------------------------------------------------------------------------
 ; H-IRQエントリ設定
+;/// @brief Installs the scanline IRQ entry point. @note Vestigial; no such hardware here.
+;/// @ingroup bootrom
 HIRQ_ENTRY_SET	macro
 		lda	#LOW(\1)
 		sta	<HIRQ_ENTRY_ADR
@@ -718,6 +870,8 @@ HIRQ_ENTRY_SET	macro
 
 
 ; H-IRQ関数設定
+;/// @brief Installs the scanline IRQ handler. @note Vestigial.
+;/// @ingroup bootrom
 HIRQ_FUNC_SET	macro
 		lda	#LOW(\1)
 		sta	<HIRQ_FUNC_ADR
@@ -734,6 +888,8 @@ HIRQ_FUNC_SET	macro
 ;   Y reg クリアーサイズ ( 0 は 256バイト )
 ;	\1 = クリアーメモリーアドレス (16bit adr)
 
+;/// @brief Fills a memory range with zero.
+;/// @ingroup bootrom
 CLEAR_MEM	macro
 
 .loop\@:
@@ -744,6 +900,8 @@ CLEAR_MEM	macro
 		endm
 
 
+;/// @brief Copies a table of bytes into RAM.
+;/// @ingroup bootrom
 COPY_TBL	macro
 	ldx  #0
 .loop\@:
@@ -759,6 +917,8 @@ COPY_TBL	macro
 ;	\2 = 転送先アドレス (16bit adr)
 ;	\3 = 転送サイズ (8bit)
 
+;/// @brief Copies a block of memory, 8-bit length.
+;/// @ingroup bootrom
 COPY_MEM	macro
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -779,6 +939,8 @@ COPY_MEM	macro
 ;	\2 = 転送先アドレス (16bit adr)
 ;	\3 = 転送サイズ (16bit)
 
+;/// @brief Copies a block of memory, 16-bit length.
+;/// @ingroup bootrom
 COPY_MEM16	macro
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -805,6 +967,9 @@ COPY_MEM16	macro
 ; BEEP
 ;-------------------------------------------------------------------------------
 
+;/// @brief Emits a tone by writing the APU pulse registers directly.
+;/// @note Used for boot progress cues before the sound driver exists.
+;/// @ingroup bootrom
 BEEP	MACRO
 	lda #0
 	sta $4015
@@ -834,6 +999,8 @@ BEEP	MACRO
 ;-------------------------------
 ; Areg = セットするライン数
 ;-------------------------------
+;/// @brief Reloads the scanline IRQ counter. @note Vestigial; no such hardware here.
+;/// @ingroup bootrom
 HIRQ_LATCH_RELOAD	MACRO
 	sta  <HIRQ_CNT
 	sta  EXS_HIRQ_REG		; H-IRQラインオフセット設定
@@ -845,6 +1012,8 @@ HIRQ_LATCH_RELOAD	MACRO
 	ENDM
 
 
+;/// @brief Acknowledges a scanline IRQ. @note Vestigial.
+;/// @ingroup bootrom
 HIRQ_END	MACRO
 	lda  #$FF
 	sta  EXS_HIRQ_REG		; H-IRQラインオフセット設定
@@ -855,6 +1024,10 @@ HIRQ_END	MACRO
 ;-------------------------------
 ; ROMミラー設定マクロ
 ;-------------------------------
+;/// @brief Emits the literal marker `nes_mirror` for a post-processing tool.
+;/// @note The tool (`bin/nes_mirror.exe`) is never invoked by any build script
+;///       in this project. @see @ref conventions
+;/// @ingroup bootrom
 ROM_MIRROR 	macro
 	db "nes_mirror",\1
 	dw \2
@@ -866,10 +1039,14 @@ ROM_MIRROR 	macro
 ;-------------------------------
 ; バンク切り替え
 ;-------------------------------
+;/// @brief Selects a PRG bank from A. @note Inert on NROM; the write lands on the board's write-enable latch. @see @ref flashing
+;/// @ingroup bootrom
 CHG_BANK_A 	macro
 	sta  $E000
 	ENDM
 
+;/// @brief Selects a PRG bank from X. @note Inert on NROM.
+;/// @ingroup bootrom
 CHG_BANK_X 	macro
 	jsr  SYS_CHG_BANK_X
 ;	stx  $8000
@@ -878,6 +1055,8 @@ CHG_BANK_X 	macro
 ;-------------------------------
 ; バンク切り替え
 ;-------------------------------
+;/// @brief Selects a PRG bank from a literal. @note Inert on NROM.
+;/// @ingroup bootrom
 CHG_BANK_LB macro
 	lda  #BANK (\1) /2
 	sta  $E000
@@ -888,6 +1067,8 @@ CHG_BANK_LB macro
 ;-------------------------------
 ; 現在のバンクをスタックにPUSH
 ;-------------------------------
+;/// @brief Saves the current bank number. @note Inert on NROM.
+;/// @ingroup bootrom
 PUSH_BANK macro
 	lda  ROM_BANK_NO
 	pha
@@ -897,6 +1078,8 @@ PUSH_BANK macro
 ;-------------------------------
 ; 現在のスタックからPOPしてバンク切り替え
 ;-------------------------------
+;/// @brief Restores a saved bank number. @note Inert on NROM.
+;/// @ingroup bootrom
 POP_BANK macro
 	pla
 	jsr  SYS_CHG_BANK
@@ -906,6 +1089,8 @@ POP_BANK macro
 ;-------------------------------
 ; サウンドデータテーブルマクロ
 ;-------------------------------
+;/// @brief Emits a data byte for the model/table description format.
+;/// @ingroup bootrom
 MDR_DT	MACRO
 	DW \1
 	DB \2
@@ -916,6 +1101,10 @@ MDR_DT	MACRO
 ;-------------------------------
 ; サウンドデータテーブルマクロ
 ;-------------------------------
+;/// @brief Stops dead with a repeating beep.
+;/// @details Masks interrupts and loops forever. Intended as a visible, audible
+;///          failure rather than a silent hang.
+;/// @ingroup bootrom
 DEBUG_HALT MACRO
 	sei
 	BEEP $104,%11110011
@@ -927,18 +1116,24 @@ DEBUG_HALT MACRO
 ;	NoNMI関係
 ;******************************************************************************
 
+;/// @brief Polls `$2002` until vertical blank begins. For use with NMI disabled.
+;/// @ingroup bootrom
 WAIT_VBLANK MACRO
 .wait_loop\@
 	bit	 $2002  ;ppu__status
 	bpl	.wait_loop\@
 	ENDM
 
+;/// @brief Polls `$2002` until vertical blank ends.
+;/// @ingroup bootrom
 WAIT_VBLANK_END MACRO
 .wait_loop\@
 	bit	 $2002  ;ppu__status
 	bmi	.wait_loop\@
 	ENDM
 
+;/// @brief Zeroes both scroll registers.
+;/// @ingroup bootrom
 RESET_SCR_XY MACRO
 	lda  #0
 	sta  $2005
@@ -949,6 +1144,8 @@ RESET_SCR_XY MACRO
 ;	EXA関係
 ;******************************************************************************
 
+;/// @brief Reads expansion adapter status from `$5000`. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 RSTAT_EXA MACRO
 	lda  $5000
 	ENDM
@@ -961,11 +1158,15 @@ RSTAT_EXA MACRO
 ; TIMEOU値セット
 ;-------------------------------------------------------------------------------
 ;	\1 = タイムアウト秒数 (1-68秒)
+;/// @brief Arms #DEMO_TIMER for the given number of seconds.
+;/// @ingroup bootrom
 SET_TIMEOUT macro
 	lda  #( \1 *60/16)
 	sta  <DEMO_TIMER
 	ENDM
 
+;/// @brief Decrements #DEMO_TIMER and branches when it reaches zero.
+;/// @ingroup bootrom
 JOB_TIMEOUT MACRO
 	lda  <DEMO_TIMER
 	beq  .lpx\@
@@ -976,6 +1177,8 @@ JOB_TIMEOUT MACRO
 .lpx\@
 	ENDM
 
+;/// @brief Branches when #DEMO_TIMER has expired.
+;/// @ingroup bootrom
 IS_TIMEOUT macro
 	lda  <DEMO_TIMER
 	ENDM

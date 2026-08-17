@@ -1,3 +1,16 @@
+;/// @file PG_main.asm
+;/// @brief Top-level assembly unit for the erasable boot ROM bank.
+;/// @ingroup bootrom
+;///
+;/// Declares the iNES header, lays out the four 8 KB banks, includes every other
+;/// source, and publishes the fixed entry points the permanent fix bank calls
+;/// into. The prebuilt fix bank is appended here with @c .incbin.
+;///
+;/// Cartridge type: **mapper 0 (NROM-256)**, 32 KB PRG, **no CHR-ROM** -- the
+;/// RP2350 occupies the CHR role. @see @ref hardware
+;///
+;/// @warning The entry addresses below are hard-coded in `BOOTROM_FIX/PG_main.asm`
+;///          as well. Moving one means editing both. @see @ref boot_reflash
 
 	.list			; リスティングファイル出力
 	.mlist			; リスティングファイル上でマクロを展開
@@ -10,14 +23,14 @@
         .inesmap 0				; mapper #0
 
 
-ROM_NMI_ENTRY	EQU $ED00
-ROM_IRQ_ENTRY	EQU $EE80
+ROM_NMI_ENTRY	EQU $ED00   ;///< Fixed NMI trampoline address, `$ED00`. 
+ROM_IRQ_ENTRY	EQU $EE80   ;///< Fixed IRQ trampoline address, `$EE80`. 
 
-INIT			EQU $F000
-TRANS_SYS_FONT	EQU $F003
-KEY_RTN			EQU $F006
-BEEP_PI			EQU $F009
-BEEP_PO			EQU $F00C
+INIT			EQU $F000   ;///< Permanent bank entry: cold boot. 
+TRANS_SYS_FONT	EQU $F003   ;///< Permanent bank entry: install the system font. 
+KEY_RTN			EQU $F006   ;///< Permanent bank entry: read the controller. 
+BEEP_PI			EQU $F009   ;///< Permanent bank entry: high beep. 
+BEEP_PO			EQU $F00C   ;///< Permanent bank entry: low beep. 
 
 
 
@@ -51,7 +64,11 @@ BEEP_PO			EQU $F00C
 	.INCLUDE	"SysPallet.asm"
 	.INCLUDE	"SysSub.asm"
 
+;/// @brief Per-frame application dispatch: advances the frame timer, then jumps via #STG_COD.
+;/// @ingroup bootrom
 PLY_MAIN_S:
+;/// @brief Jump-table body of @ref PLY_MAIN_S.
+;/// @ingroup bootrom
 PLY_MAIN:
 	inc  <FLM_TIMER
 
@@ -66,8 +83,12 @@ PLY_MAIN:
 	JPTBL	JMP_RTS			; 7
 
 
+;/// @brief Step handler that simply advances to the next step.
+;/// @ingroup bootrom
 JMP_NEXT_STG:
 	INC	<STG_COD
+;/// @brief Step handler that does nothing.
+;/// @ingroup bootrom
 JMP_RTS:
 	RTS
 
@@ -89,21 +110,31 @@ JMP_RTS:
 ; HIRQ割り込みエントリ
 ;-------------------------------------------------------------------------------
 	ORG     ROM_IRQ_ENTRY
+;/// @brief IRQ trampoline at `$EE80`. Returns immediately; IRQs are unused on this cartridge.
+;/// @ingroup bootrom
 IRQ_ENTRY:
 	rti
 
 
 	ORG     $EF00
+;/// @brief Fixed entry at `$EF00`, called once by the permanent bank after boot.
+;/// @ingroup bootrom
 MAIN_SETUP:
 	jmp  UR_MAIN_SETUP
+;/// @brief Fixed entry at `$EF03`, the application's endless loop.
+;/// @ingroup bootrom
 MAIN_LOOP:
 	jmp  UR_MAIN_LOOP
 
 	ORG     $EFF0
+;/// @brief Build stamp at `$EFF0`, compared against the cartridge's copy. @see CHK_ROMVER
+;/// @ingroup bootrom
 DB_ROM_VER:
 	.INCLUDE	"dbdate.h"
 
 	ORG     $EFFF
+;/// @brief Erase-in-progress marker at `$EFFF`; non-zero means a reflash was interrupted.
+;/// @ingroup bootrom
 IS_ROM_ERACE:
 	db  0			; ROMが消去されていたら $FFが格納されている
 ;	db  0xff		; ROMが消去されていたら $FFが格納されている

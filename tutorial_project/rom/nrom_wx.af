@@ -1,3 +1,15 @@
+/**
+ * @file nrom_wx.af
+ * @brief anago board description for the NROM "wx" cartridge.
+ * @ingroup toolchain
+ *
+ * Declares mapper 0 with a 32 KB CPU ROM and an 8 KB PPU window. `cpu_transfer`
+ * interleaves bank-latch writes to `$E000` with programming of each 8 KB window;
+ * that latch is why `macro.h`'s `CHG_BANK_A` also writes `$E000` even though a
+ * plain NROM cartridge has nothing to bank.
+ *
+ * @see @ref flashing
+ */
 board <- {
 	mappernum = 0, ppu_ramfind = false, vram_mirrorfind = true,
 	cpu_rom = {

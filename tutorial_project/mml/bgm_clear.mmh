@@ -1,4 +1,9 @@
+/// @file bgm_clear.mmh
+/// @brief Stage-clear jingle.
+/// @ingroup toolchain
 
+/// @brief Stage-clear jingle.
+/// @ingroup toolchain
 BGM(2) {
 
 

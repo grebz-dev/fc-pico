@@ -1,4 +1,14 @@
+;/// @file AplGame.asm
+;/// @brief The tutorial application running on the console.
+;/// @ingroup bootrom
+;///
+;/// Deliberately minimal. It clears the screen, performs the #FP_COM_INI
+;/// handshake that tells the cartridge which stage to start on, and then does
+;/// nothing but run @ref jobPICO every frame. All graphics come from the
+;/// cartridge. @see @ref architecture
 
+;/// @brief The application's 32-byte palette: 16 background entries then 16 sprite entries.
+;/// @ingroup bootrom
 PAL_GAME_ADR:
 	DB	$0F,$1A,$14,$30 ;(緑) 
 	DB	$0F,$2A,$2A,$2A ;(赤) 
@@ -15,6 +25,8 @@ PAL_GAME_ADR:
 ;=====================================
 ;プレイ画面
 ;=====================================
+;/// @brief Application step handler; runs the scene then clears unused sprites.
+;/// @ingroup bootrom
 APL_GAME:
 	jsr PLY_STG_MAIN
 	
@@ -88,6 +100,8 @@ APL_GAME:
 
 
 
+;/// @brief Dispatches on #STG_COD_SUB to the scene's init or main body.
+;/// @ingroup bootrom
 PLY_STG_MAIN:
 	LDA	<STG_COD_SUB
 	TBL_JUMP
@@ -95,6 +109,8 @@ PLY_STG_MAIN:
 	JPTBL	PLY_STG_1	; 1
 
 ;****** INIT ************
+;/// @brief Scene init: clears the screen and sends #FP_COM_INI with the starting stage.
+;/// @ingroup bootrom
 PLY_STG_0:
 	DISP_OFF
 ;	INC	<NMI_FLG
@@ -156,6 +172,8 @@ PLY_STG_0:
 
 
 ;****** MAIN ***********
+;/// @brief Scene main: runs @ref jobPICO every frame.
+;/// @ingroup bootrom
 PLY_STG_1:
  .if DEBUG_BUILD
 	CHK_BIT	<KEY_TRG, #KEY_A

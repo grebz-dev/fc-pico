@@ -1,3 +1,6 @@
+;/// @file SysKey.asm
+;/// @brief Controller reading with DPCM-conflict rejection, plus auto-repeat.
+;/// @ingroup bootrom
 ;========================================
 ; Key System
 ;========================================
@@ -12,6 +15,11 @@
 ; KEY RTN       *
 ;****************
 ;
+;/// @brief Reads controller 1 and derives held, triggered and repeated state.
+;/// @details Samples the port four times and takes a majority vote. This is not
+;///          paranoia: DPCM playback steals cycles from the controller read and
+;///          corrupts single samples.
+;/// @ingroup bootrom
 BR_KEY_RTN:
 	;----------------------------------------------------------------------
 	; 4 回読込み版
@@ -113,6 +121,8 @@ BR_KEY_RTN:
 
 	;----------------------------------------------------------------------
 ;;	Align	16
+;/// @brief Direction priority table for auto-repeat; down and left win ties.
+;/// @ingroup bootrom
 ro_keytable:		;2143
 	.db	%0000	;----
 	.db	%0001	;---R
@@ -135,6 +145,8 @@ ro_keytable:		;2143
 
  .if 0
 
+;/// @brief Reads controller 2. @note Disabled with `.if 0`; the tutorial is one-player.
+;/// @ingroup bootrom
 KEY_RTN2:
 	;----------------------------------------------------------------------
 	; 4 回読込み版

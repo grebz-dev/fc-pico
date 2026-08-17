@@ -1,3 +1,12 @@
+;/// @file SysSub.asm
+;/// @brief General-purpose routine library for the erasable bank.
+;/// @ingroup bootrom
+;///
+;/// Step control, string and hexadecimal drawing, BCD arithmetic, memory helpers
+;/// and the display on/off routines that back the `DISP_ON` / `DISP_OFF` macros.
+;///
+;/// @note These live in the fixed part of the bank so that every step handler can
+;///       reach them without a bank switch.
 ;===================================================================
 ;
 ;			固定バンクに置く汎用ルーチン
@@ -6,10 +15,14 @@
 ;--------------------------------
 ; STG_COD セット  A reg -> STG_COD
 ;--------------------------------
+;/// @brief Switches to a new application step, clearing per-scene state first.
+;/// @ingroup bootrom
 SET_STG_COD:
 ;	pha
 ;	JSR	STOP_BGM
 ;	pla
+;/// @brief As @ref SET_STG_COD, also setting the sub-step.
+;/// @ingroup bootrom
 SET_STG_COD2:
 	STA	<STG_COD
 
@@ -35,19 +48,29 @@ SET_STG_COD2:
 
 
 ;******* GM_WAIT **********************
+;/// @brief Waits for any key, with a timeout.
+;/// @ingroup bootrom
 ST_GM_WKEY:
 	CHK_BIT	<KEY_TRG, #KEY_ABRS
 	BNE	st_gm_w01
 
+;/// @brief Waits #GM_WAIT frames.
+;/// @ingroup bootrom
 ST_GM_WAIT:
 	DEC	<GM_WAIT
 	BNE	st_gm_w00
 
+;/// @brief Loop body of @ref ST_GM_WAIT.
+;/// @ingroup bootrom
 st_gm_w01:
 	INC	<STG_COD_SUB
+;/// @brief Exit path of @ref ST_GM_WAIT.
+;/// @ingroup bootrom
 st_gm_w00:
 	RTS
 
+;/// @brief Waits a caller-supplied number of frames.
+;/// @ingroup bootrom
 ST_GM_WAIT2:
 	jsr  SLOW_DEC_GM_WAIT
 	beq  st_gm_w01
@@ -55,6 +78,8 @@ ST_GM_WAIT2:
 
 
 ;******* フェード終了待ち **********************
+;/// @brief Waits for the running palette fade to finish.
+;/// @ingroup bootrom
 ST_FADE_WAIT:
 	lda PALFADE_TIME
 	bne	st_gm_w00
@@ -65,6 +90,8 @@ ST_FADE_WAIT:
 ; 8フレーム毎にカウントダウンする GM_WAIT
 ; カウントがゼロならゼロフラグセット
 ;-------------------------------------
+;/// @brief Decrements #GM_WAIT every other frame, for slow animations.
+;/// @ingroup bootrom
 SLOW_DEC_GM_WAIT:
 	LDA	<SYS_TIMER
 	AND	#$07
@@ -79,6 +106,8 @@ SLOW_DEC_GM_WAIT:
 ;  IN: SRC_ADR 転送元アドレス 16bit
 ;  OUT: A reg  取得したデータ
 ;=======================
+;/// @brief Reads the byte at #SRC_ADR.
+;/// @ingroup bootrom
 getSCR_ADR_DATA:
 	sty  <TMP_SYS
 	ldy  #0
@@ -89,10 +118,14 @@ getSCR_ADR_DATA:
 	plp
 	rts
 
+;/// @brief Advances #SRC_ADR by one.
+;/// @ingroup bootrom
 incSCR_ADR:
 	incw <SRC_ADR
 	rts
 
+;/// @brief Retreats #SRC_ADR by one.
+;/// @ingroup bootrom
 decSCR_ADR:
 	decw <SRC_ADR
 	rts
@@ -103,6 +136,8 @@ decSCR_ADR:
 ;  Areg = LOW
 ;  Xreg = High
 ;----------------------
+;/// @brief Adds A to #SRC_ADR.
+;/// @ingroup bootrom
 addSCR_ADR:
 	clc
 	adc  <SRC_ADR+0
@@ -118,9 +153,13 @@ addSCR_ADR:
 ;  IN: DST_ADR 転送元アドレス 16bit
 ;  破壊 Y
 ;=======================
+;/// @brief Writes A to the byte at #DST_ADR.
+;/// @ingroup bootrom
 setDST_ADR_DATA:
 	ldy   #0
 	sta   [DST_ADR],Y
+;/// @brief Advances #DST_ADR by one.
+;/// @ingroup bootrom
 incDST_ADR:
 	inc  <DST_ADR
 	bne  .end
@@ -134,6 +173,8 @@ incDST_ADR:
 ;=======================
 ; キャリーフラグ反転
 ;=======================
+;/// @brief Inverts the carry flag.
+;/// @ingroup bootrom
 revCFlag:
 	bcc  .set
 	clc
@@ -144,13 +185,19 @@ revCFlag:
 
 
 
+;/// @brief Clears the OAM shadow so no sprites are displayed.
+;/// @ingroup bootrom
 SYS_CLEAR_SP:
+;/// @brief Shared tail of the sprite-clearing routines.
+;/// @ingroup bootrom
 SPT_CLR_RTN:
 	ldy  #0
 ;-----------------------------------
 ; 余ったスプライトをクリアーする
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Hides every sprite by parking its Y coordinate off screen.
+;/// @ingroup bootrom
 clearObj:
 ;	cpy #0
 ;	beq .end
@@ -172,8 +219,12 @@ clearObj:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   DRAW_STRING で文字列の格納アドレスを指定
 ;=======================
+;/// @brief Draws a NUL-terminated string into a nametable.
+;/// @ingroup bootrom
 DRAW_STRING_SUB:
 	sta  <SRC_ADR+1
+;/// @brief Continuation of @ref DRAW_STRING_SUB.
+;/// @ingroup bootrom
 DRAW_STRING_SUB2:
 	ldy  #0
 .drst00:
@@ -195,6 +246,8 @@ DRAW_STRING_SUB2:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   DRAW_STRING で文字列の格納アドレスを指定
 ;=======================
+;/// @brief Overwrites a string with blanks.
+;/// @ingroup bootrom
 CLR_STRING_SUB:
 	sta  <SRC_ADR+1
         LDY  #0
@@ -214,6 +267,8 @@ CLR_STRING_SUB:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   A reg 描画する数値
 ;=======================
+;/// @brief Draws one byte as two hexadecimal digits.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE:
         TAY
         LSR A
@@ -222,11 +277,15 @@ DRAW_HEX_BYTE:
         LSR A
 	JSR	DRAW_HEX_BYTE2
 	TYA
+;/// @brief Continuation of @ref DRAW_HEX_BYTE.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE2:
 	jsr  convHEX2
 	sta  $2007
 	rts
 
+;/// @brief Converts a nibble to its hexadecimal character.
+;/// @ingroup bootrom
 convHEX2:
 	and  #$0f
 	cmp  #10
@@ -247,6 +306,8 @@ convHEX2:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   A reg 描画する数値
 ;=======================
+;/// @brief Draws a hexadecimal byte using the application's tile set.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE_GM:
 	TAY
 	LSR A
@@ -255,6 +316,8 @@ DRAW_HEX_BYTE_GM:
 	LSR A
 	JSR	DRAW_HEX_BYTE2_GM
 	TYA
+;/// @brief Continuation of @ref DRAW_HEX_BYTE_GM.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE2_GM:
 	AND #$0f
 	clc
@@ -269,6 +332,8 @@ DRAW_HEX_BYTE2_GM:
 ;   X reg $3xx のワークの下位アドレス8bit
 ;=======================
 
+;/// @brief Adds two packed BCD values.
+;/// @ingroup bootrom
 BCD_ADD:
 	; 加算する値を上下4ビットずつに分離
 	TAY
@@ -302,6 +367,8 @@ BCD_ADD:
 	BCC  BCD_00
 	SBC  #10
 	INC  <TMP_SV1
+;/// @brief Loop body of @ref BCD_ADD.
+;/// @ingroup bootrom
 BCD_00:
 	STA  <TMP_SV2
 
@@ -317,6 +384,8 @@ BCD_00:
 	LDA  #1
 	JMP  BCD_ADD
 
+;/// @brief Carry-propagation path of @ref BCD_ADD.
+;/// @ingroup bootrom
 BCD_01:
 	ASL  A
 	ASL  A
@@ -331,6 +400,8 @@ BCD_01:
 ; 2進化10進 インクリメント
 ;   X reg $3xx のワークの下位アドレス8bit
 ;=======================
+;/// @brief Increments a packed BCD value.
+;/// @ingroup bootrom
 BCD_INC:
 	LDA  $300,X
 	AND  #$0F
@@ -358,6 +429,8 @@ BCD_INC:
 ; 2進化10進 デクリメント
 ;   X reg $3xx のワークの下位アドレス8bit
 ;=======================
+;/// @brief Decrements a packed BCD value.
+;/// @ingroup bootrom
 BCD_DEC:
 	LDA  $300,X
 	AND  #$0F
@@ -384,6 +457,8 @@ BCD_DEC:
 ;---------------------------------------------
 ; Areg の値をBCDに変換:99以上の値は99になる
 ;---------------------------------------------
+;/// @brief Converts a binary byte to packed BCD.
+;/// @ingroup bootrom
 convBCD:
 	cmp  #99
 	bcc  .no_over
@@ -412,8 +487,12 @@ convBCD:
 ;=======================
 ; VRAM CLEAR
 ;=======================
+;/// @brief Fills a nametable region with a single tile.
+;/// @ingroup bootrom
 SYS_CLEAR_BG:
 	SET_VRAM_ADD2 #$2000
+;/// @brief Continuation of @ref SYS_CLEAR_BG.
+;/// @ingroup bootrom
 SYS_CLEAR_BG2:
 	lda	#$00
 	ldy	#0
@@ -421,6 +500,8 @@ SYS_CLEAR_BG2:
 	jsr SYS_VRAM_WLP
 	jsr SYS_VRAM_WLP
 
+;/// @brief Writes A to `$2007` X times.
+;/// @ingroup bootrom
 SYS_VRAM_WLP:
 	sta  $2007
 	dey
@@ -432,6 +513,8 @@ SYS_VRAM_WLP:
 ;------------------------------------------------------------------------------
 ;				表示on
 ;------------------------------------------------------------------------------
+;/// @brief Backs the `DISP_ON` macro: waits for a frame, then enables rendering.
+;/// @ingroup bootrom
 _disp_on_sub:
 	lda	#0
 	sta	<NMI_FLG	; 割り込み許可
@@ -444,6 +527,8 @@ _disp_on_sub:
 	sta  <HIRQ_ENA
 	rts
 
+;/// @brief Backs `DISP_ON_NSP`: enables rendering with sprites left off.
+;/// @ingroup bootrom
 _disp_on_sub2:
 
 	lda	#0
@@ -461,6 +546,8 @@ _disp_on_sub2:
 ;------------------------------------------------------------------------------
 ;				表示off
 ;------------------------------------------------------------------------------
+;/// @brief Backs the `DISP_OFF` macro: waits for a frame, then disables rendering.
+;/// @ingroup bootrom
 _disp_off_sub:
 	LDA	#0
 	STA	<FLG_2001	; 画面OFF

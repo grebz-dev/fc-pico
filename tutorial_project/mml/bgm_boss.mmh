@@ -1,5 +1,10 @@
+/// @file bgm_boss.mmh
+/// @brief Boss music.
+/// @ingroup toolchain
 
 //BGM(1) {
+/// @brief Boss theme.
+/// @ingroup toolchain
 BGM(0) {
 
 

@@ -1,3 +1,12 @@
+/// @file sound.mml
+/// @brief Master MML file: driver linkage, slot counts and the include list.
+/// @ingroup toolchain
+///
+/// Declares four music slots and 21 effect slots. The slot numbers are the same
+/// indices the firmware uses in the `BGM_*` and `SE_*` enums of `ap_main.h`,
+/// because both are offsets into NSD.Lib's song pointer table.
+///
+/// @see @ref audio_page
 //--------------------------------------------------------------
 //	アセンブリ言語とのリンク用の設定です。
 

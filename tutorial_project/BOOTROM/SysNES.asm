@@ -1,4 +1,17 @@
+;/// @file SysNES.asm
+;/// @brief Main loop and the boot-time hardware probe.
+;/// @ingroup bootrom
+;///
+;/// Also holds the vertical-blank helpers used before the NMI handler is armed:
+;/// during boot the screen must be updated with interrupts disabled, so these
+;/// routines poll `$2002` instead.
+;///
+;/// @note Much of this file is the FC-EXA adapter probe, which is vestigial on an
+;///       FC PICO cartridge -- it detects the adapter's absence and proceeds.
+;///       @see @ref conventions
 
+;/// @brief Application setup: runs the expansion-adapter probe, then returns.
+;/// @ingroup bootrom
 UR_MAIN_SETUP:
 
 	;===============================
@@ -20,6 +33,8 @@ UR_MAIN_SETUP:
 
 ;=====================================================
 
+;/// @brief The main loop: wait for vertical blank, read keys, run the step handler, step the fade.
+;/// @ingroup bootrom
 UR_MAIN_LOOP:
 	jsr WAIT_VSYNC
 	JOB_TIMEOUT
@@ -41,6 +56,8 @@ UR_MAIN_LOOP:
 ;--------------------
 ; VSYNC 待ち
 ;--------------------
+;/// @brief Blocks until @ref NMI increments #SYS_TIMER, i.e. until the next frame.
+;/// @ingroup bootrom
 WAIT_VSYNC:
 	lda  <SYS_TIMER
 .loop:
@@ -57,6 +74,8 @@ WAIT_VSYNC:
 ;===============================
 ; RAMエラー検出
 ;===============================
+;/// @brief Read/write test of one RAM location.
+;/// @ingroup bootrom
 chk_ram_sub:
 	ldy  #0
 .chk_ram_s00:
@@ -89,6 +108,8 @@ chk_ram_sub:
 ;
 ;==============================================================================
 
+;/// @brief Probes for an FC-EXA expansion adapter. @note On FC PICO this simply detects its absence and sets #EXA_MODE.
+;/// @ingroup bootrom
 BOOT_EXA:
 	ldx  #1
 	jsr  WAIT_VBLANK_X_SD
@@ -356,6 +377,8 @@ exram_sub3
 ;--------------------------------
 ; Xレジで指定フレームウェイト　サウンド処理あり
 ;--------------------------------
+;/// @brief Waits X frames with interrupts disabled, keeping sprite DMA running.
+;/// @ingroup bootrom
 WAIT_VBLANK_X_SD:
 	jsr  VBLANK_START
 
@@ -366,6 +389,8 @@ WAIT_VBLANK_X_SD:
 	rts
 
 
+;/// @brief Ends a no-NMI vertical blank, including sprite DMA.
+;/// @ingroup bootrom
 VBLANK_END_SD:
 	RESET_SCR_XY
 
@@ -384,6 +409,8 @@ VBLANK_END_SD:
 	rts
 
  .if 0
+;/// @brief Alternative no-NMI vertical-blank entry that skips the fade step.
+;/// @ingroup bootrom
 VBLANK_START2:
 	WAIT_VBLANK_END
 	lda  #%000_01_0_00		; NO-NMI
@@ -397,6 +424,8 @@ VBLANK_START2:
 ;--------------------------------
 ; Xレジで指定フレームウェイト
 ;--------------------------------
+;/// @brief Waits X frames with interrupts disabled.
+;/// @ingroup bootrom
 WAIT_VBLANK_X:
 	jsr  VBLANK_START
 
@@ -407,12 +436,16 @@ WAIT_VBLANK_X:
 	rts
 
 
+;/// @brief Ends a no-NMI vertical blank: restores `$2000`/`$2001` and the scroll registers.
+;/// @ingroup bootrom
 VBLANK_END:
 	RESET_SCR_XY
 	WAIT_VBLANK_END
 	rts
 
 
+;/// @brief Begins a no-NMI vertical blank: steps the fade, bumps the timer, reads keys, waits for `$2002`.
+;/// @ingroup bootrom
 VBLANK_START:
 	jsr PAL_FADE_SYSTEM
 

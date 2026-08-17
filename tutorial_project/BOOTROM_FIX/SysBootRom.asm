@@ -1,3 +1,14 @@
+;/// @file SysBootRom.asm
+;/// @brief Cold boot, self-test, version handshake and flash programming.
+;/// @ingroup bootrom
+;///
+;/// The permanent bank's substance. It brings the console up, decides whether the
+;/// program bank needs replacing, and if so erases and reprograms it with bytes
+;/// streamed from the cartridge over the PPU bus.
+;///
+;/// @warning The flash routines copy themselves into RAM before running, because
+;///          a flash device cannot be read while it is busy. Do not "simplify"
+;///          them back into direct calls. @see @ref boot_reflash
 ;=====================================================
 ;
 ;	起動時初期化処理
@@ -9,6 +20,11 @@
 ;===================================================================
 ;	ファミコン初期化
 ;===================================================================
+;/// @brief Cold boot entry, reached from the 6502 reset vector.
+;/// @details Silences the hardware, clears VRAM and RAM, installs the system font,
+;///          then chooses between normal boot, erase and update. Holding Start
+;///          forces an erase. @see @ref boot_reflash
+;/// @ingroup bootrom
 BR_INIT:
 	sei
 	cld
@@ -241,6 +257,10 @@ BR_INIT:
 ;				文字列描画
 ;				\1 = 文字列
 ;------------------------------------------------------------------------------
+;/// @brief Draws an inline string literal.
+;/// @ingroup bootrom
+;/// @details The text follows the call site; the macro fakes a return address so
+;///          execution resumes past the embedded data.
 BR_DRAW_STRING2 MACRO
 	LDA  #HIGH (.end\@ -1)
 	PHA
@@ -256,6 +276,8 @@ BR_DRAW_STRING2 MACRO
 .end\@:
 	ENDM
 
+;/// @brief Draws a NUL-terminated string; the fix bank's own copy, independent of the erasable bank.
+;/// @ingroup bootrom
 BR_DRAW_STRING_SUB:
 	ldy  #0
 .drst00:
@@ -276,6 +298,8 @@ BR_DRAW_STRING_SUB:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   A reg 描画する数値
 ;=======================
+;/// @brief Draws one byte as two hexadecimal digits.
+;/// @ingroup bootrom
 BR_DRAW_HEX_BYTE:
 	TAY
 	LSR A
@@ -303,6 +327,8 @@ BR_DRAW_HEX_BYTE:
 	rts
 
 
+;/// @brief Spin delay giving the cartridge time to answer. @see PICO_COM_WAIT
+;/// @ingroup bootrom
 BR_PICO_COM_WAIT:
 	ldx  #0
 .wait
@@ -311,6 +337,8 @@ BR_PICO_COM_WAIT:
 	rts
 
 
+;/// @brief Fatal error stop: beeps and halts.
+;/// @ingroup bootrom
 BR_ERROR_EMD:
 	DEBUG_HALT
 	rts
@@ -321,6 +349,12 @@ BR_ERROR_EMD:
 ;					ROMバージョンチェック
 ; CFlag = ON：ROMバージョンアップ
 ;==============================================================================
+;/// @brief Compares the local build stamp with the cartridge's copy.
+;/// @details Sends #FP_COM_VER and reads back 16 bytes. A mismatch returns carry
+;///          set, meaning the program bank must be replaced. If the reply does not
+;///          begin "20" the cartridge is not responding at all and the console
+;///          prints `PICO NOT FOUND` and halts. @see @ref boot_reflash
+;/// @ingroup bootrom
 CHK_ROMVER:
 
 	lda  #0
@@ -452,6 +486,8 @@ CHK_ROMVER:
 ;					起動時　メモリーテスト
 ;
 ;==============================================================================
+;/// @brief Walks work RAM and any expansion RAM, showing a running byte count.
+;/// @ingroup bootrom
 BOOT_MEMTEST:
 
 	lda  #%000_01_0_00		; NO-NMI
@@ -686,6 +722,8 @@ BOOT_MEMTEST:
 ; メモリーチェック文字列セット
 ; Y reg = チェックアドレスインデックス
 ;--------------------------------
+;/// @brief Read/write tests one 256-byte page.
+;/// @ingroup bootrom
 MEMCHK_SUB:
 	cpy  #0
 	bne  .ram_nozp
@@ -759,6 +797,10 @@ MEMCHK_SUB:
 ;					ROM消去システム
 ;
 ;==============================================================================
+;/// @brief Erases the program bank `$8000`-`$EFFF`, sector by sector.
+;/// @warning Stops at `$F000`: this bank erases everything except itself, which is
+;///          what makes a failed update recoverable.
+;/// @ingroup bootrom
 ROM_ERACE:
 	jsr  BEEP_PI
 	lda  #%000_01_0_00		; NO-NMI
@@ -827,6 +869,10 @@ ROM_ERACE:
  .endif
 
 ;-----------------------------------
+;/// @brief Erases one flash sector using the JEDEC command sequence.
+;/// @warning Copies itself into RAM at #FLASH_EXEC_BUF and runs from there with
+;///          interrupts masked, because flash cannot be read while it is busy.
+;/// @ingroup bootrom
 CPU_FlashSectorElase:
 	ldy  #0
 .loop_cpy
@@ -888,6 +934,10 @@ CPU_FlashSectorElase:
 ;					ROM更新システム
 ;
 ;==============================================================================
+;/// @brief Reprograms the program bank with bytes streamed from the cartridge.
+;/// @details Requests each page with #FP_COM_ROM and programs it directly from
+;///          `$2007`. @see rp_system::rom_dma
+;/// @ingroup bootrom
 ROM_UPDATE:
 	jsr  BEEP_PO
 	lda  #%000_01_0_00		; NO-NMI
@@ -984,6 +1034,9 @@ ROM_UPDATE:
 ;
 ; zフラグがNZならエラー終了
 
+;/// @brief Programs one flash page, polling DQ6 and then verifying.
+;/// @warning Also RAM-resident. @see CPU_FlashSectorElase
+;/// @ingroup bootrom
 CPU_FlashPorgram:
 	ldy  #0
 .loop_cpy
@@ -1049,6 +1102,10 @@ CPU_FlashPorgram:
 ;					システムFONT
 ;
 ;==============================================================================
+;/// @brief Expands the 1bpp system font into both pattern tables.
+;/// @note On real hardware the cartridge supplies the pattern data, so this is what
+;///       makes boot messages visible before the cartridge takes over.
+;/// @ingroup bootrom
 BR_TRANS_SYS_FONT:
 	inc  <NMI_FLG
 
@@ -1100,6 +1157,8 @@ BR_TRANS_SYS_FONT:
 
 
 
+;/// @brief The 1bpp system font data, included from `font1b_0.chr`.
+;/// @ingroup bootrom
 CHR_SYS_FONT:
 	.INCBIN		"font1b_0.chr"
 
@@ -1112,6 +1171,8 @@ CHR_SYS_FONT:
 ;--------------------------------
 ; Xレジで指定フレームウェイト
 ;--------------------------------
+;/// @brief Waits X frames with interrupts disabled.
+;/// @ingroup bootrom
 BR_WAIT_VBLANK_X:
 	jsr  BR_VBLANK_START
 
@@ -1122,12 +1183,16 @@ BR_WAIT_VBLANK_X:
 	rts
 
 
+;/// @brief Ends a no-NMI vertical blank.
+;/// @ingroup bootrom
 BR_VBLANK_END:
 	RESET_SCR_XY
 	WAIT_VBLANK_END
 	rts
 
 
+;/// @brief Begins a no-NMI vertical blank.
+;/// @ingroup bootrom
 BR_VBLANK_START:
 ;	jsr   KEY_RTN		;--- キー入力チェック -----
 	WAIT_VBLANK
@@ -1142,6 +1207,8 @@ BR_VBLANK_START:
 ;===============================
 ;	起動音「ピ」
 ;===============================
+;/// @brief Short high beep, used as a boot progress cue.
+;/// @ingroup bootrom
 BR_BEEP_PI:
 	lda #0
 	sta $4015
@@ -1164,6 +1231,8 @@ BR_BEEP_PI:
 ;===============================
 ;	起動音「ポ」
 ;===============================
+;/// @brief Short low beep, used as a boot progress cue.
+;/// @ingroup bootrom
 BR_BEEP_PO:
 	lda #0
 	sta $4015

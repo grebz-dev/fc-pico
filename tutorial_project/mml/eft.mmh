@@ -1,3 +1,11 @@
+/// @file eft.mmh
+/// @brief The sound-effect bank.
+/// @ingroup toolchain
+///
+/// Uses `#OffsetEv` / `#OffsetEn` / `#OffsetEm` / `#OffsetE@` to keep its
+/// envelope numbering clear of the music tracks', and carries the DPCM section.
+///
+/// @see @ref audio_page
 
 //==============================================================================
 //	Volume(Ev)
@@ -71,6 +79,8 @@ E(9002){ L 0 1 2 3 2 1  }
 
 #priority 3
 
+/// @brief Cursor move.
+/// @ingroup toolchain
 SE(0){
 TR01
 	v8 q0 E@2 Ev9 En11 o5 b%20
@@ -85,6 +95,8 @@ TR01
 
 #priority 2
 
+/// @brief Cursor confirm.
+/// @ingroup toolchain
 SE(1){
 TR01
 	v10 q0 E@2 Ev1 En1 o3
@@ -96,6 +108,8 @@ TR01
 //		キャンセル音
 //==============================================================================
 
+/// @brief Cursor cancel.
+/// @ingroup toolchain
 SE(2){ 
 TR01
 	v10 q0 E@2 Ev1 En1 o4
@@ -108,6 +122,8 @@ TR01
 
 #priority 3
 
+/// @brief Player shot.
+/// @ingroup toolchain
 SE(3){
 TR01
 	v4 q0 E@2 Ev10 En1 o6
@@ -122,6 +138,8 @@ TR01
 #priority 2
 
 
+/// @brief Player damaged.
+/// @ingroup toolchain
 SE(4){
 TR01
 	v12 q0 E@2 Ev9 En1 o4
@@ -138,6 +156,8 @@ TR02
 
 #priority 0
 
+/// @brief Player destroyed.
+/// @ingroup toolchain
 SE(5){
 TR01
 	v12 q0 E@2 Ev1 En1 o4
@@ -153,6 +173,8 @@ TR02
 
 #priority 2
 
+/// @brief Player formation change.
+/// @ingroup toolchain
 SE(6){
 TR01
 	v15 q1 o4 @2 @0 Em101
@@ -171,6 +193,8 @@ TR01
 
 #priority 2
 
+/// @brief Small enemy destroyed.
+/// @ingroup toolchain
 SE(7){
 TR01
 	v11 q0 E@2 Ev9 En1 o5
@@ -183,6 +207,8 @@ TR01
 
 #priority 1
 
+/// @brief Medium enemy destroyed.
+/// @ingroup toolchain
 SE(8){
 TR01
 	v12 q0 E@2 Ev9 En1 o4
@@ -197,6 +223,8 @@ TR02
 //		敵 撃破 敵サイズ大 ボス
 //==============================================================================
 
+/// @brief Large enemy or boss destroyed.
+/// @ingroup toolchain
 SE(9){
 TR01
 	v14 q0 E@2 Ev1 En1 o4
@@ -212,6 +240,8 @@ TR02
 
 #priority 2
 
+/// @brief Hit on an invulnerable enemy.
+/// @ingroup toolchain
 SE(10){
 TR01
 	v13 q1 o7 @2 @0 Em101
@@ -222,6 +252,8 @@ TR01
 //		ダメージ受け音
 //==============================================================================
 
+/// @brief Damage taken.
+/// @ingroup toolchain
 SE(11){
 TR01
 	v13 q1 o6 E@2 Em101
@@ -233,6 +265,8 @@ TR01
 //		ボス移動1
 //==============================================================================
 
+/// @brief Boss movement, variant 1.
+/// @ingroup toolchain
 SE(12){
 TR01
 	v13 q1 o4 E@2 Em101
@@ -244,6 +278,8 @@ TR01
 //		ボス移動2
 //==============================================================================
 
+/// @brief Boss movement, variant 2.
+/// @ingroup toolchain
 SE(13){
 TR01
 	v13 q1 o3 E@2 Em101
@@ -256,6 +292,8 @@ TR01
 //		ボス攻撃
 //==============================================================================
 
+/// @brief Boss attack.
+/// @ingroup toolchain
 SE(14){
 TR01
 	v13 q1 o6 E@2 Em101
@@ -267,6 +305,8 @@ TR01
 //		タイトルSE
 //==============================================================================
 
+/// @brief Title screen sting.
+/// @ingroup toolchain
 SE(15){
 TR01
 	v15 q1 o2 E@2 Em101
@@ -290,6 +330,8 @@ TR02
 //		スタートデモ　ジェット噴射
 //==============================================================================
 
+/// @brief Launch jet.
+/// @ingroup toolchain
 SE(16){
 TR01
 	v12 q0 E@2 Ev1 En1 o3
@@ -308,6 +350,8 @@ TR02
 //==============================================================================
 #priority 1
 
+/// @brief Wave cannon charging.
+/// @ingroup toolchain
 SE(17){
 
 TR01
@@ -322,6 +366,8 @@ TR01
 //		波動砲　発射
 //==============================================================================
 
+/// @brief Wave cannon fired.
+/// @ingroup toolchain
 SE(18){
 TR01
 	v12 q0 E@2 Ev517 En511 Em513 o3
@@ -341,6 +387,8 @@ TR02
 //		次元潜航
 //==============================================================================
 
+/// @brief Dimensional dive.
+/// @ingroup toolchain
 SE(19){
 
 TR01
@@ -356,6 +404,8 @@ TR01
 //		ヤマト発進
 //==============================================================================
 
+/// @brief Yamato launch.
+/// @ingroup toolchain
 SE(20){
 
 TR01

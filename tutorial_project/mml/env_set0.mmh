@@ -1,3 +1,14 @@
+/// @file env_set0.mmh
+/// @brief Envelope definitions and drum macros shared by every track.
+/// @ingroup toolchain
+///
+/// Defines voice (`E@`), volume (`Ev`), frequency (`Em`) and note (`En`)
+/// envelopes, plus the noise-channel drum macros `$k`, `$h` and `$s` and the
+/// triangle-channel drum trick `$pn`.
+///
+/// @note The frequency envelope originally used full-width braces; they were
+///       normalised to ASCII when the tree moved to UTF-8, and the rebuilt NSF is
+///       byte-identical. @see @ref conventions
 // ENV定義
 /*
         E@voice_envelope
@@ -48,9 +59,15 @@ E(6101) = {11 L 13}
 E(6105) = {-10 4 6 7 8 L 9}
 
 
+/// @brief Kick drum: selects the kick volume and note envelopes.
+/// @ingroup toolchain
 $k{ Ev6000 En6100 }
 
+/// @brief Hi-hat: selects the hi-hat volume and note envelopes.
+/// @ingroup toolchain
 $h{ Ev6001 En6101 }		// hh
+/// @brief Snare: selects the snare volume and note envelopes.
+/// @ingroup toolchain
 $s{ Ev6005 En6105 }
 
 
@@ -58,17 +75,33 @@ $s{ Ev6005 En6105 }
 // 三角波ドラム
 //==============================================================================
 
+/// @brief Triangle-channel percussion click.
+/// @details Pulses `$4011` high then low, which produces a click from the DMC
+///          channel without playing a sample.
+/// @ingroup toolchain
 $pn{  y$4011,$1f y$4011,$00 }
 
 // バスドラムＯＮ
+/// @brief Kick drum: selects the kick volume and note envelopes.
+/// @ingroup toolchain
 $kon{ $pn }
 // スネアドラムＯＮ
+/// @brief Snare: selects the snare volume and note envelopes.
+/// @ingroup toolchain
 $son{ $pn }
 // ドラムＯＦＦ
+/// @brief Drum off: clears the note and frequency envelopes.
+/// @ingroup toolchain
 $dof{ En* Em* }
 
+/// @brief Tom, high: octave 5 with the tom frequency envelope.
+/// @ingroup toolchain
 $thon{ En* o5 q6 Em6200  }
+/// @brief Tom, mid: octave 4 with the tom frequency envelope.
+/// @ingroup toolchain
 $tmon{ En* o4 q6 Em6200  }
+/// @brief Tom, low: octave 3 with the tom frequency envelope.
+/// @ingroup toolchain
 $tlon{ En* o3 q6 Em6200  }
 
 
