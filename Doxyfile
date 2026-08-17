@@ -1,0 +1,176 @@
+# Doxyfile for FC PICO -- developer reference.
+#
+# Only settings that differ from Doxygen's defaults are listed, so this file
+# stays readable and survives `doxygen -u` upgrades without churn.
+# Build with build_docs.bat (Windows) or `doxygen Doxyfile` from the repo root.
+# Doxygen 1.18.0 or newer is expected.
+
+#---------------------------------------------------------------------------
+# Project
+#---------------------------------------------------------------------------
+PROJECT_NAME           = "FC PICO"
+PROJECT_BRIEF          = "RP2350-driven Famicom cartridge: firmware, boot ROM and toolchain"
+OUTPUT_DIRECTORY       = docs
+HTML_OUTPUT            = html
+CREATE_SUBDIRS         = NO
+OUTPUT_LANGUAGE        = English
+GENERATE_LATEX         = NO
+GENERATE_HTML          = YES
+
+#---------------------------------------------------------------------------
+# Input
+#---------------------------------------------------------------------------
+INPUT                  = README.md \
+                         docs/pages \
+                         tutorial_project \
+                         tools
+RECURSIVE              = YES
+INPUT_ENCODING         = UTF-8
+USE_MDFILE_AS_MAINPAGE = README.md
+
+# The 6502, PIO, MML and batch sources are shadowed into C by the input filter
+# below; .ino is plain C++ as far as Doxygen is concerned.
+EXTENSION_MAPPING      = ino=C++ \
+                         asm=C \
+                         pio=C \
+                         mml=C \
+                         mmh=C \
+                         bat=C \
+                         nut=C \
+                         af=C
+
+FILE_PATTERNS          = *.c \
+                         *.cpp \
+                         *.h \
+                         *.ino \
+                         *.asm \
+                         *.pio \
+                         *.mml \
+                         *.mmh \
+                         *.bat \
+                         *.BAT \
+                         *.nut \
+                         *.af \
+                         *.py \
+                         *.md \
+                         *.dox
+
+# The sample game is upstream's own full application, added after this reference
+# was written: it is entirely undocumented and still CP932-encoded, so with
+# INPUT_ENCODING=UTF-8 and EXTRACT_ALL=NO it would contribute nothing but mojibake
+# and warnings. Documenting and re-encoding it is separate work; until then it stays
+# out of the input.
+EXCLUDE                = tutorial_project/sample_game
+
+# Machine-generated blobs and build artefacts. res/resdata.c is a multi-thousand-line
+# hex array produced by Bin2C; it is described in docs/pages/generated-resources.md
+# instead. The .lst listings are nesasm output and are regenerated every build.
+EXCLUDE_PATTERNS       = */res/resdata.c \
+                         */sys/pio/fcppu.pio.h \
+                         */docs/html/* \
+                         *.lst \
+                         *.log \
+                         */bin/* \
+                         *_command.lnk
+
+EXCLUDE_SYMLINKS       = YES
+
+#---------------------------------------------------------------------------
+# Input filter
+#---------------------------------------------------------------------------
+# A single dispatcher rather than FILTER_PATTERNS globs: it routes on the full
+# path, which is what lets BOOTROM/*.h (nesasm includes) bypass the C++ parser
+# while tuto1_hw/**/*.h still reaches it. See tools/doxygen/doxyfilter.py.
+INPUT_FILTER           = "python tools/doxygen/doxyfilter.py"
+
+# Browse the genuine sources, not the C-shaped shadow the filter produces.
+FILTER_SOURCE_FILES    = NO
+
+#---------------------------------------------------------------------------
+# Extraction
+#---------------------------------------------------------------------------
+# Deliberately NOT EXTRACT_ALL: an undocumented symbol should be a warning to
+# be fixed, not silently padded into the output with an empty description.
+EXTRACT_ALL            = NO
+EXTRACT_PRIVATE        = YES
+EXTRACT_STATIC         = YES
+EXTRACT_LOCAL_CLASSES  = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+SHOW_INCLUDE_FILES     = YES
+SORT_MEMBER_DOCS       = NO
+SORT_BRIEF_DOCS        = NO
+DISTRIBUTE_GROUP_DOC   = YES
+TAB_SIZE               = 4
+MARKDOWN_SUPPORT       = YES
+AUTOLINK_SUPPORT       = YES
+
+# Treat Python docstrings as Doxygen comment blocks rather than preformatted
+# text, so @param/@return inside them are interpreted. The documentation tooling
+# in tools/ is written to that convention.
+PYTHON_DOCSTRING       = NO
+
+# The firmware is an Arduino unity build: system.h #includes every .cpp, so the
+# preprocessor needs help to avoid chasing the Arduino core headers.
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+SEARCH_INCLUDES        = NO
+
+# NDEBUG is left undefined so the TRACE/ASSERT macros are documented. LINK_MP3 is
+# also left undefined, but no longer guards anything: it is retired, and the MP3
+# music path is now selected at run time. See _build_option.h.
+PREDEFINED             = DOXYGEN_ONLY=1 \
+                         __attribute__(x)=
+
+#---------------------------------------------------------------------------
+# Source browser
+#---------------------------------------------------------------------------
+SOURCE_BROWSER         = YES
+INLINE_SOURCES         = NO
+STRIP_CODE_COMMENTS    = NO
+REFERENCED_BY_RELATION = YES
+REFERENCES_RELATION    = YES
+REFERENCES_LINK_SOURCE = YES
+VERBATIM_HEADERS       = YES
+
+#---------------------------------------------------------------------------
+# Diagrams (Graphviz)
+#---------------------------------------------------------------------------
+HAVE_DOT               = YES
+DOT_IMAGE_FORMAT       = svg
+INTERACTIVE_SVG        = YES
+CLASS_GRAPH            = YES
+COLLABORATION_GRAPH    = YES
+GROUP_GRAPHS           = YES
+INCLUDE_GRAPH          = YES
+INCLUDED_BY_GRAPH      = YES
+CALL_GRAPH             = YES
+CALLER_GRAPH           = NO
+DOT_GRAPH_MAX_NODES    = 60
+MAX_DOT_GRAPH_DEPTH    = 3
+
+#---------------------------------------------------------------------------
+# HTML
+#---------------------------------------------------------------------------
+GENERATE_TREEVIEW      = YES
+FULL_SIDEBAR           = NO
+HTML_COLORSTYLE        = TOGGLE
+HTML_DYNAMIC_SECTIONS  = YES
+DISABLE_INDEX          = NO
+SEARCHENGINE           = YES
+
+#---------------------------------------------------------------------------
+# Warnings
+#---------------------------------------------------------------------------
+QUIET                  = YES
+WARNINGS               = YES
+
+# The tree is clean; keep it that way. A new undocumented symbol now fails the
+# build rather than accumulating silently.
+WARN_AS_ERROR          = FAIL_ON_WARNINGS
+WARN_IF_UNDOCUMENTED   = YES
+WARN_IF_DOC_ERROR      = YES
+WARN_IF_INCOMPLETE_DOC = YES
+WARN_NO_PARAMDOC       = YES
+WARN_LOGFILE           = docs/doxygen-warnings.log
