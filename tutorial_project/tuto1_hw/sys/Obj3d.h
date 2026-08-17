@@ -9,13 +9,13 @@
 
 enum {
 	OMD_NONE = 0,
-	OMD_MODEL,		// ���f���`�惂�[�h
-	OMD_CUBE,		// CUBE�`�惂�[�h
+	OMD_MODEL,		// モデル描画モード
+	OMD_CUBE,		// CUBE描画モード
 
-	OMD_2D,			// ---- �ȉ���2D�`�惂�[�h ---
-	OMD_PSET,		// �_�`�惂�[�h
-	OMD_SPR16,		// 16x16�X�v���C�g�`�惂�[�h
-	OMD_SPR8,		// 8x8�X�v���C�g�`�惂�[�h
+	OMD_2D,			// ---- 以下は2D描画モード ---
+	OMD_PSET,		// 点描画モード
+	OMD_SPR16,		// 16x16スプライト描画モード
+	OMD_SPR8,		// 8x8スプライト描画モード
 
 };
 

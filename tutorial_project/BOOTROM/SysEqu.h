@@ -2,42 +2,42 @@
 
 ;========================================
 
-W_AR			EQU	$00	; 16 bit ŒvŽZ—p  2 bytes
-W_BR			EQU	$02	; 16 bit ŒvŽZ—p  2 bytes
+W_AR			EQU	$00	; 16 bit è¨ˆç®—ç”¨  2 bytes
+W_BR			EQU	$02	; 16 bit è¨ˆç®—ç”¨  2 bytes
 
-TMP_SVA			EQU	$04	; ”Ä—p A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVX			EQU	$05	; ”Ä—p X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVY			EQU	$06	; ”Ä—p Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_LOOP_CNT	EQU	$07	; ”Ä—pƒ‹[ƒvƒJƒEƒ“ƒ^
+TMP_SVA			EQU	$04	; æ±Žç”¨ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVX			EQU	$05	; æ±Žç”¨ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVY			EQU	$06	; æ±Žç”¨ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_LOOP_CNT	EQU	$07	; æ±Žç”¨ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿
 
-SRC_ADR			EQU	$08	; ”Ä—pƒ\[ƒXƒAƒhƒŒƒX  2 bytes
-DST_ADR			EQU	$0A	; ”Ä—pƒfƒXƒeƒBƒl[ƒVƒ‡ƒ“ƒAƒhƒŒƒX  2 bytes
+SRC_ADR			EQU	$08	; æ±Žç”¨ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
+DST_ADR			EQU	$0A	; æ±Žç”¨ãƒ‡ã‚¹ãƒ†ã‚£ãƒãƒ¼ã‚·ãƒ§ãƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
 
-TMP_SYS			EQU	$0C		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
-TMP_SYS2		EQU	$0D		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
+TMP_SYS			EQU	$0C		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_SYS2		EQU	$0D		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
 TMP_COUNT		EQU $0E
 
-TMP_SV0		EQU	$10	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV1		EQU	$11	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV2		EQU	$12	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV3		EQU	$13	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV4		EQU	$14	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV5		EQU	$15	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV6		EQU	$16	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV7		EQU	$17	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
+TMP_SV0		EQU	$10	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV1		EQU	$11	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV2		EQU	$12	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV3		EQU	$13	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV4		EQU	$14	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV5		EQU	$15	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV6		EQU	$16	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV7		EQU	$17	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
 
 GM_TMP0	 	EQU	$18
 GM_TMP1	 	EQU	$19
 GM_TMP2	 	EQU	$1A
 GM_TMP3	 	EQU	$1B
 
-NMI_SVA		EQU	$1C	; NMIŠ„‚èž‚Ý A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-NMI_SVX		EQU	$1D	; NMIŠ„‚èž‚Ý X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-NMI_SVY		EQU	$1E	; NMIŠ„‚èž‚Ý Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
+NMI_SVA		EQU	$1C	; NMIå‰²ã‚Šè¾¼ã¿ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+NMI_SVX		EQU	$1D	; NMIå‰²ã‚Šè¾¼ã¿ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+NMI_SVY		EQU	$1E	; NMIå‰²ã‚Šè¾¼ã¿ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
 
 
 
-; PICO’ÊM—p 64byte
+; PICOé€šä¿¡ç”¨ 64byte
 PICO_BUF0	EQU  $20
 PICO_BUF1	EQU  $21
 PICO_BUF2	EQU  $22
@@ -58,34 +58,34 @@ PICO_BUF38	EQU  $58
 PICO_SNDREG	EQU  PICO_BUF10
 
 
-PICO_COM	EQU  $60		; PICO‚ÖƒRƒ}ƒ“ƒh‘—M—p
-PICO_MODE	EQU  $61		; PICO‚Ì“®ìƒ‚[ƒh
+PICO_COM	EQU  $60		; PICOã¸ã‚³ãƒžãƒ³ãƒ‰é€ä¿¡ç”¨
+PICO_MODE	EQU  $61		; PICOã®å‹•ä½œãƒ¢ãƒ¼ãƒ‰
 
-PICO_STAGE	EQU  $62		; PICO‚Ö“n‚·ƒXƒe[ƒW”Ô†
+PICO_STAGE	EQU  $62		; PICOã¸æ¸¡ã™ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·
 
-; ‹ó‚«
+; ç©ºã
 
 
-GM_WAIT		EQU	$72	; 2 bytes  ƒQ[ƒ€‘Ò‚¿
-
-;----------------
-; ˆ——Ž‚¿‘Îô
-;----------------
+GM_WAIT		EQU	$72	; 2 bytes  ã‚²ãƒ¼ãƒ å¾…ã¡
 
 ;----------------
-; Šg’£ƒAƒ_ƒvƒ^[ ƒ‚[ƒh
+; å‡¦ç†è½ã¡å¯¾ç­–
 ;----------------
-EXA_MODE	EQU	$76	; =0 Šg’£ƒ‚[ƒh =1 ƒXƒ^ƒ“ƒhƒAƒƒ“ƒ‚[ƒh
 
 ;----------------
-; ƒQ[ƒ€ŠÖ˜A
+; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ ãƒ¢ãƒ¼ãƒ‰
 ;----------------
-DEMO_TIMER	EQU	$78	; ƒfƒ‚ƒ^ƒCƒ}[
-
-
+EXA_MODE	EQU	$76	; =0 æ‹¡å¼µãƒ¢ãƒ¼ãƒ‰ =1 ã‚¹ã‚¿ãƒ³ãƒ‰ã‚¢ãƒ­ãƒ³ãƒ¢ãƒ¼ãƒ‰
 
 ;----------------
-; ƒL[ŠÖ˜A
+; ã‚²ãƒ¼ãƒ é–¢é€£
+;----------------
+DEMO_TIMER	EQU	$78	; ãƒ‡ãƒ¢ã‚¿ã‚¤ãƒžãƒ¼
+
+
+
+;----------------
+; ã‚­ãƒ¼é–¢é€£
 ;----------------
 
 
@@ -96,30 +96,30 @@ KEY_NEW		EQU	$85	;
 KEY_CH1		EQU	TMP_SYS
 KEY_CH3		EQU	TMP_SYS2
 
-REP_KEY		EQU	$8A	; ƒŠƒs[ƒg—p‚ÌƒL[
-REP_NEW		EQU	$8B	; ƒŠƒs[ƒg‚É‚æ‚é‰Ÿ‰ºó‘Ô
-REP_CNT		EQU	$8C	; ƒEƒFƒCƒgAƒCƒ“ƒ^[ƒoƒ‹‚ÌƒJƒEƒ“ƒ^
+REP_KEY		EQU	$8A	; ãƒªãƒ”ãƒ¼ãƒˆç”¨ã®ã‚­ãƒ¼
+REP_NEW		EQU	$8B	; ãƒªãƒ”ãƒ¼ãƒˆã«ã‚ˆã‚‹æŠ¼ä¸‹çŠ¶æ…‹
+REP_CNT		EQU	$8C	; ã‚¦ã‚§ã‚¤ãƒˆã€ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ã®ã‚«ã‚¦ãƒ³ã‚¿
 
 
 ;----------------
-; IRQˆ—ŠÖ˜A
+; IRQå‡¦ç†é–¢é€£
 ;----------------
-HIRQ_ENA	EQU		$8F ; IRQ ƒtƒ‰ƒO§Œä (–¢Žg—p=0)
+HIRQ_ENA	EQU		$8F ; IRQ ãƒ•ãƒ©ã‚°åˆ¶å¾¡ (æœªä½¿ç”¨=0)
 BG_SCR_X	EQU		$94 ; size 4 bytes
 
 
 ;----------------
-; ƒVƒXƒeƒ€ŠÖ˜A
+; ã‚·ã‚¹ãƒ†ãƒ é–¢é€£
 ;----------------
 FLG_2000	EQU	$B0
 FLG_2001	EQU	$B1
 BG_SCR_Y	EQU	$B2
 
 NMI_FLG		EQU	$B3
-PAL_CHG_FG	EQU	$B4		; ƒpƒŒƒbƒg•ÏXƒtƒ‰ƒO
+PAL_CHG_FG	EQU	$B4		; ãƒ‘ãƒ¬ãƒƒãƒˆå¤‰æ›´ãƒ•ãƒ©ã‚°
 
 SYS_TIMER	EQU	$B5		; 2 bytes
-FLM_TIMER	EQU	$B7		; ƒtƒŒ[ƒ€ƒ^ƒCƒ}[
+FLM_TIMER	EQU	$B7		; ãƒ•ãƒ¬ãƒ¼ãƒ ã‚¿ã‚¤ãƒžãƒ¼
 
 STG_COD		EQU	$B8
 STG_COD_SUB	EQU	$B9
@@ -127,10 +127,10 @@ STG_COD_SUB	EQU	$B9
 
 
 ;----------------
-; NMI‚©‚çƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€‚ÌƒAƒhƒŒƒX
+; NMIã‹ã‚‰ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;----------------
-NMI_CALL_BNK	EQU $BD ; 1byte ‚O‚È‚çƒR[ƒ‹‚µ‚È‚¢
-NMI_CALL_ADR	EQU $BE ; 2byte ƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€ƒAƒhƒŒƒX
+NMI_CALL_BNK	EQU $BD ; 1byte ï¼ãªã‚‰ã‚³ãƒ¼ãƒ«ã—ãªã„
+NMI_CALL_ADR	EQU $BE ; 2byte ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚¢ãƒ‰ãƒ¬ã‚¹
 
 
 TMP_WRK0	EQU	$C0
@@ -138,33 +138,33 @@ TMP_WRK1	EQU	$C1
 TMP_WRK2	EQU	$C2
 TMP_WRK3	EQU	$C3
 
-TMP_DISP2	EQU	TMP_WRK3	; 1 byte  •\Ž¦”Ä—p
+TMP_DISP2	EQU	TMP_WRK3	; 1 byte  è¡¨ç¤ºæ±Žç”¨
 
 
 SPRITE1		EQU	$200	; 256 bytes
 
 
 ;----------------
-; ƒpƒŒƒbƒgŠÖ˜A
+; ãƒ‘ãƒ¬ãƒƒãƒˆé–¢é€£
 ;----------------
-PALFADE_TIME	EQU	$306	; ƒpƒŒƒbƒgƒtƒF[ƒh‘¬“x
-PALFADE_CNT		EQU	$307	; ƒpƒŒƒbƒgƒtƒF[ƒhƒJƒEƒ“ƒ^
-PALFADE_VAL		EQU	$308	; ‰ÁŽZ’lAŒ¸ŽZ’l
-PALFADE_ADD		EQU	$309	; •Ï‰»‚Ì‰ÁŽZ’l
-PALFADE_MASK	EQU	$30A	; •Ï‰»‚³‚¹‚È‚¢ƒpƒŒƒbƒgƒrƒbƒgŽw’è
+PALFADE_TIME	EQU	$306	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦
+PALFADE_CNT		EQU	$307	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚«ã‚¦ãƒ³ã‚¿
+PALFADE_VAL		EQU	$308	; åŠ ç®—å€¤ã€æ¸›ç®—å€¤
+PALFADE_ADD		EQU	$309	; å¤‰åŒ–ã®åŠ ç®—å€¤
+PALFADE_MASK	EQU	$30A	; å¤‰åŒ–ã•ã›ãªã„ãƒ‘ãƒ¬ãƒƒãƒˆãƒ“ãƒƒãƒˆæŒ‡å®š
 
 
 MP3_VOL		EQU	$329
 MP3_BANK	EQU	$32A
 
-HISCORES	EQU	$32C	; 4 bytes ƒnƒCƒXƒRƒA
+HISCORES	EQU	$32C	; 4 bytes ãƒã‚¤ã‚¹ã‚³ã‚¢
 
-PAL_WRK		EQU	$330	 ;size $20	“]‘——p
-
-
+PAL_WRK		EQU	$330	 ;size $20	è»¢é€ç”¨
 
 
-PICO_DATA_BUF  EQU	$400	; PICO ‚Ìƒf[ƒ^“Ç‚Ýž‚Ýƒoƒbƒtƒ@
+
+
+PICO_DATA_BUF  EQU	$400	; PICO ã®ãƒ‡ãƒ¼ã‚¿èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡
 
 
 
@@ -172,7 +172,7 @@ PICO_DATA_BUF  EQU	$400	; PICO ‚Ìƒf[ƒ^“Ç‚Ýž‚Ýƒoƒbƒtƒ@
 
 
 ;----------------
-; Šg’£ƒAƒ_ƒvƒ^[ŠÖ˜A
+; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼é–¢é€£
 ;----------------
 EXS_HIRQ_REG = $4800
 
@@ -181,24 +181,24 @@ EXS_HIRQ_REG = $4800
 ;----------------
 ; WRAM
 ;----------------
-W_TEST		EQU	$6000	; 1 byte  bit7: WRAM ‘¶Ýƒtƒ‰ƒO
+W_TEST		EQU	$6000	; 1 byte  bit7: WRAM å­˜åœ¨ãƒ•ãƒ©ã‚°
 				;(1 bytes)
-W_HISCORES	EQU	$6002	; 8 bytes LV1 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰
-				;         LV2 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰
-W_MAGIC		EQU	$600a	; 6 bytes WRAM ‰Šú‰»Ï‚Ý”»•Ê—pƒ}ƒWƒbƒNƒiƒ“ƒo[
+W_HISCORES	EQU	$6002	; 8 bytes LV1 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©
+				;         LV2 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©
+W_MAGIC		EQU	$600a	; 6 bytes WRAM åˆæœŸåŒ–æ¸ˆã¿åˆ¤åˆ¥ç”¨ãƒžã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼
 
 
 WIFI_BUF EQU $7000
 
 BURST_READ_BUF EQU $7100
 
-HTTP_BUF	EQU	$7400		; HTTPƒf[ƒ^“Ç‚Ýž‚Ý
+HTTP_BUF	EQU	$7400		; HTTPãƒ‡ãƒ¼ã‚¿èª­ã¿è¾¼ã¿
 
 
 ;----------------
 ; PPU
 ;----------------
-; MMC3‚ÌIRQ‚ðŽg‚¤ê‡‚Í BG ‚ð$0000”Ô’n, Spr ‚ð$1000”Ô’n‚É”z’u‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+; MMC3ã®IRQã‚’ä½¿ã†å ´åˆã¯ BG ã‚’$0000ç•ªåœ°, Spr ã‚’$1000ç•ªåœ°ã«é…ç½®ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
 FLG_PPU2000	EQU	%100_01_0_00
 				; NMI gen,master,SP8x8,BG$0000,SP$0000,+1,v0,h0
 
@@ -223,9 +223,9 @@ KEY_ABRS	EQU	$F0
 
 
 ;----------------
-; ƒL[ƒŠƒs[ƒgÝ’è
+; ã‚­ãƒ¼ãƒªãƒ”ãƒ¼ãƒˆè¨­å®š
 ;----------------
-REP_WAIT	EQU	24	; ƒŠƒs[ƒgŠJŽn‚Ü‚Å‚ÌŽžŠÔ (ƒtƒŒ[ƒ€”)
-REP_INTERVAL	EQU	 8	; ƒŠƒs[ƒgŠÔŠu (ƒtƒŒ[ƒ€”)
+REP_WAIT	EQU	24	; ãƒªãƒ”ãƒ¼ãƒˆé–‹å§‹ã¾ã§ã®æ™‚é–“ (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
+REP_INTERVAL	EQU	 8	; ãƒªãƒ”ãƒ¼ãƒˆé–“éš” (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
 
 

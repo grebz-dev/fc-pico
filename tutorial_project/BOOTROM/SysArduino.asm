@@ -1,54 +1,54 @@
 ;----------------------------------------------------------------------
-;			 Arduino’ÊMƒVƒXƒeƒ€
+;			 Arduinoé€šä¿¡ã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;----------------------------------------------------------------------
 
-; ESP32 ƒo[ƒXƒg“]‘——pƒ[ƒN
+; ESP32 ãƒãƒ¼ã‚¹ãƒˆè»¢é€ç”¨ãƒ¯ãƒ¼ã‚¯
 
-BURST_PCNT	   EQU TMP_SV0		; ˆ³kƒJƒEƒ“ƒg
-BURST_DCNT	   EQU TMP_SV1		; ƒf[ƒ^ƒJƒEƒ“ƒg
-BURST_DATA	   EQU TMP_SV2		; ÅI“Ç‚Ýo‚µƒf[ƒ^
-BURST_IDX	   EQU TMP_SV3		; ƒf[ƒ^ƒCƒ“ƒfƒbƒNƒX
-BURST_FLIP	   EQU TMP_SV4		; “¯Šú§Œä
-BURST_TMOUT	   EQU TMP_SV5		; ƒ^ƒCƒ€ƒAƒEƒg”»’è—p
-BURST_COUNT	   EQU TMP_COUNT	; ƒf[ƒ^ƒTƒCƒYƒJƒEƒ“ƒg—p
+BURST_PCNT	   EQU TMP_SV0		; åœ§ç¸®ã‚«ã‚¦ãƒ³ãƒˆ
+BURST_DCNT	   EQU TMP_SV1		; ãƒ‡ãƒ¼ã‚¿ã‚«ã‚¦ãƒ³ãƒˆ
+BURST_DATA	   EQU TMP_SV2		; æœ€çµ‚èª­ã¿å‡ºã—ãƒ‡ãƒ¼ã‚¿
+BURST_IDX	   EQU TMP_SV3		; ãƒ‡ãƒ¼ã‚¿ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+BURST_FLIP	   EQU TMP_SV4		; åŒæœŸåˆ¶å¾¡
+BURST_TMOUT	   EQU TMP_SV5		; ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆ¤å®šç”¨
+BURST_COUNT	   EQU TMP_COUNT	; ãƒ‡ãƒ¼ã‚¿ã‚µã‚¤ã‚ºã‚«ã‚¦ãƒ³ãƒˆç”¨
 
 ;-------------------------------------------------------------
 
-SYSCOM_INIT   = $F2		; ‰Šú‰»ƒRƒ}ƒ“ƒh
-SYSCOM_ESPCOM = $F3		; ESP32 ƒVƒXƒeƒ€ƒRƒ}ƒ“ƒh
-SYSCOM_MP3_A  = $F4		; MP3 §ŒäƒRƒ}ƒ“ƒhA
-SYSCOM_MP3_B  = $F5		; MP3 §ŒäƒRƒ}ƒ“ƒhB
-SYSCOM_SAVE   = $F6		; ƒ}ƒCƒNƒSD‚ÉƒoƒbƒNƒAƒbƒv
-SYSCOM_WIFI   = $F7		; WIFI’ÊM§Œä
+SYSCOM_INIT   = $F2		; åˆæœŸåŒ–ã‚³ãƒžãƒ³ãƒ‰
+SYSCOM_ESPCOM = $F3		; ESP32 ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒžãƒ³ãƒ‰
+SYSCOM_MP3_A  = $F4		; MP3 åˆ¶å¾¡ã‚³ãƒžãƒ³ãƒ‰A
+SYSCOM_MP3_B  = $F5		; MP3 åˆ¶å¾¡ã‚³ãƒžãƒ³ãƒ‰B
+SYSCOM_SAVE   = $F6		; ãƒžã‚¤ã‚¯ãƒ­SDã«ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—
+SYSCOM_WIFI   = $F7		; WIFIé€šä¿¡åˆ¶å¾¡
 
-SYSCOM_RDATA  = $FA		; ƒf[ƒ^“Ç‚Ýo‚µ
-SYSCOM_RBURST = $FB		; ƒf[ƒ^“Ç‚Ýo‚µ(ƒo[ƒXƒg“]‘—ƒ‚[ƒh)
+SYSCOM_RDATA  = $FA		; ãƒ‡ãƒ¼ã‚¿èª­ã¿å‡ºã—
+SYSCOM_RBURST = $FB		; ãƒ‡ãƒ¼ã‚¿èª­ã¿å‡ºã—(ãƒãƒ¼ã‚¹ãƒˆè»¢é€ãƒ¢ãƒ¼ãƒ‰)
 
 STAT_INIT  = $00		;
-STAT_WAIT  = $40		; ‰Šúó‘Ô
-STAT_WAIT1 = $41		; ƒRƒ}ƒ“ƒhˆ—’†
-STAT_WAIT2 = $42		; ƒRƒ}ƒ“ƒhˆ—’† ƒ_ƒEƒ“ƒ[ƒh’†‚È‚Ç’·ŽžŠÔ‚©‚©‚éƒRƒ}ƒ“ƒhŽž STAT_WAIT‚Æƒgƒ‹ƒO
+STAT_WAIT  = $40		; åˆæœŸçŠ¶æ…‹
+STAT_WAIT1 = $41		; ã‚³ãƒžãƒ³ãƒ‰å‡¦ç†ä¸­
+STAT_WAIT2 = $42		; ã‚³ãƒžãƒ³ãƒ‰å‡¦ç†ä¸­ ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ä¸­ãªã©é•·æ™‚é–“ã‹ã‹ã‚‹ã‚³ãƒžãƒ³ãƒ‰æ™‚ STAT_WAITã¨ãƒˆãƒ«ã‚°
 
-STAT_NOEXA  = $50		; Šg’£ƒAƒ_ƒvƒ^[–³‚µ
+STAT_NOEXA  = $50		; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ç„¡ã—
 
-STAT_BOOT  = $80		; ‹N“®’†
-STAT_SEALED = $81		; ••ˆó’†i••ˆó‰ðœƒRƒ}ƒ“ƒhˆÈŠO‚Í–³Ž‹‚·‚éj
-STAT_OTASD = $82		; SDƒJ[ƒh‚©‚çOTAƒAƒbƒvƒf[ƒg
-STAT_WIFI_CONNECT = $83	; WIFIÚ‘±ŠJŽn
-STAT_WIFI_CON_OK = $84	; WIFIÚ‘±ŠJŽn¬Œ÷
-STAT_WIFI_CGI = $85		; CGIŽÀs
-STAT_WIFI_CGI_OK = $86	; CGIŽÀsOK
-STAT_UPDATE_CNT = $87	; UPDATEŒp‘±’†
-STAT_UPDATE_OK  = $88	; UPDATEƒ_ƒEƒ“ƒ[ƒhI—¹
-STAT_UPDATE_END = $89	; UPDATEI—¹
+STAT_BOOT  = $80		; èµ·å‹•ä¸­
+STAT_SEALED = $81		; å°å°ä¸­ï¼ˆå°å°è§£é™¤ã‚³ãƒžãƒ³ãƒ‰ä»¥å¤–ã¯ç„¡è¦–ã™ã‚‹ï¼‰
+STAT_OTASD = $82		; SDã‚«ãƒ¼ãƒ‰ã‹ã‚‰OTAã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ãƒˆ
+STAT_WIFI_CONNECT = $83	; WIFIæŽ¥ç¶šé–‹å§‹
+STAT_WIFI_CON_OK = $84	; WIFIæŽ¥ç¶šé–‹å§‹æˆåŠŸ
+STAT_WIFI_CGI = $85		; CGIå®Ÿè¡Œ
+STAT_WIFI_CGI_OK = $86	; CGIå®Ÿè¡ŒOK
+STAT_UPDATE_CNT = $87	; UPDATEç¶™ç¶šä¸­
+STAT_UPDATE_OK  = $88	; UPDATEãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰çµ‚äº†
+STAT_UPDATE_END = $89	; UPDATEçµ‚äº†
 
-STAT_WIFI_VS    = $90	; ‘Îíƒ}ƒbƒ`ƒ“ƒO’†
-STAT_WIFI_VS_OK = $91	; ‘Îíƒ}ƒbƒ`ƒ“ƒO¬—§
-STAT_WIFI_VS_NG = $92	; ‘Îíƒ}ƒbƒ`ƒ“ƒO•s¬—§
-STAT_WIFI_WAIT  = $93	; WIFIƒRƒ}ƒ“ƒhˆ—’†
+STAT_WIFI_VS    = $90	; å¯¾æˆ¦ãƒžãƒƒãƒãƒ³ã‚°ä¸­
+STAT_WIFI_VS_OK = $91	; å¯¾æˆ¦ãƒžãƒƒãƒãƒ³ã‚°æˆç«‹
+STAT_WIFI_VS_NG = $92	; å¯¾æˆ¦ãƒžãƒƒãƒãƒ³ã‚°ä¸æˆç«‹
+STAT_WIFI_WAIT  = $93	; WIFIã‚³ãƒžãƒ³ãƒ‰å‡¦ç†ä¸­
 
-; ƒGƒ‰[ƒR[ƒh
+; ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
 ERR_CODE_MIN = $C0
 ERR_SD_TALKING = $C1
 ERR_SD_ATTACH = $C2
@@ -59,24 +59,24 @@ ERR_WIFI_CGI = $C5
 ERR_WIFI_MATVS = $C6
 ERR_WIFI_DOWNLD = $C7
 
-; WIFIƒRƒ}ƒ“ƒh
-COM_WIFI_SCORE = $00		; ƒXƒRƒAƒAƒbƒvƒ[ƒh
-COM_WIFI_MANAGER = $F0		; WIFIÝ’èƒ}ƒl[ƒWƒƒ[
-COM_WIFI_UPDATE  = $F1		; WIFIƒAƒbƒvƒf[ƒ^[
-COM_WIFI_LSTSSID = $F2		; WIFI SSID LISTŽæ“¾
-COM_WIFI_TSTSSID = $F3		; WIFI SSID LIST“à”Ô†‚ðŽw’è‚µ‚ÄÚ‘±ƒeƒXƒg
-COM_WIFI_GETNAME = $F4		; WIFI NICNEAME Žæ“¾
-COM_WIFI_SETNAME = $F5		; WIFI NICNEAME Ý’è
+; WIFIã‚³ãƒžãƒ³ãƒ‰
+COM_WIFI_SCORE = $00		; ã‚¹ã‚³ã‚¢ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰
+COM_WIFI_MANAGER = $F0		; WIFIè¨­å®šãƒžãƒãƒ¼ã‚¸ãƒ£ãƒ¼
+COM_WIFI_UPDATE  = $F1		; WIFIã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿ãƒ¼
+COM_WIFI_LSTSSID = $F2		; WIFI SSID LISTå–å¾—
+COM_WIFI_TSTSSID = $F3		; WIFI SSID LISTå†…ç•ªå·ã‚’æŒ‡å®šã—ã¦æŽ¥ç¶šãƒ†ã‚¹ãƒˆ
+COM_WIFI_GETNAME = $F4		; WIFI NICNEAME å–å¾—
+COM_WIFI_SETNAME = $F5		; WIFI NICNEAME è¨­å®š
 
 
-COM_WIFI_SYNC    = $FC		; ƒQ[ƒ€ƒf[ƒ^ƒf[ƒ^“¯Šú
-COM_WIFI_MATCHING_VS = $FD	; ‘Îíƒ}ƒbƒ`ƒ“ƒO
-COM_WIFI_CONNECT = $FE		; WIFIÚ‘±
-COM_WIFI_DISCONNECT = $FF	; WIFIØ’f
+COM_WIFI_SYNC    = $FC		; ã‚²ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ãƒ‡ãƒ¼ã‚¿åŒæœŸ
+COM_WIFI_MATCHING_VS = $FD	; å¯¾æˆ¦ãƒžãƒƒãƒãƒ³ã‚°
+COM_WIFI_CONNECT = $FE		; WIFIæŽ¥ç¶š
+COM_WIFI_DISCONNECT = $FF	; WIFIåˆ‡æ–­
 
 
 ;----------------------------
-; ƒZ[ƒuEƒ[ƒhˆÃ†‰»ƒL[
+; ã‚»ãƒ¼ãƒ–ãƒ»ãƒ­ãƒ¼ãƒ‰æš—å·åŒ–ã‚­ãƒ¼
 ;----------------------------
 SVDT_KEY0	EQU $3C
 SVDT_KEY1	EQU $A1
@@ -87,41 +87,41 @@ SVDT_KEY3	EQU $7F
 
 
 ;-------------------------------
-; WIFIÝ’èƒ}ƒl[ƒWƒƒ[
+; WIFIè¨­å®šãƒžãƒãƒ¼ã‚¸ãƒ£ãƒ¼
 ;-------------------------------
 ;WIFI_MANAGER:
-;	lda  #COM_WIFI_MANAGER	; WIFIÝ’èƒ}ƒl[ƒWƒƒ[
+;	lda  #COM_WIFI_MANAGER	; WIFIè¨­å®šãƒžãƒãƒ¼ã‚¸ãƒ£ãƒ¼
 ;	bne  WIFI_COMMAND_82
 
 
 ;-------------------------------
-; WIFI SSID LISTŽæ“¾
+; WIFI SSID LISTå–å¾—
 ;-------------------------------
 WIFI_LSTSSID:
-	lda  #COM_WIFI_LSTSSID		; WIFI SSID LISTŽæ“¾
+	lda  #COM_WIFI_LSTSSID		; WIFI SSID LISTå–å¾—
 	bne  WIFI_COMMAND_82
 
 ;-------------------------------
-; WIFIÚ‘±
+; WIFIæŽ¥ç¶š
 ;-------------------------------
 WIFI_CONNECT:
-	lda  #COM_WIFI_CONNECT	; WIFIÚ‘±
+	lda  #COM_WIFI_CONNECT	; WIFIæŽ¥ç¶š
 	bne  WIFI_COMMAND_82
 
 ;-------------------------------
-; WIFIØ’f
+; WIFIåˆ‡æ–­
 ;-------------------------------
 WIFI_DISCONNECT:
-	lda  #COM_WIFI_DISCONNECT	; WIFIØ’f
+	lda  #COM_WIFI_DISCONNECT	; WIFIåˆ‡æ–­
 ;	bne  WIFI_COMMAND_82
 
 ;-------------------------------
-; WIFIƒRƒ}ƒ“ƒh‹¤’Êˆ—
+; WIFIã‚³ãƒžãƒ³ãƒ‰å…±é€šå‡¦ç†
 ;-------------------------------
 WIFI_COMMAND_82:
 	pha
 	lda  #SYSCOM_WIFI
-	ldy  #$82			; ‘—MŠJŽn
+	ldy  #$82			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 	pla
 	jsr  WB_Arduino_send
@@ -129,13 +129,13 @@ WIFI_COMMAND_82:
 
 
 ;-------------------------------
-; ƒXƒRƒAƒAƒbƒvƒ[ƒh
+; ã‚¹ã‚³ã‚¢ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰
 ;-------------------------------
 WIFI_SCORE:
 	lda  #SYSCOM_WIFI
-	ldy  #$85			; ‘—MŠJŽn
+	ldy  #$85			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
-	lda  #COM_WIFI_SCORE	; ƒXƒRƒA
+	lda  #COM_WIFI_SCORE	; ã‚¹ã‚³ã‚¢
 	jsr  WB_Arduino_send
 	lda  HISCORES+2
 	jsr  WB_Arduino_send
@@ -147,8 +147,8 @@ WIFI_SCORE:
 
 
 ;-------------------------------
-; WRAM‚Ìƒoƒ“ƒNØ‚è‘Ö‚¦
-;  Areg = BANK’li0-3j
+; WRAMã®ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆ
+;  Areg = BANKå€¤ï¼ˆ0-3ï¼‰
 ;-------------------------------
 setWRAM_BANK:
 	sta  <TMP_SVA
@@ -170,7 +170,7 @@ setWRAM_BANK:
 setESPCOM:
 	pha
 	lda  #SYSCOM_ESPCOM
-	ldy  #$82			; ‘—MŠJŽn
+	ldy  #$82			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 	pla
 	jsr  WB_Arduino_send
@@ -179,15 +179,15 @@ setESPCOM:
 
 
 ;-------------------------------
-; MPƒvƒŒ[ƒ„[ƒ{ƒŠƒ…[ƒ€Ý’è
-;  Areg = VOL’li0-21j 
+; MPãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ãƒœãƒªãƒ¥ãƒ¼ãƒ è¨­å®š
+;  Areg = VOLå€¤ï¼ˆ0-21ï¼‰ 
 ;-------------------------------
 setVol_MP3:
 	pha
 	lda  #SYSCOM_MP3_A
-	ldy  #$83			; ‘—MŠJŽn
+	ldy  #$83			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
-	lda  #$FE			; ƒ{ƒŠƒ…[ƒ€ƒZƒbƒg
+	lda  #$FE			; ãƒœãƒªãƒ¥ãƒ¼ãƒ ã‚»ãƒƒãƒˆ
 	jsr  WB_Arduino_send
 	pla
 	jsr  WB_Arduino_send
@@ -195,9 +195,9 @@ setVol_MP3:
 
 
 ;-------------------------------
-; MPƒvƒŒ[ƒ„[Ä¶
-;  Areg = Ä¶MP3”Ô†
-;  MP3_BANK = Ä¶ƒoƒ“ƒN”Ô†
+; MPãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å†ç”Ÿ
+;  Areg = å†ç”ŸMP3ç•ªå·
+;  MP3_BANK = å†ç”Ÿãƒãƒ³ã‚¯ç•ªå·
 ;-------------------------------
 play_MP3:
 	pha
@@ -207,7 +207,7 @@ play_MP3:
 	ldx  #SYSCOM_MP3_B
 .noloop
 	txa
-	ldy  #$83			; ‘—MŠJŽn
+	ldy  #$83			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 	lda  MP3_BANK
 	jsr  WB_Arduino_send
@@ -219,25 +219,25 @@ play_MP3:
 
 stop_MP3:
 	lda  #SYSCOM_MP3_A
-	ldy  #$82			; ‘—MŠJŽn
+	ldy  #$82			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
-	lda  #$FF			; ƒXƒgƒbƒvƒRƒ}ƒ“ƒh
+	lda  #$FF			; ã‚¹ãƒˆãƒƒãƒ—ã‚³ãƒžãƒ³ãƒ‰
 	jsr  WB_Arduino_send
 	jmp  WB_Arduino_end
 
 
 save_SAVEDATA:
 	lda  #SYSCOM_SAVE
-	ldy  #$88			; ‘—MŠJŽn
+	ldy  #$88			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 
-	lda  #$FC			; ƒoƒbƒNƒAƒbƒvƒf[ƒ^ƒwƒbƒ_[
+	lda  #$FC			; ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿ãƒ˜ãƒƒãƒ€ãƒ¼
 	jsr  WB_Arduino_send
 
-	lda  MP3_VOL		; ƒ}ƒXƒ^[ƒ{ƒŠƒ…[ƒ€
+	lda  MP3_VOL		; ãƒžã‚¹ã‚¿ãƒ¼ãƒœãƒªãƒ¥ãƒ¼ãƒ 
 	jsr  WB_Arduino_send
 
-	lda  MP3_BANK		; BGMƒoƒ“ƒN
+	lda  MP3_BANK		; BGMãƒãƒ³ã‚¯
 	jsr  WB_Arduino_send
 
 	lda  HISCORES+2
@@ -265,11 +265,11 @@ save_SAVEDATA:
 
 
 ;-------------------------------------
-;	 arduino 1ƒoƒCƒg‘‚«ž‚Ý ¦‰ü‘¢‚·‚é‚Æƒ^ƒCƒ~ƒ“ƒOŽæ‚ê‚È‚­‚È‚é
+;	 arduino 1ãƒã‚¤ãƒˆæ›¸ãè¾¼ã¿ â€»æ”¹é€ ã™ã‚‹ã¨ã‚¿ã‚¤ãƒŸãƒ³ã‚°å–ã‚Œãªããªã‚‹
 ;-------------------------------------
 
 WB_Arduino:
-	ldy  #$81		; ‘—MŠJŽn
+	ldy  #$81		; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 
 WB_Arduino_end:
@@ -280,7 +280,7 @@ WB_Arduino_end:
 
 
 ;-------------------------------------
-;	 arduino ‘—Mƒ\ƒtƒgƒEƒFƒCƒgi—v’²®j
+;	 arduino é€ä¿¡ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¤ãƒˆï¼ˆè¦èª¿æ•´ï¼‰
 ;-------------------------------------
 WB_Arduino_wait:
 	ldx  #200
@@ -292,11 +292,11 @@ WB_Arduino_wait:
 
 
 ;-------------------------------------
-;	arduino •¡”ƒoƒCƒg‘‚«ž‚Ý
+;	arduino è¤‡æ•°ãƒã‚¤ãƒˆæ›¸ãè¾¼ã¿
 ;
-;	Areg = ‘—MƒRƒ}ƒ“ƒh
-;	Yreg = $80+ƒRƒ}ƒ“ƒhƒoƒCƒg”
-;	SRC_ADRF‘—MƒRƒ}ƒ“ƒhƒAƒhƒŒƒX
+;	Areg = é€ä¿¡ã‚³ãƒžãƒ³ãƒ‰
+;	Yreg = $80+ã‚³ãƒžãƒ³ãƒ‰ãƒã‚¤ãƒˆæ•°
+;	SRC_ADRï¼šé€ä¿¡ã‚³ãƒžãƒ³ãƒ‰ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;-------------------------------------
 WB_ArduinoMB:
 	jsr  WB_Arduino_start
@@ -315,10 +315,10 @@ WB_ArduinoMB:
 	jmp  WB_Arduino_end
 
 ;-------------------------------------
-;	arduino ƒf[ƒ^‘—MŠJŽn
+;	arduino ãƒ‡ãƒ¼ã‚¿é€ä¿¡é–‹å§‹
 ;
-;	Areg = ‘—MƒRƒ}ƒ“ƒh
-;	Yreg = $80+ƒRƒ}ƒ“ƒhƒoƒCƒg”
+;	Areg = é€ä¿¡ã‚³ãƒžãƒ³ãƒ‰
+;	Yreg = $80+ã‚³ãƒžãƒ³ãƒ‰ãƒã‚¤ãƒˆæ•°
 ;-------------------------------------
 WB_Arduino_start:
 	sty	 $5000
@@ -327,11 +327,11 @@ WB_Arduino_start:
 WB_Arduino_send:
 	sta	 $5000
 	jsr  WB_Arduino_wait
-	lda	 $5000			; ƒRƒ}ƒ“ƒh‘—M
+	lda	 $5000			; ã‚³ãƒžãƒ³ãƒ‰é€ä¿¡
 	jmp  WB_Arduino_wait
 
 ;-------------------------------------
-;	ƒŠ[ƒhƒXƒe[ƒ^ƒX
+;	ãƒªãƒ¼ãƒ‰ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
 ;-------------------------------------
 RSTAT_Arduino:
 	lda  $5000
@@ -339,9 +339,9 @@ RSTAT_Arduino:
 
 
 ;-------------------------------------
-;	ƒo[ƒXƒgƒ‚[ƒhƒoƒbƒtƒ@ƒŠ[ƒh
+;	ãƒãƒ¼ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ãƒãƒƒãƒ•ã‚¡ãƒªãƒ¼ãƒ‰
 ;
-;	SET_DATA_DST xxxxx	“Ç‚Ýž‚Ýƒoƒbƒtƒ@ƒAƒhƒŒƒX
+;	SET_DATA_DST xxxxx	èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;
 ;-------------------------------------
 
@@ -354,15 +354,15 @@ ReadBuf_Burst2:
 	php
 	jsr  setDST_ADR_DATA
 	plp
- 	bcc  .loop			; ÅIƒf[ƒ^‚Ü‚Å“Ç‚Ýo‚·
+ 	bcc  .loop			; æœ€çµ‚ãƒ‡ãƒ¼ã‚¿ã¾ã§èª­ã¿å‡ºã™
 	rts
 
 ;-------------------------------------
-;	ƒo[ƒXƒgƒ‚[ƒhƒoƒbƒtƒ@ƒŠ[ƒhFƒTƒCƒYƒwƒbƒ_”Å
+;	ãƒãƒ¼ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ãƒãƒƒãƒ•ã‚¡ãƒªãƒ¼ãƒ‰ï¼šã‚µã‚¤ã‚ºãƒ˜ãƒƒãƒ€ç‰ˆ
 ;
-;	SET_DATA_DST xxxxx	“Ç‚Ýž‚Ýƒoƒbƒtƒ@ƒAƒhƒŒƒX
+;	SET_DATA_DST xxxxx	èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;
-;	ret  ƒGƒ‰[Žž‚ÍƒLƒƒƒŠ[ƒtƒ‰ƒOƒZƒbƒg
+;	ret  ã‚¨ãƒ©ãƒ¼æ™‚ã¯ã‚­ãƒ£ãƒªãƒ¼ãƒ•ãƒ©ã‚°ã‚»ãƒƒãƒˆ
 ;-------------------------------------
 
 ReadBuf_BurstSiz:
@@ -389,18 +389,18 @@ ReadBuf_BurstSiz2:
 	bcc  .loop
 .end
 	lda  #0
-	jsr  setDST_ADR_DATA	;ƒf[ƒ^I’[‚Æ‚µ‚Ä0‚ðo—Í
+	jsr  setDST_ADR_DATA	;ãƒ‡ãƒ¼ã‚¿çµ‚ç«¯ã¨ã—ã¦0ã‚’å‡ºåŠ›
 .error_end
 	rts
 
 
 ;-------------------------------------
-;	ƒo[ƒXƒgƒ‚[ƒhƒŠ[ƒh
+;	ãƒãƒ¼ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ãƒªãƒ¼ãƒ‰
 ;-------------------------------------
 START_Burst:
 	lda  #SYSCOM_RBURST
-	jsr  WB_Arduino		; ƒo[ƒXƒg“]‘—ƒ‚[ƒhŠJŽn
-	sta  <BURST_DATA	; ŠJŽnŽž‚Ì$5000‚Ì“Ç‚Ýo‚µŒ‹‰Ê‚ð•Û‘¶
+	jsr  WB_Arduino		; ãƒãƒ¼ã‚¹ãƒˆè»¢é€ãƒ¢ãƒ¼ãƒ‰é–‹å§‹
+	sta  <BURST_DATA	; é–‹å§‹æ™‚ã®$5000ã®èª­ã¿å‡ºã—çµæžœã‚’ä¿å­˜
 	lda  #0
 	sta  <BURST_PCNT
 	sta  <BURST_DCNT
@@ -415,7 +415,7 @@ RB_Burst:
 	lda  <BURST_DCNT
 	bne  .burst_ddt
 
-	; ƒRƒ}ƒ“ƒhƒoƒCƒgŽóM
+	; ã‚³ãƒžãƒ³ãƒ‰ãƒã‚¤ãƒˆå—ä¿¡
 	jsr  .waitChgR5000
 	bcs  .end
 	tay
@@ -460,7 +460,7 @@ RB_Burst:
 	beq  .waitChgR5000_loop
 	sty  <BURST_DATA
 
-	; ŽóMo—ˆ‚½‚Ì‚Å“¯ŠúM†‰ž“š
+	; å—ä¿¡å‡ºæ¥ãŸã®ã§åŒæœŸä¿¡å·å¿œç­”
 	lda  <BURST_FLIP
 	eor  #$80
 	sta  <BURST_FLIP
@@ -470,13 +470,13 @@ RB_Burst:
 	rts
 
 ;-------------------------------------
-;	Šg’£ƒVƒXƒeƒ€••ˆó‰ðœ
+;	æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ å°å°è§£é™¤
 ;-------------------------------------
 EXS_GAMEID:
 	db "A000"
 
 EXS_INIT:
-	jsr  RSTAT_Arduino			; ƒ_ƒ~[ƒŠ[ƒh
+	jsr  RSTAT_Arduino			; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 	SET_DATA_SRC EXS_GAMEID
 	ldy  #$85
 	lda  #SYSCOM_INIT
@@ -485,13 +485,13 @@ EXS_INIT:
 
 
 ;-------------------------------------
-;	Šg’£ƒVƒXƒeƒ€ƒŠƒZƒbƒg
+;	æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ ãƒªã‚»ãƒƒãƒˆ
 ;-------------------------------------
 EXS_RESET:
-	jsr  RSTAT_Arduino			; ƒ_ƒ~[ƒŠ[ƒh
+	jsr  RSTAT_Arduino			; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 
 	lda  #SYSCOM_INIT
-	ldy  #$82		; ‘—MŠJŽn
+	ldy  #$82		; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 
 	lda  #0
