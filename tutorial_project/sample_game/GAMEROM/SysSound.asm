@@ -1,11 +1,11 @@
 ;======================================================
-;			ƒTƒEƒ“ƒhƒVƒXƒeƒ€
+;			ã‚µã‚¦ãƒ³ãƒ‰ã‚·ã‚¹ãƒ†ãƒ 
 ;======================================================
 
 _nsf_init		EQU $8010	; NSF init address 
 _nmi_main		EQU $8084	; NSF play address
 _nsd_init		EQU $80A1
-_nsd_set_dpcm	EQU $80AB	; ax = Pointer of ‡™PCM infomation Struct
+_nsd_set_dpcm	EQU $80AB	; ax = Pointer of âŠ¿PCM infomation Struct
 _nsd_main		EQU $80B2
 _nsd_play_bgm	EQU $8137	; ax = Pointer of BGM
 _nsd_stop_bgm	EQU $8219
@@ -13,7 +13,7 @@ _nsd_play_se	EQU $8239	; ax = Pointer of SE
 _nsd_stop_se	EQU $82B7
 _nsd_snd_init	EQU $8AB6
 
-_nsd_table_idx	EQU $8F6E	; ƒe[ƒuƒ‹ƒCƒ“ƒfƒbƒNƒX
+_nsd_table_idx	EQU $8F6E	; ãƒ†ãƒ¼ãƒ–ãƒ«ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 
 
 bgm_addr	EQU (_nsd_table_idx+2)
@@ -27,14 +27,14 @@ STOP_SE:
 
 
 ;===============================
-; BGMÄ¶
+; BGMå†ç”Ÿ
 ;===============================
 PLAY_BGM:
 	STA  <REQ_BGM_NO
     RTS
 
 ;===============================
-; SEÄ¶
+; SEå†ç”Ÿ
 ;===============================
 PLAY_SE_FORCE:
 	STA	<REQ_SE_NO
@@ -61,7 +61,7 @@ PLAY_SE:
 
 
 ;===============================
-; ƒTƒEƒ“ƒh‰Šú‰»
+; ã‚µã‚¦ãƒ³ãƒ‰åˆæœŸåŒ–
 ;===============================
 INIT_SOUND:
 	lda  #15
@@ -82,7 +82,7 @@ MUSDRV_GET_STATE:
 
 STOP_BGM:
 STOP_BGM_SYS:
-	; BGM ’â~‚É DPCM ‚ª~‚Ü‚ç‚È‚¢‚Ì‚Å–³—–î—~‚ß‚é (2016-05-15 –å^)
+	; BGM åœæ­¢æ™‚ã« DPCM ãŒæ­¢ã¾ã‚‰ãªã„ã®ã§ç„¡ç†çŸ¢ç†æ­¢ã‚ã‚‹ (2016-05-15 é–€çœŸ)
 	lda	#%00001111
 	sta	 $4015
 	jmp  _nsd_stop_bgm
@@ -91,7 +91,7 @@ STOP_BGM_SYS:
 
 
 ;*****************************************
-;ƒTƒEƒ“ƒhƒVƒXƒeƒ€
+;ã‚µã‚¦ãƒ³ãƒ‰ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
 SOUND_SYSTEM:
 	lda  <DEMO_FG
@@ -101,7 +101,7 @@ SOUND_SYSTEM:
 .snd_sys40
 	lda  <SEQ_CTR
 	beq  .snd_sys02
-	dec  <SEQ_CTR		; BGMÄ¶ƒEƒFƒCƒg
+	dec  <SEQ_CTR		; BGMå†ç”Ÿã‚¦ã‚§ã‚¤ãƒˆ
 	jmp  .snd_sys00
 .snd_sys02:
 	lda  <REQ_BGM_NO
@@ -136,7 +136,7 @@ SOUND_SYSTEM:
 _playSE
 	asl	a
 	tay
-	;SEÄ¶ŠJn
+	;SEå†ç”Ÿé–‹å§‹
 	lda  se_addr + 0,y
 	ldx  se_addr + 1,y
 	jmp  _nsd_play_se

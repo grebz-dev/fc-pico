@@ -1,6 +1,6 @@
 
-; INSERT COIN(S) “_–ÅŽüŠú (ƒtƒŒ[ƒ€’PˆÊ)
-; ‚±‚Ì’l‚Ì”¼•ª‚ÌŽžŠÔ‚Å INSERT COIN(S) ‚ð•\Ž¦A‚à‚¤”¼•ª‚Å”ñ•\Ž¦‚Æ‚È‚è‚Ü‚·B
+; INSERT COIN(S) ç‚¹æ»…å‘¨æœŸ (ãƒ•ãƒ¬ãƒ¼ãƒ å˜ä½)
+; ã“ã®å€¤ã®åŠåˆ†ã®æ™‚é–“ã§ INSERT COIN(S) ã‚’è¡¨ç¤ºã€ã‚‚ã†åŠåˆ†ã§éžè¡¨ç¤ºã¨ãªã‚Šã¾ã™ã€‚
 INSCOIN_PERIOD = 120
 
 
@@ -11,14 +11,14 @@ PAL_TITLE_ADR:
 
 
 ;===================================
-;ƒ^ƒCƒgƒ‹‰æ–Ê
+;ã‚¿ã‚¤ãƒˆãƒ«ç”»é¢
 ;===================================
 TIT_STG:
 	
 	jsr .tbljump_sub
 
-	; ƒXƒvƒ‰ƒCƒg§Œä
-	ldy #0*4	; ƒXƒvƒ‰ƒCƒgŠJŽnˆÊ’u
+	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆåˆ¶å¾¡
+	ldy #0*4	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆé–‹å§‹ä½ç½®
 
 	inc  <PUSH_CTR
 	lda  <PUSH_CTR
@@ -52,7 +52,7 @@ TIT_STG:
 	tay
 
 .draw_p00
-	; BG—¬¯•\Ž¦
+	; BGæµæ˜Ÿè¡¨ç¤º
 	lda  <FLM_TIMER
 ;	asl  a
 ;	eor  #$FF
@@ -60,10 +60,10 @@ TIT_STG:
 	lda  #30
 	jsr createBgStarObj2
 	
-	; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ð”ñ•\Ž¦‚É‚·‚é
+	; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’éžè¡¨ç¤ºã«ã™ã‚‹
 	jsr clearObj
 
-	; ‰½‚©‚µ‚çƒL[“ü—Í‚ª‚ ‚Á‚½‚çƒ^ƒCƒ}[ƒŠƒZƒbƒg
+	; ä½•ã‹ã—ã‚‰ã‚­ãƒ¼å…¥åŠ›ãŒã‚ã£ãŸã‚‰ã‚¿ã‚¤ãƒžãƒ¼ãƒªã‚»ãƒƒãƒˆ
 	lda  KEY_TRG
 	beq  .end
 
@@ -82,13 +82,13 @@ TIT_STG:
 .tbljump_sub
 	LDA     <STG_COD_SUB
 	TBL_JUMP
-	JPTBL	TIT_STG_0	; 0 ‰Šú‰»
-	JPTBL	TIT_STG_2	; 3 ƒL[‘Ò‚¿
-	JPTBL	TIT_STG_3	; 4 ƒWƒ“ƒOƒ‹I—¹‘Ò‚¿
-	JPTBL	TIT_STG_4	; 5 ƒQ[ƒ€ƒƒCƒ“‚Ö
+	JPTBL	TIT_STG_0	; 0 åˆæœŸåŒ–
+	JPTBL	TIT_STG_2	; 3 ã‚­ãƒ¼å¾…ã¡
+	JPTBL	TIT_STG_3	; 4 ã‚¸ãƒ³ã‚°ãƒ«çµ‚äº†å¾…ã¡
+	JPTBL	TIT_STG_4	; 5 ã‚²ãƒ¼ãƒ ãƒ¡ã‚¤ãƒ³ã¸
 
 
-;---- ‰Šú‰» ------------------------
+;---- åˆæœŸåŒ– ------------------------
 TIT_STG_0:
 	inc  <NMI_FLG
 
@@ -193,7 +193,7 @@ TIT_STG_0:
 	rts
 
 
-;******* ƒƒCƒ“ **********************
+;******* ãƒ¡ã‚¤ãƒ³ **********************
 TIT_STG_2:
 	CHK_BIT	<KEY_TRG, #KEY_UP|KEY_DOWN
 	beq  .TIT_STG_12_00
@@ -229,10 +229,10 @@ TIT_STG_2:
 	jsr WAIT_FADE_END
 
 
-;	lda	 #ST_OPTION       ;ƒIƒvƒVƒ‡ƒ“‰æ–Ê‚Ö
-	lda	 #ST_LICENSE       ;ƒ‰ƒCƒZƒ“ƒX‰æ–Ê‚Ö
-;	lda	 #ST_OVER	      ; ƒQ[ƒ€ƒI[ƒo[‰æ–Ê‚Ö
-;	lda	 #ST_CLEAR	      ; ƒQ[ƒ€ƒNƒŠƒA[‰æ–Ê‚Ö
+;	lda	 #ST_OPTION       ;ã‚ªãƒ—ã‚·ãƒ§ãƒ³ç”»é¢ã¸
+	lda	 #ST_LICENSE       ;ãƒ©ã‚¤ã‚»ãƒ³ã‚¹ç”»é¢ã¸
+;	lda	 #ST_OVER	      ; ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼ç”»é¢ã¸
+;	lda	 #ST_CLEAR	      ; ã‚²ãƒ¼ãƒ ã‚¯ãƒªã‚¢ãƒ¼ç”»é¢ã¸
 	jmp  SET_STG_COD
 
 .next_stg
@@ -251,7 +251,7 @@ TIT_STG_2:
 	rts
 
 
-;--- Œø‰Ê‰¹Ä¶I—¹‘Ò‚¿ ------------
+;--- åŠ¹æžœéŸ³å†ç”Ÿçµ‚äº†å¾…ã¡ ------------
 TIT_STG_3:
 
 	ldx  #0
@@ -274,7 +274,7 @@ TIT_STG_3:
 	jsr  ST_GM_WAIT
 	rts
 
-;--- ƒvƒŒƒC‰æ–Ê‚Ö ------------
+;--- ãƒ—ãƒ¬ã‚¤ç”»é¢ã¸ ------------
 TIT_STG_4:
 
  	jsr SET_FADE_OUT_B
@@ -286,7 +286,7 @@ TIT_STG_4:
 	sta  <DEMO_FG
 	jsr  GAME_INIT
 
-	lda  #ST_MAIN        ;ƒvƒŒƒC‰æ–Ê‚Ö
+	lda  #ST_MAIN        ;ãƒ—ãƒ¬ã‚¤ç”»é¢ã¸
 	jsr  SET_STG_COD
 	rts
 
@@ -299,7 +299,7 @@ GAME_INIT:
 	sta  DEBUG_FLG
 
 GAME_INIT2:
-	; ƒXƒRƒA‰Šú‰»
+	; ã‚¹ã‚³ã‚¢åˆæœŸåŒ–
 	lda  #0
 	sta  GM_SCORE
 	sta  GM_SCORE+1

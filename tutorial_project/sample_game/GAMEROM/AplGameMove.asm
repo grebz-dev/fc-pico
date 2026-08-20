@@ -2,14 +2,14 @@
 ;=======================================================================
 ;=======================================================================
 ;
-;  ŠeŽíƒQ[ƒ€OBJˆÚ“®ˆ—
+;  å„ç¨®ã‚²ãƒ¼ãƒ OBJç§»å‹•å‡¦ç†
 ;
 
 
 
 
 moveGameObj:
-	; –³“Gƒ^ƒCƒ}[ƒJƒEƒ“ƒgƒ_ƒEƒ“
+	; ç„¡æ•µã‚¿ã‚¤ãƒžãƒ¼ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³
 	lda  PLY_MUTEKI_TM
 	beq  .mg00
 	dec  PLY_MUTEKI_TM
@@ -34,11 +34,11 @@ moveGameObj:
 
 
 ;-----------------------------------
-; “G’eˆÚ“®
+; æ•µå¼¾ç§»å‹•
 ;-----------------------------------
 moveEnemyNTObj:
 
-	; ˆÚ“®ˆ—ƒ‹[ƒv
+	; ç§»å‹•å‡¦ç†ãƒ«ãƒ¼ãƒ—
 	lda  <FLM_TIMER
 	sta  <TMP_LOOP_CNT
 	ldx  #0
@@ -64,13 +64,13 @@ moveEnemyNTObj:
 	jsr  .moveSpcSub
 	lda  ENEMY_NT_KIND,x
 	beq .next
-	cmp #NTK_WARP		; ƒ[ƒv‚ÍˆÚ“®‚µ‚È‚¢
+	cmp #NTK_WARP		; ãƒ¯ãƒ¼ãƒ—ã¯ç§»å‹•ã—ãªã„
 	beq .next
 
 	lda  ENEMY_NT_MP,x
 	jsr  setMoveDirData
 
-	; XˆÚ“®ŒvŽZ
+	; Xç§»å‹•è¨ˆç®—
 	lda  ENEMY_NT_X+0,x
 	clc
 	adc  <W_AR
@@ -79,14 +79,14 @@ moveEnemyNTObj:
 	adc  <W_AR+1
 	sta  ENEMY_NT_X+1,x
 	
-	;  X‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Xç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+1
 	bpl  .movx1
 	jsr  revCFlag
 .movx1
 	bcs  .clear
 	
-	; YˆÚ“®ŒvŽZ
+	; Yç§»å‹•è¨ˆç®—
 	lda  ENEMY_NT_Y+0,x
 	clc
 	adc  <W_BR
@@ -96,7 +96,7 @@ moveEnemyNTObj:
 	sta  ENEMY_NT_Y+1,x
 
 	
-	;  Y‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Yç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 ;	lda ENEMY_NT_Y+1,x
 	cmp #ENEMY_LINE_SUU
 ;	cmp #240
@@ -105,25 +105,25 @@ moveEnemyNTObj:
 	lda  ENEMY_NT_KIND,x
 	cmp  #NTK_MISS
 	bne  .clear
-	; ƒ~ƒTƒCƒ‹Žž“ÁŽêˆ—
+	; ãƒŸã‚µã‚¤ãƒ«æ™‚ç‰¹æ®Šå‡¦ç†
 	lda  #1
 	sta  ENEMY_NT_Y+1,x
 	jmp  .next
 
-	; ˆÚ“®I—¹
+	; ç§»å‹•çµ‚äº†
 .clear
 	lda  #0
 	sta  ENEMY_NT_KIND,x
 	jmp  .next
 
 ;------------------------------
-; “G‚Ì’e‚ÌˆÚ“®“ÁŽêˆ—
+; æ•µã®å¼¾ã®ç§»å‹•ç‰¹æ®Šå‡¦ç†
 ;------------------------------
 .moveSpcSub
 	jsr  getEnemyNTcfg2
 	lda  <TMP_WRK3
 	beq  .mss00
-	; ƒ^ƒCƒ}[‚Å’eŽí{‚P‚·‚é
+	; ã‚¿ã‚¤ãƒžãƒ¼ã§å¼¾ç¨®ï¼‹ï¼‘ã™ã‚‹
 	inc  ENEMY_NT_DT,x
 	cmp  ENEMY_NT_DT,x
 	bne  .mss00
@@ -131,7 +131,7 @@ moveEnemyNTObj:
 	cmp  #NTK_WARP
 	bne  .mss01
 	;----------------------
-	; ƒ[ƒvŽž“ÁŽêˆ—
+	; ãƒ¯ãƒ¼ãƒ—æ™‚ç‰¹æ®Šå‡¦ç†
 	;----------------------
 	lda  ENEMY_NT_MP,x
 	sta  ENEMY_NT_KIND,x
@@ -153,11 +153,11 @@ moveEnemyNTObj:
 	JPTBL	.end2		; 0
 	JPTBL	.angle		; 1
 	JPTBL	.horming	; 2
-	JPTBL	.missile_u	; 3	ã¸
-	JPTBL	.missile_d	; 4 ‰º~
+	JPTBL	.missile_u	; 3	ä¸Šæ˜‡
+	JPTBL	.missile_d	; 4 ä¸‹é™
 
 ;-----------------------------------
-; ƒ~ƒTƒCƒ‹ã¸’†
+; ãƒŸã‚µã‚¤ãƒ«ä¸Šæ˜‡ä¸­
 ;-----------------------------------
 .missile_u
 	lda  ENEMY_NT_DT,x
@@ -182,7 +182,7 @@ moveEnemyNTObj:
 	rts
 
 ;-----------------------------------
-; ƒ~ƒTƒCƒ‹‰º~’†
+; ãƒŸã‚µã‚¤ãƒ«ä¸‹é™ä¸­
 ;-----------------------------------
 .missile_d_00
 	lda  POS_PLY_X
@@ -215,13 +215,13 @@ moveEnemyNTObj:
 
 
 ;-----------------------------------
-; ƒz[ƒ~ƒ“ƒO’e“ÁŽêˆ—
+; ãƒ›ãƒ¼ãƒŸãƒ³ã‚°å¼¾ç‰¹æ®Šå‡¦ç†
 ;-----------------------------------
 .horming
 	lda  ENEMY_NT_DT,x
 	bne  .skip_getang
 
-	; •ûŒüC³
+	; æ–¹å‘ä¿®æ­£
 	lda  ENEMY_NT_X+1,x
 	sta  <PRM_X_POS
 	lda  ENEMY_NT_Y+1,x
@@ -276,13 +276,13 @@ moveEnemyNTObj:
 	db  0, -1,1
 
 ;-----------------------------------
-; Ž©‹@‘_‚¢’e
+; è‡ªæ©Ÿç‹™ã„å¼¾
 ;-----------------------------------
 .angle
 	inc  ENEMY_NT_KIND,x
 
 .angle2
-	; •ûŒüŽæ“¾
+	; æ–¹å‘å–å¾—
 	lda  ENEMY_NT_X+1,x
 	sta  <PRM_X_POS
 	lda  ENEMY_NT_Y+1,x
@@ -308,7 +308,7 @@ moveEnemyNTObj:
 
 
 ;-----------------------------------
-; Ž©‹@—U“±’e•â³ 8ƒtƒŒ[ƒ€‚É‚P‰ñ‚¾‚¯—U“±
+; è‡ªæ©Ÿèª˜å°Žå¼¾è£œæ­£ 8ãƒ•ãƒ¬ãƒ¼ãƒ ã«ï¼‘å›žã ã‘èª˜å°Ž
 ;-----------------------------------
 movePlyHorming:
 	ldx  #0
@@ -332,7 +332,7 @@ movePlyHorming:
 	rts
 
 .mph00
-	; •ûŒüC³
+	; æ–¹å‘ä¿®æ­£
 	lda  PSHOT_A_Y,x
 	sta  <PRM_X_POS
 	lda  PSHOT_A_Y,x
@@ -370,7 +370,7 @@ movePlyHorming:
 	rts
 
 ;-----------------------------------
-; Ž©‹@ƒm[ƒ}ƒ‹’eˆÚ“®
+; è‡ªæ©ŸãƒŽãƒ¼ãƒžãƒ«å¼¾ç§»å‹•
 ;-----------------------------------
 movePlyShotAObj:
 	ldx #0
@@ -381,7 +381,7 @@ movePlyShotAObj:
 	lda  PSHOT_DIR,x
 	jsr  setMoveDirData
 
-	; XˆÚ“®ŒvŽZ
+	; Xç§»å‹•è¨ˆç®—
 	lda  PSHOT_A_WX,x
 	clc
 	adc  <W_AR
@@ -390,14 +390,14 @@ movePlyShotAObj:
 	adc  <W_AR+1
 	sta  PSHOT_A_X,x
 	
-	;  X‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Xç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+1
 	bpl  .movx1
 	jsr  revCFlag
 .movx1
 	bcs  .clear
 
-	; YˆÚ“®ŒvŽZ
+	; Yç§»å‹•è¨ˆç®—
 	lda  PSHOT_A_WY,x
 	clc
 	adc  <W_BR
@@ -405,7 +405,7 @@ movePlyShotAObj:
 	lda  PSHOT_A_Y,x
 	adc  <W_BR+1
 
-	;  Y‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Yç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 	cmp #ENEMY_LINE_SUU
 	bcc .me000
 .clear
@@ -422,12 +422,12 @@ movePlyShotAObj:
 
 
 ;=======================================================================
-;  “G“–‚½‚è”»’è
+;  æ•µå½“ãŸã‚Šåˆ¤å®š
 ;=======================================================================
 
 
 ;-----------------------------------
-; “Gƒm[ƒ}ƒ‹’e“–‚½‚è”»’è
+; æ•µãƒŽãƒ¼ãƒžãƒ«å¼¾å½“ãŸã‚Šåˆ¤å®š
 ;-----------------------------------
 hitEnemyNTObj:
 	lda  PLY_ANM_NO
@@ -445,13 +445,13 @@ hitEnemyNTObj:
 	beq  .next
 
 	lda  ENEMY_NT_X+1,X
-	cmp  #8		; “–‚½‚è”»’è‚Ì¶‘¤ƒŠƒ~ƒbƒ^[
+	cmp  #8		; å½“ãŸã‚Šåˆ¤å®šã®å·¦å´ãƒªãƒŸãƒƒã‚¿ãƒ¼
 	bcc  .next
 
 	ldy  #2*(PSHOT_A_SUU+1)
 	lda  ENEMY_NT_HP,x
 	beq  .he10
-	cmp  #254		; ”»’è–³‚µ
+	cmp  #254		; åˆ¤å®šç„¡ã—
 	bne  .he00
 
 .next
@@ -466,7 +466,7 @@ hitEnemyNTObj:
 
 
 .he10
-	ldy  #2			; Ž©‹@‚¾‚¯ƒ`ƒFƒbƒN
+	ldy  #2			; è‡ªæ©Ÿã ã‘ãƒã‚§ãƒƒã‚¯
 .he00
 	lda  ENEMY_NT_Y+1,x
 	sta  <PRM_Y_POS
@@ -481,22 +481,22 @@ hitEnemyNTObj:
 
 	lda  PLY_MUTEKI_TM
 	bne  .muteki
-	jsr  setPlayerDead		; ƒvƒŒ[ƒ„[‚Éƒ_ƒ[ƒW
+	jsr  setPlayerDead		; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ã«ãƒ€ãƒ¡ãƒ¼ã‚¸
 
 .muteki
 	lda  #0
-	sta  ENEMY_NT_KIND,x	; ’e‚ðÁ‚·
+	sta  ENEMY_NT_KIND,x	; å¼¾ã‚’æ¶ˆã™
 	jmp  .next
 
 
 .chkShotAB
 	lda  ENEMY_NT_HP,X
-	beq  .next			;“–‚½‚è”»’è–³‚µA”j‰ó•s”\’e
+	beq  .next			;å½“ãŸã‚Šåˆ¤å®šç„¡ã—ã€ç ´å£Šä¸èƒ½å¼¾
 
 	cmp  #255
 	bne  .ch30
 
-	; “–‚½‚è”»’è‚ ‚èA”j‰ó•s”\’e
+	; å½“ãŸã‚Šåˆ¤å®šã‚ã‚Šã€ç ´å£Šä¸èƒ½å¼¾
 	lda  #SE_NO_DAME
 	jsr  PLAY_SE
 	jmp  .next
@@ -510,13 +510,13 @@ hitEnemyNTObj:
 	jmp  .next
 
 .hit
-	; SPƒUƒR‚È‚çƒXƒRƒA+1
+	; SPã‚¶ã‚³ãªã‚‰ã‚¹ã‚³ã‚¢+1
 	lda  ENEMY_NT_KIND,x
 	bpl  .hit2
 	lda  #1
 	jsr  SCR_ADD
 .hit2
-	; ”š”­‰‰oƒZƒbƒg
+	; çˆ†ç™ºæ¼”å‡ºã‚»ãƒƒãƒˆ
 
 	ldy ENEMY_NT_Y+1,x
 	lda ENEMY_NT_X+1,x
@@ -532,10 +532,10 @@ hitEnemyNTObj:
 
 
 ;====================================================================
-;    Žw’è•ûŒü‚ÌˆÚ“®ƒf[ƒ^Žæ“¾
-; IN -> Areg ˆÚ“®•ûŒü+‘¬“x
-; OUT -> XˆÚ“®ƒf[ƒ^ W_AR
-;        YˆÚ“®ƒf[ƒ^ W_BR
+;    æŒ‡å®šæ–¹å‘ã®ç§»å‹•ãƒ‡ãƒ¼ã‚¿å–å¾—
+; IN -> Areg ç§»å‹•æ–¹å‘+é€Ÿåº¦
+; OUT -> Xç§»å‹•ãƒ‡ãƒ¼ã‚¿ W_AR
+;        Yç§»å‹•ãƒ‡ãƒ¼ã‚¿ W_BR
 ;====================================================================
 setMoveDirData:
 	php
@@ -549,13 +549,13 @@ setMoveDirData:
 	ror  a
 	tay
 
-	; XˆÚ“®ƒf[ƒ^
+	; Xç§»å‹•ãƒ‡ãƒ¼ã‚¿
 	lda  tblMoveENTsin,y
 	sta  <W_AR
 	lda  tblMoveENTsin+1,y
 	sta  <W_AR+1
 
-	; ‚xˆÚ“®ƒf[ƒ^
+	; ï¼¹ç§»å‹•ãƒ‡ãƒ¼ã‚¿
 	ldy  <TMP_SVY
 	lda  tblMoveENTsin,y
 	sta  <W_BR
@@ -565,7 +565,7 @@ setMoveDirData:
 	plp
 	bpl  .speedx1
 
-	; ”{‘¬
+	; å€é€Ÿ
 	asl  <W_AR
 	rol  <W_AR+1
 	asl  <W_BR
@@ -576,10 +576,10 @@ setMoveDirData:
 
 
 ;====================================================================
-;    “G‚Ì’eˆÚ“®ƒf[ƒ^
+;    æ•µã®å¼¾ç§»å‹•ãƒ‡ãƒ¼ã‚¿
 ;====================================================================
 
-; “G‚Ì’eˆÚ“®ƒe[ƒuƒ‹ 64•ûŒüˆêŽü•ªsinƒe[ƒuƒ‹
+; æ•µã®å¼¾ç§»å‹•ãƒ†ãƒ¼ãƒ–ãƒ« 64æ–¹å‘ä¸€å‘¨åˆ†sinãƒ†ãƒ¼ãƒ–ãƒ«
 
 NT_SIN MACRO
 	DW	( \1 ) * $100 / MV_ENT_BASE0
@@ -740,25 +740,25 @@ tblMoveENTsin1:
 
 
 ;------------------------------------------
-;		 2“_ŠÔ•ûŒü”»’èƒVƒXƒeƒ€
+;		 2ç‚¹é–“æ–¹å‘åˆ¤å®šã‚·ã‚¹ãƒ†ãƒ 
 ;------------------------------------------
-; “ü—Í
-; PRM_X_POS	-> Šî€“_X
-; PRM_Y_POS	-> Šî€“_Y
-; W_AR+0    -> ƒ^[ƒQƒbƒgX
-; W_AR+1    -> ƒ^[ƒQƒbƒgY
+; å…¥åŠ›
+; PRM_X_POS	-> åŸºæº–ç‚¹X
+; PRM_Y_POS	-> åŸºæº–ç‚¹Y
+; W_AR+0    -> ã‚¿ãƒ¼ã‚²ãƒƒãƒˆX
+; W_AR+1    -> ã‚¿ãƒ¼ã‚²ãƒƒãƒˆY
 ;
-; ”j‰ó
+; ç ´å£Š
 ;	W_BR,PRM_W_POS,PRM_H_POS
 ;
-; o—Í
-;	TMP_SVA 0-63 •ûŒü
+; å‡ºåŠ›
+;	TMP_SVA 0-63 æ–¹å‘
 
 getAngleENT:
 	lda  #0
 	sta  <W_BR+0
 
-	; XŽ²ƒ`ƒFƒbƒN
+	; Xè»¸ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+0
 	sec
 	sbc  <PRM_X_POS
@@ -768,7 +768,7 @@ getAngleENT:
 .gae00
 	sta  <PRM_W_POS
 
-	; YŽ²ƒ`ƒFƒbƒN
+	; Yè»¸ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+1
 	sec
 	sbc  <PRM_Y_POS
@@ -812,7 +812,7 @@ getAngleENT:
 
 
 ;------------------------------------------
-;		 •ûŒü•ÏŠ·ƒe[ƒuƒ‹
+;		 æ–¹å‘å¤‰æ›ãƒ†ãƒ¼ãƒ–ãƒ«
 ;------------------------------------------
 tblDirCnv:
 	db $00,$20,$00,$20
@@ -835,7 +835,7 @@ tblDirCnv:
 	
 
 ;------------------------------------------
-;		 •ûŒü”»’èƒe[ƒuƒ‹ 16x16
+;		 æ–¹å‘åˆ¤å®šãƒ†ãƒ¼ãƒ–ãƒ« 16x16
 ;------------------------------------------
 ;	NT_SIN 0		; 0  0
 ;	NT_SIN 25		; 1  5.625

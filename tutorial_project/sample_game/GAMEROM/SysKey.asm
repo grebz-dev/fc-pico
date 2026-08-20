@@ -6,7 +6,7 @@ SYSKEY_OLD  EQU  0
 
 
 ;*****************************************
-;�L�[�̕������擾
+;キーの方向を取得
 ;*****************************************
 KEY_DIR:
 	lda  <KEY_NEW
@@ -17,7 +17,7 @@ KEY_DIR:
 
 
 .tbl
-	db  KDIR_N	; 0000 ���͖���
+	db  KDIR_N	; 0000 入力無し
 	db  KDIR_R	; 0001 KEY_RIGHT
 	db  KDIR_L	; 0010 KEY_LEFT
 	db  KDIR_N	; 0011 KEY_RIGHT + KEY_LEFT
@@ -40,7 +40,7 @@ KEY_DIR:
 ;
 KEY_RTN:
 	;----------------------------------------------------------------------
-	; 4 ��Ǎ��ݔ�
+	; 4 回読込み版
 	;----------------------------------------------------------------------
 	lda	<KEY_NEW
 	sta	<KEY_OLD
@@ -76,49 +76,49 @@ KEY_RTN:
 
 	lda	<KEY_TRG
 	and	#(KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)
-	beq	.main			; �V���ɉ����ꂽ�L�[���Ȃ�?
+	beq	.main			; 新たに押されたキーがない?
 
 	tay
-	lda  ro_keytable, y		; ���������΍� (����E���̏��ɗD��)
-	sta	<REP_KEY		; �V���ɉ����ꂽ�L�[�����s�[�g�p�ɐݒ�
+	lda  ro_keytable, y		; 同時押し対策 (下上右左の順に優先)
+	sta	<REP_KEY		; 新たに押されたキーをリピート用に設定
 	lda	#REP_WAIT
-	sta	<REP_CNT		; ����E�F�C�g
+	sta	<REP_CNT		; 初回ウェイト
 	.if	1
 	 .if	 REP_WAIT
-	  bne	.press			; =bra  �����n�߂͉�������
+	  bne	.press			; =bra  押し始めは押下あり
 	 .else
-	  beq	.press			; =bra  �����n�߂͉�������
+	  beq	.press			; =bra  押し始めは押下あり
 	 .endif
 	.else
-	 lda	#0			; �����n�߂͉����Ȃ� (trigger �ɔC����)
+	 lda	#0			; 押し始めは押下なし (trigger に任せる)
 	 beq	.set			; =bra
 	.endif
 .main:
 	lda	<KEY_NEW
 	and	<REP_KEY
-	beq	.set			; ���s�[�g�p�L�[��������Ă��Ȃ� (a=0)?
+	beq	.set			; リピート用キーが押されていない (a=0)?
 
-	dec	<REP_CNT		; �E�F�C�g�̃J�E���g�_�E��
-	beq	.press			; ����E�F�C�g�I����?
+	dec	<REP_CNT		; ウェイトのカウントダウン
+	beq	.press			; 初回ウェイト終了か?
 	lda	<REP_CNT
 	eor	#-REP_INTERVAL
-	cmp	#1			; c = 0:��v / 1:�s��v
-	lda	#0			; �J�E���^�����l �܂��� �����L�[�Ȃ�
-	bcs	.set			; 2 ��ڈȍ~�̃E�F�C�g�I���łȂ���?
+	cmp	#1			; c = 0:一致 / 1:不一致
+	lda	#0			; カウンタ初期値 または 押下キーなし
+	bcs	.set			; 2 回目以降のウェイト終了でないか?
 
-	sta	<REP_CNT		; �J�E���^��߂��B
+	sta	<REP_CNT		; カウンタを戻す。
 .press:
 	lda	<REP_KEY
 .set:
-	sta	<REP_NEW		; ���s�[�g�ɂ�� ON/OFF ����鉟�����
+	sta	<REP_NEW		; リピートにより ON/OFF される押下状態
 	rts
 
 	;----------------------------------------------------------------------
-	; 4 ��Ǎ��ݔ� - 1 �񕪃T�u
+	; 4 回読込み版 - 1 回分サブ
 	;----------------------------------------------------------------------
-	; ������̔ł� 2 �t���[���Ԃł̔�r���s��Ȃ����߁A
-	; �������ǂ��Ȃ��Ċ����̃Q�[���o�����X�ɉe�����o�Ă��܂����B
-	; ���̂��߁A��ނȂ��g�p���Ȃ����ƂƂȂ����B
+	; こちらの版は 2 フレーム間での比較を行わないため、
+	; 反応が良くなって既存のゲームバランスに影響が出てしまった。
+	; そのため、やむなく使用しないこととなった。
 .read:
 	lda	#1			; 2
 	sta	<KEY_NEW		; 3
@@ -133,7 +133,7 @@ KEY_RTN:
 	bcc	.read_loop		; 3x
 					;-1
 	lda	<KEY_NEW		; 3
-	nop				; 2  �����p
+	nop				; 2  調整用
 	rts				; 6  (153)
 
 	;----------------------------------------------------------------------

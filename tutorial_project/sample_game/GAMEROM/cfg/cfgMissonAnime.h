@@ -1,5 +1,5 @@
 ;===============================================================================================
-;	ѓ~ѓbѓVѓ‡ѓ“ѓAѓjѓЃЏ€—ќ
+;	гѓџгѓѓг‚·гѓ§гѓіг‚ўгѓ‹гѓЎе‡¦зђ†
 ;
 ;===============================================================================================
 MissionAnimeHARA:
@@ -17,7 +17,7 @@ MissionAnimeHARA:
 
 
 ;--------------------------
-;  SP“GЌUЊ‚ѓpѓ^Ѓ[ѓ“
+;  SPж•µж”»ж’ѓгѓ‘г‚їгѓјгѓі
 ;--------------------------
 .misson_atk_sub
 	lda  MISSON_ATK_CNT
@@ -47,7 +47,7 @@ MissionAnimeHARA:
 	lsr  a
 	TBL_JUMP
 	JPTBL	.no_mission_anm		; 0
-;	JPTBL	.misson_anm_01		; 1 ЋџЊіђцЌqѓGѓtѓFѓNѓg
+;	JPTBL	.misson_anm_01		; 1 ж¬Ўе…ѓжЅњи€Єг‚Ёгѓ•г‚§г‚Їгѓ€
 
 
 .no_mission_anm
@@ -55,7 +55,7 @@ MissionAnimeHARA:
 	rts
 
 ;--------------------------
-;  ѓeЃ[ѓuѓ‹‘I‘рЊ^ѓAѓjѓЃ
+;  гѓ†гѓјгѓ–гѓ«йЃёжЉћећ‹г‚ўгѓ‹гѓЎ
 ;--------------------------
 .misson_anm_tblsel
 	lda  MISSON_ANM_CNT
@@ -63,7 +63,7 @@ MissionAnimeHARA:
 	dec  MISSON_ANM_CNT
 	rts
 .setAnmSP
-	; ЏoЊ»•p“x—ђђ”Ѓ{ЊЕ’и’l
+	; е‡єзЏѕй »еє¦д№±ж•°пј‹е›єе®љеЂ¤
 	lda  MISSON_ANM_NO
 	tay
 	and  #$03
@@ -73,7 +73,7 @@ MissionAnimeHARA:
 	adc  .tblCntAdd,x
 	sta  MISSON_ANM_CNT
 	tya
-	; ѓZѓbѓgѓeЃ[ѓuѓ‹‘I‘р
+	; г‚»гѓѓгѓ€гѓ†гѓјгѓ–гѓ«йЃёжЉћ
 	and  #%0111_1100
 	sta  <TMP_WRK0
 	jsr  GET_RND
@@ -89,7 +89,7 @@ MissionAnimeHARA:
 
 
 ;------------------------------------
-; “GѓZѓbѓg–Ѕ—Я areg ЌА•W”ФЌ†
+; ж•µг‚»гѓѓгѓ€е‘Ѕд»¤ areg еє§жЁ™з•ЄеЏ·
 ;------------------------------------
 .setEnemyNT_hara:
 	asl a
@@ -172,62 +172,62 @@ MissionAnimeHARA:
 
 
 .tblData
-	; X,Y,’e‚МЋн—Ю,’e‚М€Ъ“®ѓpѓ^Ѓ[ѓ“
-	; ‰E‚©‚зи¦ђО
+	; X,Y,ејѕгЃ®зЁ®йЎћ,ејѕгЃ®з§»е‹•гѓ‘г‚їгѓјгѓі
+	; еЏігЃ‹г‚‰йљ•зџі
 	db  250,-1,NTK_METEO,$40*1+$20		;0
 	db  250,-1,NTK_METEO,$40*1+$20-1	;1
 	db  250,-1,NTK_METEO,$40*2+$20+1	;2
 	db  250,-1,NTK_METEO,$40*0+$20-2  	;3
 
-	; Ќ¶‚©‚зи¦ђО
+	; е·¦гЃ‹г‚‰йљ•зџі
 	db  6,-1,NTK_METEO,$40*1+$00	;4
 	db  6,-1,NTK_METEO,$40*2+$00-1	;5
 	db  6,-1,NTK_METEO,$40*0+$00+1	;6
 	db  6,-1,NTK_METEO,$40*1+$40-2	;7
 
-	; Џг‚©‚зи¦ђО
+	; дёЉгЃ‹г‚‰йљ•зџі
 	db  -1,6,NTK_METEO,$40*1+$10	;8
 	db  -1,6,NTK_METEO,$40*1+$10-1	;9
 	db  -1,6,NTK_METEO,$40*2+$10+1	;10
 	db  -1,6,NTK_METEO,$40*0+$10	;11
 
-	; ‰є‚©‚зи¦ђО
+	; дё‹гЃ‹г‚‰йљ•зџі
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*1+$30		;12
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*1+$30-1	;13
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*2+$30+1	;14
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*0+$30-2	;15
 
-	; Џг‚©‚зѓUѓR Ћг‚ўѓUѓR‚М‚Э
+	; дёЉгЃ‹г‚‰г‚¶г‚і еј±гЃ„г‚¶г‚ігЃ®гЃї
 	db  -1, 6,NTK_SPZK0,$40*2+$10+0	;16
 	db  -1, 6,NTK_SPZK0,$40*3+$10+0	;17
 	db  -1, 6,NTK_SPZK0,$40*1+$10-0	;18
 	db  -1, 6,NTK_SPZK0,$40*2+$10+0	;19
 
-	; Џг‚©‚зѓUѓR Ќd‚ўѓUѓRѓ~ѓbѓNѓX
+	; дёЉгЃ‹г‚‰г‚¶г‚і зЎ¬гЃ„г‚¶г‚ігѓџгѓѓг‚Їг‚№
 	db  -1, 6,NTK_SPZK0,$40*3+$10+0	;20
 	db  -2, 6,NTK_SPZK0,$40*2+$10+0	;21
 	db  -1, 6,NTK_SPZK0,$40*3+$10-0	;22
 	db  -3, 6,NTK_SPZK1,$40*1+$10+0	;23
 
-	; ‘O‚©‚зѓUѓR ѓuѓ‰ѓbѓNѓ^ѓCѓKЃ[‘а
+	; е‰ЌгЃ‹г‚‰г‚¶г‚і гѓ–гѓ©гѓѓг‚Їг‚їг‚¤г‚¬гѓјйљЉ
 	db  -1, 6,NTK_SPZK2,$40*3+$10+0	;24
 	db  -1, 6,NTK_SPZK2,$40*3+$10+0	;25
 	db  -1, 6,NTK_SPZK2,$40*3+$10-0	;26
 	db  -1, 6,NTK_SPZK2,$40*3+$10+0	;27
 
-	; ѓЏЃ[ѓvѓCѓ“ ЋгѓUѓR
+	; гѓЇгѓјгѓ—г‚¤гѓі еј±г‚¶г‚і
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;28
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;29
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;30
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;31
 
-	; ѓЏЃ[ѓvѓCѓ“ ЋгѓUѓR
+	; гѓЇгѓјгѓ—г‚¤гѓі еј±г‚¶г‚і
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;32
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;33
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;34
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;35
 
-	; ѓЏЃ[ѓvѓCѓ“ и¦ђО
+	; гѓЇгѓјгѓ—г‚¤гѓі йљ•зџі
 	db  -1,-1,NTK_WARP,NTK_METEO		;36
 	db  -1,-1,NTK_WARP,NTK_METEO		;37
 	db  -1,-1,NTK_WARP,NTK_METEO		;38
@@ -236,21 +236,21 @@ MissionAnimeHARA:
 
 
 ;------------------------------
-;	SP“G‚©‚з’e”­ЋЛ
+;	SPж•µгЃ‹г‚‰ејѕз™єе°„
 ;
-;  Areg = ЌUЊ‚ѓpѓ^Ѓ[ѓ“
+;  Areg = ж”»ж’ѓгѓ‘г‚їгѓјгѓі
 ;------------------------------
 shotSpEnemy:
 	TBL_JUMP
-	JPTBL	shotSp00		; 0		ЌUЊ‚‚µ‚И‚ў
-	JPTBL	shotSp01		; 1		‘S“G‚ЄЋ©‹@•ыЊь‚Й1”­Њ‚‚В
-	JPTBL	shotSp02		; 2		‘S“G‚ЄѓzЃ[ѓ~ѓ“ѓO’e‚р1”­Њ‚‚В
+	JPTBL	shotSp00		; 0		ж”»ж’ѓгЃ—гЃЄгЃ„
+	JPTBL	shotSp01		; 1		е…Ёж•µгЃЊи‡Єж©џж–№еђ‘гЃ«1з™єж’ѓгЃ¤
+	JPTBL	shotSp02		; 2		е…Ёж•µгЃЊгѓ›гѓјгѓџгѓіг‚°ејѕг‚’1з™єж’ѓгЃ¤
 
 shotSp01
 	jsr  shotSpTargetIDX
 	bcc  .end
 
-	; ’e”­ЋЛ
+	; ејѕз™єе°„
 	lda  ENEMY_NT_X+1,x
 	ldy  ENEMY_NT_Y+1,x
 	jsr  setEnemyNT2
@@ -265,7 +265,7 @@ shotSp02
 	jsr  shotSpTargetIDX
 	bcc  .end
 
-	; ’e”­ЋЛ
+	; ејѕз™єе°„
 	lda  ENEMY_NT_X+1,x
 	ldy  ENEMY_NT_Y+1,x
 	jsr  setEnemyNT2
@@ -288,7 +288,7 @@ shotSp02
 	rts
 	
 ;----------------------------------
-;  ”­ЋЛ‚·‚йSP“G‚МIDX‚рЋж“ѕ
+;  з™єе°„гЃ™г‚‹SPж•µгЃ®IDXг‚’еЏ–еѕ—
 ;----------------------------------
 shotSpTargetIDX:
 	lda  MISSON_ATK_IDX

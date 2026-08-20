@@ -8,7 +8,7 @@
 //#define NDEBUG	1
 
 
-// デバッグトレース番号
+// 繝�繝舌ャ繧ｰ繝医Ξ繝ｼ繧ｹ逡ｪ蜿ｷ
 enum {
 	DTR_ROOT,
 	DTR_MAIN,

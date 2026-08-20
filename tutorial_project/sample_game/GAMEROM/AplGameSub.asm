@@ -3,48 +3,48 @@
 
 
 ;================
-;=ƒXƒRƒA‰ÁŽZ=====
+;=ã‚¹ã‚³ã‚¢åŠ ç®—=====
 ;================
 
 SCR_ADD:
-	phxy	;xy push ‹^Ž—–½—ß
+	phxy	;xy push ç–‘ä¼¼å‘½ä»¤
 	LDX	#GM_SCORE & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ‹^Ž—–½—ß
+	plxy	;xy pop ç–‘ä¼¼å‘½ä»¤
 	RTS
 
 
 SCR_ADD_10:
-	phxy	;xy push ‹^Ž—–½—ß
+	phxy	;xy push ç–‘ä¼¼å‘½ä»¤
 	TAX
 	LDA	TBL_BCDx10,X
 	LDX	#GM_SCORE & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ‹^Ž—–½—ß
+	plxy	;xy pop ç–‘ä¼¼å‘½ä»¤
 	RTS
 
 SCR_ADD_100:
-	phxy	;xy push ‹^Ž—–½—ß
+	phxy	;xy push ç–‘ä¼¼å‘½ä»¤
 	LDX	#(GM_SCORE+1) & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ‹^Ž—–½—ß
+	plxy	;xy pop ç–‘ä¼¼å‘½ä»¤
 	RTS
 
 SCR_ADD_1000:
-	phxy	;xy push ‹^Ž—–½—ß
+	phxy	;xy push ç–‘ä¼¼å‘½ä»¤
 	TAX
 	LDA	TBL_BCDx10,X
 	LDX	#(GM_SCORE+1) & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ‹^Ž—–½—ß
+	plxy	;xy pop ç–‘ä¼¼å‘½ä»¤
 	RTS
 
 
@@ -53,12 +53,12 @@ TBL_BCDx10:
 
 
 ;----------------------------
-; ƒtƒH[ƒ[ƒVƒ‡ƒ“•ÏX
+; ãƒ•ã‚©ãƒ¼ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³å¤‰æ›´
 ;----------------------------
 changeForm:
 	lda  PLY_FORM
 	and  #$03
-	bne  .end		; ƒtƒH[ƒ[ƒVƒ‡ƒ“ƒ`ƒFƒ“ƒW’†
+	bne  .end		; ãƒ•ã‚©ãƒ¼ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒã‚§ãƒ³ã‚¸ä¸­
 	inc  PLY_FORM
 	lda  #SE_PLY_FORM
 	jmp  PLAY_SE
@@ -66,7 +66,7 @@ changeForm:
 	rts
 
 ;----------------------------
-; ƒz[ƒ~ƒ“ƒO’e”­ŽË
+; ãƒ›ãƒ¼ãƒŸãƒ³ã‚°å¼¾ç™ºå°„
 ;----------------------------
 shotHorming:
 	sta  <TMP_SVA	; X pos
@@ -101,21 +101,21 @@ shotHorming:
 	sta  PSHOT_A_WY,x
 	lda  POS_PLY_Y
 	sta  PSHOT_A_Y,x
-	sta  <PRM_Y_POS		; Šî€“_Y
+	sta  <PRM_Y_POS		; åŸºæº–ç‚¹Y
 
 	lda  POS_PLY_X
 	sta PSHOT_A_X,x
-	sta <PRM_X_POS		; Šî€“_X
+	sta <PRM_X_POS		; åŸºæº–ç‚¹X
 
-;	lda  #$F0		; ^ã
-;	lda  #$00+$30	; ^ã
+;	lda  #$F0		; çœŸä¸Š
+;	lda  #$00+$30	; çœŸä¸Š
 ;	sta PSHOT_DIR,x
 
 	lda  ENEMY_NT_X+1,y
-	sta  <W_AR+0 		; ƒ^[ƒQƒbƒgX
+	sta  <W_AR+0 		; ã‚¿ãƒ¼ã‚²ãƒƒãƒˆX
 
 	lda  ENEMY_NT_Y+1,y
-	sta  <W_AR+1 		; ƒ^[ƒQƒbƒgY
+	sta  <W_AR+1 		; ã‚¿ãƒ¼ã‚²ãƒƒãƒˆY
 
 	jsr  getAngleENT
 	lda  <TMP_SVA
@@ -129,7 +129,7 @@ shotHorming:
 
 
 ;----------------------------
-; ƒVƒ‡ƒbƒgˆ—
+; ã‚·ãƒ§ãƒƒãƒˆå‡¦ç†
 ;----------------------------
 
 PLY_SHOT_A:
@@ -149,7 +149,7 @@ PLY_SHOT_A:
 
 
 ;----------------------------
-; ƒvƒŒ[ƒ„[ˆÚ“®ˆ—
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ç§»å‹•å‡¦ç†
 ;----------------------------
 PLY_MOVE:
 
@@ -159,27 +159,27 @@ PLY_MOVE1:
 
 
 ;------------------------------------
-; ŽÀs’†‚ÌƒAƒjƒ‚É‘Î‰ž‚µ‚½ˆ—‚ðŽÀs
+; å®Ÿè¡Œä¸­ã®ã‚¢ãƒ‹ãƒ¡ã«å¯¾å¿œã—ãŸå‡¦ç†ã‚’å®Ÿè¡Œ
 ;------------------------------------
 PLY_ANM_PROG:
 	lda  PLY_ANM_NO
 	TBL_JUMP
-	JPTBL  .WAIT		; 0 ‘Ò‹@
-	JPTBL  .CHARGE		; 1 ƒ`ƒƒ[ƒW
-	JPTBL  .SHOTA		; 2 ƒVƒ‡ƒbƒgA
-	JPTBL  .SHOTB		; 3 ƒVƒ‡ƒbƒgB
-	JPTBL  .DEAD		; 4 Ž€–SƒAƒjƒ
+	JPTBL  .WAIT		; 0 å¾…æ©Ÿ
+	JPTBL  .CHARGE		; 1 ãƒãƒ£ãƒ¼ã‚¸
+	JPTBL  .SHOTA		; 2 ã‚·ãƒ§ãƒƒãƒˆA
+	JPTBL  .SHOTB		; 3 ã‚·ãƒ§ãƒƒãƒˆB
+	JPTBL  .DEAD		; 4 æ­»äº¡ã‚¢ãƒ‹ãƒ¡
 	
 
-.WAIT		; 0 ‘Ò‹@ -----------------------------
+.WAIT		; 0 å¾…æ©Ÿ -----------------------------
 ;	rts
 
 
-.CHARGE		; 1 ƒ`ƒƒ[ƒW -----------------------------
-	; ƒ`ƒƒ[ƒWƒAƒbƒv
+.CHARGE		; 1 ãƒãƒ£ãƒ¼ã‚¸ -----------------------------
+	; ãƒãƒ£ãƒ¼ã‚¸ã‚¢ãƒƒãƒ—
 ;	rts
 
-.SHOTA		; 2 ƒVƒ‡ƒbƒgA -----------------------------
+.SHOTA		; 2 ã‚·ãƒ§ãƒƒãƒˆA -----------------------------
 	lda  <FLM_TIMER
 	and  #$07
 	bne  .end
@@ -188,16 +188,16 @@ PLY_ANM_PROG:
 	lda  POS_PLY_X
 	jmp  setPlyShotA
 
-.SHOTB		; 3 ƒVƒ‡ƒbƒgB -----------------------------
+.SHOTB		; 3 ã‚·ãƒ§ãƒƒãƒˆB -----------------------------
 	rts
 
 
-.DEAD		; 4 Ž€–SƒAƒjƒ -----------------------------
+.DEAD		; 4 æ­»äº¡ã‚¢ãƒ‹ãƒ¡ -----------------------------
 .end
 	rts
 
 ;------------------------
-; ƒAƒjƒƒZƒbƒg
+; ã‚¢ãƒ‹ãƒ¡ã‚»ãƒƒãƒˆ
 ;------------------------
 SET_PLY_ANM:
 	cmp  PLY_ANM_NO
@@ -211,9 +211,9 @@ SET_PLY_ANM:
 
 
 ;-----------------------------------
-; ”š”­‰‰oƒZƒbƒg
-; a reg = xÀ•W
-; y reg = yÀ•W
+; çˆ†ç™ºæ¼”å‡ºã‚»ãƒƒãƒˆ
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setBakuEfc:
 	cmp  #8
@@ -243,9 +243,9 @@ setBakuEfc:
 	rts
 
 ;-----------------------------------
-; ƒqƒbƒg‰‰oƒZƒbƒgiƒ_ƒ[ƒW–³‚µ‚Ì‰‰oj
-; a reg = xÀ•W
-; y reg = yÀ•W
+; ãƒ’ãƒƒãƒˆæ¼”å‡ºã‚»ãƒƒãƒˆï¼ˆãƒ€ãƒ¡ãƒ¼ã‚¸ç„¡ã—ã®æ¼”å‡ºï¼‰
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setHitEfc:
 	jsr  setBakuEfc
@@ -254,9 +254,9 @@ setHitEfc:
 	rts
 
 ;-----------------------------------
-; ƒqƒbƒg‰‰oƒZƒbƒgiƒ_ƒ[ƒW‰‰oj
-; a reg = xÀ•W
-; y reg = yÀ•W
+; ãƒ’ãƒƒãƒˆæ¼”å‡ºã‚»ãƒƒãƒˆï¼ˆãƒ€ãƒ¡ãƒ¼ã‚¸æ¼”å‡ºï¼‰
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setDameEfc:
 	jsr  setBakuEfc
@@ -266,7 +266,7 @@ setDameEfc:
 
  .if 0
 ;-----------------------------------
-; “Gƒm[ƒ}ƒ‹’e‘SƒNƒŠƒA[
+; æ•µãƒŽãƒ¼ãƒžãƒ«å¼¾å…¨ã‚¯ãƒªã‚¢ãƒ¼
 ;-----------------------------------
 clearAllEnemyNT:
 	ldy #0
@@ -285,9 +285,9 @@ clearAllEnemyNT:
 
 
 ;-----------------------------------
-; SP“GƒZƒbƒg
-; a reg = xÀ•W
-; y reg = yÀ•W
+; SPæ•µã‚»ãƒƒãƒˆ
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setEnemyNT3:
 	pha		; X pos
@@ -312,9 +312,9 @@ setEnemyNT3:
 	rts
 
 ;-----------------------------------
-; “Gƒm[ƒ}ƒ‹’eƒZƒbƒg
-; a reg = xÀ•W
-; y reg = yÀ•W
+; æ•µãƒŽãƒ¼ãƒžãƒ«å¼¾ã‚»ãƒƒãƒˆ
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setEnemyNT2:
 	pha		; X pos
@@ -334,7 +334,7 @@ setEnemyNT2:
 	cpy  #ENEMY_NT_SIZE*ENEMY_NT_SUU
 	bne .loop
 
-	; ‹ó‚«ƒ[ƒN‚È‚µ
+	; ç©ºããƒ¯ãƒ¼ã‚¯ãªã—
 	inc  <ENEMY_NT_FLFG
 .end
 	pla
@@ -344,9 +344,9 @@ setEnemyNT2:
 
 
 ;-----------------------------------
-; “Gƒm[ƒ}ƒ‹’eƒZƒbƒg
-; a reg = xÀ•W
-; y reg = yÀ•W
+; æ•µãƒŽãƒ¼ãƒžãƒ«å¼¾ã‚»ãƒƒãƒˆ
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setEnemyNT:
 	pha		; X pos
@@ -366,7 +366,7 @@ setEnemyNT:
 	cpy  #ENEMY_NT_SIZE*ENEMY_NT_SUU
 	bne .loop
 
-	; ‹ó‚«ƒ[ƒN‚È‚µ
+	; ç©ºããƒ¯ãƒ¼ã‚¯ãªã—
 	inc  <ENEMY_NT_FLFG
 .end
 	pla
@@ -392,9 +392,9 @@ setEnemyNT_SET
 	rts
 
 ;-----------------------------------
-; Ž©‹@ƒm[ƒ}ƒ‹’eƒZƒbƒg
-; a reg = xÀ•W
-; y reg = yÀ•W
+; è‡ªæ©ŸãƒŽãƒ¼ãƒžãƒ«å¼¾ã‚»ãƒƒãƒˆ
+; a reg = xåº§æ¨™
+; y reg = yåº§æ¨™
 ;-----------------------------------
 setPlyShotA:
 	sta  <TMP_SVA	; X pos
@@ -408,7 +408,7 @@ setPlyShotA:
 	inx
 	dey
 	bne  .loop
-	; ‹ó‚«ƒ[ƒN‚È‚µ
+	; ç©ºããƒ¯ãƒ¼ã‚¯ãªã—
 	rts
 
 .set
@@ -417,18 +417,18 @@ setPlyShotA:
 	sta PSHOT_A_WY,x
 	lda <TMP_SVY
 	sta PSHOT_A_Y,x
-	sta  <PRM_Y_POS		; Šî€“_Y
+	sta  <PRM_Y_POS		; åŸºæº–ç‚¹Y
 
 	lda <TMP_SVA
 	sta PSHOT_A_X,x
-	sta <PRM_X_POS		; Šî€“_X
+	sta <PRM_X_POS		; åŸºæº–ç‚¹X
 
-;	lda  #$F0		; ^ã
-	lda  #$80+$30	; ^ã
+;	lda  #$F0		; çœŸä¸Š
+	lda  #$80+$30	; çœŸä¸Š
 	sta PSHOT_DIR,x
 
  .if 0
-	; ƒ^[ƒQƒbƒgƒT[ƒ`ƒ`ƒFƒbƒN
+	; ã‚¿ãƒ¼ã‚²ãƒƒãƒˆã‚µãƒ¼ãƒãƒã‚§ãƒƒã‚¯
 	txa
 	and  #$7*2
 	asl  a
@@ -442,10 +442,10 @@ setPlyShotA:
 
 .set2
 	lda  ENEMY_NT_X+1,y
-	sta  <W_AR+0 		; ƒ^[ƒQƒbƒgX
+	sta  <W_AR+0 		; ã‚¿ãƒ¼ã‚²ãƒƒãƒˆX
 
 	lda  ENEMY_NT_Y+1,y
-	sta  <W_AR+1 		; ƒ^[ƒQƒbƒgY
+	sta  <W_AR+1 		; ã‚¿ãƒ¼ã‚²ãƒƒãƒˆY
 
 	jsr  getAngleENT
 	lda  <TMP_SVA
@@ -454,7 +454,7 @@ setPlyShotA:
  .endif
 
 .skip
-	; –Â‚ç‚µ‰ß‚¬‚È‚Ì‚Å­‚µŠÔˆø‚­
+	; é³´ã‚‰ã—éŽãŽãªã®ã§å°‘ã—é–“å¼•ã
 	lda  <FLM_TIMER
 	and  #$07
 	bne  .end
@@ -466,7 +466,7 @@ setPlyShotA:
 
 
 ;----------------------------------
-; ƒvƒŒ[ƒ„[Ž€–SƒZƒbƒg
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼æ­»äº¡ã‚»ãƒƒãƒˆ
 ;----------------------------------
 setPlayerDead:
 	ldy  <DEMO_FG
@@ -489,7 +489,7 @@ setPlayerDead:
 
 
 	sta  PLY_MUTEKI_TM
-	; Ž€–SƒAƒjƒƒZƒbƒg
+	; æ­»äº¡ã‚¢ãƒ‹ãƒ¡ã‚»ãƒƒãƒˆ
 	lda  #PLY_AN_DEAD
 	sta  PLY_ANM_NO
 
@@ -505,7 +505,7 @@ setPlayerDead:
 	jmp  PLAY_SE
 
 ;----------------------------------
-; ƒvƒŒ[ƒ„[Ž€–SƒGƒtƒFƒNƒgƒZƒbƒg
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼æ­»äº¡ã‚¨ãƒ•ã‚§ã‚¯ãƒˆã‚»ãƒƒãƒˆ
 ;----------------------------------
 setPlayerDeadEffect:
 	phxy

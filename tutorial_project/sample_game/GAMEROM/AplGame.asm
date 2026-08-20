@@ -1,7 +1,7 @@
 
 
 ;=====================================
-;ƒvƒŒƒC‰æ–Ê
+;ãƒ—ãƒ¬ã‚¤ç”»é¢
 ;=====================================
 APL_GAME:
 	lda  #0
@@ -19,7 +19,7 @@ APL_GAME:
 	cmp  #ST_MAIN
 	beq  .skip
 	lda  <FLG_2000
-	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 .skip
 	rts
 
@@ -29,8 +29,8 @@ PLY_STG_MAIN:
 	TBL_JUMP
 	JPTBL	PLY_STG_0	; 0
 	JPTBL	PLY_STG_1	; 1
-	JPTBL	PLY_STG_2	; 2	ƒI[ƒo[‰‰o
-	JPTBL	PLY_STG_3	; 3	ƒNƒŠƒA[‰‰o
+	JPTBL	PLY_STG_2	; 2	ã‚ªãƒ¼ãƒãƒ¼æ¼”å‡º
+	JPTBL	PLY_STG_3	; 3	ã‚¯ãƒªã‚¢ãƒ¼æ¼”å‡º
 	JPTBL	PLY_STG_4	; 4	PAUSE
 
 ;****** INIT ************
@@ -51,7 +51,7 @@ PLY_STG_0:
 
 
 
-	jsr  PLY_LIFE_SET		; ƒ‰ƒCƒt‰Šú‰»
+	jsr  PLY_LIFE_SET		; ãƒ©ã‚¤ãƒ•åˆæœŸåŒ–
 
 	jsr  initGameDisp
 
@@ -64,7 +64,7 @@ PLY_STG_0:
 	lda  #PLY_AN_WAIT
 	jsr  SET_PLY_ANM
 
-    SET_NMI_CALL PLY_DRAW_S		; NMI•`‰æˆ—“o˜^
+    SET_NMI_CALL PLY_DRAW_S		; NMIæç”»å‡¦ç†ç™»éŒ²
 	
 	inc  <STG_COD_SUB
 	DISP_ON
@@ -97,7 +97,7 @@ PLY_STG_1:
 	cmp #$FF
 	bne .plydm_11
 
-	; ƒNƒŠƒA[‰æ–Ê‚Ö
+	; ã‚¯ãƒªã‚¢ãƒ¼ç”»é¢ã¸
 ;	lda  #BGM_GAME_CLEAR
 ;	jsr  PLAY_SE
 	jsr  STOP_BGM
@@ -144,7 +144,7 @@ PLY_STG_3:
 	jsr  PLY_MOVE
 	RTS
 .ps03
-	; Ÿ‚ÌƒXƒe[ƒW‚Ö
+	; æ¬¡ã®ã‚¹ãƒ†ãƒ¼ã‚¸ã¸
 	lda  #ST_CLEAR
 	jmp  exitAplGame
 
@@ -162,8 +162,8 @@ PLY_STG_4:
 
 
 ;=====================================
-;ƒQ[ƒ€I—¹ˆ—iƒ‰ƒXƒ^[ƒVƒXƒeƒ€‚Ì‰e‹¿‚Å“Á’è‚Ìè‡‚ğ“¥‚Ü‚È‚¢‚Æ‰æ–Ê‰»‚¯‚éj
-;  Areg -> ƒWƒƒƒ“ƒvæSTEP”Ô†
+;ã‚²ãƒ¼ãƒ çµ‚äº†å‡¦ç†ï¼ˆãƒ©ã‚¹ã‚¿ãƒ¼ã‚·ã‚¹ãƒ†ãƒ ã®å½±éŸ¿ã§ç‰¹å®šã®æ‰‹é †ã‚’è¸ã¾ãªã„ã¨ç”»é¢åŒ–ã‘ã‚‹ï¼‰
+;  Areg -> ã‚¸ãƒ£ãƒ³ãƒ—å…ˆSTEPç•ªå·
 ;=====================================
 exitAplGame:
 	pha
@@ -188,7 +188,7 @@ exitAplGameSub:
 
 	jsr WAIT_VSYNC
 
-	inc	<NMI_FLG	;ƒnƒ“ƒO–h~
+	inc	<NMI_FLG	;ãƒãƒ³ã‚°é˜²æ­¢
 
 
 	jmp  WAIT_VSYNC
@@ -196,7 +196,7 @@ exitAplGameSub:
 
 
 ;=================================
-; ƒƒCƒ“•`‰æˆ—
+; ãƒ¡ã‚¤ãƒ³æç”»å‡¦ç†
 ;=================================
 PLY_DRAW_S:
 	lda  PALFADE_VAL
@@ -218,7 +218,7 @@ PLY_DRAW_S:
 
 .pa_90
 
-	; ƒpƒŒƒbƒgƒAƒjƒ[ƒVƒ‡ƒ“
+	; ãƒ‘ãƒ¬ãƒƒãƒˆã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
 ;	ldx  #$00
 	ldx  #$0D
 	lda  <SYS_TIMER
@@ -239,7 +239,7 @@ PLY_DRAW_S:
 
 .skip_pal_trans
  
-	;=ƒXƒRƒA•\¦=====
+	;=ã‚¹ã‚³ã‚¢è¡¨ç¤º=====
 	LDA     SCR_CHG_SW
 	BEQ     .pds00
 	LDA     #0

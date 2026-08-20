@@ -1,6 +1,6 @@
 ;=====================================
 ;
-;	G‹›§ŒäƒVƒXƒeƒ€
+;	é›‘é­šåˆ¶å¾¡ã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;
 ;=====================================
@@ -8,9 +8,9 @@
 ;	.INCLUDE	".\CFG\cfgEnemy.h"
 
 ;----------------------------
-; “G‚Ì’e‚ÌƒRƒ“ƒtƒBƒOƒf[ƒ^æ“¾
-; Areg = “G‚Ì’e‚Ìí—Ş”Ô† (0‚ÅƒR[ƒ‹‹Ö~j
-; ret-> TMP_WRK0,TMP_WRK1,TMP_WRK2,TMP_WRK3 ‚ÉƒZƒbƒg
+; æ•µã®å¼¾ã®ã‚³ãƒ³ãƒ•ã‚£ã‚°ãƒ‡ãƒ¼ã‚¿å–å¾—
+; Areg = æ•µã®å¼¾ã®ç¨®é¡ç•ªå· (0ã§ã‚³ãƒ¼ãƒ«ç¦æ­¢ï¼‰
+; ret-> TMP_WRK0,TMP_WRK1,TMP_WRK2,TMP_WRK3 ã«ã‚»ãƒƒãƒˆ
 ;----------------------------
 getEnemyNTcfg2:
 	cmp  <CACHE_GET_NENMY_NT_FG
@@ -35,7 +35,7 @@ getEnemyNTcfg_end:
 
 
 ;-------------------
-; ©‹@’Êí’e‚ ‚½‚è
+; è‡ªæ©Ÿé€šå¸¸å¼¾ã‚ãŸã‚Š
 ;-------------------
 hit_ShotA:
 	lda  #12
@@ -52,8 +52,8 @@ hit_ShotA:
 	cpy  #0
 	beq  .end
 	lda  #0
-	sta  POS_PLY_Y,Y	; ’e‚ğÁ‚·
-	lda  #PS_NOMAL_POW		; ’Êí’e‚Ìƒ_ƒ[ƒW
+	sta  POS_PLY_Y,Y	; å¼¾ã‚’æ¶ˆã™
+	lda  #PS_NOMAL_POW		; é€šå¸¸å¼¾ã®ãƒ€ãƒ¡ãƒ¼ã‚¸
 .end
 	rts
 
@@ -65,7 +65,7 @@ hit_ShotA2:
 	lda  PLY_MUTEKI_TM
 	bne  .next_nt
 
-	; ƒvƒŒ[ƒ„[“–‚½‚è”»’èiƒTƒCƒY¬‚³‚ßj
+	; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å½“ãŸã‚Šåˆ¤å®šï¼ˆã‚µã‚¤ã‚ºå°ã•ã‚ï¼‰
 	lda  <PRM_Y_POS
 	cmp  #SP_CLR_Y
 	beq  .next_nt
@@ -84,12 +84,12 @@ hit_ShotA2:
     cmp  #PLY_HIT_SIZ_W
 	bcs .next_nt
 
-	; “–‚½‚è
+	; å½“ãŸã‚Š
 	sec
 	rts
 
 
-	; ’Êí’e‚Ì“–‚½‚è”»’è
+	; é€šå¸¸å¼¾ã®å½“ãŸã‚Šåˆ¤å®š
 .loop_nt
 	lda  POS_PLY_Y,y
 	beq  .next_nt
@@ -109,7 +109,7 @@ hit_ShotA2:
     cmp  <PRM_H_POS
 	bcs	.next_nt
 
-	; “–‚½‚è
+	; å½“ãŸã‚Š
 	sec
 	rts
 

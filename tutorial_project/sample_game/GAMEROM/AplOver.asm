@@ -3,14 +3,14 @@
 
 
 ;============================================
-; ƒQ[ƒ€ƒI[ƒo[
+; ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼
 ;============================================
 OVER_STG:
 ;.ovrstg000:
 	jsr .tbljump_sub
 
-	; ƒXƒvƒ‰ƒCƒg§Œä
-	ldy #0*4	; ƒXƒvƒ‰ƒCƒgŠJŽnˆÊ’u
+	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆåˆ¶å¾¡
+	ldy #0*4	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆé–‹å§‹ä½ç½®
 
 	LDA	<PUSH_CTR
 	AND	#$10
@@ -46,7 +46,7 @@ OVER_STG:
 	
 	
 	
-	; BG—¬¯•\Ž¦
+	; BGæµæ˜Ÿè¡¨ç¤º
 	lda  <FLM_TIMER
 ;	asl  a
 ;	eor  #$FF
@@ -55,7 +55,7 @@ OVER_STG:
 	jsr  createBgStarObj2
 	
 ;	jsr  SPT_BNK2_ANIME
-	; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ð”ñ•\Ž¦‚É‚·‚é
+	; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’éžè¡¨ç¤ºã«ã™ã‚‹
 	jmp  clearObj
 ;	rts
 
@@ -74,7 +74,7 @@ OVER_STG:
 	JPTBL	overstg20	; 2
 	JPTBL	overstg30	; 3
 
-;---- ‰Šú‰» ------------------------
+;---- åˆæœŸåŒ– ------------------------
 overstg00:
 
 	jsr STOP_SE
@@ -106,11 +106,11 @@ overstg00:
 
 	jsr  CHK_HISCORE
 
-    SET_NMI_CALL OVER_DRAW		; NMI•`‰æˆ—“o˜^
+    SET_NMI_CALL OVER_DRAW		; NMIæç”»å‡¦ç†ç™»éŒ²
 	inc  <STG_COD_SUB
 
 	lda  <FLG_2000
-	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 	DISP_ON
 	jsr SET_FADE_IN_B
 
@@ -146,7 +146,7 @@ overstg20:
 
 .TIT_STG_12_00
 	jsr  SLOW_DEC_GM_WAIT
-    beq  .overstg20_01		; ŽžŠÔØ‚ê
+    beq  .overstg20_01		; æ™‚é–“åˆ‡ã‚Œ
 
 	CHK_BIT	<KEY_TRG, #KEY_A|KEY_B|KEY_RUN
     bne  .overstg20_00
@@ -168,7 +168,7 @@ overstg20:
 	rts
 
 	;----------------------------------
-	; ƒRƒ“ƒeƒBƒjƒ…[NO
+	; ã‚³ãƒ³ãƒ†ã‚£ãƒ‹ãƒ¥ãƒ¼NO
 	;----------------------------------
 .continue_no:
 	jsr SET_FADE_OUT_B
@@ -194,7 +194,7 @@ overstg30:
 	rts
 .overstg30_job
 
-	; ƒRƒ“ƒeƒBƒjƒ…[
+	; ã‚³ãƒ³ãƒ†ã‚£ãƒ‹ãƒ¥ãƒ¼
 	jsr SET_FADE_OUT_B
 	jsr WAIT_FADE_END
 
@@ -226,13 +226,13 @@ overstg30:
 
 
 ;=================================
-; ƒQ[ƒ€ƒI[ƒo[
+; ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼
 ;=================================
 
 
 
 ;=================================
-;VBLANK •`‰æ
+;VBLANK æç”»
 ;=================================
 OVER_DRAW:
 	LDA   <STG_COD_SUB

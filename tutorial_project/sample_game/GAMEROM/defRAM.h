@@ -2,46 +2,46 @@
 
 
 ;----------------
-; ƒTƒEƒ“ƒhƒhƒ‰ƒCƒo[‚Ìƒ[ƒN
+; ã‚µã‚¦ãƒ³ãƒ‰ãƒ‰ãƒ©ã‚¤ãƒãƒ¼ã®ãƒ¯ãƒ¼ã‚¯
 ;----------------
 SND_WK0		EQU	$00	; size $32
 
 ;========================================
-;  NSFÄ¶—p
+;  NSFå†ç”Ÿç”¨
 ;========================================
-__ptr		EQU	$05	; ”Ä—pƒ|ƒCƒ“ƒ^ 2byte
+__ptr		EQU	$05	; æ±Žç”¨ãƒã‚¤ãƒ³ã‚¿ 2byte
 __tmp		EQU	$07
 
 __flag		EQU $0A
  .if 0
 	lda	#nsd_flag::BGM + nsd_flag::SE
-	sta	__flag		;BGM, SEˆ—‚ð‹ÖŽ~iRAM–¢‰Šú‰»‘Îôj
+	sta	__flag		;BGM, SEå‡¦ç†ã‚’ç¦æ­¢ï¼ˆRAMæœªåˆæœŸåŒ–å¯¾ç­–ï¼‰
 
 	__flag
-		D... .... : Ä¶§Œä–³Œø
-		...J .... : ‘‘—‚è’†
-		.... PP.. : Œø‰Ê‰¹‚Ì—Dæ“x
-		.... ..S. : ‚r‚dÄ¶’†
-		.... ...B : ‚a‚f‚l‚ªÄ¶’† 
+		D... .... : å†ç”Ÿåˆ¶å¾¡ç„¡åŠ¹
+		...J .... : æ—©é€ã‚Šä¸­
+		.... PP.. : åŠ¹æžœéŸ³ã®å„ªå…ˆåº¦
+		.... ..S. : ï¼³ï¼¥å†ç”Ÿä¸­
+		.... ...B : ï¼¢ï¼§ï¼­ãŒå†ç”Ÿä¸­ 
  .endif
 
 ;========================================
-W_AR		EQU	$40	; 16 bit ŒvŽZ—p  2 bytes
-W_BR		EQU	$42	; 16 bit ŒvŽZ—p  2 bytes
+W_AR		EQU	$40	; 16 bit è¨ˆç®—ç”¨  2 bytes
+W_BR		EQU	$42	; 16 bit è¨ˆç®—ç”¨  2 bytes
 
-TMP_SVA		EQU	$44	; ”Ä—p A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVX		EQU	$45	; ”Ä—p X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVY		EQU	$46	; ”Ä—p Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_LOOP_CNT	EQU	$47	; ”Ä—pƒ‹[ƒvƒJƒEƒ“ƒ^
+TMP_SVA		EQU	$44	; æ±Žç”¨ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVX		EQU	$45	; æ±Žç”¨ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVY		EQU	$46	; æ±Žç”¨ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_LOOP_CNT	EQU	$47	; æ±Žç”¨ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿
 
-TMP_SV0		EQU	$48	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV1		EQU	$49	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV2		EQU	$4A	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV3		EQU	$4B	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV4		EQU	$4C	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV5		EQU	$4D	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV6		EQU	$4E	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV7		EQU	$4F	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
+TMP_SV0		EQU	$48	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV1		EQU	$49	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV2		EQU	$4A	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV3		EQU	$4B	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV4		EQU	$4C	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV5		EQU	$4D	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV6		EQU	$4E	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV7		EQU	$4F	; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
 
 
 TMP_WRK0	EQU	$50
@@ -49,22 +49,22 @@ TMP_WRK1	EQU	$51
 TMP_WRK2	EQU	$52
 TMP_WRK3	EQU	$53
 
-TMP_DISP2	EQU	TMP_WRK3	; 1 byte  •\Ž¦”Ä—p
+TMP_DISP2	EQU	TMP_WRK3	; 1 byte  è¡¨ç¤ºæ±Žç”¨
 
 
-TMP_COUNT	EQU $54		; 2ƒoƒCƒg
+TMP_COUNT	EQU $54		; 2ãƒã‚¤ãƒˆ
 
 
-SRC_ADR		EQU	$56		; ”Ä—pƒ\[ƒXƒAƒhƒŒƒX  2 bytes
-DST_ADR		EQU	$58		; ”Ä—pƒfƒXƒeƒBƒl[ƒVƒ‡ƒ“ƒAƒhƒŒƒX  2 bytes
+SRC_ADR		EQU	$56		; æ±Žç”¨ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
+DST_ADR		EQU	$58		; æ±Žç”¨ãƒ‡ã‚¹ãƒ†ã‚£ãƒãƒ¼ã‚·ãƒ§ãƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
 
-TMP_ADR0		EQU	$5A		; ”Ä—pƒAƒhƒŒƒX  2 bytes
-TMP_ADR0_IDX	EQU	$5C		; ”Ä—pƒAƒhƒŒƒX  1 bytes
-TMP_ADR1		EQU	$5D		; ”Ä—pƒAƒhƒŒƒX  2 bytes
-TMP_ADR1_IDX	EQU	$5F		; ”Ä—pƒAƒhƒŒƒX  1 bytes
+TMP_ADR0		EQU	$5A		; æ±Žç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
+TMP_ADR0_IDX	EQU	$5C		; æ±Žç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  1 bytes
+TMP_ADR1		EQU	$5D		; æ±Žç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
+TMP_ADR1_IDX	EQU	$5F		; æ±Žç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  1 bytes
 
 ;----------------
-; ƒTƒuƒ‹|ƒ`ƒ“ŒÄ‚Ño‚µƒpƒ‰ƒ[ƒ^[
+; ã‚µãƒ–ãƒ«ï¼ãƒãƒ³å‘¼ã³å‡ºã—ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼
 ;----------------
 PRM_0		EQU $60
 PRM_1		EQU $61
@@ -84,7 +84,7 @@ PRM_HT_POS	EQU $6D
 
 
 ;----------------
-; Še‰æ–Ê–ˆ‚É‰Šú‰»‚µ‚Ä—˜—p‚·‚éƒ[ƒN
+; å„ç”»é¢æ¯Žã«åˆæœŸåŒ–ã—ã¦åˆ©ç”¨ã™ã‚‹ãƒ¯ãƒ¼ã‚¯
 ;----------------
 GM_TMP0	 	EQU	$70
 GM_TMP1	 	EQU	$71
@@ -98,9 +98,9 @@ GM_TMP8	 	EQU	$78
 GM_TMP9	 	EQU	$79
 GM_TMP10 	EQU	$7A
 
-; ‘I‘ð‰æ–ÊŒn
-DEBUG_KEY_CNT	EQU GM_TMP5	; ƒfƒoƒbƒO“Ë“üƒ`ƒFƒbƒN—p
-PUSH_CTR	EQU	GM_TMP7	; •¶Žš•ƒJ[ƒ\ƒ‹“_–Å—p
+; é¸æŠžç”»é¢ç³»
+DEBUG_KEY_CNT	EQU GM_TMP5	; ãƒ‡ãƒãƒƒã‚°çªå…¥ãƒã‚§ãƒƒã‚¯ç”¨
+PUSH_CTR	EQU	GM_TMP7	; æ–‡å­—ï¼†ã‚«ãƒ¼ã‚½ãƒ«ç‚¹æ»…ç”¨
 
 
 DEBUG_0		EQU  GM_TMP7
@@ -108,54 +108,54 @@ DEBUG_1		EQU  GM_TMP8
 DEBUG_2		EQU  GM_TMP9
 DEBUG_3		EQU  GM_TMP10
 
-; ‹ó‚«
+; ç©ºã
 DEBUG_COM	EQU	$80
 
 
 
-USR_PROG	EQU  $8A	; USRƒvƒƒOƒ‰ƒ€—p
-SP_LOCK		  EQU $8D	; ƒXƒvƒ‰ƒCƒgXV§Œä—p i=1 XV‚µ‚È‚¢j
+USR_PROG	EQU  $8A	; USRãƒ—ãƒ­ã‚°ãƒ©ãƒ ç”¨
+SP_LOCK		  EQU $8D	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ›´æ–°åˆ¶å¾¡ç”¨ ï¼ˆ=1 æ›´æ–°ã—ãªã„ï¼‰
 
 CACHE_GET_NENMY_NT_FG  EQU $8E
 
 
-PAL_WRK		EQU	$90 		 ;size $20	“]‘——p
+PAL_WRK		EQU	$90 		 ;size $20	è»¢é€ç”¨
 
 ;----------------
-; ƒfƒ‚—p
+; ãƒ‡ãƒ¢ç”¨
 ;----------------
 DEMOMODE_NAM	EQU	$B0
 
-DBD_BGTEST_FLG	EQU	$B1	; ”ñ 0:BG ƒeƒXƒg’† (3,4 –Ê‚Ì…–Ê§Œä—}§‚ÉŽg‚¤)
+DBD_BGTEST_FLG	EQU	$B1	; éž 0:BG ãƒ†ã‚¹ãƒˆä¸­ (3,4 é¢ã®æ°´é¢åˆ¶å¾¡æŠ‘åˆ¶ã«ä½¿ã†)
 
 
-GM_WAIT		EQU	$B2	; 2 bytes  ƒQ[ƒ€‘Ò‚¿
+GM_WAIT		EQU	$B2	; 2 bytes  ã‚²ãƒ¼ãƒ å¾…ã¡
 
 ;----------------
-; ˆ——Ž‚¿‘Îô
+; å‡¦ç†è½ã¡å¯¾ç­–
 ;----------------
 ENEMY_FLFG		EQU  $B4	;
 ENEMY_NT_FLFG	EQU  $B5	;
 
 ;----------------
-; Šg’£ƒAƒ_ƒvƒ^[ ƒ‚[ƒh
+; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ ãƒ¢ãƒ¼ãƒ‰
 ;----------------
-EXA_MODE	EQU	$B6	; =0 Šg’£ƒ‚[ƒh =1 ƒXƒ^ƒ“ƒhƒAƒƒ“ƒ‚[ƒh
+EXA_MODE	EQU	$B6	; =0 æ‹¡å¼µãƒ¢ãƒ¼ãƒ‰ =1 ã‚¹ã‚¿ãƒ³ãƒ‰ã‚¢ãƒ­ãƒ³ãƒ¢ãƒ¼ãƒ‰
 
 ;----------------
-; ƒQ[ƒ€ŠÖ˜A
+; ã‚²ãƒ¼ãƒ é–¢é€£
 ;----------------
-DEMO_FG		EQU	$B7	; ƒfƒ‚ƒtƒ‰ƒO
-DEMO_TIMER	EQU	$B8	; ƒfƒ‚ƒ^ƒCƒ}[
+DEMO_FG		EQU	$B7	; ãƒ‡ãƒ¢ãƒ•ãƒ©ã‚°
+DEMO_TIMER	EQU	$B8	; ãƒ‡ãƒ¢ã‚¿ã‚¤ãƒžãƒ¼
 
 
 
 
 ;----------------
-; ƒL[ŠÖ˜A
+; ã‚­ãƒ¼é–¢é€£
 ;----------------
-KEY_CH0D	EQU	$C0	; ƒ¢PCM ƒmƒCƒYœ‹Ž—p‚É‘Ý (VÝ)
-KEY_CH2D	EQU	$C1	; ƒ¢PCM ƒmƒCƒYœ‹Ž—p‚É‘Ý (VÝ)
+KEY_CH0D	EQU	$C0	; Î”PCM ãƒŽã‚¤ã‚ºé™¤åŽ»ç”¨ã«å¢—è¨­ (æ–°è¨­)
+KEY_CH2D	EQU	$C1	; Î”PCM ãƒŽã‚¤ã‚ºé™¤åŽ»ç”¨ã«å¢—è¨­ (æ–°è¨­)
 
 KEY_REL		EQU	$C2	;
 KEY_TRG		EQU	$C3	;
@@ -163,23 +163,23 @@ KEY_OLD		EQU	$C4	;
 KEY_NEW		EQU	$C5	;
 KEY_CH0		EQU	$C6	;
 KEY_CH1		EQU	$C7	;
-KEY_CH2		EQU	$C8	; Šg’£ƒpƒbƒh—p‚É‘Ý (VÝ)
-KEY_CH3		EQU	$C9	; Šg’£ƒpƒbƒh—p‚É‘Ý (VÝ)
+KEY_CH2		EQU	$C8	; æ‹¡å¼µãƒ‘ãƒƒãƒ‰ç”¨ã«å¢—è¨­ (æ–°è¨­)
+KEY_CH3		EQU	$C9	; æ‹¡å¼µãƒ‘ãƒƒãƒ‰ç”¨ã«å¢—è¨­ (æ–°è¨­)
 
-REP_KEY		EQU	$CA	; ƒŠƒs[ƒg—p‚ÌƒL[
-REP_NEW		EQU	$CB	; ƒŠƒs[ƒg‚É‚æ‚é‰Ÿ‰ºó‘Ô
-REP_CNT		EQU	$CC	; ƒEƒFƒCƒgAƒCƒ“ƒ^[ƒoƒ‹‚ÌƒJƒEƒ“ƒ^
+REP_KEY		EQU	$CA	; ãƒªãƒ”ãƒ¼ãƒˆç”¨ã®ã‚­ãƒ¼
+REP_NEW		EQU	$CB	; ãƒªãƒ”ãƒ¼ãƒˆã«ã‚ˆã‚‹æŠ¼ä¸‹çŠ¶æ…‹
+REP_CNT		EQU	$CC	; ã‚¦ã‚§ã‚¤ãƒˆã€ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ã®ã‚«ã‚¦ãƒ³ã‚¿
 
-BG_STAR_DISP	EQU	$CD	; ƒQ[ƒ€’†BG_STARÅ‘å•\Ž¦”
-BG_STAR_MODE	EQU	$CE	; ƒQ[ƒ€’†BG_STARƒXƒNƒ[ƒ‹ƒ‚[ƒh
+BG_STAR_DISP	EQU	$CD	; ã‚²ãƒ¼ãƒ ä¸­BG_STARæœ€å¤§è¡¨ç¤ºæ•°
+BG_STAR_MODE	EQU	$CE	; ã‚²ãƒ¼ãƒ ä¸­BG_STARã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒ¢ãƒ¼ãƒ‰
 
 ;----------------
-; IRQˆ—ŠÖ˜A
+; IRQå‡¦ç†é–¢é€£
 ;----------------
 
-;HIRQ_ENA	EQU  $CF ; IRQ ƒtƒ‰ƒO§Œä (–¢Žg—p=0)
+;HIRQ_ENA	EQU  $CF ; IRQ ãƒ•ãƒ©ã‚°åˆ¶å¾¡ (æœªä½¿ç”¨=0)
 
-SCR_LINE	EQU	$D0	; size 4 bytes	‘½dƒXƒNƒ[ƒ‹—p (Še’i‚ÌŠJŽnˆÊ’u)
+SCR_LINE	EQU	$D0	; size 4 bytes	å¤šé‡ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ç”¨ (å„æ®µã®é–‹å§‹ä½ç½®)
 BG_SCR_X	EQU	$D4 ; size 4 bytes
 
 BG_BNK		EQU	$DA	; size 6 bytes 
@@ -189,70 +189,70 @@ BG1_BNK		EQU	BG_BNK+1
 
 
 ;----------------
-; ƒVƒXƒeƒ€ŠÖ˜A
+; ã‚·ã‚¹ãƒ†ãƒ é–¢é€£
 ;----------------
 FLG_2000	EQU	$E0
 FLG_2001	EQU	$E1
 BG_SCR_Y	EQU	$E2
 
 NMI_FLG		EQU	$E3
-PAL_CHG_FG	EQU	$E4		; ƒpƒŒƒbƒg•ÏXƒtƒ‰ƒO
+PAL_CHG_FG	EQU	$E4		; ãƒ‘ãƒ¬ãƒƒãƒˆå¤‰æ›´ãƒ•ãƒ©ã‚°
 
 SYS_TIMER	EQU	$E5		; 2 bytes
-FLM_TIMER	EQU	$E7		; ƒtƒŒ[ƒ€ƒ^ƒCƒ}[
+FLM_TIMER	EQU	$E7		; ãƒ•ãƒ¬ãƒ¼ãƒ ã‚¿ã‚¤ãƒžãƒ¼
 
 STG_COD		EQU	$E8
 STG_COD_SUB	EQU	$E9
 
 ;----------------
-; ƒoƒ“ƒNŠÖ˜A
+; ãƒãƒ³ã‚¯é–¢é€£
 ;----------------
 SPT_BNK		EQU	$EA
 SPT_BNK2	EQU	$EB
-A0_BNK		EQU	$EC		; ƒoƒ“ƒNØ‚è‘Ö‚¦ƒŠƒNƒGƒXƒg—p@ŽÀÛ‚É‚ÍVBank‚ÅØ‚è‘Ö‚í‚é
+A0_BNK		EQU	$EC		; ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆãƒªã‚¯ã‚¨ã‚¹ãƒˆç”¨ã€€å®Ÿéš›ã«ã¯VBankã§åˆ‡ã‚Šæ›¿ã‚ã‚‹
 
 
 ;----------------
-; NMI‚©‚çƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€‚ÌƒAƒhƒŒƒX
+; NMIã‹ã‚‰ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;----------------
-NMI_CALL_BNK	EQU $ED ; 1byte ‚O‚È‚çƒR[ƒ‹‚µ‚È‚¢
-NMI_CALL_ADR	EQU $EE ; 2byte ƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€ƒAƒhƒŒƒX
+NMI_CALL_BNK	EQU $ED ; 1byte ï¼ãªã‚‰ã‚³ãƒ¼ãƒ«ã—ãªã„
+NMI_CALL_ADR	EQU $EE ; 2byte ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚¢ãƒ‰ãƒ¬ã‚¹
 
 
-TMP_SYS		EQU	$F0		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
-TMP_SYS2	EQU	$F1		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
-TMP_SYS3	EQU	$F2		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
-TMP_SYS4	EQU	$F3		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
+TMP_SYS		EQU	$F0		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_SYS2	EQU	$F1		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_SYS3	EQU	$F2		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_SYS4	EQU	$F3		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
 
 
 ;----------------
-; ƒTƒEƒ“ƒhŠÖ˜A
+; ã‚µã‚¦ãƒ³ãƒ‰é–¢é€£
 ;----------------
-REQ_TMPUP		EQU	$F4	; ƒeƒ“ƒ|ƒAƒbƒv
+REQ_TMPUP		EQU	$F4	; ãƒ†ãƒ³ãƒã‚¢ãƒƒãƒ—
 REQ_SE_NO		EQU	$F5
 REQ_SE_NO2		EQU	$F6	; 
 REQ_SE_NO3		EQU	$F7	; 
 
-;LAST_SE_LOCK	EQU	$F8	; “¯ˆêŒø‰Ê‰¹‚ÌÅ’áÄ¶ƒtƒŒ[ƒ€”
-;LAST_SE_NO		EQU	$F9	; ÅŒã‚ÉÄ¶‚µ‚½SE
+;LAST_SE_LOCK	EQU	$F8	; åŒä¸€åŠ¹æžœéŸ³ã®æœ€ä½Žå†ç”Ÿãƒ•ãƒ¬ãƒ¼ãƒ æ•°
+;LAST_SE_NO		EQU	$F9	; æœ€å¾Œã«å†ç”Ÿã—ãŸSE
 REQ_BGM_NO		EQU	$FA
 ;REQ_SE_NO		EQU	$FB
-SEQ_CTR			EQU	$FC	; ƒJƒEƒ“ƒ^
+SEQ_CTR			EQU	$FC	; ã‚«ã‚¦ãƒ³ã‚¿
 ;SND_FLG			EQU	$FD
 __MusBank		EQU $FD
 
 
 MASTER_VOL		EQU $FF
 
-WRAM_EXIST	EQU	$100	; 1 byte  ”ñ 0: WRAM ‚ª‘¶Ý
+WRAM_EXIST	EQU	$100	; 1 byte  éž 0: WRAM ãŒå­˜åœ¨
 				; 1 byte
-HISCORES	EQU	$102	; 8 bytes LV1 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰,
-				;         LV2 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰
-MAGIC		EQU	$10a	; 6 bytes ‹N“®/ƒŠƒZƒbƒg”»•Ê—pƒ}ƒWƒbƒNƒiƒ“ƒo[
+HISCORES	EQU	$102	; 8 bytes LV1 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©,
+				;         LV2 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©
+MAGIC		EQU	$10a	; 6 bytes èµ·å‹•/ãƒªã‚»ãƒƒãƒˆåˆ¤åˆ¥ç”¨ãƒžã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼
 
 
 ;----------------
-; ƒ‰ƒ“ƒ_ƒ€ƒVƒXƒeƒ€
+; ãƒ©ãƒ³ãƒ€ãƒ ã‚·ã‚¹ãƒ†ãƒ 
 ;----------------
 RND_SEL		EQU	$10b
 RND_WK0		EQU	$10c
@@ -262,21 +262,21 @@ RND_WK3		EQU	$10f
 
 
 ;----------------
-; ƒQ[ƒ€“à•\Ž¦ŠÖ˜A
+; ã‚²ãƒ¼ãƒ å†…è¡¨ç¤ºé–¢é€£
 ;----------------
 GM_SCORE	EQU	$110	; 4 bytes
-GM_HISCORE	EQU	$114	; 4 bytes ƒnƒCƒXƒRƒAŽÀì‹Æ—p
-SCR_CHG_SW	EQU	$118	; 1 byte  ƒXƒRƒA•Ï‰»ƒtƒ‰ƒO
+GM_HISCORE	EQU	$114	; 4 bytes ãƒã‚¤ã‚¹ã‚³ã‚¢å®Ÿä½œæ¥­ç”¨
+SCR_CHG_SW	EQU	$118	; 1 byte  ã‚¹ã‚³ã‚¢å¤‰åŒ–ãƒ•ãƒ©ã‚°
 
-DEBUG_FLG		EQU	$11a	; ƒfƒoƒbƒOƒ‚[ƒh“Ë“üƒtƒ‰ƒO
-DEBUG_MT_FLG	EQU	$11b	; ƒfƒoƒbƒOƒ‚[ƒh“Ë“üƒtƒ‰ƒO
+DEBUG_FLG		EQU	$11a	; ãƒ‡ãƒãƒƒã‚°ãƒ¢ãƒ¼ãƒ‰çªå…¥ãƒ•ãƒ©ã‚°
+DEBUG_MT_FLG	EQU	$11b	; ãƒ‡ãƒãƒƒã‚°ãƒ¢ãƒ¼ãƒ‰çªå…¥ãƒ•ãƒ©ã‚°
 
 
-PLY_LIFE		EQU $11e	; B Žc‹@”
-PLY_CONTINUE	EQU $11f	; ƒRƒ“ƒeƒBƒjƒ…[‰ñ” ƒJƒEƒ“ƒgãŒÀ99
+PLY_LIFE		EQU $11e	; B æ®‹æ©Ÿæ•°
+PLY_CONTINUE	EQU $11f	; ã‚³ãƒ³ãƒ†ã‚£ãƒ‹ãƒ¥ãƒ¼å›žæ•° ã‚«ã‚¦ãƒ³ãƒˆä¸Šé™99
 
 ;----------------
-; ‚»‚Ì‘¼
+; ãã®ä»–
 ;----------------
 DEBUG_SEL	EQU	$120
 
@@ -292,25 +292,25 @@ DEBUG_DT7	EQU	$128
 DEBUG_DT	EQU	DEBUG_DT0
 
 
-PLY_STAGE		EQU	DEBUG_DT0	; ƒXƒe[ƒW”Ô†
-DBD_SOUND_TST	EQU	DEBUG_DT1	; ƒTƒEƒ“ƒhƒeƒXƒg
-DBD_M_TYPE		EQU	DEBUG_DT2	; ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv
-DBD_MT_SUB		EQU	DEBUG_DT3	; ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒvƒTƒu
-DBD_STEP_JUMP	EQU	DEBUG_DT4	; ƒXƒeƒbƒvƒWƒƒƒ“ƒv
+PLY_STAGE		EQU	DEBUG_DT0	; ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·
+DBD_SOUND_TST	EQU	DEBUG_DT1	; ã‚µã‚¦ãƒ³ãƒ‰ãƒ†ã‚¹ãƒˆ
+DBD_M_TYPE		EQU	DEBUG_DT2	; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—
+DBD_MT_SUB		EQU	DEBUG_DT3	; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—ã‚µãƒ–
+DBD_STEP_JUMP	EQU	DEBUG_DT4	; ã‚¹ãƒ†ãƒƒãƒ—ã‚¸ãƒ£ãƒ³ãƒ—
 
 
 
 ;========================================
-; ƒTƒEƒ“ƒhƒ[ƒN
+; ã‚µã‚¦ãƒ³ãƒ‰ãƒ¯ãƒ¼ã‚¯
 ; $200-$328
 ;========================================
 SND_WK1		EQU	$200	; size $128
 
 ;========================================
-;  NSFÄ¶—p
+;  NSFå†ç”Ÿç”¨
 ;========================================
-_eff		EQU $200		; Œø‰Ê‰¹ƒe[ƒuƒ‹ŠJŽn”Ô†
-_play		EQU $201		; ƒtƒŒ[ƒ€ƒI[ƒo[–hŽ~—p•Ï”
+_eff		EQU $200		; åŠ¹æžœéŸ³ãƒ†ãƒ¼ãƒ–ãƒ«é–‹å§‹ç•ªå·
+_play		EQU $201		; ãƒ•ãƒ¬ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼é˜²æ­¢ç”¨å¤‰æ•°
 
 
 
@@ -320,72 +320,72 @@ _play		EQU $201		; ƒtƒŒ[ƒ€ƒI[ƒo[–hŽ~—p•Ï”
 
 
 ;-----------------------------------------------------
-; ‚±‚±‚©‚ç‰º‚Ì$300‘ä‚Ìƒ[ƒN‚Í ƒXƒe[ƒWŠJŽnŽž‚É‚OƒNƒŠƒA[
+; ã“ã“ã‹ã‚‰ä¸‹ã®$300å°ã®ãƒ¯ãƒ¼ã‚¯ã¯ ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹æ™‚ã«ï¼ã‚¯ãƒªã‚¢ãƒ¼
 ;-----------------------------------------------------
 CLEAR_300W_TOP  EQU  $32E
 
 
 
-MISSON_ATK_NO	EQU  $384	; B ƒ~ƒbƒVƒ‡ƒ“UŒ‚”Ô†
-MISSON_ATK_IDX	EQU  $385	; B ƒ~ƒbƒVƒ‡ƒ“UŒ‚ƒCƒ“ƒfƒbƒNƒX
-MISSON_ATK_CNT	EQU  $386	; B ƒ~ƒbƒVƒ‡ƒ“UŒ‚ƒJƒEƒ“ƒ^[
+MISSON_ATK_NO	EQU  $384	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒç•ªå·
+MISSON_ATK_IDX	EQU  $385	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+MISSON_ATK_CNT	EQU  $386	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒã‚«ã‚¦ãƒ³ã‚¿ãƒ¼
 
 
-MISSON_LDBG0	EQU  $38A	; B ƒ~ƒbƒVƒ‡ƒ“BG”Ô†
-MISSON_LDBG1	EQU  $38B	; B ƒ~ƒbƒVƒ‡ƒ“BG”Ô†
-MISSON_LDBG2	EQU  $38C	; B ƒ~ƒbƒVƒ‡ƒ“BG”Ô†
+MISSON_LDBG0	EQU  $38A	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³BGç•ªå·
+MISSON_LDBG1	EQU  $38B	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³BGç•ªå·
+MISSON_LDBG2	EQU  $38C	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³BGç•ªå·
 
-MISSON_ANM_NO	EQU  $38D	; B ƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒ”Ô†
-MISSON_ANM_CNT	EQU  $38E	; B ƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒƒJƒEƒ“ƒ^[
-;---- ƒ~ƒbƒVƒ‡ƒ“—pƒ\ƒtƒgƒXƒ^ƒbƒN -------
-MISSON_PC_SP	EQU  $38F	; B ƒ~ƒbƒVƒ‡ƒ“PCƒXƒ^ƒbƒNƒ|ƒCƒ“ƒ^
+MISSON_ANM_NO	EQU  $38D	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡ç•ªå·
+MISSON_ANM_CNT	EQU  $38E	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼
+;---- ãƒŸãƒƒã‚·ãƒ§ãƒ³ç”¨ã‚½ãƒ•ãƒˆã‚¹ã‚¿ãƒƒã‚¯ -------
+MISSON_PC_SP	EQU  $38F	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³PCã‚¹ã‚¿ãƒƒã‚¯ãƒã‚¤ãƒ³ã‚¿
 
-MISSON_STACK	EQU $390		; 16byte ƒ~ƒbƒVƒ‡ƒ“—pƒXƒ^ƒbƒN
-
-;----------------
-; ƒ~ƒbƒVƒ‡ƒ“§ŒäŒnƒ[ƒN
-;----------------
-MISSON_NO		EQU $3A0	; B ƒXƒe[ƒW“àƒ~ƒbƒVƒ‡ƒ“”Ô†
-MISSON_TYPE		EQU $3A1	; B ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv
-MISSON_TYPE_SUB	EQU $3A2	; B ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv
-MISSON_WAIT		EQU $3A3	; B MISSON_PC‚ÌŽŸ‚Ìˆ—‚Ü‚Å‚ÌƒEƒFƒCƒg
-MISSON_PC		EQU $3A4	; W ƒ~ƒbƒVƒ‡ƒ“PC
-
-MISSON_LOOP_CNT	EQU $3A6	; B ƒ~ƒbƒVƒ‡ƒ“ ƒ‹[ƒvƒJƒEƒ“ƒ^
-MISSON_FLG		EQU $3A9	; B ƒ~ƒbƒVƒ‡ƒ“ ƒtƒ‰ƒO
-MISSON_STEP		EQU $3AA	; B ƒ~ƒbƒVƒ‡ƒ“ ˆ—ƒXƒeƒbƒv
-MISSON_TMP		EQU $3AB	; B ƒ~ƒbƒVƒ‡ƒ“ ”Ä—p
-
-SECRET_STAT		EQU $3AC	; B ƒV[ƒNƒŒƒbƒgó‘Ô(0:‰Šú’l 1:‰ð•ú 2:Žæ“¾)
-SECRET_LIFE_ADD	EQU $3AD	; B ƒV[ƒNƒŒƒbƒgƒAƒCƒeƒ€Šl“¾Žž‚Ìƒ‰ƒCƒtƒ{[ƒiƒX
-
-MISSON_ASM		EQU $3AE	; W ƒ~ƒbƒVƒ‡ƒ“–ˆƒtƒŒ[ƒ€Š„ž‚Ýˆ—
-
-ENEMY_ATK_LV	EQU $3B0	; B “G‚ÌUŒ‚LV 
-							;  0:UŒ‚‚µ‚È‚¢ 1:Ž©‹@‘_‚¢’e 2:ƒz[ƒ~ƒ“ƒO’e
-							;  3:Ž©‹@‘_‚¢•ƒz[ƒ~ƒ“ƒO 4: ‚‘¬ƒz[ƒ~ƒ“ƒO
-
-MISSON_CMP_P	EQU $3B1    ; B ”äŠr–½—ßŽž‚Ìƒtƒ‰ƒO•Û‘¶
-
-DAM_BG_FLASH	EQU $3B2	; ƒ_ƒ[ƒW‚a‚fƒtƒ‰ƒbƒVƒ…
+MISSON_STACK	EQU $390		; 16byte ãƒŸãƒƒã‚·ãƒ§ãƒ³ç”¨ã‚¹ã‚¿ãƒƒã‚¯
 
 ;----------------
-; ƒvƒŒ[ƒ„[ƒ[ƒN
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³åˆ¶å¾¡ç³»ãƒ¯ãƒ¼ã‚¯
 ;----------------
-PLY_ANM_NO		EQU $3B3	; ƒAƒjƒ[ƒVƒ‡ƒ“”Ô†
-PLY_FORM		EQU $3B4	; ƒtƒH[ƒ[ƒVƒ‡ƒ“
-PLY_DISP_FG		EQU $3B5	; ƒvƒŒ[ƒ„[•\Ž¦§Œä
-PLY_MUTEKI_TM	EQU $3B6	; –³“Gƒ^ƒCƒ}[
+MISSON_NO		EQU $3A0	; B ã‚¹ãƒ†ãƒ¼ã‚¸å†…ãƒŸãƒƒã‚·ãƒ§ãƒ³ç•ªå·
+MISSON_TYPE		EQU $3A1	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—
+MISSON_TYPE_SUB	EQU $3A2	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—
+MISSON_WAIT		EQU $3A3	; B MISSON_PCã®æ¬¡ã®å‡¦ç†ã¾ã§ã®ã‚¦ã‚§ã‚¤ãƒˆ
+MISSON_PC		EQU $3A4	; W ãƒŸãƒƒã‚·ãƒ§ãƒ³PC
 
-;---- ƒ{ƒXƒ~ƒbƒVƒ‡ƒ“—p ƒ[ƒN -------
-BM_DEATH_ANM	EQU $3B7		; w ƒ{ƒXŽ€–SƒAƒjƒ
-BM_DEATH_MSC	EQU $3B9		; w ƒ{ƒXŽ€–Sƒ~ƒbƒVƒ‡ƒ“ƒXƒNƒŠƒvƒg
+MISSON_LOOP_CNT	EQU $3A6	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿
+MISSON_FLG		EQU $3A9	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ ãƒ•ãƒ©ã‚°
+MISSON_STEP		EQU $3AA	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ å‡¦ç†ã‚¹ãƒ†ãƒƒãƒ—
+MISSON_TMP		EQU $3AB	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ æ±Žç”¨
+
+SECRET_STAT		EQU $3AC	; B ã‚·ãƒ¼ã‚¯ãƒ¬ãƒƒãƒˆçŠ¶æ…‹(0:åˆæœŸå€¤ 1:è§£æ”¾ 2:å–å¾—)
+SECRET_LIFE_ADD	EQU $3AD	; B ã‚·ãƒ¼ã‚¯ãƒ¬ãƒƒãƒˆã‚¢ã‚¤ãƒ†ãƒ ç²å¾—æ™‚ã®ãƒ©ã‚¤ãƒ•ãƒœãƒ¼ãƒŠã‚¹
+
+MISSON_ASM		EQU $3AE	; W ãƒŸãƒƒã‚·ãƒ§ãƒ³æ¯Žãƒ•ãƒ¬ãƒ¼ãƒ å‰²è¾¼ã¿å‡¦ç†
+
+ENEMY_ATK_LV	EQU $3B0	; B æ•µã®æ”»æ’ƒLV 
+							;  0:æ”»æ’ƒã—ãªã„ 1:è‡ªæ©Ÿç‹™ã„å¼¾ 2:ãƒ›ãƒ¼ãƒŸãƒ³ã‚°å¼¾
+							;  3:è‡ªæ©Ÿç‹™ã„ï¼†ãƒ›ãƒ¼ãƒŸãƒ³ã‚° 4: é«˜é€Ÿãƒ›ãƒ¼ãƒŸãƒ³ã‚°
+
+MISSON_CMP_P	EQU $3B1    ; B æ¯”è¼ƒå‘½ä»¤æ™‚ã®ãƒ•ãƒ©ã‚°ä¿å­˜
+
+DAM_BG_FLASH	EQU $3B2	; ãƒ€ãƒ¡ãƒ¼ã‚¸ï¼¢ï¼§ãƒ•ãƒ©ãƒƒã‚·ãƒ¥
+
+;----------------
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ãƒ¯ãƒ¼ã‚¯
+;----------------
+PLY_ANM_NO		EQU $3B3	; ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ç•ªå·
+PLY_FORM		EQU $3B4	; ãƒ•ã‚©ãƒ¼ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³
+PLY_DISP_FG		EQU $3B5	; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼è¡¨ç¤ºåˆ¶å¾¡
+PLY_MUTEKI_TM	EQU $3B6	; ç„¡æ•µã‚¿ã‚¤ãƒžãƒ¼
+
+;---- ãƒœã‚¹ãƒŸãƒƒã‚·ãƒ§ãƒ³ç”¨ ãƒ¯ãƒ¼ã‚¯ -------
+BM_DEATH_ANM	EQU $3B7		; w ãƒœã‚¹æ­»äº¡ã‚¢ãƒ‹ãƒ¡
+BM_DEATH_MSC	EQU $3B9		; w ãƒœã‚¹æ­»äº¡ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¹ã‚¯ãƒªãƒ—ãƒˆ
 
 SHOT_TARGET		EQU $3BB
 
 
 ;----------------
-; ƒvƒŒ[ƒ„[ƒ[ƒN
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ãƒ¯ãƒ¼ã‚¯
 ;----------------
 
 PLY_OBJ_KIND	EQU	$500
@@ -397,10 +397,10 @@ POS_PLY_X		EQU $520
 POS_PLY_Y		EQU $521
 
 ;----------------
-; Ž©‹@‚Ì’Êí’eƒ[ƒN
+; è‡ªæ©Ÿã®é€šå¸¸å¼¾ãƒ¯ãƒ¼ã‚¯
 ;----------------
 PSHOT_A_X	 EQU (POS_PLY_X+2)
-PSHOT_A_Y	 EQU (POS_PLY_Y+2)	; =0 ‚ÌŽž‚ÍƒXƒ^ƒ“ƒoƒCó‘Ô
+PSHOT_A_Y	 EQU (POS_PLY_Y+2)	; =0 ã®æ™‚ã¯ã‚¹ã‚¿ãƒ³ãƒã‚¤çŠ¶æ…‹
 PSHOT_A_SUU	 EQU 15
 
 
@@ -413,14 +413,14 @@ PSHOT_A_WY		 EQU (PLY_OBJ_WY+2)
 
 
 ;----------------
-; “G‚Ìƒm[ƒ}ƒ‹’eƒ[ƒN
-; $600-$6AF 8x22ƒZƒbƒg
+; æ•µã®ãƒŽãƒ¼ãƒžãƒ«å¼¾ãƒ¯ãƒ¼ã‚¯
+; $600-$6AF 8x22ã‚»ãƒƒãƒˆ
 ;----------------
 ENEMY_NT_WORK	EQU	$600
 ENEMY_NT_KIND	EQU	$600
-ENEMY_NT_MP		EQU	$601	; ˆÚ“®ƒpƒ^[ƒ“”Ô†
-ENEMY_NT_DT		EQU	$602	; “ÁŽê§Œä—pƒf[ƒ^
-ENEMY_NT_HP		EQU	$603	; ‘Ï‹v—Í
+ENEMY_NT_MP		EQU	$601	; ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³ç•ªå·
+ENEMY_NT_DT		EQU	$602	; ç‰¹æ®Šåˆ¶å¾¡ç”¨ãƒ‡ãƒ¼ã‚¿
+ENEMY_NT_HP		EQU	$603	; è€ä¹…åŠ›
 ENEMY_NT_X		EQU $604	; W
 ENEMY_NT_Y		EQU $606	; W
 
@@ -428,8 +428,8 @@ ENEMY_NT_SIZE	 EQU 8
 ENEMY_NT_SUU	 EQU 22
 
 ;----------------
-; ”š”­‰‰oƒ[ƒN
-; $6B0-$6D7 3x13ƒZƒbƒg
+; çˆ†ç™ºæ¼”å‡ºãƒ¯ãƒ¼ã‚¯
+; $6B0-$6D7 3x13ã‚»ãƒƒãƒˆ
 ;----------------
 BAKU_EFC_X	 EQU $6B0
 BAKU_EFC_Y	 EQU $6B1
@@ -440,22 +440,22 @@ BAKU_EFC_SUU EQU 13
 
 
 ;----------------
-; ƒpƒŒƒbƒgŠÖ˜A
+; ãƒ‘ãƒ¬ãƒƒãƒˆé–¢é€£
 ;----------------
-PALFADE_TIME	EQU	$6D7	; ƒpƒŒƒbƒgƒtƒF[ƒh‘¬“x
-PALFADE_CNT		EQU	$6D8	; ƒpƒŒƒbƒgƒtƒF[ƒhƒJƒEƒ“ƒ^
-PALFADE_VAL		EQU	$6D9	; ‰ÁŽZ’lAŒ¸ŽZ’l
-PALFADE_ADD		EQU	$6DA	; •Ï‰»‚Ì‰ÁŽZ’l
-PALFADE_MASK	EQU	$60B	; •Ï‰»‚³‚¹‚È‚¢ƒpƒŒƒbƒgƒrƒbƒgŽw’è
+PALFADE_TIME	EQU	$6D7	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦
+PALFADE_CNT		EQU	$6D8	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚«ã‚¦ãƒ³ã‚¿
+PALFADE_VAL		EQU	$6D9	; åŠ ç®—å€¤ã€æ¸›ç®—å€¤
+PALFADE_ADD		EQU	$6DA	; å¤‰åŒ–ã®åŠ ç®—å€¤
+PALFADE_MASK	EQU	$60B	; å¤‰åŒ–ã•ã›ãªã„ãƒ‘ãƒ¬ãƒƒãƒˆãƒ“ãƒƒãƒˆæŒ‡å®š
 
-;--- ‹ó‚«‚ ‚è ---
+;--- ç©ºãã‚ã‚Š ---
 ; 6DC-6DF
 
 
-PAL_WRK2	EQU	$6E0 	;size $20	ƒtƒF[ƒh’†“]‘——p
+PAL_WRK2	EQU	$6E0 	;size $20	ãƒ•ã‚§ãƒ¼ãƒ‰ä¸­è»¢é€ç”¨
 
 
 OBJ_BUF		EQU	$700		; 256 bytes
-BPE_BUF 	EQU	$700		; BEP“WŠJƒoƒbƒtƒ@
+BPE_BUF 	EQU	$700		; BEPå±•é–‹ãƒãƒƒãƒ•ã‚¡
 
 

@@ -1,12 +1,12 @@
 
-	.list			; ƒŠƒXƒeƒBƒ“ƒOƒtƒ@ƒCƒ‹o—Í
-	.mlist			; ƒŠƒXƒeƒBƒ“ƒOƒtƒ@ƒCƒ‹ã‚Åƒ}ƒNƒ‚ð“WŠJ
+	.list			; ãƒªã‚¹ãƒ†ã‚£ãƒ³ã‚°ãƒ•ã‚¡ã‚¤ãƒ«å‡ºåŠ›
+	.mlist			; ãƒªã‚¹ãƒ†ã‚£ãƒ³ã‚°ãƒ•ã‚¡ã‚¤ãƒ«ä¸Šã§ãƒžã‚¯ãƒ­ã‚’å±•é–‹
 
 	.INCLUDE	"defDebug.h"
 
-        .inesprg 2		; ƒvƒƒOƒ‰ƒ€ƒoƒ“ƒN”
-        .ineschr 1		; CHR ƒoƒ“ƒN”
-        .inesmir 1		; 0:V ‚’¼‚Q‰æ–Êi …•½ƒ~ƒ‰[j 1:H …•½‚Q‰æ–Êi‚’¼ƒ~ƒ‰[j
+        .inesprg 2		; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãƒãƒ³ã‚¯æ•°
+        .ineschr 1		; CHR ãƒãƒ³ã‚¯æ•°
+        .inesmir 1		; 0:V åž‚ç›´ï¼’ç”»é¢ï¼ˆ æ°´å¹³ãƒŸãƒ©ãƒ¼ï¼‰ 1:H æ°´å¹³ï¼’ç”»é¢ï¼ˆåž‚ç›´ãƒŸãƒ©ãƒ¼ï¼‰
         .inesmap 0		; mapper #0
 
 	.INCLUDE	"defMacro.h"
@@ -20,7 +20,7 @@
 	.code
 
 	;========================================
-	; ƒQ[ƒ€ƒoƒ“ƒN0
+	; ã‚²ãƒ¼ãƒ ãƒãƒ³ã‚¯0
 	;========================================
 	.BANK		0
 	ORG  $8000
@@ -41,7 +41,7 @@
 	.INCLUDE	".\cfg\cfgGame.h"
 	.INCLUDE	".\cfg\cfgEnemyNT.h"
 	.INCLUDE	".\cfg\cfgStage.h"
-	.INCLUDE	".\cfg\cfgMissonSP.h"		; ƒTƒuƒ‹[ƒ`ƒ“
+	.INCLUDE	".\cfg\cfgMissonSP.h"		; ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³
 	.INCLUDE	".\cfg\cfgMissonHara.h"
 	.INCLUDE	".\cfg\cfgMissonAnime.h"
 
@@ -53,7 +53,7 @@
 	.INCLUDE	"AplOver.asm"
 
 	.INCLUDE	"AplGameDisp.asm"
-	.INCLUDE	"AplGame.asm"		;ƒQ[ƒ€–{‘Ì
+	.INCLUDE	"AplGame.asm"		;ã‚²ãƒ¼ãƒ æœ¬ä½“
 	.INCLUDE	"AplGameSub.asm"
 
 	.INCLUDE	"AplEnemy.asm"
@@ -65,7 +65,7 @@
       ORG     $E000
 ;-----------------------------
 ;  $E000
-;  ƒQ[ƒ€•Ï”‰Šú‰»@FC PICO—p
+;  ã‚²ãƒ¼ãƒ å¤‰æ•°åˆæœŸåŒ–ã€€FC PICOç”¨
 ; 
 ;-----------------------------
 jvcFCP_GAME_INIT:
@@ -73,7 +73,7 @@ jvcFCP_GAME_INIT:
 	brk
 ;-----------------------------
 ;  $E004
-;  ƒQ[ƒ€–{‘Ìˆ—@FC PICO—p
+;  ã‚²ãƒ¼ãƒ æœ¬ä½“å‡¦ç†ã€€FC PICOç”¨
 ; 
 ;-----------------------------
 jvcFCP_GAME_MAIN:
@@ -86,7 +86,7 @@ FCP_GAME_INIT:
 	lda  #0
 	sta  <DEMO_FG
 
-	lda  #ST_MAIN        ;ƒvƒŒƒC‰æ–Ê‚Ö
+	lda  #ST_MAIN        ;ãƒ—ãƒ¬ã‚¤ç”»é¢ã¸
 	STA	<STG_COD
 
 	LDA	#0
@@ -175,7 +175,7 @@ JMP_RTS:
 
 
 
-; HIRQŠ„‚èž‚ÝƒGƒ“ƒgƒŠ
+; HIRQå‰²ã‚Šè¾¼ã¿ã‚¨ãƒ³ãƒˆãƒª
 IRQ_ENTRY:
 	rti
 

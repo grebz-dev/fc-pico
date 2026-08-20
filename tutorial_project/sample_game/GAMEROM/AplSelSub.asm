@@ -1,5 +1,5 @@
 ;============================================
-; 	�I����ʌn�T�u���[�`��
+; 	選択画面系サブルーチン
 ;============================================
 
 initSelDisp:
@@ -30,26 +30,26 @@ PAL_OVER_ADR:
 
 
 ;----------------------
-; �n�C�X�R�A�`�F�b�N
+; ハイスコアチェック
 ;----------------------
 CHK_HISCORE:
 	LDA	#0
 	STA	<TMP_DISP2
-	LDX	#3			; ��̌����猩�Ă���
+	LDX	#3			; 上の桁から見ていく
 ;        LDY     #BGM_CLEAR
 .hichk_00:
 	DEX
 	BMI	.hichk_02
 	LDA	GM_HISCORE,X
 	CMP	GM_SCORE,X
-	BEQ	.hichk_00		; ���̌��������Ȃ牺�̌������ɂ���
-	BCS	.hichk_02		; ���̌��Ńn�C�X�R�A���Ⴂ�Ȃ�I���
+	BEQ	.hichk_00		; 今の桁が同じなら下の桁を見にいく
+	BCS	.hichk_02		; 今の桁でハイスコアより低いなら終わる
 
-	; �f�o�b�O���[�h���̓n�C�X�R�A���X�V���Ȃ��悤�ɂ��� (2016-06-01 ��^)
+	; デバッグモード中はハイスコアを更新しないようにした (2016-06-01 門真)
 ;	lda	 DEBUG_FLG
 ;	bne	.update_e
 
-	; �n�C�X�R�A�X�V
+	; ハイスコア更新
 	LDA	GM_SCORE+2
 	STA	GM_HISCORE+2
 	LDA	GM_SCORE+1
@@ -100,11 +100,11 @@ DRAW_SCORE:
 	JSR	DRAW_HEX_BYTE
 	LDA	GM_SCORE+0
 	JSR	DRAW_HEX_BYTE
-	lda #0				;�_�~�[�O
+	lda #0				;ダミー０
 	jmp	DRAW_HEX_BYTE2
 
 ;-----------------------------------
-; PUSH ANY BUTTON �_�ŕ`�揈��
+; PUSH ANY BUTTON 点滅描画処理
 ;-----------------------------------
 
 DRAW_PUSH_ANY_BUTTON

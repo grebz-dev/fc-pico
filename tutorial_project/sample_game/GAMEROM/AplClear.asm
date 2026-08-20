@@ -2,7 +2,7 @@
 
 
 ;============================================
-; ƒNƒŠƒA
+; ã‚¯ãƒªã‚¢
 ;============================================
 
 
@@ -11,9 +11,9 @@
 CLEAR_STG:
 	jsr .tbljump_sub
 
-	; ƒXƒvƒ‰ƒCƒg§Œä
-	ldy #0*4	; ƒXƒvƒ‰ƒCƒgŠJnˆÊ’u
-	; BG—¬¯•\¦
+	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆåˆ¶å¾¡
+	ldy #0*4	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆé–‹å§‹ä½ç½®
+	; BGæµæ˜Ÿè¡¨ç¤º
 	lda  <FLM_TIMER
 	asl  a
 	eor  #$FF
@@ -23,7 +23,7 @@ CLEAR_STG:
 
 	
 ;	jsr  SPT_BNK2_ANIME
-	jmp  clearObj		; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ğ”ñ•\¦‚É‚·‚é
+	jmp  clearObj		; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’éè¡¨ç¤ºã«ã™ã‚‹
 
 
 .tbljump_sub
@@ -34,7 +34,7 @@ CLEAR_STG:
 	JPTBL	.clearstg20	; 2
 	JPTBL	.clearstg30	; 3
 
-;---- ‰Šú‰» ------------------------
+;---- åˆæœŸåŒ– ------------------------
 .clearstg00:
 	inc  <NMI_FLG
 	lda  #0
@@ -56,9 +56,9 @@ CLEAR_STG:
 	lda  PLY_CONTINUE
 	bne  .cotinue_skip
 
-	; ƒm[ƒRƒ“ƒeƒBƒjƒ…[ƒ{[ƒiƒX
+	; ãƒãƒ¼ã‚³ãƒ³ãƒ†ã‚£ãƒ‹ãƒ¥ãƒ¼ãƒœãƒ¼ãƒŠã‚¹
 	SET_VRAM_ADD2	#$2000 + 32*12 + 8
-	lda  #$7F	; ©‹@ƒAƒCƒRƒ“
+	lda  #$7F	; è‡ªæ©Ÿã‚¢ã‚¤ã‚³ãƒ³
     sta  $2007
 
 	lda  PLY_LIFE
@@ -111,7 +111,7 @@ CLEAR_STG:
 	sta <BG_SCR_X
 
 
-    SET_NMI_CALL CLEAR_DRAW		; NMI•`‰æˆ—“o˜^
+    SET_NMI_CALL CLEAR_DRAW		; NMIæç”»å‡¦ç†ç™»éŒ²
 
 	INC	<STG_COD_SUB
 
@@ -159,11 +159,11 @@ CLEAR_STG:
 	lda  #STAGE_MAX
 	cmp  PLY_STAGE
 	bne  .next
-	; ƒ\ƒtƒgƒŠƒZƒbƒg
+	; ã‚½ãƒ•ãƒˆãƒªã‚»ãƒƒãƒˆ
 	jmp  INIT
 
 .next
-	; Ÿ‚ÌƒXƒe[ƒW‚Ö
+	; æ¬¡ã®ã‚¹ãƒ†ãƒ¼ã‚¸ã¸
 	INC	PLY_STAGE
 	LDA    #ST_MAIN
 .set_stg_cod:
@@ -178,7 +178,7 @@ CLEAR_STG:
 
 
 ;=================================
-;VBLANK •`‰æ
+;VBLANK æç”»
 ;=================================
 CLEAR_DRAW:
 	LDA   <STG_COD_SUB

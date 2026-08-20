@@ -1,14 +1,14 @@
 
 ;***********************************************************************
-;	ƒf[ƒ^“]‘—ŠÖ˜AƒVƒXƒeƒ€
+;	ãƒ‡ãƒ¼ã‚¿è»¢é€é–¢é€£ã‚·ã‚¹ãƒ†ãƒ 
 ;***********************************************************************
 
 ;=======================
-; ROM‚ÌŽw’èƒoƒ“ƒN‚Ìƒf[ƒ^‚ðRAM‚ÉƒRƒs[‚·‚é
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  IN: DST_ADR “]‘—æƒAƒhƒŒƒX 16bit
-;  IN: Y “]‘—ƒTƒCƒY
-;  ”j‰ó A,Y
+; ROMã®æŒ‡å®šãƒãƒ³ã‚¯ã®ãƒ‡ãƒ¼ã‚¿ã‚’RAMã«ã‚³ãƒ”ãƒ¼ã™ã‚‹
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  IN: DST_ADR è»¢é€å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  IN: Y è»¢é€ã‚µã‚¤ã‚º
+;  ç ´å£Š A,Y
 ;=======================
 memcpy:
 .loop
@@ -22,7 +22,7 @@ memcpy:
 
 
 ;=======================
-; ”wŒiƒf[ƒ^ 2C00       *
+; èƒŒæ™¯ãƒ‡ãƒ¼ã‚¿ 2C00       *
 ;=======================
 CLEAR_BG_2C:
 	PHA
@@ -68,8 +68,8 @@ CLEAR_BG_DATA_L3:
 
 
 ;=======================
-; ƒpƒŒƒbƒg‰ŠúƒZƒbƒgƒTƒu
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
+; ãƒ‘ãƒ¬ãƒƒãƒˆåˆæœŸã‚»ãƒƒãƒˆã‚µãƒ–
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
 ;=======================
 setPalData:
 	ldy  #32
@@ -79,14 +79,14 @@ setPalData2:
 	jmp  memcpy
 
 ;------------------------------------------------
-;	BPE ƒfƒR[ƒh
+;	BPE ãƒ‡ã‚³ãƒ¼ãƒ‰
 ;
-;  SRC_ADR =  ƒf[ƒ^Ši”[ƒAƒhƒŒƒX
-;  DST_ADR =  “WŠJæVRAMƒAƒhƒŒƒX
+;  SRC_ADR =  ãƒ‡ãƒ¼ã‚¿æ ¼ç´ã‚¢ãƒ‰ãƒ¬ã‚¹
+;  DST_ADR =  å±•é–‹å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹
 ;------------------------------------------------
 BPE_pass		EQU  TMP_SV7
-BPE_decompsize	EQU  TMP_WRK0		; “WŠJƒTƒCƒY
-BPE_compsize	EQU  TMP_WRK2		; ˆ³kƒTƒCƒY
+BPE_decompsize	EQU  TMP_WRK0		; å±•é–‹ã‚µã‚¤ã‚º
+BPE_compsize	EQU  TMP_WRK2		; åœ§ç¸®ã‚µã‚¤ã‚º
 
 BPE_DIC_H		EQU  TMP_SV0
 BPE_DIC_L		EQU  TMP_SV2
@@ -96,7 +96,7 @@ BPE_IX_BUF		EQU  BPE_BUF+$80
 
 
 bpe_dec_vram:
-	; “]‘—æVRAMƒAƒhƒŒƒXƒZƒbƒg
+	; è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
 	lda  <DST_ADR+1
     sta  $2006
 	lda  #$FF
@@ -113,31 +113,31 @@ bpe_dec:
 .no_end
 	sta  <BPE_pass
 
-	; “WŠJƒTƒCƒY
+	; å±•é–‹ã‚µã‚¤ã‚º
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_decompsize+0
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_decompsize+1
 
-	; ˆ³kƒTƒCƒY
+	; åœ§ç¸®ã‚µã‚¤ã‚º
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_compsize+0
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_compsize+1
 
-	; Ž«‘ƒAƒhƒŒƒXH
+	; è¾žæ›¸ã‚¢ãƒ‰ãƒ¬ã‚¹H
 	LD_W <BPE_DIC_H , <SRC_ADR
 	ldx  #0
 	lda  <BPE_pass
 	jsr  addSCR_ADR
 
-	; Ž«‘ƒAƒhƒŒƒXL
+	; è¾žæ›¸ã‚¢ãƒ‰ãƒ¬ã‚¹L
 	LD_W <BPE_DIC_L , <SRC_ADR
 	ldx  #0
 	lda  <BPE_pass
 	jsr  addSCR_ADR
 
-	; Ž«‘ƒAƒhƒŒƒXO
+	; è¾žæ›¸ã‚¢ãƒ‰ãƒ¬ã‚¹O
 	LD_W <BPE_DIC_O , <SRC_ADR
 	ldx  #0
 	lda  <BPE_pass
@@ -148,7 +148,7 @@ bpe_dec:
 	jmp .loop
 
 ;------------------------------------------------
-;	BPE 1ƒtƒŒ[ƒ€ƒfƒR[ƒh
+;	BPE 1ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ã‚³ãƒ¼ãƒ‰
 ;------------------------------------------------
 frame_decode:
 	lda  <DST_ADR+1

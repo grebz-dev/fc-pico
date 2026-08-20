@@ -2,7 +2,7 @@
 ;----------------
 ; PPU
 ;----------------
-; MMC3‚ÌIRQ‚ðŽg‚¤ê‡‚Í BG ‚ð$0000”Ô’n, Spr ‚ð$1000”Ô’n‚É”z’u‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
+; MMC3ã®IRQã‚’ä½¿ã†å ´åˆã¯ BG ã‚’$0000ç•ªåœ°, Spr ã‚’$1000ç•ªåœ°ã«é…ç½®ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
 FLG_PPU2000	EQU	%101_01_0_00
 				; NMI gen,master,SP8x8,BG$0000,SP$0000,+1,v0,h0
 
@@ -41,63 +41,63 @@ KDIR_UL		EQU $07
 
 
 ;----------------
-; ƒL[ƒŠƒs[ƒgÝ’è
+; ã‚­ãƒ¼ãƒªãƒ”ãƒ¼ãƒˆè¨­å®š
 ;----------------
-REP_WAIT	EQU	24	; ƒŠƒs[ƒgŠJŽn‚Ü‚Å‚ÌŽžŠÔ (ƒtƒŒ[ƒ€”)
-REP_INTERVAL	EQU	 8	; ƒŠƒs[ƒgŠÔŠu (ƒtƒŒ[ƒ€”)
+REP_WAIT	EQU	24	; ãƒªãƒ”ãƒ¼ãƒˆé–‹å§‹ã¾ã§ã®æ™‚é–“ (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
+REP_INTERVAL	EQU	 8	; ãƒªãƒ”ãƒ¼ãƒˆé–“éš” (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
 
 
 ;----------------
-; ƒoƒ“ƒN’è‹`
+; ãƒãƒ³ã‚¯å®šç¾©
 ;----------------
 PBNK_SYS	EQU  $00
 
 
 
 ;----------------
-; ŠeŽíP’è‹`
+; å„ç¨®På®šç¾©
 ;----------------
-SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
+SP_CLR_Y	EQU 240		; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚¯ãƒªã‚¢ãƒ¼Y
 
 ;----------------
-; STEP’è‹`
+; STEPå®šç¾©
 ;----------------
-ST_INIT		EQU	 0	; ‰Šú‰»
-ST_EXA00	EQU	 1	; Šg’£ƒVƒXƒeƒ€‹N“®ƒ`ƒFƒbƒN
+ST_INIT		EQU	 0	; åˆæœŸåŒ–
+ST_EXA00	EQU	 1	; æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ èµ·å‹•ãƒã‚§ãƒƒã‚¯
 ST_TITLE	EQU	 2
 ST_OPTION	EQU	 3
 ST_DEBUG	EQU	 4
 ST_MAIN		EQU	 5
 ST_CLEAR	EQU	 6
 ST_OVER		EQU	 7
-ST_LICENSE	EQU	 8	; ƒ‰ƒCƒZƒ“ƒX
+ST_LICENSE	EQU	 8	; ãƒ©ã‚¤ã‚»ãƒ³ã‚¹
 
-ST_MAX		EQU	 9	; ƒXƒeƒbƒv‚ÌÅ‘å’l
-
-
-
-;==========================================================
-; ƒfƒ‚ƒ^ƒCƒ}[ŠÖ˜A’è‹`
-;==========================================================
-TITLE_DEMO_TM	EQU	(7*60/16)	; –ñ7•b
-GAME_DEMO_TM	EQU	(15*60/16)	; –ñ15•b
-CREDIT_DEMO_TM	EQU	(5*60/16)	; –ñ5•b
+ST_MAX		EQU	 9	; ã‚¹ãƒ†ãƒƒãƒ—ã®æœ€å¤§å€¤
 
 
 
 ;==========================================================
-; ƒvƒŒ[ƒ„[ƒAƒjƒ§ŒäŠÖ˜A’è‹`
+; ãƒ‡ãƒ¢ã‚¿ã‚¤ãƒžãƒ¼é–¢é€£å®šç¾©
 ;==========================================================
-PLY_AN_WAIT		EQU  0		; ‘Ò‹@
-PLY_AN_CHARGE	EQU  1		; ƒ`ƒƒ[ƒW
-PLY_AN_SHOTA	EQU  2		; ƒVƒ‡ƒbƒgA
-PLY_AN_SHOTB	EQU  3		; ƒVƒ‡ƒbƒgB
-PLY_AN_DEAD		EQU  4		; Ž€–SƒAƒjƒ
+TITLE_DEMO_TM	EQU	(7*60/16)	; ç´„7ç§’
+GAME_DEMO_TM	EQU	(15*60/16)	; ç´„15ç§’
+CREDIT_DEMO_TM	EQU	(5*60/16)	; ç´„5ç§’
+
+
+
+;==========================================================
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ã‚¢ãƒ‹ãƒ¡åˆ¶å¾¡é–¢é€£å®šç¾©
+;==========================================================
+PLY_AN_WAIT		EQU  0		; å¾…æ©Ÿ
+PLY_AN_CHARGE	EQU  1		; ãƒãƒ£ãƒ¼ã‚¸
+PLY_AN_SHOTA	EQU  2		; ã‚·ãƒ§ãƒƒãƒˆA
+PLY_AN_SHOTB	EQU  3		; ã‚·ãƒ§ãƒƒãƒˆB
+PLY_AN_DEAD		EQU  4		; æ­»äº¡ã‚¢ãƒ‹ãƒ¡
 
 
 
 ;----------------
-; ƒTƒEƒ“ƒh’è‹`
+; ã‚µã‚¦ãƒ³ãƒ‰å®šç¾©
 ;----------------
 BGM_BOSS	EQU  1	;
 BGM_STAGE	EQU  2	;
@@ -106,31 +106,31 @@ BGM_OVER	EQU  4	;
 
 SE_TOP_NO	EQU  5
 
-SE_CUR_SEL		EQU  (SE_TOP_NO+0)	; 00 ƒJ[ƒ\ƒ‹ ˆÚ“®
-SE_CUR_ENT		EQU  (SE_TOP_NO+1)	; 01 ƒJ[ƒ\ƒ‹ Œˆ’è
-SE_CUR_CAN		EQU  (SE_TOP_NO+2)	; 02 ƒJ[ƒ\ƒ‹ ƒLƒƒƒ“ƒZƒ‹@(ƒIƒvƒVƒ‡ƒ“ Žg—p)
-SE_SHOT_A		EQU  (SE_TOP_NO+3)	; 03 Ž©‹@ƒVƒ‡ƒbƒg‰¹
-SE_PLY_DAME		EQU  (SE_TOP_NO+4)	; 04 Ž©‹@ƒ_ƒ[ƒW‰¹
-SE_PLY_DEAD		EQU  (SE_TOP_NO+5)	; 05 Ž©‹@Ž€–S
-SE_PLY_FORM		EQU  (SE_TOP_NO+6)	; 06 Ž©‹@ƒtƒH[ƒ[ƒVƒ‡ƒ“ƒ`ƒFƒ“ƒW
+SE_CUR_SEL		EQU  (SE_TOP_NO+0)	; 00 ã‚«ãƒ¼ã‚½ãƒ« ç§»å‹•
+SE_CUR_ENT		EQU  (SE_TOP_NO+1)	; 01 ã‚«ãƒ¼ã‚½ãƒ« æ±ºå®š
+SE_CUR_CAN		EQU  (SE_TOP_NO+2)	; 02 ã‚«ãƒ¼ã‚½ãƒ« ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã€€(ã‚ªãƒ—ã‚·ãƒ§ãƒ³ ä½¿ç”¨)
+SE_SHOT_A		EQU  (SE_TOP_NO+3)	; 03 è‡ªæ©Ÿã‚·ãƒ§ãƒƒãƒˆéŸ³
+SE_PLY_DAME		EQU  (SE_TOP_NO+4)	; 04 è‡ªæ©Ÿãƒ€ãƒ¡ãƒ¼ã‚¸éŸ³
+SE_PLY_DEAD		EQU  (SE_TOP_NO+5)	; 05 è‡ªæ©Ÿæ­»äº¡
+SE_PLY_FORM		EQU  (SE_TOP_NO+6)	; 06 è‡ªæ©Ÿãƒ•ã‚©ãƒ¼ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒã‚§ãƒ³ã‚¸
 
-SE_BAKU_S		EQU  (SE_TOP_NO+7)	; 07 “G Œ‚”j “GƒTƒCƒY¬ ƒUƒR
-SE_BAKU_M		EQU  (SE_TOP_NO+8)	; 08 “G Œ‚”j “GƒTƒCƒY’† ƒUƒR
-SE_BAKU_L		EQU  (SE_TOP_NO+9)	; 09 “G Œ‚”j “GƒTƒCƒY‘å ƒ{ƒX
+SE_BAKU_S		EQU  (SE_TOP_NO+7)	; 07 æ•µ æ’ƒç ´ æ•µã‚µã‚¤ã‚ºå° ã‚¶ã‚³
+SE_BAKU_M		EQU  (SE_TOP_NO+8)	; 08 æ•µ æ’ƒç ´ æ•µã‚µã‚¤ã‚ºä¸­ ã‚¶ã‚³
+SE_BAKU_L		EQU  (SE_TOP_NO+9)	; 09 æ•µ æ’ƒç ´ æ•µã‚µã‚¤ã‚ºå¤§ ãƒœã‚¹
 
-SE_NO_DAME		EQU  (SE_TOP_NO+10)	; 10 “G–³“G‰¹
-SE_DAME			EQU  (SE_TOP_NO+11)	; 11 ƒ_ƒ[ƒWŽó‚¯‰¹
+SE_NO_DAME		EQU  (SE_TOP_NO+10)	; 10 æ•µç„¡æ•µéŸ³
+SE_DAME			EQU  (SE_TOP_NO+11)	; 11 ãƒ€ãƒ¡ãƒ¼ã‚¸å—ã‘éŸ³
 
-SE_BOSS_MOVE1	EQU  (SE_TOP_NO+12)	; 12 ƒ{ƒXˆÚ“®1
-SE_BOSS_MOVE2	EQU  (SE_TOP_NO+13)	; 13 ƒ{ƒXˆÚ“®2
+SE_BOSS_MOVE1	EQU  (SE_TOP_NO+12)	; 12 ãƒœã‚¹ç§»å‹•1
+SE_BOSS_MOVE2	EQU  (SE_TOP_NO+13)	; 13 ãƒœã‚¹ç§»å‹•2
 
-SE_BOSS_ATK1	EQU  (SE_TOP_NO+14)	; 14 ƒ{ƒXUŒ‚
-SE_TITLE		EQU  (SE_TOP_NO+15)	; 15 ƒ^ƒCƒgƒ‹‚r‚d
-SE_START_JET	EQU  (SE_TOP_NO+16)	; 16 ƒXƒ^[ƒgƒWƒFƒbƒg
-SE_HADOU_CHG	EQU  (SE_TOP_NO+17)	; 17 ”g“®–C@ƒ`ƒƒ[ƒW
-SE_HADOU_SHT	EQU  (SE_TOP_NO+18)	; 18 ”g“®–C@”­ŽË
-SE_DM_DIVE		EQU  (SE_TOP_NO+19)	; 19 ŽŸŒ³öq
-SE_YAMATO_S		EQU  (SE_TOP_NO+20)	; 20 ƒ„ƒ}ƒg”­i
+SE_BOSS_ATK1	EQU  (SE_TOP_NO+14)	; 14 ãƒœã‚¹æ”»æ’ƒ
+SE_TITLE		EQU  (SE_TOP_NO+15)	; 15 ã‚¿ã‚¤ãƒˆãƒ«ï¼³ï¼¥
+SE_START_JET	EQU  (SE_TOP_NO+16)	; 16 ã‚¹ã‚¿ãƒ¼ãƒˆã‚¸ã‚§ãƒƒãƒˆ
+SE_HADOU_CHG	EQU  (SE_TOP_NO+17)	; 17 æ³¢å‹•ç ²ã€€ãƒãƒ£ãƒ¼ã‚¸
+SE_HADOU_SHT	EQU  (SE_TOP_NO+18)	; 18 æ³¢å‹•ç ²ã€€ç™ºå°„
+SE_DM_DIVE		EQU  (SE_TOP_NO+19)	; 19 æ¬¡å…ƒæ½œèˆª
+SE_YAMATO_S		EQU  (SE_TOP_NO+20)	; 20 ãƒ¤ãƒžãƒˆç™ºé€²
 
 SNDTST_MAX   EQU (SE_TOP_NO+21)
 
