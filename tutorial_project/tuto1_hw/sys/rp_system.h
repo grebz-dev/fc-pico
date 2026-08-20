@@ -30,6 +30,8 @@
 
 #include "Obj3d.h"
 
+#include "Obj3d.h"
+
 
 
 #define LOOP_MS 1
