@@ -55,17 +55,21 @@ FILE_PATTERNS          = *.c \
                          *.md \
                          *.dox
 
-# The sample game is upstream's own full application, added after this reference
-# was written: it is entirely undocumented and still CP932-encoded, so with
-# INPUT_ENCODING=UTF-8 and EXTRACT_ALL=NO it would contribute nothing but mojibake
-# and warnings. Documenting and re-encoding it is separate work; until then it stays
-# out of the input.
-EXCLUDE                = tutorial_project/sample_game
+# sample_game/sys/ is a verbatim copy of tuto1_hw/sys/ -- byte-identical but for
+# two blank lines in rp_system.h. Documenting it again would duplicate every
+# platform class in the output and make every cross-reference ambiguous, so the copy
+# is excluded and @ref sample_game says so instead.
+EXCLUDE                = tutorial_project/sample_game/sys
 
 # Machine-generated blobs and build artefacts. res/resdata.c is a multi-thousand-line
 # hex array produced by Bin2C; it is described in docs/pages/generated-resources.md
 # instead. The .lst listings are nesasm output and are regenerated every build.
 EXCLUDE_PATTERNS       = */res/resdata.c \
+                         */res/res_id.h \
+                         */res/res_id2.h \
+                         */res/fcpico.c \
+                         */res/mdl_*.c \
+                         */res/mdl_*_col.h \
                          */sys/pio/fcppu.pio.h \
                          */docs/html/* \
                          *.lst \

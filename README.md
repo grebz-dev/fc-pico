@@ -53,6 +53,7 @@ Then, by task:
 - Regenerating the checked-in image and sound data -> @ref generated_resources
 - Setting up a toolchain -> @ref dev_setup
 - Editing the sources -> @ref conventions
+- Reading the shipped game rather than the tutorial -> @ref sample_game
 
 ## Building
 

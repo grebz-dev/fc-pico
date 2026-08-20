@@ -48,6 +48,29 @@
  */
 
 /**
+ * @defgroup sample_app Sample game -- application layer
+ * @brief The shipped game's C++ half: scene machine, screens and resource access.
+ *
+ * A larger application than the tutorial sketch, and a differently shaped one:
+ * the game's rules live in 6502 code executed by rp_fcemu, and this layer feeds
+ * it input, reads its object tables back out and renders them in 3D.
+ *
+ * @see @ref sample_game
+ */
+
+/**
+ * @defgroup gamerom Sample game -- 6502 game ROM
+ * @brief The game itself, as a standalone NROM cartridge image.
+ *
+ * Assembled from @c sample_game/GAMEROM/ into @c map0demo.NES. It is a complete
+ * Famicom game with its own reset vector and NMI handler, and it also exposes a
+ * two-entry jump table at `$E000` so the cartridge can drive it a frame at a
+ * time instead.
+ *
+ * @see @ref sample_game
+ */
+
+/**
  * @defgroup bootrom 6502 boot ROM
  * @brief Code that runs on the console's own CPU.
  *

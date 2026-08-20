@@ -276,10 +276,16 @@ def filter_batch(lines):
 def select_filter(path):
     """Choose the filter appropriate to *path*.
 
-    Dispatch is by path as well as extension: ``.h`` files under ``BOOTROM/``
-    and ``BOOTROM_FIX/`` are nesasm includes, not C headers, and must be kept
-    away from the C++ parser.  Routing on the path here is what lets a single
-    ``INPUT_FILTER`` replace a fragile set of ``FILTER_PATTERNS`` globs.
+    Dispatch is by path as well as extension: ``.h`` files under ``BOOTROM/``,
+    ``BOOTROM_FIX/`` and ``sample_game/GAMEROM/`` are nesasm includes, not C
+    headers, and must be kept away from the C++ parser.  Routing on the path
+    here is what lets a single ``INPUT_FILTER`` replace a fragile set of
+    ``FILTER_PATTERNS`` globs.
+
+    Getting this wrong is quiet rather than loud.  A missed ``.h`` is passed
+    through to the C++ parser, which reads ``NAME EQU $12`` as a variable
+    declaration and reports it as an undocumented member -- so the file appears
+    in the reference, wrongly, instead of failing outright.
 
     @param path path to the file Doxygen is about to parse.
     @return a callable taking a list of lines, or ``None`` to pass through.
@@ -299,7 +305,7 @@ def select_filter(path):
         return filter_batch
     if ext == ".h":
         # nesasm include, or genuine C header?
-        if "/bootrom/" in norm or "/bootrom_fix/" in norm:
+        if "/bootrom/" in norm or "/bootrom_fix/" in norm or "/gamerom/" in norm:
             return filter_nesasm
         return None
     return None
