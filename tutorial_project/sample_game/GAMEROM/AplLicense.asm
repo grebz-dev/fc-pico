@@ -1,16 +1,28 @@
+;/// @file AplLicense.asm
+;/// @brief Licence screen, on the console's own hardware.
+;/// @ingroup gamerom
+;///
+;/// The cartridge shows the same text from BPE-compressed nametables instead.
+;/// @see @ref sample_game
 
 
+;/// @brief Palette data for the licence screen.
+;/// @ingroup gamerom
 PAL_LICENSE:
 	PAL_STAFF
 
+;/// @brief Licence page 1, BPE-compressed.
+;/// @ingroup gamerom
 BPE_LICENSE0:
 	.incbin		".\CHR\NamLicense0.bpe"
+;/// @brief Licence page 2, BPE-compressed.
+;/// @ingroup gamerom
 BPE_LICENSE1:
 	.incbin		".\CHR\NamLicense1.bpe"
 
 
-LICENSE_DISP_WAIT	EQU  60*10/8
-LICENSE_DISP_SCR	EQU  60* 6/8
+LICENSE_DISP_WAIT	EQU  60*10/8		;///< Frames the licence page is held before it may be dismissed.
+LICENSE_DISP_SCR	EQU  60* 6/8		;///< Scroll position of the licence text.
 
 
 ;============================================
@@ -18,6 +30,8 @@ LICENSE_DISP_SCR	EQU  60* 6/8
 ;============================================
 
 ;=========================================
+;/// @brief Console-side licence screen, showing the NSD.Lib notice.
+;/// @ingroup gamerom
 APL_LICENSE:
 	ldy  #0
 	jsr  clearObj2

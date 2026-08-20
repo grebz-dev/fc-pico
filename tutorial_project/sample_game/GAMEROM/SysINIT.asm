@@ -1,3 +1,16 @@
+;/// @file SysINIT.asm
+;/// @brief Cold-start: RAM clear, PPU warm-up and the WRAM reset gesture.
+;/// @ingroup gamerom
+;///
+;/// Runs only on a real console. Clears memory, waits out the PPU's power-on
+;/// settling time, and blanks the palette so the reset garbage never reaches the
+;/// screen.
+;///
+;/// The stack page is cleared with care: the high score lives there and is meant
+;/// to survive a reset, so the routine steps around it. Holding a key combination
+;/// at boot forces the whole of WRAM to be wiped anyway, which is why the key
+;/// port is read twice here -- the debouncer needs the same keys on two
+;/// consecutive frames before it will report them.
 ;=====================================================
 ;
 ;	起動時初期化処理
@@ -8,12 +21,19 @@
 
 
 ;---------------------------------------------------
-MAGIC_LEN	EQU	6
+MAGIC_LEN	EQU	6		;///< Length of the #MAGIC signature, in bytes.
 
+;/// @brief The #MAGIC signature, in ROM, compared against the copy in the stack page.
+;/// @ingroup gamerom
 ro_magic:
 	.db	"MAP0DM"
 
 
+;/// @brief Clears memory, waits out the PPU and decides whether to wipe WRAM.
+;/// Steps around the high-score bytes in the stack page so they survive a reset,
+;/// and reads the controller twice so the two-frame debounce can report the
+;/// WRAM-wipe key combination on the very first frame.
+;/// @ingroup gamerom
 SYS_INIT:
 	sei
 	ldx  #0		; =ldx #0

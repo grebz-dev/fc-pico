@@ -1,8 +1,23 @@
+;/// @file AplGame.asm
+;/// @brief The play state: the per-frame step machine for a stage.
+;/// @ingroup gamerom
+;///
+;/// `APL_GAME` is entry 5 in the `STG_COD` jump table, and `PLY_STG_0` through
+;/// `PLY_STG_4` are the phases it walks -- stage intro, play, and the exits into
+;/// the clear and game-over states.
+;///
+;/// @note Under the cartridge only the innermost part of this runs. `FCP_GAME_MAIN`
+;///       calls `updateMission` and `moveGameObj` directly and never enters this
+;///       state machine, so the intro and exit phases are skipped and the C++ side
+;///       decides when a run has ended.
 
 
 ;=====================================
 ;プレイ画面
 ;=====================================
+;/// @brief Entry 5 of the `STG_COD` table: the play state on a real console.
+;/// @ingroup gamerom
+;/// @note Not reached under the cartridge. @see @ref sample_game
 APL_GAME:
 	lda  #0
 	sta  <ENEMY_FLFG
@@ -24,6 +39,8 @@ APL_GAME:
 	rts
 
 
+;/// @brief Dispatches on #STG_COD_SUB to the current play phase.
+;/// @ingroup gamerom
 PLY_STG_MAIN:
 	LDA	<STG_COD_SUB
 	TBL_JUMP
@@ -34,6 +51,8 @@ PLY_STG_MAIN:
 	JPTBL	PLY_STG_4	; 4	PAUSE
 
 ;****** INIT ************
+;/// @brief Play phase 0: stage initialisation.
+;/// @ingroup gamerom
 PLY_STG_0:
 	DISP_OFF
 ;	INC	<NMI_FLG
@@ -73,6 +92,8 @@ PLY_STG_0:
 	RTS
 
 ;****** MAIN ***********
+;/// @brief Play phase 1: the stage proper.
+;/// @ingroup gamerom
 PLY_STG_1:
 
 .plydm_10:
@@ -111,6 +132,8 @@ PLY_STG_1:
 
 
 ;****** OVER WAIT ***********
+;/// @brief Play phase 2: waiting out the game-over sequence.
+;/// @ingroup gamerom
 PLY_STG_2:
 	DEC	<GM_WAIT
 	LDA	<GM_WAIT
@@ -136,6 +159,8 @@ PLY_STG_2:
 ;	rts
 
 ;****** CLEAR WAIT ***********
+;/// @brief Play phase 3: waiting out the stage-clear sequence.
+;/// @ingroup gamerom
 PLY_STG_3:
 	DEC	<GM_WAIT
 	LDA	<GM_WAIT
@@ -150,6 +175,8 @@ PLY_STG_3:
 
 
 ;****** PAUSE ***********
+;/// @brief Play phase 4: paused.
+;/// @ingroup gamerom
 PLY_STG_4:
 	CHK_BIT <KEY_TRG, #KEY_RUN
         BEQ     .plyst4_00
@@ -165,6 +192,8 @@ PLY_STG_4:
 ;ゲーム終了処理（ラスターシステムの影響で特定の手順を踏まないと画面化ける）
 ;  Areg -> ジャンプ先STEP番号
 ;=====================================
+;/// @brief Leaves the play state for the screen named in the accumulator.
+;/// @ingroup gamerom
 exitAplGame:
 	pha
 	jsr  exitAplGameSub
@@ -172,6 +201,8 @@ exitAplGame:
 	pla
     jmp  SET_STG_COD
 
+;/// @brief Exit entry point that skips the setup.
+;/// @ingroup gamerom
 exitAplGame2:
 	pha
 	jsr  exitAplGameSub
@@ -179,6 +210,8 @@ exitAplGame2:
     jmp  SET_STG_COD2
 
 
+;/// @brief Common tail of the play-state exits.
+;/// @ingroup gamerom
 exitAplGameSub:
 	jsr  SET_FADE_OUT_B
 	jsr  WAIT_FADE_END
@@ -198,6 +231,8 @@ exitAplGameSub:
 ;=================================
 ; メイン描画処理
 ;=================================
+;/// @brief Console-side draw for the play state.
+;/// @ingroup gamerom
 PLY_DRAW_S:
 	lda  PALFADE_VAL
 	bne  .skip_pal_trans

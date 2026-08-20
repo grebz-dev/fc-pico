@@ -1,3 +1,10 @@
+;/// @file cfgMissonHara.h
+;/// @brief Mission scripts for the ordinary waves, written in `MC_*` bytecode.
+;/// @ingroup gamerom
+;///
+;/// Shared by all stages. The header comment lists the control opcodes and their
+;/// operands; note the restriction it records, that a called script may not itself
+;/// call.
 ;===============================================================================================
 ;	ミッションコントロールテーブル（全ステージ共通）
 ;
@@ -21,7 +28,7 @@
 
 ;
 
-ZAKO_MOVE_DT MACRO
+ZAKO_MOVE_DT MACRO		;///< Emits a minion movement-data row.
 	DB	\1			; フレーム数(1-200)
 	DW	( \2 ) * $100 / \1	; 移動量 X
 	DW	( \3 ) * $100 / \1	; 移動量 Y
@@ -30,10 +37,12 @@ ZAKO_MOVE_DT MACRO
 
 
 ;ZFY_BASE = $2C00
-ZFY_BASE = %010_00_00000_00000
+ZFY_BASE = %010_00_00000_00000		;///< Base nametable address for minion spawn positions, as a packed PPU address.
 
 ;  ミッションコントロール：最大64種類登録可能
 
+;/// @brief Script address for each HARADIUS sub-type, up to 64 of them.
+;/// @ingroup gamerom
 misson_hara_control_tbl:
 
 	dw  HaraProg00
@@ -88,6 +97,8 @@ HaraProg00	; ステージ開始
 ;=====================================
 ; ステージBGM再生
 ;=====================================
+;/// @brief Mission subroutine: start the stage music.
+;/// @ingroup gamerom
 playStageBGM:
 	lda  #BGM_STAGE
 	jmp  PLAY_BGM
@@ -99,6 +110,8 @@ HaraProg01
 	MC_PGCALL playBossBGM,0	; ステージBGM再生
 	MC_END	; データエンド
 
+;/// @brief Mission subroutine: start the boss music.
+;/// @ingroup gamerom
 playBossBGM:
 	lda  #BGM_BOSS	; 1
 	jmp  PLAY_BGM
@@ -107,8 +120,12 @@ playBossBGM:
 ;-------------------------------
 ; 上から攻撃　NTK_SPZK0
 ;-------------------------------
+;/// @brief Script: attack from above with #NTK_SPZK0.
+;/// @ingroup gamerom
 HaraProg02:
 	MC_MEMSET PRM_1, NTK_SPZK0
+;/// @brief Body of #HaraProg02.
+;/// @ingroup gamerom
 HaraProg02_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -147,6 +164,8 @@ HaraProg02_0:
 ;-------------------------------
 ; 上から攻撃　NTK_SPZK1
 ;-------------------------------
+;/// @brief Script: attack from above with #NTK_SPZK1.
+;/// @ingroup gamerom
 HaraProg03:
 	MC_MEMSET PRM_1, NTK_SPZK1
 	MC_JMP HaraProg02_0, MCJ_JMP
@@ -154,6 +173,8 @@ HaraProg03:
 ;-------------------------------
 ; 上から攻撃　NTK_SPZK2
 ;-------------------------------
+;/// @brief Script: attack from above with #NTK_SPZK2.
+;/// @ingroup gamerom
 HaraProg04:
 	MC_MEMSET PRM_1, NTK_SPZK2
 	MC_JMP HaraProg02_0, MCJ_JMP
@@ -190,6 +211,8 @@ HaraProg05
 HaraProg06
 	MC_MEMSET PRM_1, NTK_SPZK0
 
+;/// @brief Script body, sub-type 6.
+;/// @ingroup gamerom
 HaraProg06_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -250,6 +273,8 @@ HaraProg08
 HaraProg09
 	MC_MEMSET PRM_1, NTK_SPZK0
 
+;/// @brief Script body, sub-type 9.
+;/// @ingroup gamerom
 HaraProg09_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -308,6 +333,8 @@ HaraProg0B
 HaraProg0C
 	MC_MEMSET PRM_1, NTK_SPZK0
 
+;/// @brief Script body, sub-type 12.
+;/// @ingroup gamerom
 HaraProg0C_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2

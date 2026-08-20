@@ -1,7 +1,20 @@
+;/// @file SysNES.asm
+;/// @brief Reset vector, the NMI handler and the random-number generator.
+;/// @ingroup gamerom
+;///
+;/// The frame is driven from `NMI`, in the order the PPU demands: sprite DMA
+;/// first, then the queued VRAM writes, then the scroll registers, and only then
+;/// the APU. Everything before the scroll write has to fit inside vertical blank.
+;///
+;/// @note None of this runs under the cartridge. The RP2350 calls the game logic
+;///       directly and does the drawing itself, so the NMI handler, the sprite DMA
+;///       and the VRAM queue are all dead code in that mode.
 
 ;=====================================================
 
 
+;/// @brief Reset vector. Runs only on a real console.
+;/// @ingroup gamerom
 INIT:
 	sei
 	cld
@@ -15,6 +28,8 @@ INIT:
 	sta	<FLG_2000
 	sta	 $2000				; このタイミングでNMI発生
 
+;/// @brief Clear loop used during reset.
+;/// @ingroup gamerom
 LOPX:
 	jsr WAIT_VSYNC
 
@@ -39,6 +54,10 @@ LOPX:
 ;*****************************************
 ;乱数システム
 ;*****************************************
+;/// @brief Advances the pseudo-random generator. Called once per frame.
+;/// @ingroup gamerom
+;/// @note Called from `FCP_GAME_MAIN` as well, so the sequence advances at the
+;///       same rate in both modes.
 MAKE_RND:
 	lda  RND_WK0
 	adc  #77
@@ -72,6 +91,14 @@ MAKE_RND:
 ;***************************************
 ;***************************************
 
+;/// @brief Vertical-blank interrupt: the frame driver on a real console.
+;/// @ingroup gamerom
+;///
+;/// Order is forced by the hardware -- sprite DMA, queued VRAM writes, scroll
+;/// registers, then the APU. Everything up to the scroll write has to complete
+;/// inside vertical blank or the picture breaks.
+;/// @note Dead code under the cartridge, which drives the game from `$E004` and
+;///       does its own drawing. @see @ref sample_game
 NMI:
 	bit	 $2002
 	pha

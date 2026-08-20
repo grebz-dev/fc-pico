@@ -1,3 +1,13 @@
+;/// @file AplGameMove.asm
+;/// @brief Object movement: enemies, enemy shots and player shots.
+;/// @ingroup gamerom
+;///
+;/// The simulation proper, and the largest file in the ROM. Movement patterns are
+;/// table-driven: `tblMoveENTsin` and its siblings hold the sine and direction
+;/// tables that the aimed, homing and semi-homing shots steer by.
+;///
+;/// `hitEnemyNTObj` is the collision pass. It runs here, on the 6502, in both
+;/// modes -- the cartridge renders the outcome but does not decide it.
 ;=======================================================================
 ;=======================================================================
 ;=======================================================================
@@ -8,6 +18,10 @@
 
 
 
+;/// @brief Moves every live object, then runs the collision pass.
+;/// @ingroup gamerom
+;///
+;/// Called from `FCP_GAME_MAIN`, so this is the simulation the cartridge sees.
 moveGameObj:
 	; 無敵タイマーカウントダウン
 	lda  PLY_MUTEKI_TM
@@ -36,6 +50,8 @@ moveGameObj:
 ;-----------------------------------
 ; 敵弾移動
 ;-----------------------------------
+;/// @brief Steps each enemy and enemy shot along its movement pattern.
+;/// @ingroup gamerom
 moveEnemyNTObj:
 
 	; 移動処理ループ
@@ -310,6 +326,8 @@ moveEnemyNTObj:
 ;-----------------------------------
 ; 自機誘導弾補正 8フレームに１回だけ誘導
 ;-----------------------------------
+;/// @brief Steers the player's homing shots. Corrects once every eight frames.
+;/// @ingroup gamerom
 movePlyHorming:
 	ldx  #0
 .loop
@@ -372,6 +390,10 @@ movePlyHorming:
 ;-----------------------------------
 ; 自機ノーマル弾移動
 ;-----------------------------------
+;/// @brief Steps the player's shots and retires any that leave the playfield.
+;/// @ingroup gamerom
+;/// @note A retired slot is marked by zeroing its Y, which is the same convention
+;///       the C++ renderer tests. @see @ref sample_game
 movePlyShotAObj:
 	ldx #0
 .loop
@@ -429,6 +451,11 @@ movePlyShotAObj:
 ;-----------------------------------
 ; 敵ノーマル弾当たり判定
 ;-----------------------------------
+;/// @brief Collision: player shots against enemies, and enemies against the player.
+;/// @ingroup gamerom
+;///
+;/// Runs on the 6502 in both modes. The cartridge renders the result but takes no
+;/// part in deciding it.
 hitEnemyNTObj:
 	lda  PLY_ANM_NO
 	cmp  #PLY_AN_DEAD
@@ -537,6 +564,8 @@ hitEnemyNTObj:
 ; OUT -> X移動データ W_AR
 ;        Y移動データ W_BR
 ;====================================================================
+;/// @brief Loads the movement delta for a direction into #W_BR.
+;/// @ingroup gamerom
 setMoveDirData:
 	php
 	asl  a
@@ -581,25 +610,27 @@ setMoveDirData:
 
 ; 敵の弾移動テーブル 64方向一周分sinテーブル
 
-NT_SIN MACRO
+NT_SIN MACRO		;///< Emits one entry of the enemy movement sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE0
 	ENDM
 
-NT_SIN1 MACRO
+NT_SIN1 MACRO		;///< Emits one entry of the first alternate sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE1
 	ENDM
 
-NT_SIN2 MACRO
+NT_SIN2 MACRO		;///< Emits one entry of the second alternate sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE2
 	ENDM
 
-NT_SIN3 MACRO
+NT_SIN3 MACRO		;///< Emits one entry of the third alternate sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE3
 	ENDM
 
 
 ; 360 / 64 = 5.625
 
+;/// @brief Sine table for enemy movement; 64 steps to the turn, 5.625 degrees each.
+;/// @ingroup gamerom
 tblMoveENTsin:
 	NT_SIN 0		; 0  0
 	NT_SIN 25		; 1  5.625
@@ -669,6 +700,8 @@ tblMoveENTsin:
 	NT_SIN -50		; 62
 	NT_SIN -25		; 63
 
+;/// @brief Second sine table, at a different amplitude.
+;/// @ingroup gamerom
 tblMoveENTsin1:
 	NT_SIN1 0		; 0
 	NT_SIN1 25		; 1
@@ -754,6 +787,8 @@ tblMoveENTsin1:
 ; 出力
 ;	TMP_SVA 0-63 方向
 
+;/// @brief Returns the direction from an enemy to the player, for aimed shots.
+;/// @ingroup gamerom
 getAngleENT:
 	lda  #0
 	sta  <W_BR+0
@@ -814,6 +849,8 @@ getAngleENT:
 ;------------------------------------------
 ;		 方向変換テーブル
 ;------------------------------------------
+;/// @brief Direction conversion table.
+;/// @ingroup gamerom
 tblDirCnv:
 	db $00,$20,$00,$20
 	db $01,$1F,$3F,$21
@@ -854,6 +891,8 @@ tblDirCnv:
 ;	NT_SIN 251		; E  78.75
 ;	NT_SIN 255		; F  84.375
 
+;/// @brief Direction test table.
+;/// @ingroup gamerom
 tblDirCheck:
 	db $08,$00,$00,$00,$00,$00,$00,$00,  $00,$00,$00,$00,$00,$00,$00,$00
 	db $10,$08,$06,$05,$04,$03,$03,$03,  $02,$02,$02,$02,$02,$01,$01,$01

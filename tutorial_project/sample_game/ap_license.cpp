@@ -2,6 +2,20 @@
     ap_license.cpp
 */
 
+/**
+ * @file ap_license.cpp
+ * @brief Licence screen: two BPE-compressed nametable pages.
+ * @ingroup sample_app
+ *
+ * Each page is a full 32x30 NES nametable assembled from
+ * `res/NamLicense0.asm` and `NamLicense1.asm`, compressed by `res/bpe_asm.bat`
+ * and stored in the archive. The page is decompressed into a 1152-byte stack
+ * buffer and drawn one tile at a time, every frame.
+ *
+ * The page number lives in ap_main's sub-step, so it is 1 or 2 and the archive
+ * id is formed as `BPE_NAMLICENSE0 - 1 + sel`.
+ */
+
 
 #include "ap_main.h"
 
@@ -10,6 +24,7 @@ ap_license ap_li;
 
 
 
+/// @brief NES palette for the licence screen. @ingroup sample_app
 const uint8_t ap_pal[] = {
 	// BG PAL
 	0x0F,0x01,0x15,0x20,
@@ -23,6 +38,13 @@ const uint8_t ap_pal[] = {
 	0x0F,0x21,0x10,0x20
 };
 
+/**
+ * @brief Unused. Inherited verbatim from the ap_option screen this one was copied from.
+ * @ingroup sample_app
+ * @warning Six pairs against ap_license::op_dt's seven entries. Harmless only
+ *          because neither table is read here; the ap_option.cpp original has
+ *          the seventh pair. @see @ref sample_game
+ */
 const uint8_t op_cfg[] = {
 	// MIN,MAX
 	1,3,

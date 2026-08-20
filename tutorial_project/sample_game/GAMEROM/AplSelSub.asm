@@ -1,7 +1,12 @@
+;/// @file AplSelSub.asm
+;/// @brief Menu and selection helpers shared by the console-side screens.
+;/// @ingroup gamerom
 ;============================================
 ; 	選択画面系サブルーチン
 ;============================================
 
+;/// @brief Prepares the display for a menu screen.
+;/// @ingroup gamerom
 initSelDisp:
 
 	jsr  STOP_SE
@@ -23,7 +28,11 @@ initSelDisp:
 	SET_DATA_SRC  PAL_OVER_ADR
 	jmp setPalData
 
+;/// @brief Palette data for the stage-clear screen.
+;/// @ingroup gamerom
 PAL_CLEAR_ADR:
+;/// @brief Palette data for the game-over screen.
+;/// @ingroup gamerom
 PAL_OVER_ADR:
 	PAL_CLEAR
 
@@ -32,6 +41,8 @@ PAL_OVER_ADR:
 ;----------------------
 ; ハイスコアチェック
 ;----------------------
+;/// @brief Compares the score against #HISCORES and records a new best.
+;/// @ingroup gamerom
 CHK_HISCORE:
 	LDA	#0
 	STA	<TMP_DISP2
@@ -65,6 +76,8 @@ CHK_HISCORE:
 	RTS
 
 
+;/// @brief Writes the new high score into the stack page.
+;/// @ingroup gamerom
 save_hiscore:
 	lda  GM_HISCORE+2
 	sta  HISCORES+2
@@ -87,12 +100,16 @@ save_hiscore:
 
 
 
+;/// @brief Erases a drawn string.
+;/// @ingroup gamerom
 STR_CLEAR_2:
 	DRAW_STRING2 "SCORE "
 	rts
 
 
 
+;/// @brief Draws the score.
+;/// @ingroup gamerom
 DRAW_SCORE:
 	LDA	GM_SCORE+2
 	JSR	DRAW_HEX_BYTE
@@ -114,6 +131,8 @@ DRAW_PUSH_ANY_BUTTON
 	BEQ  DRAW_PUSH_ANY_BUTTON_C
 	DRAW_STRING STR_PUSH_W
 	RTS
+;/// @brief Draws the blinking prompt.
+;/// @ingroup gamerom
 DRAW_PUSH_ANY_BUTTON_C:
 	DRAW_STRING STR_PUSH_C
 	RTS

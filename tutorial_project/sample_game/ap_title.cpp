@@ -2,6 +2,16 @@
     ap_title.cpp
 */
 
+/**
+ * @file ap_title.cpp
+ * @brief Title screen: menu, attract-mode countdown and the tumbling logo.
+ * @ingroup sample_app
+ *
+ * The logo flies in from `m_z = -20` and is stopped by hand once it reaches the
+ * origin, rather than by any animation system; every 128 frames it is given a
+ * fresh random tumble.
+ */
+
 
 #include "ap_main.h"
 
@@ -9,6 +19,7 @@
 ap_title ap_t;
 
 
+/// @brief NES palette for the title screen. @ingroup sample_app
 const uint8_t pal_title[] = {
 	// BG PAL
 	0x0F,0x01,0x15,0x20,

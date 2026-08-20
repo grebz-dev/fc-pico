@@ -2,12 +2,23 @@
     ap_over.cpp
  */
 
+/**
+ * @file ap_over.cpp
+ * @brief Game-over screen: tumbling enemy model and the final score.
+ * @ingroup sample_app
+ *
+ * Music is stopped twice over, once on the console through
+ * rp_system::setPF_COM() and once in the cartridge's own player, because both
+ * can be sounding at this point.
+ */
+
 
 #include "ap_main.h"
 
 ap_over ap_ov;
 
 
+/// @brief NES palette for the game-over screen. @ingroup sample_app
 const uint8_t pal_over[] = {
 	// BG PAL
 	0x0F,0x15,0x11,0x30,

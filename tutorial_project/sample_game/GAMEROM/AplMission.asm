@@ -1,3 +1,20 @@
+;/// @file AplMission.asm
+;/// @brief The mission engine: a bytecode interpreter for stage scripts.
+;/// @ingroup gamerom
+;///
+;/// A stage is not code, it is a script. `MISSON_PC` is a program counter into a
+;/// byte stream built from the `MC_*` macros in defMission.h, and
+;/// `mainMissionControl` is the interpreter that walks it.
+;///
+;/// The interpreter has more of a machine than the name suggests: a wait counter
+;/// that suspends the script for a number of frames, a loop counter, conditional
+;/// jumps, and a real call stack in `MISSON_STACK` indexed by `MISSON_PC_SP`, so
+;/// one script can call another. Scripts may not nest calls, though; the comment
+;/// at the head of cfgMissonHara.h says so plainly.
+;///
+;/// `MISSON_TYPE` doubles as the halt flag. Set to `$FF` the interpreter stops,
+;/// and that is exactly what the C++ side watches for to decide a stage is clear.
+;/// @see @ref sample_game
 ;=====================================
 ;
 ;	ミッション制御プログラム
@@ -9,9 +26,13 @@
 ;-------------------
 ;	初期化
 ;-------------------
+;/// @brief Starts the first mission of the current stage.
+;/// @ingroup gamerom
 initMission:
 	lda  #0
 	sta  MISSON_NO
+;/// @brief Reads the next entry from the stage table and starts that mission.
+;/// @ingroup gamerom
 getMission:
 	lda  #0
 	sta  MISSON_STEP
@@ -100,6 +121,11 @@ getMission:
 ;-------------------
 ;	ミッション更新処理（メインから毎フレームコール）
 ;-------------------
+;/// @brief Advances the mission engine by one frame.
+;/// @ingroup gamerom
+;///
+;/// Returns immediately once `MISSON_TYPE` reads `$FF`, which is the halt state
+;/// and the signal the cartridge reads as stage-cleared.
 updateMission:
 	jsr  .u001
 	lda  <USR_PROG+1
@@ -120,6 +146,8 @@ updateMission:
 	JPTBL	mi_Hara		; 2  BGザコ敵
 	JPTBL	mi_Hara		; 3  BGザコ敵
 	JPTBL	mi_Hara		; 4  BGザコ敵
+;/// @brief Mission handler that does nothing. Fills unused jump-table slots.
+;/// @ingroup gamerom
 mi_dmy:
 	rts
 
@@ -130,6 +158,11 @@ mi_dmy:
 ;----------------------
 ;  初期化
 ;----------------------
+;/// @brief Loads the script for a mission and points `MISSON_PC` at its start.
+;/// @ingroup gamerom
+;///
+;/// The sub-type byte is read two ways at once: its top two bits become the enemy
+;/// attack level, and its bottom six index the script table for the mission type.
 initMissionControl:
 	lda  MISSON_TYPE
 	asl  a
@@ -185,6 +218,12 @@ popMstack_areg
 ;----------------------
 ;  メイン
 ;----------------------
+;/// @brief The bytecode interpreter: executes one step of the mission script.
+;/// @ingroup gamerom
+;///
+;/// Counts `MISSON_WAIT` down first and does nothing while it is non-zero, which
+;/// is how a script sleeps. Otherwise it fetches the opcode at `MISSON_PC` and
+;/// dispatches on it. @see defMission.h for the opcodes.
 mainMissionControl:
 	lda  MISSON_WAIT
 	beq  .control

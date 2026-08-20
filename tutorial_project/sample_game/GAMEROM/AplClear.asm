@@ -1,3 +1,6 @@
+;/// @file AplClear.asm
+;/// @brief Stage-clear screen, on the console's own hardware.
+;/// @ingroup gamerom
 
 
 
@@ -8,6 +11,8 @@
 
 
 ;=========================================
+;/// @brief Console-side stage-clear screen.
+;/// @ingroup gamerom
 CLEAR_STG:
 	jsr .tbljump_sub
 
@@ -180,6 +185,8 @@ CLEAR_STG:
 ;=================================
 ;VBLANK 描画
 ;=================================
+;/// @brief Vertical-blank draw for the stage-clear screen.
+;/// @ingroup gamerom
 CLEAR_DRAW:
 	LDA   <STG_COD_SUB
 	TBL_JUMP

@@ -1,3 +1,6 @@
+;/// @file AplGameInit.asm
+;/// @brief Per-stage setup: clears the object tables and seeds the mission.
+;/// @ingroup gamerom
 
 
 
@@ -8,6 +11,8 @@
 ;
 ;=====================================
 
+;/// @brief Prepares the display for a stage: nametables, palette and sprites.
+;/// @ingroup gamerom
 initGameDisp:
 
 	;--------------------------

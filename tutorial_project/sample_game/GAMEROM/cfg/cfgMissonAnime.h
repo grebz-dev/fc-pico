@@ -1,7 +1,12 @@
+;/// @file cfgMissonAnime.h
+;/// @brief Mission animation sequences.
+;/// @ingroup gamerom
 ;===============================================================================================
 ;	ミッションアニメ処理
 ;
 ;===============================================================================================
+;/// @brief Runs the HARADIUS mission animation.
+;/// @ingroup gamerom
 MissionAnimeHARA:
 	lda  <PRM_1
 	pha
@@ -240,6 +245,8 @@ MissionAnimeHARA:
 ;
 ;  Areg = 攻撃パターン
 ;------------------------------
+;/// @brief Fires from a special enemy; the accumulator selects the attack pattern.
+;/// @ingroup gamerom
 shotSpEnemy:
 	TBL_JUMP
 	JPTBL	shotSp00		; 0		攻撃しない
@@ -290,6 +297,8 @@ shotSp02
 ;----------------------------------
 ;  発射するSP敵のIDXを取得
 ;----------------------------------
+;/// @brief Returns the index of the special enemy that should fire.
+;/// @ingroup gamerom
 shotSpTargetIDX:
 	lda  MISSON_ATK_IDX
 	inc  MISSON_ATK_IDX

@@ -1,7 +1,17 @@
+;/// @file defMacro.h
+;/// @brief The assembler macro library: 16-bit arithmetic and jump tables.
+;/// @ingroup gamerom
+;///
+;/// nesasm has no 16-bit operations, so they are built here: `LD_W`, `ADD_W` and
+;/// their neighbours do a word at a time in two byte-sized halves.
+;///
+;/// `TBL_JUMP` and `JPTBL` are the pattern the whole game dispatches on -- an
+;/// index in the accumulator selects an entry from the table of addresses that
+;/// follows the macro inline.
 ;******************************************************************************
 ;	MOVE関係
 ;******************************************************************************
-LD_W MACRO
+LD_W MACRO		;///< Loads a 16-bit value, low byte then high.
 	lda  \2
 	sta  \1
 	lda  \2+1
@@ -12,7 +22,7 @@ LD_W MACRO
 ;	算術関係
 ;******************************************************************************
 
-ADD_W MACRO
+ADD_W MACRO		;///< Adds a 16-bit value with carry between the halves.
 	clc
 	lda  \1
 	adc  \2
@@ -25,14 +35,14 @@ ADD_W MACRO
 ;------------------------------------------------------------------------------
 ;				バイト足し演算
 ;------------------------------------------------------------------------------
-add	MACRO
+add	MACRO		;///< 8-bit add.
 	clc
 	adc	\1
 	ENDM
 ;------------------------------------------------------------------------------
 ;				バイト引き演算
 ;------------------------------------------------------------------------------
-sub	MACRO
+sub	MACRO		;///< 8-bit subtract.
 	sec
 	sbc	\1
 	ENDM
@@ -40,7 +50,7 @@ sub	MACRO
 ;				ワード足し演算
 ;				xy + \1\2 = xy
 ;------------------------------------------------------------------------------
-addw	MACRO
+addw	MACRO		;///< 16-bit add.
 	pha
 
 	tya
@@ -61,7 +71,7 @@ addw	MACRO
 ;				ワード引き演算
 ;				xy - \1\2 = xy
 ;------------------------------------------------------------------------------
-subw	MACRO
+subw	MACRO		;///< 16-bit subtract.
 	pha
 
 	tya
@@ -79,7 +89,7 @@ subw	MACRO
 ;				ワードインクリメント
 ;				\1\2 + 1 = \1\2
 ;------------------------------------------------------------------------------
-incw	MACRO
+incw	MACRO		;///< 16-bit increment.
 	inc	\1
 	bne	.iend\@
 
@@ -92,7 +102,7 @@ incw	MACRO
 ;				ワードデクリメント
 ;				\1\2 - 1 = \1\2
 ;------------------------------------------------------------------------------
-decw	MACRO
+decw	MACRO		;///< 16-bit decrement.
 	lda	\1
 	bne	.dend\@
 
@@ -105,7 +115,7 @@ decw	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　AR に固定ワードセット
 ;------------------------------------------------------------------------------
-SET_AR	MACRO
+SET_AR	MACRO		;///< Loads the 16-bit accumulator #W_AR.
 	LDA	\1 & $ff
         STA	<W_AR
 	LDA	\1 >> 8
@@ -115,7 +125,7 @@ SET_AR	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　BR に固定ワードセット
 ;------------------------------------------------------------------------------
-SET_BR	MACRO
+SET_BR	MACRO		;///< Loads the 16-bit accumulator #W_BR.
 	LDA	\1 & $ff
         STA	<W_BR
 	LDA	\1 >> 8
@@ -125,7 +135,7 @@ SET_BR	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　AR にメモリー上のワード値セット
 ;------------------------------------------------------------------------------
-SET_AR_M	MACRO
+SET_AR_M	MACRO		;///< Loads #W_AR from memory.
 	LDA	\1
         STA	<W_AR
 	LDA	\1+1
@@ -135,7 +145,7 @@ SET_AR_M	MACRO
 ;------------------------------------------------------------------------------
 ;		擬似ワードレジスタ　BR にメモリー上のワード値セット
 ;------------------------------------------------------------------------------
-SET_BR_M	MACRO
+SET_BR_M	MACRO		;///< Loads #W_BR from memory.
 	LDA	\1
         STA	<W_BR
 	LDA	\1+1
@@ -147,7 +157,7 @@ SET_BR_M	MACRO
 ;				対象メモリーアドレス = \1
 ;				セットするビット     = \2
 ;------------------------------------------------------------------------------
-SET_BIT		MACRO
+SET_BIT		MACRO		;///< Sets a bit in a byte.
 	LDA	\1
 	ORA	\2
 	STA	\1
@@ -158,7 +168,7 @@ SET_BIT		MACRO
 ;				対象メモリーアドレス = \1
 ;				クリアーするビット   = \2
 ;------------------------------------------------------------------------------
-CLR_BIT		MACRO
+CLR_BIT		MACRO		;///< Clears a bit in a byte.
 	LDA	\1
 	AND	$ff - \2
 	STA	\1
@@ -169,7 +179,7 @@ CLR_BIT		MACRO
 ;				対象メモリーアドレス = \1
 ;				チェックするビット   = \2
 ;------------------------------------------------------------------------------
-CHK_BIT		MACRO
+CHK_BIT		MACRO		;///< Tests a bit in a byte.
 	LDA	\1
 	AND	\2
 	ENDM
@@ -178,7 +188,7 @@ CHK_BIT		MACRO
 ;------------------------------------------------------------------------------
 ;				XYレジスタをスタックに退避
 ;------------------------------------------------------------------------------
-phxy		MACRO
+phxy		MACRO		;///< Pushes X and Y.
 	sta  <TMP_SYS
 	txa
 	pha
@@ -190,7 +200,7 @@ phxy		MACRO
 ;------------------------------------------------------------------------------
 ;				XYレジスタをスタックから復帰
 ;------------------------------------------------------------------------------
-plxy		MACRO
+plxy		MACRO		;///< Pulls Y and X.
 	sta  <TMP_SYS
 	pla
 	tay
@@ -202,7 +212,7 @@ plxy		MACRO
 ;------------------------------------------------------------------------------
 ;				SRC_ADRをスタックに退避
 ;------------------------------------------------------------------------------
-phSRC_ADR	MACRO
+phSRC_ADR	MACRO		;///< Pushes #SRC_ADR.
 	lda  <SRC_ADR+0
 	pha
 	lda  <SRC_ADR+1
@@ -212,7 +222,7 @@ phSRC_ADR	MACRO
 ;------------------------------------------------------------------------------
 ;				XYレジスタをスタックから復帰
 ;------------------------------------------------------------------------------
-plSRC_ADR	MACRO
+plSRC_ADR	MACRO		;///< Pulls #SRC_ADR.
 	pla
 	sta  <SRC_ADR+1
 	pla
@@ -229,14 +239,14 @@ plSRC_ADR	MACRO
 ;------------------------------------------------------------------------------
 ;				表示on
 ;------------------------------------------------------------------------------
-DISP_ON		MACRO
+DISP_ON		MACRO		;///< Enables background and sprite rendering.
 	jsr  _disp_on_sub
 	ENDM
 
 ;------------------------------------------------------------------------------
 ;				表示off
 ;------------------------------------------------------------------------------
-DISP_OFF	MACRO
+DISP_OFF	MACRO		;///< Disables rendering, so VRAM may be written outside vertical blank.
 	jsr  _disp_off_sub
 	ENDM
 
@@ -244,7 +254,7 @@ DISP_OFF	MACRO
 ;				VRAMアドレスセット
 ;				VRAMアドレス = \1(16bit adr)
 ;------------------------------------------------------------------------------
-SET_VRAM_ADD2	MACRO
+SET_VRAM_ADD2	MACRO		;///< Sets the PPU address register.
 	lda #HIGH (\1)
     sta $2006
 	lda #LOW  (\1)
@@ -255,7 +265,7 @@ SET_VRAM_ADD2	MACRO
 ;				VRAMアドレスセット
 ;				VRAMアドレス = \1(16bit adr)
 ;------------------------------------------------------------------------------
-SET_VRAM_ADD_A_00	MACRO
+SET_VRAM_ADD_A_00	MACRO		;///< Sets the PPU address from the accumulator with a zero low byte.
         STA  $2006
         LDA	#$00
         STA  $2006
@@ -266,7 +276,7 @@ SET_VRAM_ADD_A_00	MACRO
 ;				データアドレスセット
 ;				データアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
-SET_DATA_SRC	MACRO
+SET_DATA_SRC	MACRO		;///< Points #SRC_ADR at a label.
 	lda	#LOW (\1)
 	sta	<SRC_ADR
 	lda #HIGH (\1)
@@ -277,7 +287,7 @@ SET_DATA_SRC	MACRO
 ;				データアドレスセット
 ;				データアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
-SET_DATA_DST	MACRO
+SET_DATA_DST	MACRO		;///< Points #DST_ADR at a label.
 	lda	#LOW (\1)
 	sta	<DST_ADR
 	lda #HIGH (\1)
@@ -290,7 +300,7 @@ SET_DATA_DST	MACRO
 ;				データアドレス = \1 (16bit adr)
 ;				データアドレス = \2 (16bit adr)
 ;------------------------------------------------------------------------------
-SET_DATA_ADR	MACRO
+SET_DATA_ADR	MACRO		;///< Points a general-purpose pointer at a label.
 	lda	#LOW (\2)
 	sta	\1
 	lda #HIGH (\2)
@@ -301,7 +311,7 @@ SET_DATA_ADR	MACRO
 ;				パレット転送
 ;				データアドレス = \1 (アドレス)
 ;------------------------------------------------------------------------------
-TRANS_PAL	MACRO
+TRANS_PAL	MACRO		;///< Queues a palette transfer.
 	lda  #LOW (\1)
 	sta  <SRC_ADR
 	lda  #HIGH (\1)
@@ -313,7 +323,7 @@ TRANS_PAL	MACRO
 ;				ネームテーブル＆パレット転送
 ;				データアドレス = \1 (バンク付アドレス)
 ;------------------------------------------------------------------------------
-DRAW_BG_DATA	MACRO
+DRAW_BG_DATA	MACRO		;///< Queues a background data block for the vertical-blank handler.
 	lda  #LOW (\1)
 	sta  <SRC_ADR
 	lda  #HIGH (\1)
@@ -326,7 +336,7 @@ DRAW_BG_DATA	MACRO
 ;				ネームテーブル転送
 ;				データアドレス = \1 (バンク付アドレス)
 ;------------------------------------------------------------------------------
-DRAW_BG_DATA_NP	MACRO
+DRAW_BG_DATA_NP	MACRO		;///< As #DRAW_BG_DATA, without the palette part.
 	lda  #LOW (\1)
 	sta  <SRC_ADR
 	lda  #HIGH (\1)
@@ -347,7 +357,7 @@ DRAW_BG_DATA_NP	MACRO
 ;				ネームテーブル転送
 ;				データアドレス = \1 (バンク付アドレス)
 ;------------------------------------------------------------------------------
-DRAW_BG_TEXT	MACRO
+DRAW_BG_TEXT	MACRO		;///< Queues a run of text into the nametable.
 	lda  #LOW (\1)
 	sta  <SRC_ADR
 	lda  #HIGH (\1)
@@ -360,7 +370,7 @@ DRAW_BG_TEXT	MACRO
 ;				文字列描画
 ;				\1 = 文字列
 ;------------------------------------------------------------------------------
-DRAW_STRING2 MACRO
+DRAW_STRING2 MACRO		;///< Emits an inline string. What `strver.h` is written in.
 	LDA  #HIGH (.end\@ -1)
 	PHA
 	LDA  #LOW (.end\@ -1)
@@ -378,7 +388,7 @@ DRAW_STRING2 MACRO
 ;				文字列描画
 ;				データソースアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
-DRAW_STRING	MACRO
+DRAW_STRING	MACRO		;///< Emits an inline string with its position.
 	lda	#\1 & $ff
 	STA	<SRC_ADR
 	LDA	#\1 >> 8
@@ -390,7 +400,7 @@ DRAW_STRING	MACRO
 ;				文字列描画（クリアー切り替え付き）
 ;				データソースアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
-DRAW_STRING_S	MACRO
+DRAW_STRING_S	MACRO		;///< Emits a short inline string.
 	lda	#\1 & $ff
 	STA	<SRC_ADR
 	LDA	#\1 >> 8
@@ -403,7 +413,7 @@ DRAW_STRING_S	MACRO
 ;				A reg = テーブル選択番号
 ;				テーブルデータアドレス = \1 (16bit adr)
 ;------------------------------------------------------------------------------
-DRAW_STRING_TBL_SEL	MACRO
+DRAW_STRING_TBL_SEL	MACRO		;///< Selects a string from a table and emits it.
 	ASL	A
 	TAX
 	LDA	\1,X
@@ -414,7 +424,7 @@ DRAW_STRING_TBL_SEL	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-PAL_CHG	MACRO
+PAL_CHG	MACRO		;///< Requests a palette change by setting #PAL_CHG_FG.
 	inc  <PAL_CHG_FG
 	ENDM
 
@@ -426,7 +436,7 @@ PAL_CHG	MACRO
 ;				テーブルジャンプ
 ;				A reg = ジャンプ先テーブル番号
 ;------------------------------------------------------------------------------
-TBL_JUMP	MACRO
+TBL_JUMP	MACRO		;///< Dispatches on the accumulator into the #JPTBL entries that follow inline. The pattern the whole game branches on.
 	ASL	A
 	stx  <TMP_SYS
 	TAX
@@ -442,7 +452,7 @@ TBL_JUMP	MACRO
 ;------------------------------------------------------------------------------
 ;  テーブルジャンプ先　宣言用マクロ　スタックを使う場合ジャンプ先-1 をプッシュ
 ;------------------------------------------------------------------------------
-JPTBL	MACRO
+JPTBL	MACRO		;///< One entry of a #TBL_JUMP table.
 	DW	\1 -1
 	ENDM
 
@@ -450,7 +460,7 @@ JPTBL	MACRO
 ;=================================================================
 ; 				NMIユーザー処理登録用マクロ
 ;=================================================================
-SET_NMI_CALL	MACRO
+SET_NMI_CALL	MACRO		;///< Installs a routine for the NMI handler to call, via #NMI_CALL_ADR.
 	LDA	#HIGH (\1)
 	STA <NMI_CALL_ADR+1
 	LDA	#LOW  (\1)
@@ -463,7 +473,7 @@ SET_NMI_CALL	MACRO
 ;=================================================================
 ; 				NMIユーザー処理解除用マクロ
 ;=================================================================
-CLR_NMI_CALL	MACRO
+CLR_NMI_CALL	MACRO		;///< Clears the NMI callback.
 	LDA	#0
 	STA <NMI_CALL_BNK
 	ENDM
@@ -475,7 +485,7 @@ CLR_NMI_CALL	MACRO
 ;------------------------------------------------------
 ; VRAM転送先アドレス指定マクロ
 ;------------------------------------------------------
-SET_VRAMT_ADR	MACRO
+SET_VRAMT_ADR	MACRO		;///< Sets a VRAM transfer address.
 	lda   #HIGH (\1)
 	jsr   writeVRAMT_DATA
 	lda   #LOW  (\1)
@@ -492,7 +502,7 @@ SET_VRAMT_ADR	MACRO
 ;   Y reg クリアーサイズ ( 0 は 256バイト )
 ;	\1 = クリアーメモリーアドレス (16bit adr)
 
-CLEAR_MEM	macro
+CLEAR_MEM	macro		;///< Zeroes a region.
 
 .loop\@:
 	dey
@@ -502,7 +512,7 @@ CLEAR_MEM	macro
 		endm
 
 
-COPY_TBL	macro
+COPY_TBL	macro		;///< Copies a table.
 	ldx  #0
 .loop\@:
 	lda  \1,x
@@ -517,7 +527,7 @@ COPY_TBL	macro
 ;	\2 = 転送先アドレス (16bit adr)
 ;	\3 = 転送サイズ (8bit)
 
-COPY_MEM	macro
+COPY_MEM	macro		;///< Copies a region.
 	lda  #LOW (\1)
 	sta  <SRC_ADR
 	lda  #HIGH (\1)
@@ -537,7 +547,7 @@ COPY_MEM	macro
 ;	\2 = 転送先アドレス (16bit adr)
 ;	\3 = 転送サイズ (16bit)
 
-COPY_MEM16	macro
+COPY_MEM16	macro		;///< Copies a region longer than 256 bytes.
 	lda  #LOW (\1)
 	sta  <SRC_ADR
 	lda  #HIGH (\1)
@@ -563,7 +573,7 @@ COPY_MEM16	macro
 ; BEEP
 ;-------------------------------------------------------------------------------
 
-BEEP	MACRO
+BEEP	MACRO		;///< Debug: emits a tone directly through the APU.
 	lda #0
 	sta $4015
 

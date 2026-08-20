@@ -2,12 +2,23 @@
     ap_clear.cpp
  */
 
+/**
+ * @file ap_clear.cpp
+ * @brief Stage-clear screen.
+ * @ingroup sample_app
+ *
+ * @note Configures the model through ap_demo0.h's `OBJ_DEM_MODEL` and then
+ *       adjusts it through its own `OBJ_CLR_MODEL`. Both are 0, so the two names
+ *       refer to the same slot and the screen works.
+ */
+
 
 #include "ap_main.h"
 
 ap_clear ap_cl;
 
 
+/// @brief NES palette for the stage-clear screen. @ingroup sample_app
 const uint8_t pal_clear[] = {
 	// BG PAL
 	0x0F,0x15,0x11,0x30,

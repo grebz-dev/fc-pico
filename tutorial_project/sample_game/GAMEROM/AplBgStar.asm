@@ -1,12 +1,19 @@
+;/// @file AplBgStar.asm
+;/// @brief The scrolling starfield drawn into the background layer.
+;/// @ingroup gamerom
+;///
+;/// Console-only. The cartridge draws its own starfield out of 3D points.
 ;=====================================
 ;
 ;	BG裏に流れる星システム 8x16スプライト専用
 ;
 ;
 ;=====================================
-BG_STAR_MAX   equ 16			; BG星の表示数デフォルト
+BG_STAR_MAX   equ 16			; BG星の表示数デフォルト		;///< Default number of background stars.
 
 
+;/// @brief Seeds the background starfield.
+;/// @ingroup gamerom
 initGameBgStarObj:
 	lda  #BG_STAR_MAX
 	sta  <BG_STAR_DISP
@@ -18,6 +25,8 @@ initGameBgStarObj:
 ;  BG流星表示
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Emits the starfield sprites, starting at the OAM index in Y.
+;/// @ingroup gamerom
 createBgStarObj:
 	ldx  <FLM_TIMER
 	stx  <TMP_SV0
@@ -49,6 +58,8 @@ createBgStarObj:
 ; x reg = スクロール値0-255
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Starfield entry point that skips the setup.
+;/// @ingroup gamerom
 createBgStarObj2:
 	stx  <TMP_SV0
 	lsr  a
@@ -135,9 +146,11 @@ createBgStarObj2:
 ;
 ;
 ;=====================================
-BG_STAR_CHR   equ $31		; BG星のキャラ番号
+BG_STAR_CHR   equ $31		; BG星のキャラ番号		;///< CHR tile used for a background star.
 
 
+;/// @brief Starting X for each background star.
+;/// @ingroup gamerom
 TBL_BG_STAR_X:
 	db $00,$20,$40,$60
 	db $80,$A0,$C0,$E0
@@ -152,6 +165,8 @@ TBL_BG_STAR_X:
 	db $98,$B8,$D8,$F8
 
 
+;/// @brief Starting Y for each background star.
+;/// @ingroup gamerom
 TBL_BG_STAR_Y:
 	db 32+2,76,240,50
 	db 100,8,180,64
@@ -167,6 +182,8 @@ TBL_BG_STAR_Y:
 
 
 
+;/// @brief CHR tile for each background star.
+;/// @ingroup gamerom
 TBL_BG_STAR_CHR:
 	db BG_STAR_CHR+ 0,BG_STAR_CHR+ 2,BG_STAR_CHR+ 4,BG_STAR_CHR+ 6
 	db BG_STAR_CHR+ 0,BG_STAR_CHR+ 2,BG_STAR_CHR+ 4,BG_STAR_CHR+ 6

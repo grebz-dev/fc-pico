@@ -1,11 +1,20 @@
+;/// @file AplTitle.asm
+;/// @brief Title screen, on the console's own hardware.
+;/// @ingroup gamerom
+;///
+;/// Reached through the `STG_COD` jump table in PG_main.asm. Unused when the ROM
+;/// runs under the cartridge, which draws its own title screen in 3D and never
+;/// advances `STG_COD` past the play state.
 
 ; INSERT COIN(S) 点滅周期 (フレーム単位)
 ; この値の半分の時間で INSERT COIN(S) を表示、もう半分で非表示となります。
-INSCOIN_PERIOD = 120
+INSCOIN_PERIOD = 120		;///< INSERT COIN blink period in frames; the text shows for half of it.
 
 
 
 	;======== TITLE BG =============
+;/// @brief Palette data for the title screen.
+;/// @ingroup gamerom
 PAL_TITLE_ADR:
 	PAL_TITLE
 
@@ -13,6 +22,8 @@ PAL_TITLE_ADR:
 ;===================================
 ;タイトル画面
 ;===================================
+;/// @brief Console-side title screen.
+;/// @ingroup gamerom
 TIT_STG:
 	
 	jsr .tbljump_sub
@@ -89,6 +100,8 @@ TIT_STG:
 
 
 ;---- 初期化 ------------------------
+;/// @brief Title phase 0: initialisation.
+;/// @ingroup gamerom
 TIT_STG_0:
 	inc  <NMI_FLG
 
@@ -194,6 +207,8 @@ TIT_STG_0:
 
 
 ;******* メイン **********************
+;/// @brief Title phase 2: the menu.
+;/// @ingroup gamerom
 TIT_STG_2:
 	CHK_BIT	<KEY_TRG, #KEY_UP|KEY_DOWN
 	beq  .TIT_STG_12_00
@@ -252,6 +267,8 @@ TIT_STG_2:
 
 
 ;--- 効果音再生終了待ち ------------
+;/// @brief Title phase 3: waiting for the confirmation sound to finish.
+;/// @ingroup gamerom
 TIT_STG_3:
 
 	ldx  #0
@@ -275,6 +292,8 @@ TIT_STG_3:
 	rts
 
 ;--- プレイ画面へ ------------
+;/// @brief Title phase 4: entering the play screen.
+;/// @ingroup gamerom
 TIT_STG_4:
 
  	jsr SET_FADE_OUT_B
@@ -292,12 +311,16 @@ TIT_STG_4:
 
 
 
+;/// @brief Resets the game state for a new run.
+;/// @ingroup gamerom
 GAME_INIT:
 	lda  #1
 	sta  PLY_STAGE
 	lda  #0
 	sta  DEBUG_FLG
 
+;/// @brief Game reset entry point that skips the setup.
+;/// @ingroup gamerom
 GAME_INIT2:
 	; スコア初期化
 	lda  #0

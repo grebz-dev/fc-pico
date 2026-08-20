@@ -1,3 +1,11 @@
+;/// @file AplGameSub.asm
+;/// @brief Game-side helpers: scoring, spawning, animation and effects.
+;/// @ingroup gamerom
+;///
+;/// Score is kept as packed BCD and added through the `SCR_ADD` family, one
+;/// routine per decimal place. `setBakuEfc` and its neighbours are the effect
+;/// spawners: they only fill a table slot, leaving the drawing to whichever side
+;/// is rendering.
 
 
 
@@ -6,6 +14,13 @@
 ;=スコア加算=====
 ;================
 
+;/// @brief Adds to the score in packed BCD.
+;/// @ingroup gamerom
+;///
+;/// One routine per decimal place, `SCR_ADD` through `SCR_ADD_1000`, so a caller
+;/// picks the magnitude by choosing an entry point.
+;/// @note The displayed score has a zero appended, so the stored value is a tenth
+;///       of what the player sees.
 SCR_ADD:
 	phxy	;xy push 疑似命令
 	LDX	#GM_SCORE & $ff
@@ -16,6 +31,8 @@ SCR_ADD:
 	RTS
 
 
+;/// @brief Adds to the tens digit of the score.
+;/// @ingroup gamerom
 SCR_ADD_10:
 	phxy	;xy push 疑似命令
 	TAX
@@ -27,6 +44,8 @@ SCR_ADD_10:
 	plxy	;xy pop 疑似命令
 	RTS
 
+;/// @brief Adds to the hundreds digit.
+;/// @ingroup gamerom
 SCR_ADD_100:
 	phxy	;xy push 疑似命令
 	LDX	#(GM_SCORE+1) & $ff
@@ -36,6 +55,8 @@ SCR_ADD_100:
 	plxy	;xy pop 疑似命令
 	RTS
 
+;/// @brief Adds to the thousands digit.
+;/// @ingroup gamerom
 SCR_ADD_1000:
 	phxy	;xy push 疑似命令
 	TAX
@@ -48,6 +69,8 @@ SCR_ADD_1000:
 	RTS
 
 
+;/// @brief Multiplication table used by the BCD score routines.
+;/// @ingroup gamerom
 TBL_BCDx10:
 	DB $00,$10,$20,$30,$40,$50,$60,$70,$80,$90
 
@@ -55,6 +78,8 @@ TBL_BCDx10:
 ;----------------------------
 ; フォーメーション変更
 ;----------------------------
+;/// @brief Changes the player's formation.
+;/// @ingroup gamerom
 changeForm:
 	lda  PLY_FORM
 	and  #$03
@@ -68,6 +93,8 @@ changeForm:
 ;----------------------------
 ; ホーミング弾発射
 ;----------------------------
+;/// @brief Fires a homing shot.
+;/// @ingroup gamerom
 shotHorming:
 	sta  <TMP_SVA	; X pos
 	sty  <TMP_SVY
@@ -132,6 +159,8 @@ shotHorming:
 ; ショット処理
 ;----------------------------
 
+;/// @brief Fires the player's normal shot.
+;/// @ingroup gamerom
 PLY_SHOT_A:
 	lda  PLY_ANM_NO
 	cmp  #PLY_AN_DEAD
@@ -151,8 +180,12 @@ PLY_SHOT_A:
 ;----------------------------
 ; プレーヤー移動処理
 ;----------------------------
+;/// @brief Moves the player from the current direction.
+;/// @ingroup gamerom
 PLY_MOVE:
 
+;/// @brief Player movement entry point that skips the setup.
+;/// @ingroup gamerom
 PLY_MOVE1:
 	jmp  PLY_ANM_PROG
 
@@ -161,6 +194,8 @@ PLY_MOVE1:
 ;------------------------------------
 ; 実行中のアニメに対応した処理を実行
 ;------------------------------------
+;/// @brief Runs the handler for the animation state in #PLY_ANM_NO.
+;/// @ingroup gamerom
 PLY_ANM_PROG:
 	lda  PLY_ANM_NO
 	TBL_JUMP
@@ -199,6 +234,9 @@ PLY_ANM_PROG:
 ;------------------------
 ; アニメセット
 ;------------------------
+;/// @brief Sets the player animation state in `PLY_ANM_NO`.
+;/// @ingroup gamerom
+;/// @note `PLY_AN_DEAD` is the value the cartridge watches for to end a run.
 SET_PLY_ANM:
 	cmp  PLY_ANM_NO
 	beq  .end
@@ -215,6 +253,10 @@ SET_PLY_ANM:
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Claims an explosion slot at a position.
+;/// @ingroup gamerom
+;/// @note Fills the table only. Under the cartridge the animation counter is then
+;///       advanced by the C++ side, not here. @see @ref sample_game
 setBakuEfc:
 	cmp  #8
 	bcs   .x00
@@ -247,6 +289,8 @@ setBakuEfc:
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Spawns a hit effect at the position in Y.
+;/// @ingroup gamerom
 setHitEfc:
 	jsr  setBakuEfc
 	lda #18
@@ -258,6 +302,8 @@ setHitEfc:
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Spawns a damage effect at the position in Y.
+;/// @ingroup gamerom
 setDameEfc:
 	jsr  setBakuEfc
 	lda #13
@@ -268,6 +314,8 @@ setDameEfc:
 ;-----------------------------------
 ; 敵ノーマル弾全クリアー
 ;-----------------------------------
+;/// @brief Empties the whole enemy table.
+;/// @ingroup gamerom
 clearAllEnemyNT:
 	ldy #0
 .loop
@@ -289,6 +337,8 @@ clearAllEnemyNT:
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Enemy spawn entry point taking a Y coordinate and extra data.
+;/// @ingroup gamerom
 setEnemyNT3:
 	pha		; X pos
 	tya
@@ -316,6 +366,8 @@ setEnemyNT3:
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Enemy spawn entry point taking a Y coordinate.
+;/// @ingroup gamerom
 setEnemyNT2:
 	pha		; X pos
 	tya
@@ -348,6 +400,8 @@ setEnemyNT2:
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Spawns an enemy or enemy shot into the first free table slot.
+;/// @ingroup gamerom
 setEnemyNT:
 	pha		; X pos
 	tya
@@ -396,6 +450,8 @@ setEnemyNT_SET
 ; a reg = x座標
 ; y reg = y座標
 ;-----------------------------------
+;/// @brief Fires a player shot from the current position and direction.
+;/// @ingroup gamerom
 setPlyShotA:
 	sta  <TMP_SVA	; X pos
 	sty  <TMP_SVY
@@ -468,6 +524,8 @@ setPlyShotA:
 ;----------------------------------
 ; プレーヤー死亡セット
 ;----------------------------------
+;/// @brief Starts the player's death sequence and decrements the life count.
+;/// @ingroup gamerom
 setPlayerDead:
 	ldy  <DEMO_FG
 	bne  .end
@@ -507,6 +565,8 @@ setPlayerDead:
 ;----------------------------------
 ; プレーヤー死亡エフェクトセット
 ;----------------------------------
+;/// @brief Runs the death animation, one frame per call.
+;/// @ingroup gamerom
 setPlayerDeadEffect:
 	phxy
 	lda  <SYS_TIMER

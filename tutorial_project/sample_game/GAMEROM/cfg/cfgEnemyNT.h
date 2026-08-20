@@ -1,20 +1,27 @@
+;/// @file cfgEnemyNT.h
+;/// @brief Enemy and enemy-shot definitions, and their movement tables.
+;/// @ingroup gamerom
+;///
+;/// The `NTK_*` kinds declared here are the same numbers the C++ side switches on
+;/// when it decides whether a table entry should be drawn as a sprite or a model.
+;/// @see @ref sample_game
 ;===============================================================================================
 ; 敵ノーマル弾移動データテーブル
 ;
 ;===============================================================================================
 
-NTK_ANGLE	EQU		1	; 自機狙い弾
-NTK_NOMAL	EQU		2	; 通常弾
-NTK_HORMI	EQU		3	; ホーミング弾
-NTK_MISS	EQU		4	; ミサイル弾
-NTK_HHORM	EQU		6	; 半誘導弾
-NTK_HHORM3	EQU		8	; 半誘導弾３分裂
-NTK_METEO	EQU		$80+11	; 隕石
-NTK_WARP	EQU		$80+12	; ワープエフェクト
-NTK_SPZK0	EQU		$80+13	; SPザコ0
-NTK_SPZK1	EQU		$80+14	; SPザコ1
-NTK_SPZK2	EQU		$80+15	; SPザコ2
-NTK_LIFE	EQU		$80+16	; ライフ回復
+NTK_ANGLE	EQU		1	; 自機狙い弾		;///< Aimed shot.
+NTK_NOMAL	EQU		2	; 通常弾		;///< Plain shot.
+NTK_HORMI	EQU		3	; ホーミング弾		;///< Homing shot.
+NTK_MISS	EQU		4	; ミサイル弾		;///< Missile.
+NTK_HHORM	EQU		6	; 半誘導弾		;///< Partially homing shot.
+NTK_HHORM3	EQU		8	; 半誘導弾３分裂		;///< Partially homing shot that splits into three.
+NTK_METEO	EQU		$80+11	; 隕石		;///< Meteor. Top bit set, so the cartridge draws it as a model rather than a sprite.
+NTK_WARP	EQU		$80+12	; ワープエフェクト		;///< Warp-in effect.
+NTK_SPZK0	EQU		$80+13	; SPザコ0		;///< Special minion 0.
+NTK_SPZK1	EQU		$80+14	; SPザコ1		;///< Special minion 1.
+NTK_SPZK2	EQU		$80+15	; SPザコ2		;///< Special minion 2.
+NTK_LIFE	EQU		$80+16	; ライフ回復		;///< Extra-life pickup.
 
 
 ; データフォーマット
@@ -38,7 +45,7 @@ NTK_LIFE	EQU		$80+16	; ライフ回復
 
 
 
-NT_CFG MACRO
+NT_CFG MACRO		;///< Emits one row of #tblEnemyNTcfg.
 	db \1 * 4 + \2	; 見た目＋パレット
 	db \3			; HP (=0当たり判定なし）
 	db \4			; 拡張番号
@@ -48,6 +55,8 @@ NT_CFG MACRO
 
 
 ;  最大64種類登録可能
+;/// @brief Enemy configuration rows, up to 64 kinds.
+;/// @ingroup gamerom
 tblEnemyNTcfg:
 	NT_CFG 2,2,0,1,0		; 1 自機狙い弾 発射時
 	NT_CFG 2,2,0,0,0		; 2 自機狙い弾 移動中(通常弾)

@@ -2,12 +2,23 @@
     ap_demo0.cpp
  */
 
+/**
+ * @file ap_demo0.cpp
+ * @brief Attract mode: a slow parade of the ship and enemy models.
+ * @ingroup sample_app
+ *
+ * The subject changes on a fixed schedule -- the ship at frame 2, then an enemy
+ * at frame 180 -- and the enemy cycles through the three types on each visit via
+ * a function-local `static`, so it survives between runs of the screen.
+ */
+
 
 #include "ap_main.h"
 
 ap_demo0 ap_d0;
 
 
+/// @brief NES palette for the model parade. @ingroup sample_app
 const uint8_t pal_demo0[] = {
 	// BG PAL
 	0x0F,0x15,0x11,0x30,
@@ -21,6 +32,7 @@ const uint8_t pal_demo0[] = {
 	0x0F,0x21,0x10,0x20
 };
 
+/// @brief All-zero background attribute table: every tile uses palette set 0. @ingroup sample_app
 const uint8_t atr_demo0[] = {
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,
 	0x00,0x00,0x00,0x00,0x00,0x00,0x00,0x00,

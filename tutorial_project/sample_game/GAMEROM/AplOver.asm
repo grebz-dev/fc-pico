@@ -1,3 +1,6 @@
+;/// @file AplOver.asm
+;/// @brief Game-over screen, on the console's own hardware.
+;/// @ingroup gamerom
 
 	;======== GAME OVER BG =============
 
@@ -5,6 +8,8 @@
 ;============================================
 ; ゲームオーバー
 ;============================================
+;/// @brief Console-side game-over screen.
+;/// @ingroup gamerom
 OVER_STG:
 ;.ovrstg000:
 	jsr .tbljump_sub
@@ -75,6 +80,8 @@ OVER_STG:
 	JPTBL	overstg30	; 3
 
 ;---- 初期化 ------------------------
+;/// @brief Game-over phase 0: initialisation.
+;/// @ingroup gamerom
 overstg00:
 
 	jsr STOP_SE
@@ -120,6 +127,8 @@ overstg00:
 	jmp  WAIT_FADE_END
 
 
+;/// @brief Game-over phase 1.
+;/// @ingroup gamerom
 overstg10:
 	jsr  SLOW_DEC_GM_WAIT
     bne  .end
@@ -131,6 +140,8 @@ overstg10:
 .end
 	rts
 
+;/// @brief Game-over phase 2.
+;/// @ingroup gamerom
 overstg20:
 	inc  <PUSH_CTR
 
@@ -177,6 +188,8 @@ overstg20:
 	jmp	SET_STG_COD		; =jsr+rts
 	
 
+;/// @brief Game-over phase 3.
+;/// @ingroup gamerom
 overstg30:
 	lda  <PUSH_CTR
 	clc
@@ -234,6 +247,8 @@ overstg30:
 ;=================================
 ;VBLANK 描画
 ;=================================
+;/// @brief Vertical-blank draw for the game-over screen.
+;/// @ingroup gamerom
 OVER_DRAW:
 	LDA   <STG_COD_SUB
 	TBL_JUMP

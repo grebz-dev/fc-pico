@@ -1,3 +1,10 @@
+;/// @file SysSub.asm
+;/// @brief Shared subroutines: arithmetic, VRAM queueing and object helpers.
+;/// @ingroup gamerom
+;///
+;/// General-purpose routines used across the game. The VRAM helpers queue writes
+;/// for the NMI handler to drain rather than touching `$2006`/`$2007` directly,
+;/// because outside vertical blank that would corrupt the display.
 ;===================================================================
 ;
 ;			固定バンクに置く汎用ルーチン
@@ -6,7 +13,11 @@
 ;--------------------------------
 ; STG_COD セット  A reg -> STG_COD
 ;--------------------------------
+;/// @brief Sets #STG_COD from the accumulator.
+;/// @ingroup gamerom
 SET_STG_COD:
+;/// @brief Sets #STG_COD and clears the sub-step.
+;/// @ingroup gamerom
 SET_STG_COD2:
 	STA	<STG_COD
 
@@ -30,19 +41,29 @@ SET_STG_COD2:
 
 
 ;******* GM_WAIT **********************
+;/// @brief Waits on #GM_WAIT or a key press, whichever comes first.
+;/// @ingroup gamerom
 ST_GM_WKEY:
 	CHK_BIT	<KEY_TRG, #KEY_ABRS
 	bne  st_gm_w01
 
+;/// @brief Waits until #GM_WAIT reaches zero.
+;/// @ingroup gamerom
 ST_GM_WAIT:
 	dec <GM_WAIT
 	bne  st_gm_w00
 
+;/// @brief Inner loop of #ST_GM_WAIT.
+;/// @ingroup gamerom
 st_gm_w01:
 	inc  <STG_COD_SUB
+;/// @brief Inner loop of #ST_GM_WAIT.
+;/// @ingroup gamerom
 st_gm_w00:
 	rts
 
+;/// @brief Wait entry point that skips the counter setup.
+;/// @ingroup gamerom
 ST_GM_WAIT2:
 	jsr  SLOW_DEC_GM_WAIT
 	beq  st_gm_w01
@@ -50,6 +71,8 @@ ST_GM_WAIT2:
 
 
 ;******* フェード終了待ち **********************
+;/// @brief Waits for a palette fade to finish.
+;/// @ingroup gamerom
 ST_FADE_WAIT:
 	lda  PALFADE_TIME
 	bne  st_gm_w00
@@ -60,6 +83,8 @@ ST_FADE_WAIT:
 ; 8フレーム毎にカウントダウンする GM_WAIT
 ; カウントがゼロならゼロフラグセット
 ;-------------------------------------
+;/// @brief Decrements #GM_WAIT and sets the zero flag when it reaches zero.
+;/// @ingroup gamerom
 SLOW_DEC_GM_WAIT:
 	lda  <SYS_TIMER
 	and  #$07
@@ -74,6 +99,8 @@ SLOW_DEC_GM_WAIT:
 ;  IN: SRC_ADR 転送元アドレス 16bit
 ;  OUT: A reg  取得したデータ
 ;=======================
+;/// @brief Reads the byte at #SRC_ADR into the accumulator.
+;/// @ingroup gamerom
 getSCR_ADR_DATA:
 	sty  <TMP_SYS
 	ldy  #0
@@ -84,10 +111,14 @@ getSCR_ADR_DATA:
 	plp
 	rts
 
+;/// @brief Increments #SRC_ADR.
+;/// @ingroup gamerom
 incSCR_ADR:
 	incw <SRC_ADR
 	rts
 
+;/// @brief Decrements #SRC_ADR.
+;/// @ingroup gamerom
 decSCR_ADR:
 	decw <SRC_ADR
 	rts
@@ -98,6 +129,8 @@ decSCR_ADR:
 ;  Areg = LOW
 ;  Xreg = High
 ;----------------------
+;/// @brief Adds X:A to #SRC_ADR.
+;/// @ingroup gamerom
 addSCR_ADR:
 	clc
 	adc  <SRC_ADR+0
@@ -113,9 +146,13 @@ addSCR_ADR:
 ;  IN: DST_ADR 転送元アドレス 16bit
 ;  破壊 Y
 ;=======================
+;/// @brief Stores the accumulator at #DST_ADR. Destroys Y.
+;/// @ingroup gamerom
 setDST_ADR_DATA:
 	ldy   #0
 	sta   [DST_ADR],Y
+;/// @brief Increments #DST_ADR.
+;/// @ingroup gamerom
 incDST_ADR:
 	inc  <DST_ADR
 	bne  .end
@@ -129,6 +166,8 @@ incDST_ADR:
 ;=======================
 ; キャリーフラグ反転
 ;=======================
+;/// @brief Inverts the carry flag.
+;/// @ingroup gamerom
 revCFlag:
 	bcc  .set
 	clc
@@ -143,9 +182,13 @@ revCFlag:
 ; 余ったスプライトをクリアーする
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Parks a run of sprites off-screen, starting at the index in Y.
+;/// @ingroup gamerom
 clearObj:
 	cpy  #0
 	beq  clearObj_end
+;/// @brief Sprite clear entry point that skips the setup.
+;/// @ingroup gamerom
 clearObj2:
 	lda  #SP_CLR_Y
 .spclr_loop
@@ -155,6 +198,8 @@ clearObj2:
 	iny
 	iny
 	bne .spclr_loop
+;/// @brief Common tail of the sprite clear routines.
+;/// @ingroup gamerom
 clearObj_end:
 	rts
 
@@ -165,6 +210,8 @@ clearObj_end:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   DRAW_STRING で文字列の格納アドレスを指定
 ;=======================
+;/// @brief Draws the string whose address the `DRAW_STRING` macro supplied.
+;/// @ingroup gamerom
 DRAW_STRING_SUB:
 	sta  <SRC_ADR+1
 	ldy  #0
@@ -186,6 +233,8 @@ DRAW_STRING_SUB:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   DRAW_STRING で文字列の格納アドレスを指定
 ;=======================
+;/// @brief Erases a string previously drawn by #DRAW_STRING_SUB.
+;/// @ingroup gamerom
 CLR_STRING_SUB:
 	sta  <SRC_ADR+1
 	ldy  #0
@@ -205,6 +254,8 @@ CLR_STRING_SUB:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   A reg 描画する数値
 ;=======================
+;/// @brief Draws the accumulator as two hexadecimal digits.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE:
 	tay
 	lsr  a
@@ -213,6 +264,8 @@ DRAW_HEX_BYTE:
 	lsr  a
 	jsr  DRAW_HEX_BYTE2
 	tya
+;/// @brief Hex draw entry point that skips the setup.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE2:
 	and  #$0f
 	cmp  #10
@@ -232,6 +285,8 @@ DRAW_HEX_BYTE2:
 ;   SET_VRAM で転送先VRAMアドレスを指定
 ;   A reg 描画する数値
 ;=======================
+;/// @brief Draws a hexadecimal byte using the in-game font.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE_GM:
 	tay
 	lsr  a
@@ -240,6 +295,8 @@ DRAW_HEX_BYTE_GM:
 	lsr  a
 	jsr  DRAW_HEX_BYTE2_GM
 	tya
+;/// @brief In-game hex draw entry point that skips the setup.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE2_GM:
 	and  #$0f
 	clc
@@ -254,6 +311,8 @@ DRAW_HEX_BYTE2_GM:
 ;   X reg $1xx のワークの下位アドレス8bit
 ;=======================
 
+;/// @brief Adds to a packed BCD value in the stack page, addressed by X.
+;/// @ingroup gamerom
 BCD_ADD:
 	; 加算する値を上下4ビットずつに分離
 	tay
@@ -287,6 +346,8 @@ BCD_ADD:
 	bcc  BCD_00
 	sbc  #10
 	inc  <TMP_SV1
+;/// @brief Inner step of #BCD_ADD.
+;/// @ingroup gamerom
 BCD_00:
 	sta  <TMP_SV2
 
@@ -302,6 +363,8 @@ BCD_00:
 	lda  #1
 	jmp  BCD_ADD
 
+;/// @brief Inner step of #BCD_ADD.
+;/// @ingroup gamerom
 BCD_01:
 	asl  a
 	asl  a
@@ -316,6 +379,8 @@ BCD_01:
 ; 2進化10進 インクリメント
 ;   X reg $1xx のワークの下位アドレス8bit
 ;=======================
+;/// @brief Increments a packed BCD value in the stack page.
+;/// @ingroup gamerom
 BCD_INC:
 	lda  $100,x
 	and  #$0F
@@ -343,6 +408,8 @@ BCD_INC:
 ; 2進化10進 デクリメント
 ;   X reg $1xx のワークの下位アドレス8bit
 ;=======================
+;/// @brief Decrements a packed BCD value in the stack page.
+;/// @ingroup gamerom
 BCD_DEC:
 	lda  $100,x
 	and  #$0F
@@ -368,6 +435,8 @@ BCD_DEC:
 ;---------------------------------------------
 ; Areg の値をBCDに変換:99以上の値は99になる
 ;---------------------------------------------
+;/// @brief Converts the accumulator to BCD, saturating at 99.
+;/// @ingroup gamerom
 convBCD:
 	cmp  #99
 	bcc  .no_over
@@ -396,7 +465,11 @@ convBCD:
 ;=======================
 ; SPRITE   CLEAR       *
 ;=======================
+;/// @brief Parks every sprite off-screen.
+;/// @ingroup gamerom
 SYS_CLEAR_SP:
+;/// @brief Inner loop of #SYS_CLEAR_SP.
+;/// @ingroup gamerom
 SPT_CLR_RTN:
 	ldx #0
 	lda #$F1
@@ -414,8 +487,12 @@ SPT_CLR_RTN:
 ;=======================
 ; VRAM CLEAR
 ;=======================
+;/// @brief Clears VRAM.
+;/// @ingroup gamerom
 SYS_CLEAR_BG:
 	SET_VRAM_ADD2 #$2000
+;/// @brief VRAM clear entry point that skips the setup.
+;/// @ingroup gamerom
 SYS_CLEAR_BG2:
 	lda	#$00
 	ldy	#0
@@ -423,6 +500,8 @@ SYS_CLEAR_BG2:
 	jsr SYS_VRAM_WLP
 	jsr SYS_VRAM_WLP
 
+;/// @brief Inner write loop of the VRAM clear.
+;/// @ingroup gamerom
 SYS_VRAM_WLP:
 	sta  $2007
 	dey
@@ -434,6 +513,8 @@ SYS_VRAM_WLP:
 ;------------------------------------------------------------------------------
 ;				表示on
 ;------------------------------------------------------------------------------
+;/// @brief Turns rendering on.
+;/// @ingroup gamerom
 _disp_on_sub:
 	lda  #0
 	sta  <NMI_FLG	; 割り込み許可
@@ -447,6 +528,8 @@ _disp_on_sub:
 ;------------------------------------------------------------------------------
 ;				表示off
 ;------------------------------------------------------------------------------
+;/// @brief Turns rendering off, so VRAM may be written freely.
+;/// @ingroup gamerom
 _disp_off_sub:
 	lda  #0
 	sta  <FLG_2001	; 画面OFF
@@ -461,6 +544,10 @@ _disp_off_sub:
 ;--------------------
 ; VSYNC 待ち
 ;--------------------
+;/// @brief Waits for the next vertical blank, via #NMI_FLG.
+;/// @note Never returns under the cartridge, which raises no NMI. Nothing on the
+;///       `$E004` path calls it. @see @ref sample_game
+;/// @ingroup gamerom
 WAIT_VSYNC:
 	lda  <FLG_2000
 	beq  .end
@@ -478,6 +565,8 @@ WAIT_VSYNC:
 ;*****************************************
 ; Areg に 0-255の擬似乱数を返す
 ;*****************************************
+;/// @brief Returns a pseudo-random byte in the accumulator.
+;/// @ingroup gamerom
 GET_RND:
 	stx  <TMP_SVX
 	lda  RND_SEL
@@ -496,6 +585,8 @@ GET_RND:
 ;
 ; Areg に 指定した数値未満の擬似乱数を返す
 ;*****************************************
+;/// @brief Returns a pseudo-random byte below the supplied limit.
+;/// @ingroup gamerom
 GET_RND_N:
 	sta  <TMP_SVA
 .get_rndn_00:

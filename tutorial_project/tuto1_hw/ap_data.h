@@ -76,38 +76,35 @@ extern void initResData();
 
 /**
  * @brief Returns a pointer to one resource inside an archive.
- * @param resid A `res/res_id.h` identifier, optionally offset by a multiple of
- *              10000 to select the archive (0 = linked in, 1 = #RES_DATA_ADR).
- * @return Pointer into the archive; the data is read in place, never copied.
- * @note No bounds or signature check: an id past the end of the archive returns
- *       a pointer built from whatever the index table happens to hold there.
+ * @note In this tutorial only the built-in archive is ever populated; the
+ *       10000-and-above range that selects #RES_DATA_ADR is never used. The
+ *       sample game uses both. @see @ref sample_game
  * @ingroup app
  */
 extern const unsigned char* getResData( int resid );
 
 /**
  * @brief Returns the byte length of one resource inside an archive.
- * @param resid Same encoding as getResData().
- * @return Length in bytes, as recorded in the archive's index table.
+ * @note Nothing in the tutorial calls it: every asset here is a fixed size the
+ *       caller already knows.
  * @ingroup app
  */
 extern int getResDataSize( int resid );
 
 /**
  * @brief Attaches the mesh and colour data for a model to an object.
- * @param obj Object to configure.
- * @param no One of the `MDL_*` identifiers.
- * @note The body is reduced to `obj->init()` in this tutorial; it is retained as
- *       a worked example of the intended calling convention.
+ * @note Reduced to `obj->init()` in this tutorial, which ships no model data. It
+ *       is retained as a worked example of the intended calling convention; the
+ *       sample game has the real one. @see @ref sample_game
  * @ingroup app
  */
 extern void setModelDataObj( Obj3d *obj, int no );
 
 /**
  * @brief Starts playback of a compiled-in MP3 track.
- * @param no Track index.
- * @note Also compiled out in the tutorial. Invoked from core 1 in response to
- *       #C1_SND_MP3PLAY.
+ * @note An empty stub in the tutorial, which ships no MP3 data. The sample game
+ *       implements it against a separately flashed archive.
+ *       @see @ref sample_game
  * @ingroup app
  */
 extern void setMP3data( int no );

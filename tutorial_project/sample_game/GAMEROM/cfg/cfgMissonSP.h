@@ -1,3 +1,6 @@
+;/// @file cfgMissonSP.h
+;/// @brief Mission subroutines for the special enemies.
+;/// @ingroup gamerom
 ;===============================================================================================
 ;	ミッションSP敵関連
 ;
@@ -6,9 +9,13 @@
 ;------------------------------------------------------------------
 ; sp敵　消滅待ち
 ;------------------------------------------------------------------
+;/// @brief Wait entry point that skips the setup.
+;/// @ingroup gamerom
 waitClearSPE2:
 	MC_MEMSET MISSON_ANM_NO, 0
 ;@	MC_MEMSET MISSON_ATK_NO, 0
+;/// @brief Mission subroutine: wait until the special enemies are gone.
+;/// @ingroup gamerom
 waitClearSPE:
 	MC_WAIT 1
 	MC_PGCALL  .checkSub,0
@@ -65,6 +72,8 @@ setSPE
 ; a reg = 切り替えテーブル番号
 ;------------------------------------------------------------------
  .if 0
+;/// @brief Selects a special-enemy kind from the table indexed by the accumulator.
+;/// @ingroup gamerom
 selSPE_KIND:
 	jsr  selSPE_SUB
 	lda  .tbl,y
@@ -78,6 +87,8 @@ selSPE_KIND:
 ; sp敵の移動方向をENEMY_ATK_LVで切り替え
 ; a reg = 切り替えテーブル番号
 ;------------------------------------------------------------------
+;/// @brief Selects a special-enemy movement pattern.
+;/// @ingroup gamerom
 selSPE_MP:
 	jsr  selSPE_SUB
 	lda  .tbl,y
@@ -104,6 +115,8 @@ selSPE_MP:
 	db NTK_SPZK0,NTK_SPZK1,NTK_SPZK2,NTK_METEO	; 8
 
 
+;/// @brief Special-enemy warp-in helper.
+;/// @ingroup gamerom
 selSPE_SUB:
 	sta  <TMP_SVA
 	lda  ENEMY_ATK_LV

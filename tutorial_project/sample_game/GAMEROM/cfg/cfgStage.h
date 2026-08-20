@@ -1,3 +1,10 @@
+;/// @file cfgStage.h
+;/// @brief The stage tables: which missions run, and in what order.
+;/// @ingroup gamerom
+;///
+;/// One table per stage, each a list of mission types and sub-types. The sub-type
+;/// byte is overloaded: its top two bits set the enemy attack level, and the
+;/// bottom six index the script table for that mission type.
 ;===============================================================================================
 ;	ステージのミッション定義テーブル
 ;
@@ -6,14 +13,18 @@
 ;  サブタイプ部分の指定可能数値および仕様は各ミッションタイプにより異なる
 ;  ※サブタイプの詳細はあとでまとめます。
 ;===============================================================================================
-MN_BOSS_BGM = $00
+MN_BOSS_BGM = $00		;///< Mission-list marker selecting the boss music.
 
+;/// @brief Mission list for each stage, in play order.
+;/// @ingroup gamerom
 mission_prog_tbl:
 	dw	0
 	dw  stage1
 	dw  stage2
 	dw  stage3
 
+;/// @brief Mission list for the first attract-mode run.
+;/// @ingroup gamerom
 mission_prog_tbl_demo1:
 	dw	0
 	dw  stage1_demo
@@ -21,6 +32,8 @@ mission_prog_tbl_demo1:
 	dw  stage3_demo
 
 
+;/// @brief Mission list for the second attract-mode run.
+;/// @ingroup gamerom
 mission_prog_tbl_demo2:
 	dw	0
 	dw  stage1_boss

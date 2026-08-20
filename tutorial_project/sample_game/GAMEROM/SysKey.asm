@@ -1,13 +1,26 @@
+;/// @file SysKey.asm
+;/// @brief Controller reading and the two-frame debounce.
+;/// @ingroup gamerom
+;///
+;/// Produces the held-key and newly-pressed-key bytes the rest of the game reads.
+;/// A key must appear in two consecutive reads before it counts, which is what
+;/// makes the boot-time reset gesture reliable.
+;///
+;/// @note Under the cartridge these bytes are not read from the port at all: the
+;///       RP2350 writes them straight into `KEY_NEW` and `KEY_TRG`.
+;///       @see @ref sample_game
 ;========================================
 ; Key System
 ;========================================
 
-SYSKEY_OLD  EQU  0
+SYSKEY_OLD  EQU  0		;///< Previous read, used by the two-frame debounce.
 
 
 ;*****************************************
 ;キーの方向を取得
 ;*****************************************
+;/// @brief Converts the held direction keys into one of the `KDIR_*` values.
+;/// @ingroup gamerom
 KEY_DIR:
 	lda  <KEY_NEW
 	and  #$0F
@@ -38,6 +51,13 @@ KEY_DIR:
 ; KEY RTN       *
 ;****************
 ;
+;/// @brief Reads the controller and updates the held and newly-pressed bytes.
+;/// @ingroup gamerom
+;///
+;/// A key is reported only once it has appeared in two consecutive reads, which
+;/// is what makes the boot-time WRAM reset gesture dependable.
+;/// @note Not called under the cartridge: the RP2350 writes `KEY_NEW` and
+;///       `KEY_TRG` itself. @see @ref sample_game
 KEY_RTN:
 	;----------------------------------------------------------------------
 	; 4 回読込み版
@@ -138,6 +158,8 @@ KEY_RTN:
 
 	;----------------------------------------------------------------------
 ;;	Align	16
+;/// @brief Direction lookup table: key bits to `KDIR_*`.
+;/// @ingroup gamerom
 ro_keytable:		;2143
 	.db	%0000	;----
 	.db	%0001	;---R

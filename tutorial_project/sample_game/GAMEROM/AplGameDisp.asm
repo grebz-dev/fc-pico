@@ -1,3 +1,11 @@
+;/// @file AplGameDisp.asm
+;/// @brief Turns the object tables into sprites and BG updates.
+;/// @ingroup gamerom
+;///
+;/// The half of the game that the cartridge replaces wholesale. Here each live
+;/// object becomes OAM entries and nametable writes; under the cartridge the same
+;/// tables are read by `ap_game::conv3DObje()` and become 3D objects instead.
+;/// @see @ref sample_game
 
 
 
@@ -9,6 +17,10 @@
 ;
 ;=====================================
 
+;/// @brief Rebuilds the sprite list and background updates from the object tables.
+;/// The routine the cartridge replaces. `ap_game::conv3DObje()` reads the same
+;/// tables and produces 3D objects instead. @see @ref sample_game
+;/// @ingroup gamerom
 updateGameDisp:
 	;--------------------------------
 	; スプライト構築
@@ -65,6 +77,8 @@ updateGameDisp:
 ;---------------------------------
 ;		LIFE描画
 ;---------------------------------
+;/// @brief Draws the remaining lives.
+;/// @ingroup gamerom
 drawPlyLife:
 	SET_VRAM_ADD2 #$2000 + 32*28 + 19
 
@@ -77,6 +91,8 @@ drawPlyLife:
 ; 自機キャラスプライトを構築
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Emits the player's sprites, starting at the OAM index in Y.
+;/// @ingroup gamerom
 createPlayerObj:
 	lda  PLY_DISP_FG
 	bne  .end
@@ -127,6 +143,8 @@ createPlayerObj:
 ; y reg = スプライトの開始位置
 ;-----------------------------------
 
+;/// @brief Emits the explosion sprites.
+;/// @ingroup gamerom
 createBakuEfcObj:
 	ldx #0
 .cb_loop
@@ -188,6 +206,8 @@ createBakuEfcObj:
 ; 敵ノーマル弾表示
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Emits the enemy and enemy-shot sprites.
+;/// @ingroup gamerom
 createEnemyNTObj:
 	ldx  #0
 	stx  <CACHE_GET_NENMY_NT_FG
@@ -312,6 +332,8 @@ createEnemyNTObj:
 	db  $59,%0000	; 4
 	db  $5D,%0000	; 5
 
+;/// @brief Picks the shot tile that matches a direction.
+;/// @ingroup gamerom
 dirbullet:
 	stx  <TMP_SVX
 	clc
@@ -349,6 +371,8 @@ dirbullet:
 ; 自機の通常弾表示
 ; y reg = スプライトの開始位置
 ;-----------------------------------
+;/// @brief Emits the player-shot sprites.
+;/// @ingroup gamerom
 createPlyShotAObj:
 
 	lda  <SYS_TIMER
