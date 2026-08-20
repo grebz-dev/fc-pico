@@ -1,0 +1,1 @@
+.\bin\VirtuaNES sound.nsf

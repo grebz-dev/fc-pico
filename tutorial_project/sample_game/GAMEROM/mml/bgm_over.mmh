@@ -1,0 +1,59 @@
+BGM(3) {
+
+
+TR1 t140 l16 v15
+TR2      l16 v15
+TR3      l16 v15
+TR4      l16 v15
+//TR5      l16 v15
+
+// ƒCƒ“ƒgƒ•”•ª
+TR1
+	v2  q16 E@1001
+	o6
+	EC1,1
+	f r a r > c r e r < f r a r > c r e r <
+	t_-10
+	e r g r b r > d r < e r g r b r > d r <
+	t_-10
+	d r f r a r > c r < d r f r a r > c r <
+	t_-10
+	c r e r g r b r
+	t_-10
+	 > d r g r b r > v1 d r
+
+TR2
+	v4  q2 E@1001
+	o2 l4
+
+	f ^ ^ ^
+	e ^ ^ ^
+	d ^ ^ ^
+	c ^ ^ ^
+	 ^ ^
+
+TR3
+	o5 l8
+	o5  l4 Em3000
+	r > e < a > e
+	d l8  g d l4 ^ ^
+	c ^  < a > c
+	l16 < b > c < b ^ ^ l4 ^ ^
+	^ ^
+/*
+TR5 Rm0 l16
+	o7
+//	a ^ ^ ^
+	[a]16
+	o4
+//	g ^ ^ ^
+	[g]16
+//	f ^ ^ ^
+	[f]16
+	o7
+//	e ^ ^ ^ ^ ^
+	[e]24
+*/
+
+}
+

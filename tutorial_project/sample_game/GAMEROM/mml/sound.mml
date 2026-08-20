@@ -1,0 +1,40 @@
+//--------------------------------------------------------------
+//	アセンブリ言語とのリンク用の設定です。
+
+#Label		"_MUS01_"	//アセンブリ言語からアクセスするためのラベル名
+#Segment	"MUS01"		//このMMLからコンパイルしたデータを配置するセグメント
+#SegmentPCM	"PCM01"		//⊿ＰＣＭを配置するセグメント
+#code ".\bin\nsd.bin"
+
+
+//--------------------------------------------------------------
+
+;音色定義ルール
+;
+
+#title		""
+#Copyright	"e.itikawa"
+#Composer	"e.itikawa"
+;#QReverse 
+
+#TieMode 1
+
+
+
+#bgm	4
+#se		21
+
+
+#include "env_set0.mmh"
+
+#include "bgm_boss.mmh"
+
+#include "bgm_stage.mmh"
+
+#include "bgm_clear.mmh"
+
+#include "bgm_over.mmh"
+
+#include "eft.mmh"
+
+

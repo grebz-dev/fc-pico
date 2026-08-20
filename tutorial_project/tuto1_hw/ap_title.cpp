@@ -79,7 +79,7 @@ void ap_title::main() {
 	{
 		char buffer[40]; // バッファを確保
 		sprintf(buffer, "%d",ap.m_timer );
-		c.setSprMG( 2.0f, 2.0f );
+		c.setSprZoom( 2.0f, 2.0f );
 		c.setSprFlip( 0 );
 		c.setDefCol(3);
 		c.drawString( buffer, 8*1, 20, _font );

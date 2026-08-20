@@ -1,0 +1,1 @@
+..\picotool load -x tuto1_hw.ino.uf2

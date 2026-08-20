@@ -1,0 +1,88 @@
+
+BGM(1) {
+//BGM(3) {
+
+
+
+
+TR1 t120 l16 v15
+TR2      l16 v15
+TR3      l16 v15
+TR4      l16 v15
+//TR5      l16 v15
+
+// イントロ部分
+
+TR1 L
+	q2
+	 E@1002
+	o4 l16
+
+	En*
+	
+	Em3000
+	Ev2000
+	v7
+	// Ａメロ
+	f+ef+ d^^ ^^^ <a>df+
+	g^^ f+^^ e^^ f+^^
+	agf+ e^^ ^^^ ded
+	c^^ e^^ g^^ e^^
+
+	f+ef+ d^^ ^^^ <a>df+
+	g^^ f+^^ e^^ f+^^
+	agf+ e^^ ^^^ ded
+	c^^ e^^ g^^ >c^^<
+
+	// Ｂメロ
+	En4000
+	[
+    b^^ ^^^ b^f+ ^b^
+    a^^ ^^^ a^e ^a^
+    b^^ ^^^ b^f+ ^b^
+    >c<^g ^e^  c^e ^g^
+	]2
+
+TR3 L
+	o4 q16 l16
+	Em*
+
+	[
+	[ dad  >d<f+>d< ]4
+	[ cgc  >c<e>c<]4
+	]2
+
+	<
+	[
+	[ b>df+ b>df+<<]2
+	[ a>c+e a>c+e<<]2
+	[ b>df+ b>df+<<]2
+	>
+	[ ceg > ceg <]2
+	<
+	]2
+
+
+// ハイハット＆スネア
+TR4 L
+	o5 l16  v12
+	[ <$kon $h c $h c $kon $h c $s c $h c $kon $h c> ]7
+	<$kon $h c $s c $kon $h c $s c $h c $s c>
+
+/*
+TR5 L
+	 o5  q0 Rm0
+	[
+	[ ddd ]8
+	[ ccc ]8
+	]2
+
+	[
+	o7[ bbb ]4
+	o4[ aaa ]4
+	o7[ bbb ]4
+	o5[ ccc ]4
+	]2
+*/
+
+}
