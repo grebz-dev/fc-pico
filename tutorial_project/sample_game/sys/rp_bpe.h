@@ -24,7 +24,7 @@ typedef struct {
 } FRAMEHEADR;
 
 
-//•ÏŠ·Ž«‘
+//å¤‰æ›è¾žæ›¸
 typedef struct {
 	ushort twobyte;
 	uchar onebyte;
@@ -36,18 +36,18 @@ typedef struct {
 extern int bpe_decode(uint8_t *buf, uint8_t *wbuf );
 
 
-//BPEƒtƒ@ƒCƒ‹
+//BPEãƒ•ã‚¡ã‚¤ãƒ«
 /*
 
-[ƒtƒŒ[ƒ€ƒwƒbƒ_]
-ƒpƒX(ushort)
-Œ³‚ÌƒTƒCƒY(ushort)
-ˆ³kƒTƒCƒY(ushort)
-Ž«‘(ƒpƒX” * 3byte)
+[ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ˜ãƒƒãƒ€]
+ãƒ‘ã‚¹(ushort)
+å…ƒã®ã‚µã‚¤ã‚º(ushort)
+åœ§ç¸®ã‚µã‚¤ã‚º(ushort)
+è¾žæ›¸(ãƒ‘ã‚¹æ•° * 3byte)
 
-[ˆ³kƒf[ƒ^]
-ƒoƒCƒiƒŠ(ˆ³kƒTƒCƒY)
+[åœ§ç¸®ãƒ‡ãƒ¼ã‚¿]
+ãƒã‚¤ãƒŠãƒª(åœ§ç¸®ã‚µã‚¤ã‚º)
 
-ˆÈ‰º[ƒtƒŒ[ƒ€ƒwƒbƒ_][ˆ³kƒf[ƒ^]...‚ª‘±‚­
+ä»¥ä¸‹[ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ˜ãƒƒãƒ€][åœ§ç¸®ãƒ‡ãƒ¼ã‚¿]...ãŒç¶šã
 
 */

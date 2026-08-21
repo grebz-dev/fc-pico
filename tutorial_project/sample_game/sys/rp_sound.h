@@ -36,14 +36,14 @@ public:
 
 private:
 	uint8_t   m_APU[ 0x18 ];
-	uint8_t   m_BgmRQ;		// BGMƒŠƒNƒGƒXƒg—p
-	uint8_t   m_SeRQ[8];	// SEƒŠƒNƒGƒXƒg—p
+	uint8_t   m_BgmRQ;		// BGMãƒªã‚¯ã‚¨ã‚¹ãƒˆç”¨
+	uint8_t   m_SeRQ[8];	// SEãƒªã‚¯ã‚¨ã‚¹ãƒˆç”¨
 
-	const uint8_t*  m_pMP3data;	// MP3ƒf[ƒ^ƒAƒhƒŒƒX
-	int m_MP3_idx;		// MP3ƒf[ƒ^ ƒCƒ“ƒfƒbƒNƒX
-	int m_MP3_size;		// MP3ƒf[ƒ^ ƒTƒCƒY
-	bool m_bMP3loop;	// MP3ƒ‹[ƒvÄ¶
-	int m_loopWait;		// ƒ‹[ƒvÄ¶‚ÌƒEƒFƒCƒg
+	const uint8_t*  m_pMP3data;	// MP3ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹
+	int m_MP3_idx;		// MP3ãƒ‡ãƒ¼ã‚¿ ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+	int m_MP3_size;		// MP3ãƒ‡ãƒ¼ã‚¿ ã‚µã‚¤ã‚º
+	bool m_bMP3loop;	// MP3ãƒ«ãƒ¼ãƒ—å†ç”Ÿ
+	int m_loopWait;		// ãƒ«ãƒ¼ãƒ—å†ç”Ÿæ™‚ã®ã‚¦ã‚§ã‚¤ãƒˆ
 
 
 };

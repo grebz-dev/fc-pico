@@ -1,3 +1,10 @@
+/// @file bgm_over.mmh
+
+/// @brief Game-over jingle.
+/// @ingroup toolchain
+
+/// @brief Game-over jingle.
+/// @ingroup toolchain
 BGM(3) {
 
 
@@ -7,7 +14,7 @@ TR3      l16 v15
 TR4      l16 v15
 //TR5      l16 v15
 
-// ƒCƒ“ƒgƒ•”•ª
+// ã‚¤ãƒ³ãƒˆãƒ­éƒ¨åˆ†
 TR1
 	v2  q16 E@1001
 	o6

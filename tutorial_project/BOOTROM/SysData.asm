@@ -1,13 +1,18 @@
+;/// @file SysData.asm
+;/// @brief Screen and palette bulk-fill helpers.
+;/// @ingroup bootrom
 
 
 ;***********************************************************************
-;	ƒf[ƒ^“]‘—ŠÖ˜AƒVƒXƒeƒ€
+;	ãƒ‡ãƒ¼ã‚¿è»¢é€é–¢é€£ã‚·ã‚¹ãƒ†ãƒ 
 ;***********************************************************************
 
 
 ;=======================
-; ”wŒiƒf[ƒ^ 2400       *
+; èƒŒæ™¯ãƒ‡ãƒ¼ã‚¿ 2400       *
 ;=======================
+;/// @brief Clears nametable `$2400`.
+;/// @ingroup bootrom
 CLEAR_BG_24:
 	pha
 	SET_VRAM_ADD2 #$2400
@@ -15,27 +20,37 @@ CLEAR_BG_24:
 	jmp  CLEAR_BG_00
 
 ;=======================
-; ”wŒiƒf[ƒ^ 2C00       *
+; èƒŒæ™¯ãƒ‡ãƒ¼ã‚¿ 2C00       *
 ;=======================
+;/// @brief Clears nametable `$2C00`.
+;/// @ingroup bootrom
 CLEAR_BG_2C:
 	pha
 	SET_VRAM_ADD2 #$2C00
 	pla
 	jmp  CLEAR_BG_00
 
+;/// @brief Shared tail of the nametable clear routines.
+;/// @ingroup bootrom
 BAK_CLR_RTN:
 	lda  #$00
+;/// @brief Clears nametable `$2000`.
+;/// @ingroup bootrom
 CLEAR_BG:
 	pha
 	SET_VRAM_ADD2 #$2000
 	pla
 
+;/// @brief Clears a nametable to tile 0.
+;/// @ingroup bootrom
 CLEAR_BG_00:
 	ldy  #0
 	jsr  CLEAR_VRAM
 	jsr  CLEAR_VRAM
 	jsr  CLEAR_VRAM
 
+;/// @brief Clears the whole of VRAM.
+;/// @ingroup bootrom
 CLEAR_VRAM:
 	sta  $2007
 	dey
@@ -44,12 +59,16 @@ CLEAR_VRAM:
 
 
 ;=======================
-; ƒpƒŒƒbƒg‰ŠúƒZƒbƒgƒTƒu
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
+; ãƒ‘ãƒ¬ãƒƒãƒˆåˆæœŸã‚»ãƒƒãƒˆã‚µãƒ–
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
 ;=======================
+;/// @brief Loads 32 palette bytes into #PAL_WRK and flags the palette dirty.
+;/// @ingroup bootrom
 setPalData:
 	ldy  #32
 	SET_DATA_DST PAL_WRK
+;/// @brief As @ref setPalData, with the source address already in #SRC_ADR.
+;/// @ingroup bootrom
 setPalData2:
 	PAL_CHG
 	jmp  memcpy
@@ -57,12 +76,14 @@ setPalData2:
 
 
 ;=======================
-; ROM‚Ìw’èƒoƒ“ƒN‚Ìƒf[ƒ^‚ğRAM‚ÉƒRƒs[‚·‚é
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  IN: DST_ADR “]‘—æƒAƒhƒŒƒX 16bit
-;  IN: Y “]‘—ƒTƒCƒY
-;  ”j‰ó A,Y
+; ROMã®æŒ‡å®šãƒãƒ³ã‚¯ã®ãƒ‡ãƒ¼ã‚¿ã‚’RAMã«ã‚³ãƒ”ãƒ¼ã™ã‚‹
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  IN: DST_ADR è»¢é€å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  IN: Y è»¢é€ã‚µã‚¤ã‚º
+;  ç ´å£Š A,Y
 ;=======================
+;/// @brief Copies Y bytes from #SRC_ADR to #DST_ADR, descending.
+;/// @ingroup bootrom
 memcpy:
 .loop
 	dey

@@ -1,20 +1,34 @@
+;/// @file SysPallet.asm
+;/// @brief Palette sets and the fade-in and fade-out routines.
+;/// @ingroup gamerom
+;///
+;/// Fades run by stepping every entry towards or away from black through a
+;/// brightness table, a frame at a time. The result is queued for the NMI handler
+;/// like any other VRAM write.
 ;========================================
 ; Pallet System
 ;========================================
-DEF_FADE_SPD	equ 4	; ƒfƒtƒHƒ‹ƒgƒtƒF[ƒh‘¬“x
+DEF_FADE_SPD	equ 4	; ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦		;///< Default fade speed, in frames per step.
 
 ;*****************************************
-;ƒpƒŒƒbƒgƒtƒF[ƒhƒVƒXƒeƒ€
+;ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
+;/// @brief Advances a running fade by one step, if one is due.
+;/// @warning The mask it applies, #PALFADE_MASK, is never written -- the only
+;///          `sta` to it in this file is commented out -- and its address falls
+;///          inside the enemy table. @see @ref sample_game
+;/// @ingroup gamerom
 PAL_FADE_SYSTEM:
-	jsr PAL_FADE_SYSTEM2	; ƒtƒF[ƒh’l§Œä
-	jmp PAL_SET_RTN2		; ƒpƒŒƒbƒg“]‘—
+	jsr PAL_FADE_SYSTEM2	; ãƒ•ã‚§ãƒ¼ãƒ‰å€¤åˆ¶å¾¡
+	jmp PAL_SET_RTN2		; ãƒ‘ãƒ¬ãƒƒãƒˆè»¢é€
 	
+;/// @brief Fade entry point that skips the due-time check.
+;/// @ingroup gamerom
 PAL_FADE_SYSTEM2:
 	lda	PALFADE_TIME
-	beq	.ret		; ƒtƒF[ƒhƒ^ƒCƒ€‚ª‚O‚È‚ç‰½‚à‚µ‚È‚¢‚ÅƒŠƒ^[ƒ“
+	beq	.ret		; ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¿ã‚¤ãƒ ãŒï¼ãªã‚‰ä½•ã‚‚ã—ãªã„ã§ãƒªã‚¿ãƒ¼ãƒ³
 	dec	PALFADE_CNT
-	bne	.ret		; ƒJƒEƒ“ƒgƒ_ƒEƒ“’†‚È‚çƒŠƒ^[ƒ“
+	bne	.ret		; ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ä¸­ãªã‚‰ãƒªã‚¿ãƒ¼ãƒ³
 	sta	PALFADE_CNT
 
 	PAL_CHG
@@ -38,40 +52,58 @@ PAL_FADE_SYSTEM2:
 
 
 ;*****************************************
-;•ƒtƒF[ƒhƒCƒ“
+;é»’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
 ;*****************************************
+;/// @brief Starts a fade in from black.
+;/// @ingroup gamerom
 SET_FADE_IN_B:
 	lda	#DEF_FADE_SPD
+;/// @brief Fade in from black, at a caller-supplied speed.
+;/// @ingroup gamerom
 SET_FADE_IN_B2:
 	ldy	#-$40
 	ldx	#$10
 	bne fade_set_end
 ;*****************************************
-;•ƒtƒF[ƒhƒAƒEƒg
+;é»’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆ
 ;*****************************************
+;/// @brief Starts a fade out to black.
+;/// @ingroup gamerom
 SET_FADE_OUT_B:
 	lda	#DEF_FADE_SPD
+;/// @brief Fade out to black, at a caller-supplied speed.
+;/// @ingroup gamerom
 SET_FADE_OUT_B2:
 	ldy	#0
 	ldx	#-$10
 	bne fade_set_end
 ;*****************************************
-;”’ƒtƒF[ƒhƒCƒ“
+;ç™½ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
 ;*****************************************
+;/// @brief Starts a fade in from white.
+;/// @ingroup gamerom
 SET_FADE_IN_W:
 	lda	#DEF_FADE_SPD
+;/// @brief Fade in from white, at a caller-supplied speed.
+;/// @ingroup gamerom
 SET_FADE_IN_W2:
 	ldy	#$40
 	ldx	#-$10
 	bne fade_set_end
 ;*****************************************
-;”’ƒtƒF[ƒhƒAƒEƒg
+;ç™½ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆ
 ;*****************************************
+;/// @brief Starts a fade out to white.
+;/// @ingroup gamerom
 SET_FADE_OUT_W:
 	lda	#DEF_FADE_SPD
+;/// @brief Fade out to white, at a caller-supplied speed.
+;/// @ingroup gamerom
 SET_FADE_OUT_W2:
 	ldy	#0
 	ldx	#$10
+;/// @brief Common tail of the fade setup routines.
+;/// @ingroup gamerom
 fade_set_end:
 	sta PALFADE_TIME
 	sta	PALFADE_CNT
@@ -81,11 +113,13 @@ fade_set_end:
 	rts
 
 ;*****************************************
-;ƒtƒF[ƒhI—¹‘Ò‚¿
+;ãƒ•ã‚§ãƒ¼ãƒ‰çµ‚äº†å¾…ã¡
 ;*****************************************
+;/// @brief Blocks until the running fade finishes.
+;/// @ingroup gamerom
 WAIT_FADE_END:
 	lda  <FLG_2000
-	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 .loop
 	jsr  WAIT_VSYNC
 	jsr  PAL_FADE_SYSTEM
@@ -95,8 +129,10 @@ WAIT_FADE_END:
 
 
 ;*****************************************
-;ƒpƒŒƒbƒg‚o‚o‚t“]‘—ƒVƒXƒeƒ€
+;ãƒ‘ãƒ¬ãƒƒãƒˆï¼°ï¼°ï¼µè»¢é€ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
+;/// @brief Copies #PAL_WRK to the PPU. Must run inside vertical blank.
+;/// @ingroup gamerom
 transPALLET:
 	lda  <PAL_CHG_FG
 	beq  .end
@@ -109,7 +145,7 @@ transPALLET:
 	
 	lda  PALFADE_VAL
 	BNE  .fadepal00
-	; ƒ_ƒCƒŒƒNƒg“]‘—
+	; ãƒ€ã‚¤ãƒ¬ã‚¯ãƒˆè»¢é€
 .loop
 	lda  PAL_WRK,x
 	sta  $2007
@@ -118,7 +154,7 @@ transPALLET:
 	bne  .loop
 	rts
 
-	; ƒtƒF[ƒh’†“]‘—
+	; ãƒ•ã‚§ãƒ¼ãƒ‰ä¸­è»¢é€
 .fadepal00
 	lda  PAL_WRK2,x
 	sta  $2007
@@ -129,8 +165,10 @@ transPALLET:
 	rts
 
 ;*****************************************
-;ƒpƒŒƒbƒg§ŒäƒVƒXƒeƒ€
+;ãƒ‘ãƒ¬ãƒƒãƒˆåˆ¶å¾¡ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
+;/// @brief Installs a palette set and requests the transfer.
+;/// @ingroup gamerom
 PAL_SET_RTN2:
 	LDA	<PAL_CHG_FG
 	BNE	.pal00
@@ -144,11 +182,11 @@ PAL_SET_RTN2:
 
 	rts
 
-;--- ƒpƒŒƒbƒg“]‘—ˆ— -----
+;--- ãƒ‘ãƒ¬ãƒƒãƒˆè»¢é€å‡¦ç† -----
 .fadepal00
 	BMI		.fadepal01
 
-.palwcre020		; ‰ÁZ“]‘— i”’ƒtƒF[ƒh—pj
+.palwcre020		; åŠ ç®—è»¢é€ ï¼ˆç™½ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ï¼‰
 	lda  tblFadeMask,y
 	and  PALFADE_MASK
 	jsr  sub_palwcre
@@ -159,7 +197,7 @@ PAL_SET_RTN2:
 
 
 
-.fadepal01	; Œ¸Z“]‘— i•ƒtƒF[ƒh—pj
+.fadepal01	; æ¸›ç®—è»¢é€ ï¼ˆé»’ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ï¼‰
 	lda  tblFadeMask,y
 	and  PALFADE_MASK
 	jsr  sub_palbcre
@@ -169,11 +207,13 @@ PAL_SET_RTN2:
 	rts
 
 
+;/// @brief One bit per palette entry, used to decide which entries a fade step touches.
+;/// @ingroup gamerom
 tblFadeMask:
 	db  $01,$02,$04,$08,$10,$20,$40,$80
 
 ;--------------------
-; ”’ƒtƒF[ƒhƒTƒu
+; ç™½ãƒ•ã‚§ãƒ¼ãƒ‰ã‚µãƒ–
 ;--------------------
 sub_palwcre
 	bne  sub_paldirect
@@ -183,11 +223,11 @@ sub_palwcre
 
 .loop
 	lda	PAL_WRK,x
-	cmp	#$0F		; $0F‚Í“Áêˆµ‚¢
+	cmp	#$0F		; $0Fã¯ç‰¹æ®Šæ‰±ã„
 	bne	.palwcre030
 	lda	#$F0
 .palwcre030
-	; ”’ˆÈã‚È‚ç”’‚É‚·‚é
+	; ç™½ä»¥ä¸Šãªã‚‰ç™½ã«ã™ã‚‹
 	clc
 	adc	PALFADE_VAL
 	cmp	#$40
@@ -204,7 +244,7 @@ sub_palwcre
 	rts
 
 ;--------------------
-; •ƒtƒF[ƒhƒTƒu
+; é»’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚µãƒ–
 ;--------------------
 sub_palbcre
 	bne  sub_paldirect
@@ -214,10 +254,10 @@ sub_palbcre
 
 .loop
     LDA     PAL_WRK,X
-	cmp	#$0F		; $0F‚Í“Áêˆµ‚¢‚Å‰½‚à‚µ‚È‚¢
+	cmp	#$0F		; $0Fã¯ç‰¹æ®Šæ‰±ã„ã§ä½•ã‚‚ã—ãªã„
 	beq	.palbcre040
 .palbcre030
-	; •ˆÈ‰º‚È‚ç•‚É‚·‚é
+	; é»’ä»¥ä¸‹ãªã‚‰é»’ã«ã™ã‚‹
 	clc
 	adc	PALFADE_VAL
 	bpl	.palbcre040
@@ -233,7 +273,7 @@ sub_palbcre
 	rts
 
 ;--------------------
-; ƒ_ƒCƒŒƒNƒg“]‘—
+; ãƒ€ã‚¤ãƒ¬ã‚¯ãƒˆè»¢é€
 ;--------------------
 sub_paldirect
 	tya

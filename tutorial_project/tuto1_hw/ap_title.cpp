@@ -2,6 +2,18 @@
     ap_title.cpp
 */
 
+/**
+ * @file ap_title.cpp
+ * @brief Implementation of the title scene.
+ * @ingroup app
+ *
+ * Doubles as the tutorial's worked example: key auto-repeat, music and effect
+ * triggers, three-colour text and a scaled sprite counter.
+ *
+ * @see ap_title.h
+ */
+
+
 
 #include "ap_main.h"
 
@@ -9,6 +21,8 @@
 ap_title ap_t;
 
 
+/// @brief Title-screen palette: 16 background entries then 16 sprite entries,
+/// as NES palette indices. Uploaded via rp_system::setPalData().
 const uint8_t pal_title[] = {
 	// BG PAL
 	0x0F,0x01,0x15,0x20,

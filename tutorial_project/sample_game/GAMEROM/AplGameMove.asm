@@ -1,15 +1,29 @@
+;/// @file AplGameMove.asm
+;/// @brief Object movement: enemies, enemy shots and player shots.
+;/// @ingroup gamerom
+;///
+;/// The simulation proper, and the largest file in the ROM. Movement patterns are
+;/// table-driven: `tblMoveENTsin` and its siblings hold the sine and direction
+;/// tables that the aimed, homing and semi-homing shots steer by.
+;///
+;/// `hitEnemyNTObj` is the collision pass. It runs here, on the 6502, in both
+;/// modes -- the cartridge renders the outcome but does not decide it.
 ;=======================================================================
 ;=======================================================================
 ;=======================================================================
 ;
-;  ŠeíƒQ[ƒ€OBJˆÚ“®ˆ—
+;  å„ç¨®ã‚²ãƒ¼ãƒ OBJç§»å‹•å‡¦ç†
 ;
 
 
 
 
+;/// @brief Moves every live object, then runs the collision pass.
+;/// @ingroup gamerom
+;///
+;/// Called from `FCP_GAME_MAIN`, so this is the simulation the cartridge sees.
 moveGameObj:
-	; –³“Gƒ^ƒCƒ}[ƒJƒEƒ“ƒgƒ_ƒEƒ“
+	; ç„¡æ•µã‚¿ã‚¤ãƒãƒ¼ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³
 	lda  PLY_MUTEKI_TM
 	beq  .mg00
 	dec  PLY_MUTEKI_TM
@@ -34,11 +48,13 @@ moveGameObj:
 
 
 ;-----------------------------------
-; “G’eˆÚ“®
+; æ•µå¼¾ç§»å‹•
 ;-----------------------------------
+;/// @brief Steps each enemy and enemy shot along its movement pattern.
+;/// @ingroup gamerom
 moveEnemyNTObj:
 
-	; ˆÚ“®ˆ—ƒ‹[ƒv
+	; ç§»å‹•å‡¦ç†ãƒ«ãƒ¼ãƒ—
 	lda  <FLM_TIMER
 	sta  <TMP_LOOP_CNT
 	ldx  #0
@@ -64,13 +80,13 @@ moveEnemyNTObj:
 	jsr  .moveSpcSub
 	lda  ENEMY_NT_KIND,x
 	beq .next
-	cmp #NTK_WARP		; ƒ[ƒv‚ÍˆÚ“®‚µ‚È‚¢
+	cmp #NTK_WARP		; ãƒ¯ãƒ¼ãƒ—ã¯ç§»å‹•ã—ãªã„
 	beq .next
 
 	lda  ENEMY_NT_MP,x
 	jsr  setMoveDirData
 
-	; XˆÚ“®ŒvZ
+	; Xç§»å‹•è¨ˆç®—
 	lda  ENEMY_NT_X+0,x
 	clc
 	adc  <W_AR
@@ -79,14 +95,14 @@ moveEnemyNTObj:
 	adc  <W_AR+1
 	sta  ENEMY_NT_X+1,x
 	
-	;  X‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Xç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+1
 	bpl  .movx1
 	jsr  revCFlag
 .movx1
 	bcs  .clear
 	
-	; YˆÚ“®ŒvZ
+	; Yç§»å‹•è¨ˆç®—
 	lda  ENEMY_NT_Y+0,x
 	clc
 	adc  <W_BR
@@ -96,7 +112,7 @@ moveEnemyNTObj:
 	sta  ENEMY_NT_Y+1,x
 
 	
-	;  Y‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Yç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 ;	lda ENEMY_NT_Y+1,x
 	cmp #ENEMY_LINE_SUU
 ;	cmp #240
@@ -105,25 +121,25 @@ moveEnemyNTObj:
 	lda  ENEMY_NT_KIND,x
 	cmp  #NTK_MISS
 	bne  .clear
-	; ƒ~ƒTƒCƒ‹“Áêˆ—
+	; ãƒŸã‚µã‚¤ãƒ«æ™‚ç‰¹æ®Šå‡¦ç†
 	lda  #1
 	sta  ENEMY_NT_Y+1,x
 	jmp  .next
 
-	; ˆÚ“®I—¹
+	; ç§»å‹•çµ‚äº†
 .clear
 	lda  #0
 	sta  ENEMY_NT_KIND,x
 	jmp  .next
 
 ;------------------------------
-; “G‚Ì’e‚ÌˆÚ“®“Áêˆ—
+; æ•µã®å¼¾ã®ç§»å‹•ç‰¹æ®Šå‡¦ç†
 ;------------------------------
 .moveSpcSub
 	jsr  getEnemyNTcfg2
 	lda  <TMP_WRK3
 	beq  .mss00
-	; ƒ^ƒCƒ}[‚Å’eí{‚P‚·‚é
+	; ã‚¿ã‚¤ãƒãƒ¼ã§å¼¾ç¨®ï¼‹ï¼‘ã™ã‚‹
 	inc  ENEMY_NT_DT,x
 	cmp  ENEMY_NT_DT,x
 	bne  .mss00
@@ -131,7 +147,7 @@ moveEnemyNTObj:
 	cmp  #NTK_WARP
 	bne  .mss01
 	;----------------------
-	; ƒ[ƒv“Áêˆ—
+	; ãƒ¯ãƒ¼ãƒ—æ™‚ç‰¹æ®Šå‡¦ç†
 	;----------------------
 	lda  ENEMY_NT_MP,x
 	sta  ENEMY_NT_KIND,x
@@ -153,11 +169,11 @@ moveEnemyNTObj:
 	JPTBL	.end2		; 0
 	JPTBL	.angle		; 1
 	JPTBL	.horming	; 2
-	JPTBL	.missile_u	; 3	ã¸
-	JPTBL	.missile_d	; 4 ‰º~
+	JPTBL	.missile_u	; 3	ä¸Šæ˜‡
+	JPTBL	.missile_d	; 4 ä¸‹é™
 
 ;-----------------------------------
-; ƒ~ƒTƒCƒ‹ã¸’†
+; ãƒŸã‚µã‚¤ãƒ«ä¸Šæ˜‡ä¸­
 ;-----------------------------------
 .missile_u
 	lda  ENEMY_NT_DT,x
@@ -182,7 +198,7 @@ moveEnemyNTObj:
 	rts
 
 ;-----------------------------------
-; ƒ~ƒTƒCƒ‹‰º~’†
+; ãƒŸã‚µã‚¤ãƒ«ä¸‹é™ä¸­
 ;-----------------------------------
 .missile_d_00
 	lda  POS_PLY_X
@@ -215,13 +231,13 @@ moveEnemyNTObj:
 
 
 ;-----------------------------------
-; ƒz[ƒ~ƒ“ƒO’e“Áêˆ—
+; ãƒ›ãƒ¼ãƒŸãƒ³ã‚°å¼¾ç‰¹æ®Šå‡¦ç†
 ;-----------------------------------
 .horming
 	lda  ENEMY_NT_DT,x
 	bne  .skip_getang
 
-	; •ûŒüC³
+	; æ–¹å‘ä¿®æ­£
 	lda  ENEMY_NT_X+1,x
 	sta  <PRM_X_POS
 	lda  ENEMY_NT_Y+1,x
@@ -276,13 +292,13 @@ moveEnemyNTObj:
 	db  0, -1,1
 
 ;-----------------------------------
-; ©‹@‘_‚¢’e
+; è‡ªæ©Ÿç‹™ã„å¼¾
 ;-----------------------------------
 .angle
 	inc  ENEMY_NT_KIND,x
 
 .angle2
-	; •ûŒüæ“¾
+	; æ–¹å‘å–å¾—
 	lda  ENEMY_NT_X+1,x
 	sta  <PRM_X_POS
 	lda  ENEMY_NT_Y+1,x
@@ -308,8 +324,10 @@ moveEnemyNTObj:
 
 
 ;-----------------------------------
-; ©‹@—U“±’e•â³ 8ƒtƒŒ[ƒ€‚É‚P‰ñ‚¾‚¯—U“±
+; è‡ªæ©Ÿèª˜å°å¼¾è£œæ­£ 8ãƒ•ãƒ¬ãƒ¼ãƒ ã«ï¼‘å›ã ã‘èª˜å°
 ;-----------------------------------
+;/// @brief Steers the player's homing shots. Corrects once every eight frames.
+;/// @ingroup gamerom
 movePlyHorming:
 	ldx  #0
 .loop
@@ -332,7 +350,7 @@ movePlyHorming:
 	rts
 
 .mph00
-	; •ûŒüC³
+	; æ–¹å‘ä¿®æ­£
 	lda  PSHOT_A_Y,x
 	sta  <PRM_X_POS
 	lda  PSHOT_A_Y,x
@@ -370,8 +388,12 @@ movePlyHorming:
 	rts
 
 ;-----------------------------------
-; ©‹@ƒm[ƒ}ƒ‹’eˆÚ“®
+; è‡ªæ©Ÿãƒãƒ¼ãƒãƒ«å¼¾ç§»å‹•
 ;-----------------------------------
+;/// @brief Steps the player's shots and retires any that leave the playfield.
+;/// @ingroup gamerom
+;/// @note A retired slot is marked by zeroing its Y, which is the same convention
+;///       the C++ renderer tests. @see @ref sample_game
 movePlyShotAObj:
 	ldx #0
 .loop
@@ -381,7 +403,7 @@ movePlyShotAObj:
 	lda  PSHOT_DIR,x
 	jsr  setMoveDirData
 
-	; XˆÚ“®ŒvZ
+	; Xç§»å‹•è¨ˆç®—
 	lda  PSHOT_A_WX,x
 	clc
 	adc  <W_AR
@@ -390,14 +412,14 @@ movePlyShotAObj:
 	adc  <W_AR+1
 	sta  PSHOT_A_X,x
 	
-	;  X‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Xç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+1
 	bpl  .movx1
 	jsr  revCFlag
 .movx1
 	bcs  .clear
 
-	; YˆÚ“®ŒvZ
+	; Yç§»å‹•è¨ˆç®—
 	lda  PSHOT_A_WY,x
 	clc
 	adc  <W_BR
@@ -405,7 +427,7 @@ movePlyShotAObj:
 	lda  PSHOT_A_Y,x
 	adc  <W_BR+1
 
-	;  Y‰æ–ÊŠOƒ`ƒFƒbƒN
+	;  Yç”»é¢å¤–ãƒã‚§ãƒƒã‚¯
 	cmp #ENEMY_LINE_SUU
 	bcc .me000
 .clear
@@ -422,13 +444,18 @@ movePlyShotAObj:
 
 
 ;=======================================================================
-;  “G“–‚½‚è”»’è
+;  æ•µå½“ãŸã‚Šåˆ¤å®š
 ;=======================================================================
 
 
 ;-----------------------------------
-; “Gƒm[ƒ}ƒ‹’e“–‚½‚è”»’è
+; æ•µãƒãƒ¼ãƒãƒ«å¼¾å½“ãŸã‚Šåˆ¤å®š
 ;-----------------------------------
+;/// @brief Collision: player shots against enemies, and enemies against the player.
+;/// @ingroup gamerom
+;///
+;/// Runs on the 6502 in both modes. The cartridge renders the result but takes no
+;/// part in deciding it.
 hitEnemyNTObj:
 	lda  PLY_ANM_NO
 	cmp  #PLY_AN_DEAD
@@ -445,13 +472,13 @@ hitEnemyNTObj:
 	beq  .next
 
 	lda  ENEMY_NT_X+1,X
-	cmp  #8		; “–‚½‚è”»’è‚Ì¶‘¤ƒŠƒ~ƒbƒ^[
+	cmp  #8		; å½“ãŸã‚Šåˆ¤å®šã®å·¦å´ãƒªãƒŸãƒƒã‚¿ãƒ¼
 	bcc  .next
 
 	ldy  #2*(PSHOT_A_SUU+1)
 	lda  ENEMY_NT_HP,x
 	beq  .he10
-	cmp  #254		; ”»’è–³‚µ
+	cmp  #254		; åˆ¤å®šç„¡ã—
 	bne  .he00
 
 .next
@@ -466,7 +493,7 @@ hitEnemyNTObj:
 
 
 .he10
-	ldy  #2			; ©‹@‚¾‚¯ƒ`ƒFƒbƒN
+	ldy  #2			; è‡ªæ©Ÿã ã‘ãƒã‚§ãƒƒã‚¯
 .he00
 	lda  ENEMY_NT_Y+1,x
 	sta  <PRM_Y_POS
@@ -481,22 +508,22 @@ hitEnemyNTObj:
 
 	lda  PLY_MUTEKI_TM
 	bne  .muteki
-	jsr  setPlayerDead		; ƒvƒŒ[ƒ„[‚Éƒ_ƒ[ƒW
+	jsr  setPlayerDead		; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ã«ãƒ€ãƒ¡ãƒ¼ã‚¸
 
 .muteki
 	lda  #0
-	sta  ENEMY_NT_KIND,x	; ’e‚ğÁ‚·
+	sta  ENEMY_NT_KIND,x	; å¼¾ã‚’æ¶ˆã™
 	jmp  .next
 
 
 .chkShotAB
 	lda  ENEMY_NT_HP,X
-	beq  .next			;“–‚½‚è”»’è–³‚µA”j‰ó•s”\’e
+	beq  .next			;å½“ãŸã‚Šåˆ¤å®šç„¡ã—ã€ç ´å£Šä¸èƒ½å¼¾
 
 	cmp  #255
 	bne  .ch30
 
-	; “–‚½‚è”»’è‚ ‚èA”j‰ó•s”\’e
+	; å½“ãŸã‚Šåˆ¤å®šã‚ã‚Šã€ç ´å£Šä¸èƒ½å¼¾
 	lda  #SE_NO_DAME
 	jsr  PLAY_SE
 	jmp  .next
@@ -510,13 +537,13 @@ hitEnemyNTObj:
 	jmp  .next
 
 .hit
-	; SPƒUƒR‚È‚çƒXƒRƒA+1
+	; SPã‚¶ã‚³ãªã‚‰ã‚¹ã‚³ã‚¢+1
 	lda  ENEMY_NT_KIND,x
 	bpl  .hit2
 	lda  #1
 	jsr  SCR_ADD
 .hit2
-	; ”š”­‰‰oƒZƒbƒg
+	; çˆ†ç™ºæ¼”å‡ºã‚»ãƒƒãƒˆ
 
 	ldy ENEMY_NT_Y+1,x
 	lda ENEMY_NT_X+1,x
@@ -532,11 +559,13 @@ hitEnemyNTObj:
 
 
 ;====================================================================
-;    w’è•ûŒü‚ÌˆÚ“®ƒf[ƒ^æ“¾
-; IN -> Areg ˆÚ“®•ûŒü+‘¬“x
-; OUT -> XˆÚ“®ƒf[ƒ^ W_AR
-;        YˆÚ“®ƒf[ƒ^ W_BR
+;    æŒ‡å®šæ–¹å‘ã®ç§»å‹•ãƒ‡ãƒ¼ã‚¿å–å¾—
+; IN -> Areg ç§»å‹•æ–¹å‘+é€Ÿåº¦
+; OUT -> Xç§»å‹•ãƒ‡ãƒ¼ã‚¿ W_AR
+;        Yç§»å‹•ãƒ‡ãƒ¼ã‚¿ W_BR
 ;====================================================================
+;/// @brief Loads the movement delta for a direction into #W_BR.
+;/// @ingroup gamerom
 setMoveDirData:
 	php
 	asl  a
@@ -549,13 +578,13 @@ setMoveDirData:
 	ror  a
 	tay
 
-	; XˆÚ“®ƒf[ƒ^
+	; Xç§»å‹•ãƒ‡ãƒ¼ã‚¿
 	lda  tblMoveENTsin,y
 	sta  <W_AR
 	lda  tblMoveENTsin+1,y
 	sta  <W_AR+1
 
-	; ‚xˆÚ“®ƒf[ƒ^
+	; ï¼¹ç§»å‹•ãƒ‡ãƒ¼ã‚¿
 	ldy  <TMP_SVY
 	lda  tblMoveENTsin,y
 	sta  <W_BR
@@ -565,7 +594,7 @@ setMoveDirData:
 	plp
 	bpl  .speedx1
 
-	; ”{‘¬
+	; å€é€Ÿ
 	asl  <W_AR
 	rol  <W_AR+1
 	asl  <W_BR
@@ -576,30 +605,32 @@ setMoveDirData:
 
 
 ;====================================================================
-;    “G‚Ì’eˆÚ“®ƒf[ƒ^
+;    æ•µã®å¼¾ç§»å‹•ãƒ‡ãƒ¼ã‚¿
 ;====================================================================
 
-; “G‚Ì’eˆÚ“®ƒe[ƒuƒ‹ 64•ûŒüˆêü•ªsinƒe[ƒuƒ‹
+; æ•µã®å¼¾ç§»å‹•ãƒ†ãƒ¼ãƒ–ãƒ« 64æ–¹å‘ä¸€å‘¨åˆ†sinãƒ†ãƒ¼ãƒ–ãƒ«
 
-NT_SIN MACRO
+NT_SIN MACRO		;///< Emits one entry of the enemy movement sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE0
 	ENDM
 
-NT_SIN1 MACRO
+NT_SIN1 MACRO		;///< Emits one entry of the first alternate sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE1
 	ENDM
 
-NT_SIN2 MACRO
+NT_SIN2 MACRO		;///< Emits one entry of the second alternate sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE2
 	ENDM
 
-NT_SIN3 MACRO
+NT_SIN3 MACRO		;///< Emits one entry of the third alternate sine table.
 	DW	( \1 ) * $100 / MV_ENT_BASE3
 	ENDM
 
 
 ; 360 / 64 = 5.625
 
+;/// @brief Sine table for enemy movement; 64 steps to the turn, 5.625 degrees each.
+;/// @ingroup gamerom
 tblMoveENTsin:
 	NT_SIN 0		; 0  0
 	NT_SIN 25		; 1  5.625
@@ -669,6 +700,8 @@ tblMoveENTsin:
 	NT_SIN -50		; 62
 	NT_SIN -25		; 63
 
+;/// @brief Second sine table, at a different amplitude.
+;/// @ingroup gamerom
 tblMoveENTsin1:
 	NT_SIN1 0		; 0
 	NT_SIN1 25		; 1
@@ -740,25 +773,27 @@ tblMoveENTsin1:
 
 
 ;------------------------------------------
-;		 2“_ŠÔ•ûŒü”»’èƒVƒXƒeƒ€
+;		 2ç‚¹é–“æ–¹å‘åˆ¤å®šã‚·ã‚¹ãƒ†ãƒ 
 ;------------------------------------------
-; “ü—Í
-; PRM_X_POS	-> Šî€“_X
-; PRM_Y_POS	-> Šî€“_Y
-; W_AR+0    -> ƒ^[ƒQƒbƒgX
-; W_AR+1    -> ƒ^[ƒQƒbƒgY
+; å…¥åŠ›
+; PRM_X_POS	-> åŸºæº–ç‚¹X
+; PRM_Y_POS	-> åŸºæº–ç‚¹Y
+; W_AR+0    -> ã‚¿ãƒ¼ã‚²ãƒƒãƒˆX
+; W_AR+1    -> ã‚¿ãƒ¼ã‚²ãƒƒãƒˆY
 ;
-; ”j‰ó
+; ç ´å£Š
 ;	W_BR,PRM_W_POS,PRM_H_POS
 ;
-; o—Í
-;	TMP_SVA 0-63 •ûŒü
+; å‡ºåŠ›
+;	TMP_SVA 0-63 æ–¹å‘
 
+;/// @brief Returns the direction from an enemy to the player, for aimed shots.
+;/// @ingroup gamerom
 getAngleENT:
 	lda  #0
 	sta  <W_BR+0
 
-	; X²ƒ`ƒFƒbƒN
+	; Xè»¸ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+0
 	sec
 	sbc  <PRM_X_POS
@@ -768,7 +803,7 @@ getAngleENT:
 .gae00
 	sta  <PRM_W_POS
 
-	; Y²ƒ`ƒFƒbƒN
+	; Yè»¸ãƒã‚§ãƒƒã‚¯
 	lda  <W_AR+1
 	sec
 	sbc  <PRM_Y_POS
@@ -812,8 +847,10 @@ getAngleENT:
 
 
 ;------------------------------------------
-;		 •ûŒü•ÏŠ·ƒe[ƒuƒ‹
+;		 æ–¹å‘å¤‰æ›ãƒ†ãƒ¼ãƒ–ãƒ«
 ;------------------------------------------
+;/// @brief Direction conversion table.
+;/// @ingroup gamerom
 tblDirCnv:
 	db $00,$20,$00,$20
 	db $01,$1F,$3F,$21
@@ -835,7 +872,7 @@ tblDirCnv:
 	
 
 ;------------------------------------------
-;		 •ûŒü”»’èƒe[ƒuƒ‹ 16x16
+;		 æ–¹å‘åˆ¤å®šãƒ†ãƒ¼ãƒ–ãƒ« 16x16
 ;------------------------------------------
 ;	NT_SIN 0		; 0  0
 ;	NT_SIN 25		; 1  5.625
@@ -854,6 +891,8 @@ tblDirCnv:
 ;	NT_SIN 251		; E  78.75
 ;	NT_SIN 255		; F  84.375
 
+;/// @brief Direction test table.
+;/// @ingroup gamerom
 tblDirCheck:
 	db $08,$00,$00,$00,$00,$00,$00,$00,  $00,$00,$00,$00,$00,$00,$00,$00
 	db $10,$08,$06,$05,$04,$03,$03,$03,  $02,$02,$02,$02,$02,$01,$01,$01

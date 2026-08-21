@@ -1,17 +1,22 @@
+;/// @file AplGameInit.asm
+;/// @brief Per-stage setup: clears the object tables and seeds the mission.
+;/// @ingroup gamerom
 
 
 
 ;=====================================
 ;
-;	ƒQ[ƒ€‰Šú‰»
+;	ã‚²ãƒ¼ãƒ åˆæœŸåŒ–
 ;
 ;
 ;=====================================
 
+;/// @brief Prepares the display for a stage: nametables, palette and sprites.
+;/// @ingroup gamerom
 initGameDisp:
 
 	;--------------------------
-	; BGŠÖ˜A‰Šú‰»
+	; BGé–¢é€£åˆæœŸåŒ–
 	;--------------------------
 
 	lda #0
@@ -23,7 +28,7 @@ initGameDisp:
 	jsr setGameCommonPal
 	jsr PAL_FADE_SYSTEM
 
-	; ƒAƒgƒŠƒrƒ…[ƒg‘‚«Š·‚¦
+	; ã‚¢ãƒˆãƒªãƒ“ãƒ¥ãƒ¼ãƒˆæ›¸ãæ›ãˆ
 	SET_VRAM_ADD2	#$23C0
 
 	lda #%00000000
@@ -43,23 +48,23 @@ initGameDisp:
 	SET_VRAM_ADD2 #$2000 + 32*28 + 0
 	DRAW_STRING2 " SCORE 000000000  "
 
-	lda  #$7F	; ©‹@ƒAƒCƒRƒ“
+	lda  #$7F	; è‡ªæ©Ÿã‚¢ã‚¤ã‚³ãƒ³
     sta  $2007
 	DRAW_STRING2 "    STAGE "
 	
 
-	; 	ƒXƒe[ƒW”Ô†•`‰æ
+	; 	ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·æç”»
 	SET_VRAM_ADD2 #$2000 + 32*28 + 28
 	
 	LDA	PLY_STAGE
 	jsr  convBCD
 	JSR	DRAW_HEX_BYTE
 
-	; 	c‹@”•`‰æ
+	; 	æ®‹æ©Ÿæ•°æç”»
 	jsr  drawPlyLife
 
 
-;	ƒƒ‚ƒŠ[ƒNƒŠƒA[
+;	ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¯ãƒªã‚¢ãƒ¼
 	ldx  #0
 	txa			; =lda #0
 .CLR_LOP:

@@ -1,3 +1,13 @@
+;/// @file NamLicense0.asm
+;/// @brief Licence page 1 as a full nametable, assembled then BPE-compressed.
+;/// @ingroup gamerom
+;///
+;/// Built by `chr/bpe_asm.bat`: assembled to a `.nes`, cut down to the 1 KB
+;/// nametable, then compressed. `res/NamLicense0.asm` is the cartridge's copy of
+;/// the same page. @see @ref sample_game
+
+;/// @brief Licence page 1 as nametable data, 32x30 tiles.
+;/// @ingroup gamerom
 TXT_LICENSE:
 	db "                                "
 	db "                                "

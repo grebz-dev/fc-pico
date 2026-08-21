@@ -1,22 +1,35 @@
+;/// @file SysSub.asm
+;/// @brief General-purpose routine library for the erasable bank.
+;/// @ingroup bootrom
+;///
+;/// Step control, string and hexadecimal drawing, BCD arithmetic, memory helpers
+;/// and the display on/off routines that back the `DISP_ON` / `DISP_OFF` macros.
+;///
+;/// @note These live in the fixed part of the bank so that every step handler can
+;///       reach them without a bank switch.
 ;===================================================================
 ;
-;			ŒÅ’èƒoƒ“ƒN‚É’u‚­”Ä—pƒ‹[ƒ`ƒ“
+;			å›ºå®šãƒãƒ³ã‚¯ã«ç½®ãæ±Žç”¨ãƒ«ãƒ¼ãƒãƒ³
 ;
 ;===================================================================
 ;--------------------------------
-; STG_COD ƒZƒbƒg  A reg -> STG_COD
+; STG_COD ã‚»ãƒƒãƒˆ  A reg -> STG_COD
 ;--------------------------------
+;/// @brief Switches to a new application step, clearing per-scene state first.
+;/// @ingroup bootrom
 SET_STG_COD:
 ;	pha
 ;	JSR	STOP_BGM
 ;	pla
+;/// @brief As @ref SET_STG_COD, also setting the sub-step.
+;/// @ingroup bootrom
 SET_STG_COD2:
 	STA	<STG_COD
 
 ;	JSR	STOP_SE
 
 	sei
-	inc	<NMI_FLG	;ƒnƒ“ƒO–hŽ~
+	inc	<NMI_FLG	;ãƒãƒ³ã‚°é˜²æ­¢
 
 	LDA	#0
 	sta <HIRQ_ENA
@@ -28,33 +41,45 @@ SET_STG_COD2:
 	STA	<KEY_TRG
 	dec	<NMI_FLG
 
-	DISP_OFF		; ‰æ–Êoff
+	DISP_OFF		; ç”»é¢off
 
 	RTS
 
 
 
 ;******* GM_WAIT **********************
+;/// @brief Waits for any key, with a timeout.
+;/// @ingroup bootrom
 ST_GM_WKEY:
 	CHK_BIT	<KEY_TRG, #KEY_ABRS
 	BNE	st_gm_w01
 
+;/// @brief Waits #GM_WAIT frames.
+;/// @ingroup bootrom
 ST_GM_WAIT:
 	DEC	<GM_WAIT
 	BNE	st_gm_w00
 
+;/// @brief Loop body of @ref ST_GM_WAIT.
+;/// @ingroup bootrom
 st_gm_w01:
 	INC	<STG_COD_SUB
+;/// @brief Exit path of @ref ST_GM_WAIT.
+;/// @ingroup bootrom
 st_gm_w00:
 	RTS
 
+;/// @brief Waits a caller-supplied number of frames.
+;/// @ingroup bootrom
 ST_GM_WAIT2:
 	jsr  SLOW_DEC_GM_WAIT
 	beq  st_gm_w01
 	RTS
 
 
-;******* ƒtƒF[ƒhI—¹‘Ò‚¿ **********************
+;******* ãƒ•ã‚§ãƒ¼ãƒ‰çµ‚äº†å¾…ã¡ **********************
+;/// @brief Waits for the running palette fade to finish.
+;/// @ingroup bootrom
 ST_FADE_WAIT:
 	lda PALFADE_TIME
 	bne	st_gm_w00
@@ -62,9 +87,11 @@ ST_FADE_WAIT:
 	rts
 
 ;-------------------------------------
-; 8ƒtƒŒ[ƒ€–ˆ‚ÉƒJƒEƒ“ƒgƒ_ƒEƒ“‚·‚é GM_WAIT
-; ƒJƒEƒ“ƒg‚ªƒ[ƒ‚È‚çƒ[ƒƒtƒ‰ƒOƒZƒbƒg
+; 8ãƒ•ãƒ¬ãƒ¼ãƒ æ¯Žã«ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ã™ã‚‹ GM_WAIT
+; ã‚«ã‚¦ãƒ³ãƒˆãŒã‚¼ãƒ­ãªã‚‰ã‚¼ãƒ­ãƒ•ãƒ©ã‚°ã‚»ãƒƒãƒˆ
 ;-------------------------------------
+;/// @brief Decrements #GM_WAIT every other frame, for slow animations.
+;/// @ingroup bootrom
 SLOW_DEC_GM_WAIT:
 	LDA	<SYS_TIMER
 	AND	#$07
@@ -75,10 +102,12 @@ SLOW_DEC_GM_WAIT:
 
 
 ;=======================
-; [SCR_ADR] ‚©‚ç‚PƒoƒCƒg A reg ‚É“ü‚ê‚ÄƒAƒhƒŒƒX‚ðƒCƒ“ƒNƒŠƒƒ“ƒg
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  OUT: A reg  Žæ“¾‚µ‚½ƒf[ƒ^
+; [SCR_ADR] ã‹ã‚‰ï¼‘ãƒã‚¤ãƒˆ A reg ã«å…¥ã‚Œã¦ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  OUT: A reg  å–å¾—ã—ãŸãƒ‡ãƒ¼ã‚¿
 ;=======================
+;/// @brief Reads the byte at #SRC_ADR.
+;/// @ingroup bootrom
 getSCR_ADR_DATA:
 	sty  <TMP_SYS
 	ldy  #0
@@ -89,20 +118,26 @@ getSCR_ADR_DATA:
 	plp
 	rts
 
+;/// @brief Advances #SRC_ADR by one.
+;/// @ingroup bootrom
 incSCR_ADR:
 	incw <SRC_ADR
 	rts
 
+;/// @brief Retreats #SRC_ADR by one.
+;/// @ingroup bootrom
 decSCR_ADR:
 	decw <SRC_ADR
 	rts
 
 
 ;----------------------
-;  SRC_ADR‚É‰ÁŽZ
+;  SRC_ADRã«åŠ ç®—
 ;  Areg = LOW
 ;  Xreg = High
 ;----------------------
+;/// @brief Adds A to #SRC_ADR.
+;/// @ingroup bootrom
 addSCR_ADR:
 	clc
 	adc  <SRC_ADR+0
@@ -114,13 +149,17 @@ addSCR_ADR:
 
 
 ;=======================
-; Areg ‚ð [DST_ADR] ‚ÉƒZƒbƒg‚µ‚ÄƒAƒhƒŒƒX‚ðƒCƒ“ƒNƒŠƒƒ“ƒg
-;  IN: DST_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  ”j‰ó Y
+; Areg ã‚’ [DST_ADR] ã«ã‚»ãƒƒãƒˆã—ã¦ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;  IN: DST_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  ç ´å£Š Y
 ;=======================
+;/// @brief Writes A to the byte at #DST_ADR.
+;/// @ingroup bootrom
 setDST_ADR_DATA:
 	ldy   #0
 	sta   [DST_ADR],Y
+;/// @brief Advances #DST_ADR by one.
+;/// @ingroup bootrom
 incDST_ADR:
 	inc  <DST_ADR
 	bne  .end
@@ -132,8 +171,10 @@ incDST_ADR:
 
 
 ;=======================
-; ƒLƒƒƒŠ[ƒtƒ‰ƒO”½“]
+; ã‚­ãƒ£ãƒªãƒ¼ãƒ•ãƒ©ã‚°åè»¢
 ;=======================
+;/// @brief Inverts the carry flag.
+;/// @ingroup bootrom
 revCFlag:
 	bcc  .set
 	clc
@@ -144,13 +185,19 @@ revCFlag:
 
 
 
+;/// @brief Clears the OAM shadow so no sprites are displayed.
+;/// @ingroup bootrom
 SYS_CLEAR_SP:
+;/// @brief Shared tail of the sprite-clearing routines.
+;/// @ingroup bootrom
 SPT_CLR_RTN:
 	ldy  #0
 ;-----------------------------------
-; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ðƒNƒŠƒA[‚·‚é
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJŽnˆÊ’u
+; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’ã‚¯ãƒªã‚¢ãƒ¼ã™ã‚‹
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Hides every sprite by parking its Y coordinate off screen.
+;/// @ingroup bootrom
 clearObj:
 ;	cpy #0
 ;	beq .end
@@ -168,12 +215,16 @@ clearObj:
 
 
 ;=======================
-; •¶Žš—ñ•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   DRAW_STRING ‚Å•¶Žš—ñ‚ÌŠi”[ƒAƒhƒŒƒX‚ðŽw’è
+; æ–‡å­—åˆ—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   DRAW_STRING ã§æ–‡å­—åˆ—ã®æ ¼ç´ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
 ;=======================
+;/// @brief Draws a NUL-terminated string into a nametable.
+;/// @ingroup bootrom
 DRAW_STRING_SUB:
 	sta  <SRC_ADR+1
+;/// @brief Continuation of @ref DRAW_STRING_SUB.
+;/// @ingroup bootrom
 DRAW_STRING_SUB2:
 	ldy  #0
 .drst00:
@@ -191,10 +242,12 @@ DRAW_STRING_SUB2:
 
 
 ;=======================
-; •¶Žš—ñƒNƒŠƒA[
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   DRAW_STRING ‚Å•¶Žš—ñ‚ÌŠi”[ƒAƒhƒŒƒX‚ðŽw’è
+; æ–‡å­—åˆ—ã‚¯ãƒªã‚¢ãƒ¼
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   DRAW_STRING ã§æ–‡å­—åˆ—ã®æ ¼ç´ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
 ;=======================
+;/// @brief Overwrites a string with blanks.
+;/// @ingroup bootrom
 CLR_STRING_SUB:
 	sta  <SRC_ADR+1
         LDY  #0
@@ -210,10 +263,12 @@ CLR_STRING_SUB:
 
 
 ;=======================
-; 16i”@”Žš•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   A reg •`‰æ‚·‚é”’l
+; 16é€²æ•°ã€€æ•°å­—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   A reg æç”»ã™ã‚‹æ•°å€¤
 ;=======================
+;/// @brief Draws one byte as two hexadecimal digits.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE:
         TAY
         LSR A
@@ -222,11 +277,15 @@ DRAW_HEX_BYTE:
         LSR A
 	JSR	DRAW_HEX_BYTE2
 	TYA
+;/// @brief Continuation of @ref DRAW_HEX_BYTE.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE2:
 	jsr  convHEX2
 	sta  $2007
 	rts
 
+;/// @brief Converts a nibble to its hexadecimal character.
+;/// @ingroup bootrom
 convHEX2:
 	and  #$0f
 	cmp  #10
@@ -243,10 +302,12 @@ convHEX2:
 
 
 ;=======================
-; 16i”@”Žš•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   A reg •`‰æ‚·‚é”’l
+; 16é€²æ•°ã€€æ•°å­—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   A reg æç”»ã™ã‚‹æ•°å€¤
 ;=======================
+;/// @brief Draws a hexadecimal byte using the application's tile set.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE_GM:
 	TAY
 	LSR A
@@ -255,6 +316,8 @@ DRAW_HEX_BYTE_GM:
 	LSR A
 	JSR	DRAW_HEX_BYTE2_GM
 	TYA
+;/// @brief Continuation of @ref DRAW_HEX_BYTE_GM.
+;/// @ingroup bootrom
 DRAW_HEX_BYTE2_GM:
 	AND #$0f
 	clc
@@ -264,13 +327,15 @@ DRAW_HEX_BYTE2_GM:
     RTS
 
 ;=======================
-; 2i‰»10i 8ƒrƒbƒg‰ÁŽZ
-;   A reg ‰ÁŽZ‚·‚é’liBCD’lj
-;   X reg $3xx ‚Ìƒ[ƒN‚Ì‰ºˆÊƒAƒhƒŒƒX8bit
+; 2é€²åŒ–10é€² 8ãƒ“ãƒƒãƒˆåŠ ç®—
+;   A reg åŠ ç®—ã™ã‚‹å€¤ï¼ˆBCDå€¤ï¼‰
+;   X reg $3xx ã®ãƒ¯ãƒ¼ã‚¯ã®ä¸‹ä½ã‚¢ãƒ‰ãƒ¬ã‚¹8bit
 ;=======================
 
+;/// @brief Adds two packed BCD values.
+;/// @ingroup bootrom
 BCD_ADD:
-	; ‰ÁŽZ‚·‚é’l‚ðã‰º4ƒrƒbƒg‚¸‚Â‚É•ª—£
+	; åŠ ç®—ã™ã‚‹å€¤ã‚’ä¸Šä¸‹4ãƒ“ãƒƒãƒˆãšã¤ã«åˆ†é›¢
 	TAY
 	AND  #$0F
 	STA  <TMP_SV0
@@ -294,7 +359,7 @@ BCD_ADD:
 	LSR  A
 	STA  <TMP_SV3
 
-	; ‰ºˆÊ4ƒrƒbƒg‚ð‰ÁŽZ
+	; ä¸‹ä½4ãƒ“ãƒƒãƒˆã‚’åŠ ç®—
 	LDA  <TMP_SV0
 	CLC
 	ADC  <TMP_SV2
@@ -302,10 +367,12 @@ BCD_ADD:
 	BCC  BCD_00
 	SBC  #10
 	INC  <TMP_SV1
+;/// @brief Loop body of @ref BCD_ADD.
+;/// @ingroup bootrom
 BCD_00:
 	STA  <TMP_SV2
 
-	; ãˆÊ4ƒrƒbƒg‚ð‰ÁŽZ
+	; ä¸Šä½4ãƒ“ãƒƒãƒˆã‚’åŠ ç®—
 	LDA  <TMP_SV1
 	CLC
 	ADC  <TMP_SV3
@@ -317,6 +384,8 @@ BCD_00:
 	LDA  #1
 	JMP  BCD_ADD
 
+;/// @brief Carry-propagation path of @ref BCD_ADD.
+;/// @ingroup bootrom
 BCD_01:
 	ASL  A
 	ASL  A
@@ -328,9 +397,11 @@ BCD_01:
 
 
 ;=======================
-; 2i‰»10i ƒCƒ“ƒNƒŠƒƒ“ƒg
-;   X reg $3xx ‚Ìƒ[ƒN‚Ì‰ºˆÊƒAƒhƒŒƒX8bit
+; 2é€²åŒ–10é€² ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;   X reg $3xx ã®ãƒ¯ãƒ¼ã‚¯ã®ä¸‹ä½ã‚¢ãƒ‰ãƒ¬ã‚¹8bit
 ;=======================
+;/// @brief Increments a packed BCD value.
+;/// @ingroup bootrom
 BCD_INC:
 	LDA  $300,X
 	AND  #$0F
@@ -355,9 +426,11 @@ BCD_INC:
 
 
 ;=======================
-; 2i‰»10i ƒfƒNƒŠƒƒ“ƒg
-;   X reg $3xx ‚Ìƒ[ƒN‚Ì‰ºˆÊƒAƒhƒŒƒX8bit
+; 2é€²åŒ–10é€² ãƒ‡ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;   X reg $3xx ã®ãƒ¯ãƒ¼ã‚¯ã®ä¸‹ä½ã‚¢ãƒ‰ãƒ¬ã‚¹8bit
 ;=======================
+;/// @brief Decrements a packed BCD value.
+;/// @ingroup bootrom
 BCD_DEC:
 	LDA  $300,X
 	AND  #$0F
@@ -382,8 +455,10 @@ BCD_DEC:
 
 
 ;---------------------------------------------
-; Areg ‚Ì’l‚ðBCD‚É•ÏŠ·:99ˆÈã‚Ì’l‚Í99‚É‚È‚é
+; Areg ã®å€¤ã‚’BCDã«å¤‰æ›:99ä»¥ä¸Šã®å€¤ã¯99ã«ãªã‚‹
 ;---------------------------------------------
+;/// @brief Converts a binary byte to packed BCD.
+;/// @ingroup bootrom
 convBCD:
 	cmp  #99
 	bcc  .no_over
@@ -412,8 +487,12 @@ convBCD:
 ;=======================
 ; VRAM CLEAR
 ;=======================
+;/// @brief Fills a nametable region with a single tile.
+;/// @ingroup bootrom
 SYS_CLEAR_BG:
 	SET_VRAM_ADD2 #$2000
+;/// @brief Continuation of @ref SYS_CLEAR_BG.
+;/// @ingroup bootrom
 SYS_CLEAR_BG2:
 	lda	#$00
 	ldy	#0
@@ -421,6 +500,8 @@ SYS_CLEAR_BG2:
 	jsr SYS_VRAM_WLP
 	jsr SYS_VRAM_WLP
 
+;/// @brief Writes A to `$2007` X times.
+;/// @ingroup bootrom
 SYS_VRAM_WLP:
 	sta  $2007
 	dey
@@ -430,44 +511,50 @@ SYS_VRAM_WLP:
 
 
 ;------------------------------------------------------------------------------
-;				•\Ž¦on
+;				è¡¨ç¤ºon
 ;------------------------------------------------------------------------------
+;/// @brief Backs the `DISP_ON` macro: waits for a frame, then enables rendering.
+;/// @ingroup bootrom
 _disp_on_sub:
 	lda	#0
-	sta	<NMI_FLG	; Š„‚èž‚Ý‹–‰Â
+	sta	<NMI_FLG	; å‰²ã‚Šè¾¼ã¿è¨±å¯
 
-	JSR	WAIT_VSYNC	; IRQ‚ð“­‚©‚¹‚é‚½‚ßAŽŸƒtƒŒ[ƒ€‚É‚È‚é‚Ü‚Å‘Ò‚ÂB
+	JSR	WAIT_VSYNC	; IRQã‚’åƒã‹ã›ã‚‹ãŸã‚ã€æ¬¡ãƒ•ãƒ¬ãƒ¼ãƒ ã«ãªã‚‹ã¾ã§å¾…ã¤ã€‚
 
 	lda  #FLG_PPU2001
-	sta  <FLG_2001	; ‰æ–ÊON
+	sta  <FLG_2001	; ç”»é¢ON
 	lda  #1
 	sta  <HIRQ_ENA
 	rts
 
+;/// @brief Backs `DISP_ON_NSP`: enables rendering with sprites left off.
+;/// @ingroup bootrom
 _disp_on_sub2:
 
 	lda	#0
-	sta	<NMI_FLG	; Š„‚èž‚Ý‹–‰Â
+	sta	<NMI_FLG	; å‰²ã‚Šè¾¼ã¿è¨±å¯
 
-	JSR	WAIT_VSYNC	; IRQ‚ð“­‚©‚¹‚é‚½‚ßAŽŸƒtƒŒ[ƒ€‚É‚È‚é‚Ü‚Å‘Ò‚ÂB
+	JSR	WAIT_VSYNC	; IRQã‚’åƒã‹ã›ã‚‹ãŸã‚ã€æ¬¡ãƒ•ãƒ¬ãƒ¼ãƒ ã«ãªã‚‹ã¾ã§å¾…ã¤ã€‚
 
 	lda  #%000_01_11_0
-	sta  <FLG_2001	; ‰æ–ÊON
+	sta  <FLG_2001	; ç”»é¢ON
 	lda  #1
 	sta  <HIRQ_ENA
 	rts
 
 
 ;------------------------------------------------------------------------------
-;				•\Ž¦off
+;				è¡¨ç¤ºoff
 ;------------------------------------------------------------------------------
+;/// @brief Backs the `DISP_OFF` macro: waits for a frame, then disables rendering.
+;/// @ingroup bootrom
 _disp_off_sub:
 	LDA	#0
-	STA	<FLG_2001	; ‰æ–ÊOFF
+	STA	<FLG_2001	; ç”»é¢OFF
 	STA	<HIRQ_ENA
-	JSR	WAIT_VSYNC	; ‰æ–Êoff‚É‚È‚é‚Ì‚ÍŽŸ‚ÌƒtƒŒ[ƒ€‚©‚ç‚È‚Ì‚ÅA‘Ò‚ÂB
+	JSR	WAIT_VSYNC	; ç”»é¢offã«ãªã‚‹ã®ã¯æ¬¡ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã‹ã‚‰ãªã®ã§ã€å¾…ã¤ã€‚
 
 	lda	#1
-	sta	<NMI_FLG	; Š„‚èž‚Ý‹ÖŽ~
+	sta	<NMI_FLG	; å‰²ã‚Šè¾¼ã¿ç¦æ­¢
 	rts
 

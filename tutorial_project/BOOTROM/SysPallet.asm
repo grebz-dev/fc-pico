@@ -1,44 +1,71 @@
+;/// @file SysPallet.asm
+;/// @brief Palette fade engine and the only writer of the hardware palette.
+;/// @ingroup bootrom
+;///
+;/// All palette changes go through the #PAL_WRK shadow; @ref transPALLET is what
+;/// moves them to `$3F00`, and it must run inside vertical blank.
+;///
+;/// Fades are computed per entry against a mask, so groups of colours can be
+;/// faded independently. Palette index `$0F` is special-cased as black.
 ;========================================
 ; Pallet System
 ;========================================
-DEF_FADE_SPD	equ 4	; ƒfƒtƒHƒ‹ƒgƒtƒF[ƒh‘¬“x
+DEF_FADE_SPD	equ 4   ;///< Default frames between fade steps. ; ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦
 
 
 ;*****************************************
-;•ƒtƒF[ƒhƒCƒ“
+;é»’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
 ;*****************************************
+;/// @brief Starts a fade in from black.
+;/// @ingroup bootrom
 SET_FADE_IN_B:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_IN_B, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_IN_B2:
 	ldy	#-$40
 	ldx	#$10
 	bne fade_set_end
 ;*****************************************
-;•ƒtƒF[ƒhƒAƒEƒg
+;é»’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆ
 ;*****************************************
+;/// @brief Starts a fade out to black.
+;/// @ingroup bootrom
 SET_FADE_OUT_B:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_OUT_B, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_OUT_B2:
 	ldy	#0
 	ldx	#-$10
 	bne fade_set_end
 ;*****************************************
-;”’ƒtƒF[ƒhƒCƒ“
+;ç™½ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¤ãƒ³
 ;*****************************************
+;/// @brief Starts a fade in from white.
+;/// @ingroup bootrom
 SET_FADE_IN_W:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_IN_W, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_IN_W2:
 	ldy	#$40
 	ldx	#-$10
 	bne fade_set_end
 ;*****************************************
-;”’ƒtƒF[ƒhƒAƒEƒg
+;ç™½ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¢ã‚¦ãƒˆ
 ;*****************************************
+;/// @brief Starts a fade out to white.
+;/// @ingroup bootrom
 SET_FADE_OUT_W:
 	lda	#DEF_FADE_SPD
+;/// @brief As @ref SET_FADE_OUT_W, with a caller-supplied speed.
+;/// @ingroup bootrom
 SET_FADE_OUT_W2:
 	ldy	#0
 	ldx	#$10
+;/// @brief Common tail of the fade setters: stores the parameters and flags the palette dirty.
+;/// @ingroup bootrom
 fade_set_end:
 	sta PALFADE_TIME
 	sta	PALFADE_CNT
@@ -48,11 +75,13 @@ fade_set_end:
 	rts
 
 ;*****************************************
-;ƒtƒF[ƒhI—¹‘Ò‚¿
+;ãƒ•ã‚§ãƒ¼ãƒ‰çµ‚äº†å¾…ã¡
 ;*****************************************
+;/// @brief Blocks until the running fade completes, re-enabling NMI first.
+;/// @ingroup bootrom
 WAIT_FADE_END:
 	lda  <FLG_2000
-	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 .loop
 	jsr  WAIT_VSYNC
 	jsr  PAL_FADE_SYSTEM
@@ -62,14 +91,16 @@ WAIT_FADE_END:
 
 
 ;*****************************************
-;ƒpƒŒƒbƒgƒtƒF[ƒhƒVƒXƒeƒ€
+;ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
 	
+;/// @brief Advances the fade by one step; called once per frame from the main loop.
+;/// @ingroup bootrom
 PAL_FADE_SYSTEM:
 	lda	PALFADE_TIME
-	beq	.ret		; ƒtƒF[ƒhƒ^ƒCƒ€‚ª‚O‚È‚ç‰½‚à‚µ‚È‚¢‚ÅƒŠƒ^[ƒ“
+	beq	.ret		; ãƒ•ã‚§ãƒ¼ãƒ‰ã‚¿ã‚¤ãƒ ãŒï¼ãªã‚‰ä½•ã‚‚ã—ãªã„ã§ãƒªã‚¿ãƒ¼ãƒ³
 	dec	PALFADE_CNT
-	bne	.ret		; ƒJƒEƒ“ƒgƒ_ƒEƒ“’†‚È‚çƒŠƒ^[ƒ“
+	bne	.ret		; ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ä¸­ãªã‚‰ãƒªã‚¿ãƒ¼ãƒ³
 	sta	PALFADE_CNT
 
 	PAL_CHG
@@ -92,8 +123,10 @@ PAL_FADE_SYSTEM:
 	rts
 
 ;*****************************************
-;ƒpƒŒƒbƒg‚o‚o‚t“]‘—ƒVƒXƒeƒ€
+;ãƒ‘ãƒ¬ãƒƒãƒˆï¼°ï¼°ï¼µè»¢é€ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
+;/// @brief Uploads #PAL_WRK to `$3F00`, applying the fade. @warning Must run inside vertical blank.
+;/// @ingroup bootrom
 transPALLET:
 	lda  <PAL_CHG_FG
 	beq  .end
@@ -106,7 +139,7 @@ transPALLET:
 	
 	lda  PALFADE_VAL
 	BNE  .fadepal00
-	; ƒ_ƒCƒŒƒNƒg“]‘—
+	; ãƒ€ã‚¤ãƒ¬ã‚¯ãƒˆè»¢é€
 .loop
 	lda  PAL_WRK,x
 	sta  $2007
@@ -116,11 +149,11 @@ transPALLET:
 .end
 	rts
 
-	; ƒtƒF[ƒh’†“]‘—
+	; ãƒ•ã‚§ãƒ¼ãƒ‰ä¸­è»¢é€
 .fadepal00
 	bmi  .fadepal01
 
-.palwcre020		; ‰ÁZ“]‘— i”’ƒtƒF[ƒh—pj
+.palwcre020		; åŠ ç®—è»¢é€ ï¼ˆç™½ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ï¼‰
 	ldy  #0
 .loop_w0
 	lda  tblFadeMask,y
@@ -133,7 +166,7 @@ transPALLET:
 
 
 
-.fadepal01	; Œ¸Z“]‘— i•ƒtƒF[ƒh—pj
+.fadepal01	; æ¸›ç®—è»¢é€ ï¼ˆé»’ãƒ•ã‚§ãƒ¼ãƒ‰ç”¨ï¼‰
 	ldy  #0
 .loop_b0
 	lda  tblFadeMask,y
@@ -145,21 +178,23 @@ transPALLET:
 	rts
 
 
+;/// @brief Bit masks selecting which palette group each fade step affects.
+;/// @ingroup bootrom
 tblFadeMask:
 	db  $01,$02,$04,$08,$10,$20,$40,$80
 
 ;--------------------
-; ”’ƒtƒF[ƒhƒTƒu
+; ç™½ãƒ•ã‚§ãƒ¼ãƒ‰ã‚µãƒ–
 ;--------------------
 sub_palwcre
 	bne  sub_paldirect
 .loop
 	lda	PAL_WRK,x
-	cmp	#$0F		; $0F‚Í“Áêˆµ‚¢
+	cmp	#$0F		; $0Fã¯ç‰¹æ®Šæ‰±ã„
 	bne	.palwcre030
 	lda	#$F0
 .palwcre030
-	; ”’ˆÈã‚È‚ç”’‚É‚·‚é
+	; ç™½ä»¥ä¸Šãªã‚‰ç™½ã«ã™ã‚‹
 	clc
 	adc	PALFADE_VAL
 	cmp	#$40
@@ -174,17 +209,17 @@ sub_palwcre
 	rts
 
 ;--------------------
-; •ƒtƒF[ƒhƒTƒu
+; é»’ãƒ•ã‚§ãƒ¼ãƒ‰ã‚µãƒ–
 ;--------------------
 sub_palbcre
 	bne  sub_paldirect
 
 .loop
     lda  PAL_WRK,X
-	cmp  #$0F		; $0F‚Í“Áêˆµ‚¢‚Å‰½‚à‚µ‚È‚¢
+	cmp  #$0F		; $0Fã¯ç‰¹æ®Šæ‰±ã„ã§ä½•ã‚‚ã—ãªã„
 	beq  .palbcre040
 .palbcre030
-	; •ˆÈ‰º‚È‚ç•‚É‚·‚é
+	; é»’ä»¥ä¸‹ãªã‚‰é»’ã«ã™ã‚‹
 	clc
 	adc  PALFADE_VAL
 	bpl  .palbcre040
@@ -198,7 +233,7 @@ sub_palbcre
 	rts
 
 ;--------------------
-; ƒ_ƒCƒŒƒNƒg“]‘—
+; ãƒ€ã‚¤ãƒ¬ã‚¯ãƒˆè»¢é€
 ;--------------------
 sub_paldirect
 .loop

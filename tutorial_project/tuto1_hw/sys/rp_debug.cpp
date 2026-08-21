@@ -2,6 +2,14 @@
     rp_dma.h - DMA関連
  */
 
+/**
+ * @file rp_debug.cpp
+ * @brief Implementation of the trace ring and the dual-core watchdog.
+ * @ingroup platform
+ * @see rp_debug.h
+ */
+
+
 
 #define rp_debug_cpp
 
@@ -10,10 +18,11 @@
 #include "rp_system.h"
 #include "rp_debug.h"
 
-uint8_t WDT_mode;
-unsigned long WDI_time;
+uint8_t WDT_mode;   ///< 0: core 1 may feed the watchdog. 1: only core 0 may. @see setWDT_mode
+unsigned long WDI_time;   ///< Timestamp of the last WDT_update(), in microseconds.
 
 
+/// @brief Human-readable names for the `DTR_*` trace points.
 const char *DTR_str[DTR_MAX] = {
 		"DTR_ROOT",
 		"DTR_MAIN",
@@ -22,9 +31,9 @@ const char *DTR_str[DTR_MAX] = {
 };
 
 
-uint8_t  DTR_log_idx;
-uint8_t  DTR_log_kind[ DTR_LOG_SIZE ];
-uint16_t DTR_log_line[ DTR_LOG_SIZE ];
+uint8_t  DTR_log_idx;   ///< Write cursor into the trace ring; wraps at #DTR_LOG_SIZE.
+uint8_t  DTR_log_kind[ DTR_LOG_SIZE ];   ///< Trace-point identifier per ring entry.
+uint16_t DTR_log_line[ DTR_LOG_SIZE ];   ///< Source line number per ring entry.
 
 
 //=========================================================
@@ -39,6 +48,12 @@ void setDebugTrace( uint8_t dtrno, uint16_t line ) {
 	DTR_log_idx++;
 }
 
+/**
+ * @brief Formats the trace ring, newest entry first.
+ * @return One `NAME:line` pair per line.
+ * @note Intended to be printed after an unexplained reset to show where the
+ *       firmware was. The call inside WDT_check() is commented out.
+ */
 String strDebugTrace(void) {
 	char buffer[50];
 	String msg;

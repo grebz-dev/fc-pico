@@ -1,11 +1,35 @@
+/**
+ * @file flashdevice.nut
+ * @brief anago flash device table.
+ * @ingroup toolchain
+ *
+ * The part used here is the AM29F040B: 4 Mbit, erase required, command mask
+ * `MASK_A10` (`0x7FF`). That mask is what makes the `$D555` / `$AAAA` unlock
+ * addresses in `SysBootRom.asm` decode correctly.
+ *
+ * @note The manufacturer ID here (`0x01`) disagrees with `FLASH_MAN_CODE` in
+ *       `BOOTROM/defDebug.h`. The 6502 never checks it, so the discrepancy is
+ *       inert. @see @ref flashing
+ */
 //bit is masking MSB
+/**
+ * @brief Builds an address mask of the given width.
+ * @details Takes the number of address bits the device decodes for its command
+ *          sequence and returns a mask with that many low bits set.
+ * @return The mask.
+ */
 function mask_get(bit)
 {
 	local t = 1 << (bit + 1);
 	return t - 1;
 }
+/// @brief One megabit in bytes; device capacities are multiples of this.
 local mega = 0x20000;
+/// @brief Command mask for devices decoding 15 address bits.
 local MASK_A14 = mask_get(14);
+/// @brief Command mask for devices decoding 11 address bits (`0x7FF`).
+/// @details The AM29F040B uses this, which is why the `$D555` and `$AAAA`
+///          unlock writes in `SysBootRom.asm` decode to `0x555` and `0x2AA`.
 local MASK_A10 = mask_get(10);
 device <- {
 	["dummy"] = {

@@ -1,3 +1,15 @@
+::/ @file m.BAT
+::/ @brief Assembles the game ROM.
+::/ @ingroup toolchain
+::/
+::/ Writes `strver.h`, assembles `PG_main.asm` with nesasm, copies the result to
+::/ `map0demo.NES` and also cuts a headerless `gamerom.bin`. The `find "error"`
+::/ at the end is the only check; nesasm's exit status is not consulted, so a
+::/ failed build has to be spotted in the log.
+::/
+::/ @note `map0demo.NES` is what `res/binlink.lst` packs into the cartridge's
+::/       resource archive, so `res/conv.bat` has to run after this.
+::/ @see @ref sample_game, @ref build_pipeline
 @echo off
 
 set title=map0demo

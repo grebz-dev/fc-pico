@@ -1,48 +1,51 @@
+;/// @file defDebug.h
+;/// @brief Build-time switches for the erasable bank.
+;/// @ingroup bootrom
 
 ;==========================================================
-; ƒfƒoƒbƒOƒRƒ“ƒgƒ[ƒ‹’è‹`
+; ãƒ‡ãƒãƒƒã‚°ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«å®šç¾©
 ;==========================================================
-; ƒfƒoƒbƒOƒrƒ‹ƒhƒRƒ“ƒgƒ[ƒ‹
-DEBUG_BUILD EQU  0
+; ãƒ‡ãƒãƒƒã‚°ãƒ“ãƒ«ãƒ‰ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«
+DEBUG_BUILD EQU  0   ;///< Non-zero enables the in-ROM debug controls in `AplGame.asm`. 
 
-MAPPER_NO	EQU 0
-
-
-; NMI ‚ÆƒQ[ƒ€ˆ—‚¾‚¯‚Å‚·‚ªˆ—‚Ìd‚³‚ğ•\¦‚·‚éê‡‚Í 1 ‚É‚µ‚Ü‚·
-PROCESSMETER = 0
-
-; ƒQ[ƒ€ˆ—‚Ìd‚³‚ğ•\¦‚·‚éê‡‚Í 1 ‚É‚µ‚Ü‚·
-GAME_PROCESSMETER = 	0
+MAPPER_NO	EQU 0   ;///< iNES mapper number; 0 for the NROM cartridge this project targets. 
 
 
-; ƒGƒ“ƒfƒBƒ“ƒOƒeƒXƒgƒ‚[ƒh (‘¦ƒNƒŠƒAŠm’è)
-ENDINGTEST = 0
+; NMI ã¨ã‚²ãƒ¼ãƒ å‡¦ç†ã ã‘ã§ã™ãŒå‡¦ç†ã®é‡ã•ã‚’è¡¨ç¤ºã™ã‚‹å ´åˆã¯ 1 ã«ã—ã¾ã™
+PROCESSMETER = 0   ;///< Show a CPU-load meter for the vertical blank and application. 
 
-; ƒfƒoƒbƒO‹@”\ON
-DEBUG_MODE = 0
-
-; ƒfƒoƒbƒOƒ‚[ƒh‚Åƒeƒ“ƒ|‚Ì‘¬‚¢ƒXƒe[ƒW‹È‚ğÄ¶‰Â”\‚É‚·‚éê‡‚Í 1 ‚É‚µ‚Ü‚·B
-; (uSOUND TSTv‚Å B ‚ğ‰Ÿ‚µ‚È‚ª‚ç A ‚ğ‰Ÿ‚·)
-DEBUG_TEMPO_UP = 1
-
-DEBUG_NO_GAME_OVER = 0
-
-DEBUG_DISP_BOSS_HP = 0
-
-DEBUG_DISP_PLY_DEBUG = 0
+; ã‚²ãƒ¼ãƒ å‡¦ç†ã®é‡ã•ã‚’è¡¨ç¤ºã™ã‚‹å ´åˆã¯ 1 ã«ã—ã¾ã™
+GAME_PROCESSMETER = 	0   ;///< Show a CPU-load meter for the application only. 
 
 
-AUTO_SHOT_OFF = 0			; =1 ‚ÌA’Êí’e‚ÌƒI[ƒgƒVƒ‡ƒbƒg‚ğ‚`ƒ{ƒ^ƒ“‰Ÿ‚µ‚Á‚Ï‚È‚µ‚Å’â~o—ˆ‚é
+; ã‚¨ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ãƒ†ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ (å³ã‚¯ãƒªã‚¢ç¢ºå®š)
+ENDINGTEST = 0   ;///< Ending test mode: clear the game immediately. 
+
+; ãƒ‡ãƒãƒƒã‚°æ©Ÿèƒ½ON
+DEBUG_MODE = 0   ;///< Master switch for the in-ROM debug features. 
+
+; ãƒ‡ãƒãƒƒã‚°ãƒ¢ãƒ¼ãƒ‰ã§ãƒ†ãƒ³ãƒã®é€Ÿã„ã‚¹ãƒ†ãƒ¼ã‚¸æ›²ã‚’å†ç”Ÿå¯èƒ½ã«ã™ã‚‹å ´åˆã¯ 1 ã«ã—ã¾ã™ã€‚
+; (ã€ŒSOUND TSTã€ã§ B ã‚’æŠ¼ã—ãªãŒã‚‰ A ã‚’æŠ¼ã™)
+DEBUG_TEMPO_UP = 1   ;///< Allow the fast stage tune to be selected in the sound test. 
+
+DEBUG_NO_GAME_OVER = 0   ;///< Disable game over. 
+
+DEBUG_DISP_BOSS_HP = 0   ;///< Display boss hit points. 
+
+DEBUG_DISP_PLY_DEBUG = 0   ;///< Display player debug state. 
 
 
-SINGLE_SHOT_TEST = 0		; =1 ©‹@‚Ì’Êí’e1”­‚Ì‚İƒeƒXƒg
-STAGE_TEST		 = 0		; !=0  w’èƒXƒe[ƒW‚©‚çƒXƒ^[ƒg
+AUTO_SHOT_OFF = 0   ;///< Allow autofire to be suppressed by holding A. ; =1 ã®æ™‚ã€é€šå¸¸å¼¾ã®ã‚ªãƒ¼ãƒˆã‚·ãƒ§ãƒƒãƒˆã‚’ï¼¡ãƒœã‚¿ãƒ³æŠ¼ã—ã£ã±ãªã—ã§åœæ­¢å‡ºæ¥ã‚‹
 
-MMC_TYPE = 0				; =0 MMC3  =1 AX-A1 =2 INL-SWAP
-NO_COPY_PROTECT =  0		; =1 ƒRƒs[ƒvƒƒeƒNƒg–³‚µ
-FLASH_DEV_CODE = $A4
-FLASH_MAN_CODE = $C2
-WRAM_PROTECT_CODE = 0
 
-ARDUINO_MODE = 0			; =1 ARDUINO “‹Úƒ‚[ƒh
+SINGLE_SHOT_TEST = 0   ;///< Restrict the player to a single shot, for testing. ; =1 è‡ªæ©Ÿã®é€šå¸¸å¼¾1ç™ºã®ã¿ãƒ†ã‚¹ãƒˆ
+STAGE_TEST		 = 0   ;///< Non-zero starts the game on that stage. ; !=0  æŒ‡å®šã‚¹ãƒ†ãƒ¼ã‚¸ã‹ã‚‰ã‚¹ã‚¿ãƒ¼ãƒˆ
+
+MMC_TYPE = 0   ;///< Mapper variant: 0 MMC3, 1 AX-A1, 2 INL-SWAP. @note Stale; this cartridge is NROM. ; =0 MMC3  =1 AX-A1 =2 INL-SWAP
+NO_COPY_PROTECT =  0   ;///< Disable the copy protection check. ; =1 ã‚³ãƒ”ãƒ¼ãƒ—ãƒ­ãƒ†ã‚¯ãƒˆç„¡ã—
+FLASH_DEV_CODE = $A4   ;///< Expected flash device ID, `$A4` for the AM29F040B. 
+FLASH_MAN_CODE = $C2   ;///< Expected flash manufacturer ID. @note Disagrees with `rom/flashdevice.nut`; unused, so inert. @see @ref flashing 
+WRAM_PROTECT_CODE = 0   ;///< Cartridge RAM write-protect code. 
+
+ARDUINO_MODE = 0   ;///< Build for a cartridge carrying the FC-EXA expansion adapter. @note Not FC PICO. ; =1 ARDUINO æ­è¼‰ãƒ¢ãƒ¼ãƒ‰
 

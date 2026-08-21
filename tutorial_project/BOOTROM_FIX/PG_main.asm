@@ -1,46 +1,57 @@
+;/// @file PG_main.asm
+;/// @brief Top-level assembly unit for the permanent boot ROM bank.
+;/// @ingroup bootrom
+;///
+;/// Publishes the jump table at `$F000` and the 6502 reset/NMI/IRQ vectors. This
+;/// bank is never erased, which is what makes a failed self-reflash recoverable.
+;///
+;/// @warning The `FP_COM_*` constants are redefined locally here rather than
+;///          shared with `BOOTROM/SysPico.asm`. That is a third copy of the
+;///          protocol values. @see @ref protocol
+;/// @see @ref boot_reflash
 
-	.list			; ƒŠƒXƒeƒBƒ“ƒOƒtƒ@ƒCƒ‹o—Í
-	.mlist			; ƒŠƒXƒeƒBƒ“ƒOƒtƒ@ƒCƒ‹ã‚Åƒ}ƒNƒ‚ğ“WŠJ
+	.list			; ãƒªã‚¹ãƒ†ã‚£ãƒ³ã‚°ãƒ•ã‚¡ã‚¤ãƒ«å‡ºåŠ›
+	.mlist			; ãƒªã‚¹ãƒ†ã‚£ãƒ³ã‚°ãƒ•ã‚¡ã‚¤ãƒ«ä¸Šã§ãƒã‚¯ãƒ­ã‚’å±•é–‹
 
 	.INCLUDE	"defDebug.h"
 
-        .inesprg 4	            ; ƒvƒƒOƒ‰ƒ€ƒoƒ“ƒN”
-        .ineschr 0	            ; CHR ƒoƒ“ƒN”
-        .inesmir 1              ; ‚’¼ƒ~ƒ‰[ƒŠƒ“ƒO
+        .inesprg 4	            ; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãƒãƒ³ã‚¯æ•°
+        .ineschr 0	            ; CHR ãƒãƒ³ã‚¯æ•°
+        .inesmir 1              ; å‚ç›´ãƒŸãƒ©ãƒ¼ãƒªãƒ³ã‚°
         .inesmap 0				; mapper #0
 
 
-PG_MAIN EQU 1
+PG_MAIN EQU 1   ;///< Set to 1 when assembling the permanent bank, so shared sources can branch. 
 
-ROM_NMI_ENTRY	EQU $ED00
-ROM_IRQ_ENTRY	EQU $EE80
-
-
-
-;----------------------------------------------
-;
-; ƒtƒ@ƒ~ƒRƒ“‚©‚çPICO@ƒRƒ}ƒ“ƒh
-;
-;----------------------------------------------
-FP_COM_ACK	= $0F		; PICO‚©‚ç‚ÌƒRƒ}ƒ“ƒh³íI—¹‰“š
-FP_COM_NAK	= $1F		; PICO‚©‚ç‚ÌƒRƒ}ƒ“ƒh¸”sI—¹‰“š
-FP_COM_VER	= $2F		; BIOS-ROM‚Ìƒo[ƒWƒ‡ƒ“æ“¾F0x0FƒoƒCƒg‚ÌROMƒo[ƒWƒ‡ƒ“•¶š—ñ
-FP_COM_ROM	= $3F		; BIOS-ROM‚ÌROMƒf[ƒ^—v‹ƒRƒ}ƒ“ƒhF FP_COM_ROM,ƒAƒhƒŒƒXH : 0x100•ª‚ÌROMƒf[ƒ^“Ç‚İo‚·
-
-FP_COM_LOG	= $BF		; ƒƒO
-FP_COM_DRQ	= $CF		; ƒf[ƒ^ƒŠƒNƒGƒXƒg
-FP_COM_DLD	= $DF		; ƒf[ƒ^ƒ[ƒh
-FP_COM_RST	= $EF		; PICOƒŠƒXƒ^[ƒg
-FP_COM_INI	= $FF		; PICO‰Šú‰»
+ROM_NMI_ENTRY	EQU $ED00   ;///< NMI vector target in the erasable bank, `$ED00`. 
+ROM_IRQ_ENTRY	EQU $EE80   ;///< IRQ vector target in the erasable bank, `$EE80`. 
 
 
 
 ;----------------------------------------------
 ;
-; ‚»‚Ì‘¼
+; ãƒ•ã‚¡ãƒŸã‚³ãƒ³ã‹ã‚‰PICOã€€ã‚³ãƒãƒ³ãƒ‰
 ;
 ;----------------------------------------------
-SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
+FP_COM_ACK	= $0F   ;///< Success reply. @note Redefined locally; see the warning in @ref protocol. ; PICOã‹ã‚‰ã®ã‚³ãƒãƒ³ãƒ‰æ­£å¸¸çµ‚äº†å¿œç­”
+FP_COM_NAK	= $1F   ;///< Failure reply. @note Redefined locally. ; PICOã‹ã‚‰ã®ã‚³ãƒãƒ³ãƒ‰å¤±æ•—çµ‚äº†å¿œç­”
+FP_COM_VER	= $2F   ;///< Request the boot-ROM build stamp. @see CHK_ROMVER ; BIOS-ROMã®ãƒãƒ¼ã‚¸ãƒ§ãƒ³å–å¾—ï¼š0x0Fãƒã‚¤ãƒˆã®ROMãƒãƒ¼ã‚¸ãƒ§ãƒ³æ–‡å­—åˆ—
+FP_COM_ROM	= $3F   ;///< Request a 256-byte page of the ROM image. @see ROM_UPDATE ; BIOS-ROMã®ROMãƒ‡ãƒ¼ã‚¿è¦æ±‚ã‚³ãƒãƒ³ãƒ‰ï¼š FP_COM_ROM,ã‚¢ãƒ‰ãƒ¬ã‚¹H : 0x100åˆ†ã®ROMãƒ‡ãƒ¼ã‚¿èª­ã¿å‡ºã™
+
+FP_COM_LOG	= $BF   ;///< Debug log to the cartridge's serial console. ; ãƒ­ã‚°
+FP_COM_DRQ	= $CF   ;///< Data request while in bulk data mode. ; ãƒ‡ãƒ¼ã‚¿ãƒªã‚¯ã‚¨ã‚¹ãƒˆ
+FP_COM_DLD	= $DF   ;///< Data load; next byte selects the page. ; ãƒ‡ãƒ¼ã‚¿ãƒ­ãƒ¼ãƒ‰
+FP_COM_RST	= $EF   ;///< Restart the cartridge firmware. ; PICOãƒªã‚¹ã‚¿ãƒ¼ãƒˆ
+FP_COM_INI	= $FF   ;///< Initialise the cartridge. ; PICOåˆæœŸåŒ–
+
+
+
+;----------------------------------------------
+;
+; ãã®ä»–
+;
+;----------------------------------------------
+SP_CLR_Y	EQU 240   ;///< Y coordinate that parks a sprite off screen. ; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚¯ãƒªã‚¢ãƒ¼Y
 
 
 
@@ -51,7 +62,7 @@ SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
 
 
 	;========================================
-	; ƒQ[ƒ€ƒoƒ“ƒN $00
+	; ã‚²ãƒ¼ãƒ ãƒãƒ³ã‚¯ $00
 	;========================================
 	.BANK		0
        ORG     $8000
@@ -61,7 +72,7 @@ SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
 
 
 	;========================================
-	; ƒQ[ƒ€ƒoƒ“ƒN $10
+	; ã‚²ãƒ¼ãƒ ãƒãƒ³ã‚¯ $10
 	;========================================
 	.BANK		2
 		ORG     $C000
@@ -71,32 +82,50 @@ SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
        ORG     $E000
 
 	ORG     $EF00
+;/// @brief Placeholder at `$EF00`; the real routine comes from the erasable bank.
+;/// @ingroup bootrom
 MAIN_SETUP:
 	jmp  0		; dmy
+;/// @brief Placeholder at `$EF03`; the real routine comes from the erasable bank.
+;/// @ingroup bootrom
 MAIN_LOOP:
 	jmp  0		; dmy
 
 	ORG     $EFF0
+;/// @brief Build stamp placeholder; the erasable bank supplies the real one.
+;/// @ingroup bootrom
 DB_ROM_VER:
 ;	.INCLUDE	"dbdate.h"
 
 	ORG     $EFFF
+;/// @brief Erase marker placeholder; the erasable bank supplies the real one.
+;/// @ingroup bootrom
 IS_ROM_ERACE:
-	db  0			; ROM‚ªÁ‹‚³‚ê‚Ä‚¢‚½‚ç $FF‚ªŠi”[‚³‚ê‚Ä‚¢‚é
-;	db  0xff		; ROM‚ªÁ‹‚³‚ê‚Ä‚¢‚½‚ç $FF‚ªŠi”[‚³‚ê‚Ä‚¢‚é
+	db  0			; ROMãŒæ¶ˆå»ã•ã‚Œã¦ã„ãŸã‚‰ $FFãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹
+;	db  0xff		; ROMãŒæ¶ˆå»ã•ã‚Œã¦ã„ãŸã‚‰ $FFãŒæ ¼ç´ã•ã‚Œã¦ã„ã‚‹
 
        ORG     $F000
 	;----------------------------------------
-	; ƒWƒƒƒ“ƒvƒxƒNƒ^[
+	; ã‚¸ãƒ£ãƒ³ãƒ—ãƒ™ã‚¯ã‚¿ãƒ¼
 	;----------------------------------------
+;/// @brief Jump-table entry `$F000`: cold boot. @see BR_INIT
+;/// @ingroup bootrom
 INIT:
 	jmp  BR_INIT
+;/// @brief Jump-table entry `$F003`: expand the system font into both pattern tables.
+;/// @ingroup bootrom
 TRANS_SYS_FONT:
 	jmp  BR_TRANS_SYS_FONT
+;/// @brief Jump-table entry `$F006`: read the controller. @see BR_KEY_RTN
+;/// @ingroup bootrom
 KEY_RTN:
 	jmp  BR_KEY_RTN
+;/// @brief Jump-table entry `$F009`: high-pitched beep.
+;/// @ingroup bootrom
 BEEP_PI:
 	jmp  BR_BEEP_PI
+;/// @brief Jump-table entry `$F00C`: low-pitched beep.
+;/// @ingroup bootrom
 BEEP_PO:
 	jmp  BR_BEEP_PO
 
@@ -105,7 +134,7 @@ BEEP_PO:
 	.include	"SysBootRom.asm"
 
 	ORG	$FFF9
-	DB  $00		; ƒoƒ“ƒN”»’è—p
+	DB  $00		; ãƒãƒ³ã‚¯åˆ¤å®šç”¨
 	DW	ROM_NMI_ENTRY
 	DW	INIT
 	DW	ROM_IRQ_ENTRY

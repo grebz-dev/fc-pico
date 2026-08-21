@@ -1,39 +1,48 @@
+;/// @file cfgMissonHara.h
+;/// @brief Mission scripts for the ordinary waves, written in `MC_*` bytecode.
+;/// @ingroup gamerom
+;///
+;/// Shared by all stages. The header comment lists the control opcodes and their
+;/// operands; note the restriction it records, that a called script may not itself
+;/// call.
 ;===============================================================================================
-;	ƒ~ƒbƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‹ƒe[ƒuƒ‹i‘SƒXƒe[ƒW‹¤’Êj
+;	ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ãƒ†ãƒ¼ãƒ–ãƒ«ï¼ˆå…¨ã‚¹ãƒ†ãƒ¼ã‚¸å…±é€šï¼‰
 ;
 ;MC_END			
-;MC_CALL	 		; MC_CALL, ŒÄ‚Ño‚µæƒAƒhƒŒƒXƒ‰ƒxƒ‹@@ƒR[ƒ‹‚Íæ‚©‚çƒR[ƒ‹‚Í•s‰Â
+;MC_CALL	 		; MC_CALL, å‘¼ã³å‡ºã—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ©ãƒ™ãƒ«ã€€ã€€ã‚³ãƒ¼ãƒ«ã¯å…ˆã‹ã‚‰ã‚³ãƒ¼ãƒ«ã¯ä¸å¯
 ;MC_RET			
-;MC_LOOP_CNT		; MC_LOOP_CNT, iƒ‹[ƒv‰ñ”j
-;MC_JMP				; MC_JMP, ƒWƒƒƒ“ƒvðŒ, ƒWƒƒƒ“ƒvæƒAƒhƒŒƒX
-;MC_ZAKO			; ŽG‹›“GƒZƒbƒg
-;MC_PALSET			; ƒpƒŒƒbƒg‘‚«Š·‚¦
-;MC_MEMSET			; ƒƒ‚ƒŠ[ƒZƒbƒg 1ƒoƒCƒg”Å
-;MC_MEMSET2			; ƒƒ‚ƒŠ[ƒZƒbƒg 2ƒoƒCƒg”Å
-;MC_PGCALL			; ƒvƒƒOƒ‰ƒ€ƒR[ƒ‹ ƒvƒƒOƒ‰ƒ€‚ðŒÄ‚Ño‚·
+;MC_LOOP_CNT		; MC_LOOP_CNT, ï¼ˆãƒ«ãƒ¼ãƒ—å›žæ•°ï¼‰
+;MC_JMP				; MC_JMP, ã‚¸ãƒ£ãƒ³ãƒ—æ¡ä»¶, ã‚¸ãƒ£ãƒ³ãƒ—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹
+;MC_ZAKO			; é›‘é­šæ•µã‚»ãƒƒãƒˆ
+;MC_PALSET			; ãƒ‘ãƒ¬ãƒƒãƒˆæ›¸ãæ›ãˆ
+;MC_MEMSET			; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚»ãƒƒãƒˆ 1ãƒã‚¤ãƒˆç‰ˆ
+;MC_MEMSET2			; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚»ãƒƒãƒˆ 2ãƒã‚¤ãƒˆç‰ˆ
+;MC_PGCALL			; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚³ãƒ¼ãƒ« ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’å‘¼ã³å‡ºã™
 ;
-;MC_BG_ATR			;  BGƒAƒgƒŠƒrƒ…[ƒg‘Š·‚¦@ƒAƒhƒŒƒXA’l
-;MC_MEMADD			;  ƒƒ‚ƒŠ[‰ÁŽZ 1ƒoƒCƒg”Å ƒAƒhƒŒƒXA’l
-;MC_MEMCMP			;  ƒƒ‚ƒŠ[”äŠr 1ƒoƒCƒg”Å ƒAƒhƒŒƒXA’l
+;MC_BG_ATR			;  BGã‚¢ãƒˆãƒªãƒ“ãƒ¥ãƒ¼ãƒˆæ›¸æ›ãˆã€€ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
+;MC_MEMADD			;  ãƒ¡ãƒ¢ãƒªãƒ¼åŠ ç®— 1ãƒã‚¤ãƒˆç‰ˆ ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
+;MC_MEMCMP			;  ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒ 1ãƒã‚¤ãƒˆç‰ˆ ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
 
 
 ;===============================================================================================
 
 ;
 
-ZAKO_MOVE_DT MACRO
-	DB	\1			; ƒtƒŒ[ƒ€”(1-200)
-	DW	( \2 ) * $100 / \1	; ˆÚ“®—Ê X
-	DW	( \3 ) * $100 / \1	; ˆÚ“®—Ê Y
+ZAKO_MOVE_DT MACRO		;///< Emits a minion movement-data row.
+	DB	\1			; ãƒ•ãƒ¬ãƒ¼ãƒ æ•°(1-200)
+	DW	( \2 ) * $100 / \1	; ç§»å‹•é‡ X
+	DW	( \3 ) * $100 / \1	; ç§»å‹•é‡ Y
 	ENDM
 
 
 
 ;ZFY_BASE = $2C00
-ZFY_BASE = %010_00_00000_00000
+ZFY_BASE = %010_00_00000_00000		;///< Base nametable address for minion spawn positions, as a packed PPU address.
 
-;  ƒ~ƒbƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‹FÅ‘å64Ží—Þ“o˜^‰Â”\
+;  ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ï¼šæœ€å¤§64ç¨®é¡žç™»éŒ²å¯èƒ½
 
+;/// @brief Script address for each HARADIUS sub-type, up to 64 of them.
+;/// @ingroup gamerom
 misson_hara_control_tbl:
 
 	dw  HaraProg00
@@ -56,12 +65,12 @@ misson_hara_control_tbl:
 	dw  HaraProg10
 
 
-HaraProg00	; ƒXƒe[ƒWŠJŽn
+HaraProg00	; ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹
 	MC_PGCALL SET_FADE_IN_B,0
-	MC_PGCALL playStageBGM,0	; ƒXƒe[ƒWBGMÄ¶
-	MC_PGCALL .stege_init,0		; ƒXƒe[ƒW‰Šú‰»
+	MC_PGCALL playStageBGM,0	; ã‚¹ãƒ†ãƒ¼ã‚¸BGMå†ç”Ÿ
+	MC_PGCALL .stege_init,0		; ã‚¹ãƒ†ãƒ¼ã‚¸åˆæœŸåŒ–
 	MC_WAIT 60
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 
 .stege_init
@@ -86,8 +95,10 @@ HaraProg00	; ƒXƒe[ƒWŠJŽn
 
 
 ;=====================================
-; ƒXƒe[ƒWBGMÄ¶
+; ã‚¹ãƒ†ãƒ¼ã‚¸BGMå†ç”Ÿ
 ;=====================================
+;/// @brief Mission subroutine: start the stage music.
+;/// @ingroup gamerom
 playStageBGM:
 	lda  #BGM_STAGE
 	jmp  PLAY_BGM
@@ -96,19 +107,25 @@ playStageBGM:
 
 HaraProg01
 	MC_CALL waitClearSPE2
-	MC_PGCALL playBossBGM,0	; ƒXƒe[ƒWBGMÄ¶
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_PGCALL playBossBGM,0	; ã‚¹ãƒ†ãƒ¼ã‚¸BGMå†ç”Ÿ
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
+;/// @brief Mission subroutine: start the boss music.
+;/// @ingroup gamerom
 playBossBGM:
 	lda  #BGM_BOSS	; 1
 	jmp  PLAY_BGM
 
 
 ;-------------------------------
-; ã‚©‚çUŒ‚@NTK_SPZK0
+; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 ;-------------------------------
+;/// @brief Script: attack from above with #NTK_SPZK0.
+;/// @ingroup gamerom
 HaraProg02:
 	MC_MEMSET PRM_1, NTK_SPZK0
+;/// @brief Body of #HaraProg02.
+;/// @ingroup gamerom
 HaraProg02_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -141,26 +158,30 @@ HaraProg02_0:
 	MC_WAIT 16
 
 	MC_MEMPOP MISSON_ANM_NO
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 
 ;-------------------------------
-; ã‚©‚çUŒ‚@NTK_SPZK1
+; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK1
 ;-------------------------------
+;/// @brief Script: attack from above with #NTK_SPZK1.
+;/// @ingroup gamerom
 HaraProg03:
 	MC_MEMSET PRM_1, NTK_SPZK1
 	MC_JMP HaraProg02_0, MCJ_JMP
 
 ;-------------------------------
-; ã‚©‚çUŒ‚@NTK_SPZK2
+; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK2
 ;-------------------------------
+;/// @brief Script: attack from above with #NTK_SPZK2.
+;/// @ingroup gamerom
 HaraProg04:
 	MC_MEMSET PRM_1, NTK_SPZK2
 	MC_JMP HaraProg02_0, MCJ_JMP
 
 
 ;-------------------------------
-; ƒEƒFƒCƒgFƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒ‚Ì‚Ý‚ÅŽg—p
+; ã‚¦ã‚§ã‚¤ãƒˆï¼šãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡ã®ã¿ã§ä½¿ç”¨
 ;-------------------------------
 HaraProg05
 	MC_MEMCMP  ENEMY_ATK_LV, MTSV_0
@@ -182,14 +203,16 @@ HaraProg05
 	MC_WAIT 120
 	MC_WAIT 120
 
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 ;-------------------------------
-; ‰º‚©‚çUŒ‚@NTK_SPZK0
+; ä¸‹ã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 ;-------------------------------
 HaraProg06
 	MC_MEMSET PRM_1, NTK_SPZK0
 
+;/// @brief Script body, sub-type 6.
+;/// @ingroup gamerom
 HaraProg06_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -222,20 +245,20 @@ HaraProg06_0:
 	MC_WAIT 16
 
 	MC_MEMPOP MISSON_ANM_NO
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 
 
 
 ;-------------------------------
-; ‰º‚©‚çUŒ‚@NTK_SPZK1
+; ä¸‹ã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK1
 ;-------------------------------
 HaraProg07
 	MC_MEMSET PRM_1, NTK_SPZK1
 	MC_JMP HaraProg06_0, MCJ_JMP
 
 ;-------------------------------
-; ‰º‚©‚çUŒ‚@NTK_SPZK2
+; ä¸‹ã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK2
 ;-------------------------------
 HaraProg08
 	MC_MEMSET PRM_1, NTK_SPZK2
@@ -245,11 +268,13 @@ HaraProg08
 
 
 ;-------------------------------
-; ŽÎ‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
+; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
 ;-------------------------------
 HaraProg09
 	MC_MEMSET PRM_1, NTK_SPZK0
 
+;/// @brief Script body, sub-type 9.
+;/// @ingroup gamerom
 HaraProg09_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -282,19 +307,19 @@ HaraProg09_0:
 	MC_WAIT 16
 
 	MC_MEMPOP MISSON_ANM_NO
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 
 
 ;-------------------------------
-; ŽÎ‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK1
+; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK1
 ;-------------------------------
 HaraProg0A
 	MC_MEMSET PRM_1, NTK_SPZK1
 	MC_JMP HaraProg09_0, MCJ_JMP
 
 ;-------------------------------
-; ŽÎ‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK2
+; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK2
 ;-------------------------------
 HaraProg0B
 	MC_MEMSET PRM_1, NTK_SPZK2
@@ -303,11 +328,13 @@ HaraProg0B
 
 
 ;-------------------------------
-; ŽÎ‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
+; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
 ;-------------------------------
 HaraProg0C
 	MC_MEMSET PRM_1, NTK_SPZK0
 
+;/// @brief Script body, sub-type 12.
+;/// @ingroup gamerom
 HaraProg0C_0:
 	MC_MEMPUSH MISSON_ANM_NO
 	MC_CALL waitClearSPE2
@@ -340,17 +367,17 @@ HaraProg0C_0:
 	MC_WAIT 16
 
 	MC_MEMPOP MISSON_ANM_NO
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 ;-------------------------------
-; ŽÎ‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK1
+; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK1
 ;-------------------------------
 HaraProg0D
 	MC_MEMSET PRM_1, NTK_SPZK1
 	MC_JMP HaraProg0C_0, MCJ_JMP
 
 ;-------------------------------
-; ŽÎ‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK2
+; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK2
 ;-------------------------------
 HaraProg0E
 	MC_MEMSET PRM_1, NTK_SPZK2
@@ -358,7 +385,7 @@ HaraProg0E
 
 
 ;-------------------------------
-; ƒ[ƒvƒCƒ“@^_
+; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼
 ;-------------------------------
 HaraProg0F
 	MC_MEMSET PRM_1, NTK_WARP
@@ -397,10 +424,10 @@ HaraProg0F
 	MC_CALL waitClearSPE2
 
 	MC_MEMPOP MISSON_ANM_NO
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 ;-------------------------------
-; ƒ[ƒvƒCƒ“@_^
+; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼¼ï¼
 ;-------------------------------
 HaraProg10
 	MC_MEMSET PRM_1, NTK_WARP
@@ -439,7 +466,7 @@ HaraProg10
 	MC_CALL waitClearSPE2
 
 	MC_MEMPOP MISSON_ANM_NO
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 
 
 HaraProg11
@@ -480,4 +507,4 @@ HaraProg1D
 HaraProg1E
 
 HaraProg1F
-	MC_END	; ƒf[ƒ^ƒGƒ“ƒh
+	MC_END	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰

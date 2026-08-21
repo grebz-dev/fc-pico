@@ -1,17 +1,30 @@
+;/// @file SysNES.asm
+;/// @brief Main loop and the boot-time hardware probe.
+;/// @ingroup bootrom
+;///
+;/// Also holds the vertical-blank helpers used before the NMI handler is armed:
+;/// during boot the screen must be updated with interrupts disabled, so these
+;/// routines poll `$2002` instead.
+;///
+;/// @note Much of this file is the FC-EXA adapter probe, which is vestigial on an
+;///       FC PICO cartridge -- it detects the adapter's absence and proceeds.
+;///       @see @ref conventions
 
+;/// @brief Application setup: runs the expansion-adapter probe, then returns.
+;/// @ingroup bootrom
 UR_MAIN_SETUP:
 
 	;===============================
-	;	ƒTƒEƒ“ƒhE—”‰Šú‰»
+	;	ã‚µã‚¦ãƒ³ãƒ‰ãƒ»ä¹±æ•°åˆæœŸåŒ–
 	;===============================
-;@	jsr  EXS_RESET		; Šg’£ƒVƒXƒeƒ€ƒŠƒZƒbƒg
+;@	jsr  EXS_RESET		; æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ ãƒªã‚»ãƒƒãƒˆ
 
 ;@	jsr  INIT_SOUND
 
-;@	jsr  VRAMT_INIT	; VRAM“]‘—ƒVƒXƒeƒ€‰Šú‰»
+;@	jsr  VRAMT_INIT	; VRAMè»¢é€ã‚·ã‚¹ãƒ†ãƒ åˆæœŸåŒ–
 
 	;===============================
-	;	FC-EXA ‰Šú‰»
+	;	FC-EXA åˆæœŸåŒ–
 	;===============================
 	jsr  BOOT_EXA
 
@@ -20,43 +33,49 @@ UR_MAIN_SETUP:
 
 ;=====================================================
 
+;/// @brief The main loop: wait for vertical blank, read keys, run the step handler, step the fade.
+;/// @ingroup bootrom
 UR_MAIN_LOOP:
 	jsr WAIT_VSYNC
 	JOB_TIMEOUT
-;@	JSR	KEY_RTN2	;--- ƒL[“ü—Íƒ`ƒFƒbƒN -----
-	JSR	KEY_RTN		;--- ƒL[“ü—Íƒ`ƒFƒbƒN -----
+;@	JSR	KEY_RTN2	;--- ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯ -----
+	JSR	KEY_RTN		;--- ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯ -----
 
 ;	sei
 ;	lda  <HIRQ_ENA
 ;	beq  .no_irq
-;	cli			; Š„‚è‚İ‰ğœ
+;	cli			; å‰²ã‚Šè¾¼ã¿è§£é™¤
 ;.no_irq
 
-	JSR	PLY_MAIN_S	; ƒƒCƒ“ˆ—ŒÄ‚Ño‚µ
+	JSR	PLY_MAIN_S	; ãƒ¡ã‚¤ãƒ³å‡¦ç†å‘¼ã³å‡ºã—
 
 	jsr  PAL_FADE_SYSTEM
 	jmp  MAIN_LOOP
 
 
 ;--------------------
-; VSYNC ‘Ò‚¿
+; VSYNC å¾…ã¡
 ;--------------------
+;/// @brief Blocks until @ref NMI increments #SYS_TIMER, i.e. until the next frame.
+;/// @ingroup bootrom
 WAIT_VSYNC:
 	lda  <SYS_TIMER
 .loop:
 	cmp  <SYS_TIMER
-	beq  .loop		; NMII—¹‘Ò‚¿
+	beq  .loop		; NMIçµ‚äº†å¾…ã¡
 
 	rts
 
 ;==============================================================================
 ;
-;						‹N“®ƒƒ‚ƒŠ[ƒeƒXƒgƒVƒXƒeƒ€
+;						èµ·å‹•æ™‚ãƒ¡ãƒ¢ãƒªãƒ¼ãƒ†ã‚¹ãƒˆã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;==============================================================================
 ;===============================
-; RAMƒGƒ‰[ŒŸo
+; RAMã‚¨ãƒ©ãƒ¼æ¤œå‡º
 ;===============================
+;/// @brief Read/write test of one RAM location.
+;/// @ingroup bootrom
 chk_ram_sub:
 	ldy  #0
 .chk_ram_s00:
@@ -85,17 +104,19 @@ chk_ram_sub:
 
 ;==============================================================================
 ;
-;						‹N“®EXAƒ`ƒFƒbƒNƒVƒXƒeƒ€
+;						èµ·å‹•æ™‚EXAãƒã‚§ãƒƒã‚¯ã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;==============================================================================
 
+;/// @brief Probes for an FC-EXA expansion adapter. @note On FC PICO this simply detects its absence and sets #EXA_MODE.
+;/// @ingroup bootrom
 BOOT_EXA:
 	ldx  #1
 	jsr  WAIT_VBLANK_X_SD
 
-	jsr  EXS_RESET		; Šg’£ƒVƒXƒeƒ€ƒŠƒZƒbƒg
+	jsr  EXS_RESET		; æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ ãƒªã‚»ãƒƒãƒˆ
 
-	; Šg’£RAM‘¶İƒ`ƒFƒbƒN
+	; æ‹¡å¼µRAMå­˜åœ¨ãƒã‚§ãƒƒã‚¯
 	lda  $6000
 	tax
 	eor  #$FF
@@ -107,7 +128,7 @@ BOOT_EXA:
 	RSTAT_EXA
 	cmp  #STAT_NOEXA
 	bne  .exa00
-	; EXA–³‚µ
+	; EXAç„¡ã—
 .noexa00
  	inc  <EXA_MODE
 	rts
@@ -126,7 +147,7 @@ BOOT_EXA:
 	DRAW_STRING2 "FC-EXA BOOT"
 	jsr  VBLANK_END_SD
 
-	;---- STAT_BOOTŒŸo ------------------------
+	;---- STAT_BOOTæ¤œå‡º ------------------------
 .boot_exa01
 	jsr  VBLANK_START
 	SET_VRAM_ADD2	#$2000 + 32*7 + 1
@@ -144,7 +165,7 @@ BOOT_EXA:
 ;@	lda  #SE_CUR_SEL
 ;@	jsr  PLAY_SE
 
-	;---- STAT_SEALEDŒŸo ------------------------
+	;---- STAT_SEALEDæ¤œå‡º ------------------------
 .boot_exa02
 	jsr  VBLANK_START
 	SET_VRAM_ADD2	#$2000 + 32*8 + 1
@@ -159,7 +180,7 @@ BOOT_EXA:
 	cmp  #STAT_SEALED
 	bne  .boot_exa02
 
-	;---- ••ˆó‰ğœƒRƒ}ƒ“ƒh‘—M ------------------------
+	;---- å°å°è§£é™¤ã‚³ãƒãƒ³ãƒ‰é€ä¿¡ ------------------------
 	ldx  #1
 	jsr  WAIT_VBLANK_X_SD
 
@@ -168,7 +189,7 @@ BOOT_EXA:
 
 	jsr  EXS_INIT
 
-	;---- ••ˆó‰ğœ‘Ò‚¿ ------------------------
+	;---- å°å°è§£é™¤å¾…ã¡ ------------------------
 .boot_exa03
 	jsr  VBLANK_START
 	SET_VRAM_ADD2	#$2000 + 32*9 + 1
@@ -189,7 +210,7 @@ BOOT_EXA:
 	ldx  #10
 	jsr  WAIT_VBLANK_X_SD
 
-	;---- Šg’£RAMƒeƒXƒg ------------------------
+	;---- æ‹¡å¼µRAMãƒ†ã‚¹ãƒˆ ------------------------
 	jsr  KEY_RTN
 	CHK_BIT	<KEY_NEW, #KEY_SEL
 	beq  .skip_exramtest 
@@ -230,7 +251,7 @@ BOOT_EXA:
 
 exram_sub
 	;---------------------------
-	; RAMƒoƒ“ƒNØ‚è‘Ö‚¦ƒeƒXƒg
+	; RAMãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆãƒ†ã‚¹ãƒˆ
 	;---------------------------
 	ldx  #0
 .loop
@@ -244,7 +265,7 @@ exram_sub
 	bne  .loop
 
 	;---------------------------
-	; RAMƒoƒ“ƒN RAM“Æ—§«ƒeƒXƒg
+	; RAMãƒãƒ³ã‚¯ RAMç‹¬ç«‹æ€§ãƒ†ã‚¹ãƒˆ
 	;---------------------------
 	ldx  #0
 .loop2
@@ -296,8 +317,8 @@ exram_sub3
 
 
 ;--------------------------------
-; ƒƒ‚ƒŠ[ƒ`ƒFƒbƒN•¶š—ñƒZƒbƒg
-; Y reg = ƒ`ƒFƒbƒNƒAƒhƒŒƒXƒCƒ“ƒfƒbƒNƒX
+; ãƒ¡ãƒ¢ãƒªãƒ¼ãƒã‚§ãƒƒã‚¯æ–‡å­—åˆ—ã‚»ãƒƒãƒˆ
+; Y reg = ãƒã‚§ãƒƒã‚¯ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 ;--------------------------------
 .MEMCHK_SUB:
 	tya
@@ -349,13 +370,15 @@ exram_sub3
 
 ;==============================================================================
 ;
-;					NMI‹Ö~Œ^@‰æ–Ê•\¦ƒVƒXƒeƒ€ ¦Šg’£
+;					NMIç¦æ­¢å‹ã€€ç”»é¢è¡¨ç¤ºã‚·ã‚¹ãƒ†ãƒ  â€»æ‹¡å¼µ
 ;
 ;==============================================================================
 
 ;--------------------------------
-; XƒŒƒW‚Åw’èƒtƒŒ[ƒ€ƒEƒFƒCƒg@ƒTƒEƒ“ƒhˆ—‚ ‚è
+; Xãƒ¬ã‚¸ã§æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã‚¦ã‚§ã‚¤ãƒˆã€€ã‚µã‚¦ãƒ³ãƒ‰å‡¦ç†ã‚ã‚Š
 ;--------------------------------
+;/// @brief Waits X frames with interrupts disabled, keeping sprite DMA running.
+;/// @ingroup bootrom
 WAIT_VBLANK_X_SD:
 	jsr  VBLANK_START
 
@@ -366,6 +389,8 @@ WAIT_VBLANK_X_SD:
 	rts
 
 
+;/// @brief Ends a no-NMI vertical blank, including sprite DMA.
+;/// @ingroup bootrom
 VBLANK_END_SD:
 	RESET_SCR_XY
 
@@ -384,6 +409,8 @@ VBLANK_END_SD:
 	rts
 
  .if 0
+;/// @brief Alternative no-NMI vertical-blank entry that skips the fade step.
+;/// @ingroup bootrom
 VBLANK_START2:
 	WAIT_VBLANK_END
 	lda  #%000_01_0_00		; NO-NMI
@@ -395,8 +422,10 @@ VBLANK_START2:
  .endif
  
 ;--------------------------------
-; XƒŒƒW‚Åw’èƒtƒŒ[ƒ€ƒEƒFƒCƒg
+; Xãƒ¬ã‚¸ã§æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã‚¦ã‚§ã‚¤ãƒˆ
 ;--------------------------------
+;/// @brief Waits X frames with interrupts disabled.
+;/// @ingroup bootrom
 WAIT_VBLANK_X:
 	jsr  VBLANK_START
 
@@ -407,22 +436,26 @@ WAIT_VBLANK_X:
 	rts
 
 
+;/// @brief Ends a no-NMI vertical blank: restores `$2000`/`$2001` and the scroll registers.
+;/// @ingroup bootrom
 VBLANK_END:
 	RESET_SCR_XY
 	WAIT_VBLANK_END
 	rts
 
 
+;/// @brief Begins a no-NMI vertical blank: steps the fade, bumps the timer, reads keys, waits for `$2002`.
+;/// @ingroup bootrom
 VBLANK_START:
 	jsr PAL_FADE_SYSTEM
 
 	incw  <SYS_TIMER
-	jsr   KEY_RTN		;--- ƒL[“ü—Íƒ`ƒFƒbƒN -----
+	jsr   KEY_RTN		;--- ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯ -----
 	WAIT_VBLANK
 
-;--- ƒXƒvƒ‰ƒCƒgDMA“]‘— ----- i¦512 clockÁ”ïj
-	lda  #2			;‚±‚±‚É•K—v
-	sta  $4014		;‚±‚±‚É•K—v
+;--- ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆDMAè»¢é€ ----- ï¼ˆâ€»512 clockæ¶ˆè²»ï¼‰
+	lda  #2			;ã“ã“ã«å¿…è¦
+	sta  $4014		;ã“ã“ã«å¿…è¦
 
 	jsr  transPALLET
 	

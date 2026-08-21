@@ -1,4 +1,32 @@
+;/// @file SysNMI.asm
+;/// @brief Vertical-blank handler: the one place the console and the RP2350 exchange data.
+;/// @ingroup bootrom
+;///
+;/// Everything the cartridge link does happens inside this interrupt, in this
+;/// order:
+;///
+;///  1. flush any pending palette change (must be inside vblank);
+;///  2. read the 64-byte mailbox out of `$2007` into zero page `$20`-`$5F`;
+;///  3. write back one pending command byte plus the controller state;
+;///  4. run the optional user NMI hook;
+;///  5. restore `$2000`/`$2001` and the scroll registers;
+;///  6. sprite DMA;
+;///  7. replay the APU register writes the RP2350 queued for this frame.
+;///
+;/// Step 3 is the frame heartbeat. Writing #KEY_NEW is what tells the RP2350 that
+;/// a frame boundary has passed, so it restarts its DMA and releases core 0 to
+;/// render the next frame. Skip it and the display freezes.
+;///
+;/// @note `$0800` here is a *port*, not video memory. `SET_VRAM_ADD2 #$0800`
+;///       parks the PPU address in pattern-table space, which is decoded by the
+;///       cartridge; the subsequent `$2007` accesses are reads from and writes to
+;///       the RP2350, not VRAM.
+;/// @see @ref protocol
+;/// @see jobPICO
 
+;/// @brief Reads eight consecutive mailbox bytes from `$2007` into a zero-page block.
+;/// @details Fully unrolled because the vblank budget is roughly 2200 cycles and
+;///          a loop's overhead would not fit alongside sprite DMA.
 RCV_PICO_BUF	MACRO
 	lda  $2007
 	sta  <\1 +0
@@ -21,34 +49,51 @@ RCV_PICO_BUF	MACRO
 
 
 ;***************************************
-; NMIŠ„‚èž‚Ý
+; NMIå‰²ã‚Šè¾¼ã¿
 ;***************************************
 
+;/// @brief Vertical-blank interrupt handler; entered ~60 times per second.
+;/// @ingroup bootrom
+;///
+;/// Reached through the fixed trampoline at `ROM_NMI_ENTRY` (`$ED00`) so that the
+;/// permanent fix bank's vector table never has to change when the main bank is
+;/// reflashed.
+;///
+;/// @warning Re-entrant calls are rejected via `NMI_FLG`: if the previous frame's
+;///          handler has not finished, this one returns immediately. A handler
+;///          that overruns vblank therefore drops frames rather than corrupting
+;///          VRAM.
+;/// @note Sprite DMA is skipped while a palette fade is in progress, freeing the
+;///       ~514 cycles it costs for the fade computation.
+;/// @see RCV_PICO_BUF, transPALLET, jobPICO
 NMI:
 	bit	 $2002
 	sta  <NMI_SVA
 	incw  <SYS_TIMER
-	lda  <NMI_FLG	;NMIˆ—’†‚©?
+	lda  <NMI_FLG	;NMIå‡¦ç†ä¸­ã‹?
 	beq  .nmi_ok
 	lda  <NMI_SVA
 	rti
 
 .nmi_ok
-	inc  <NMI_FLG	;NMIˆ—’†ƒtƒ‰ƒOƒIƒ“
+	inc  <NMI_FLG	;NMIå‡¦ç†ä¸­ãƒ•ãƒ©ã‚°ã‚ªãƒ³
 	stx  <NMI_SVX
 	sty  <NMI_SVY
 
 
-; --- NMI ƒƒCƒ“ˆ— --------------
+; --- NMI ãƒ¡ã‚¤ãƒ³å‡¦ç† --------------
 
 
 ;****************************
-; ‚o‚o‚t§Œäi¦‚o‚o‚t‚ÍA‚’¼‹AüŠúŠÔ’†‚Éˆ—‚ðI‚í‚ç‚¹‚éj
+; ï¼°ï¼°ï¼µåˆ¶å¾¡ï¼ˆâ€»ï¼°ï¼°ï¼µã¯ã€åž‚ç›´å¸°ç·šæœŸé–“ä¸­ã«å‡¦ç†ã‚’çµ‚ã‚ã‚‰ã›ã‚‹ï¼‰
 ;****************************
 	jsr  transPALLET
 
 	SET_VRAM_ADD2 #$0800
-	; PICO‚©‚çƒf[ƒ^Žóf
+	; PICOã‹ã‚‰ãƒ‡ãƒ¼ã‚¿å—è¨º
+	; The first read after setting the PPU address returns the stale read
+	; buffer, never the addressed byte. Discarding it is mandatory, not
+	; defensive -- without it every mailbox byte lands one slot early.
 	lda  $2007	;dummy read
 
 	RCV_PICO_BUF PICO_BUF0
@@ -61,6 +106,11 @@ NMI:
 	RCV_PICO_BUF PICO_BUF38
 
 
+	; Reply channel. At most one queued command byte goes out per frame,
+	; followed unconditionally by the controller state. That second write is
+	; the frame heartbeat: on the cartridge it falls through to the default
+	; case of rp_system::jobRcvCom(), which latches the keys, re-arms the frame
+	; DMA and clears rp_system::frame_draw to release the renderer.
 	SET_VRAM_ADD2 #$0800
 	lda  <PICO_COM
 	beq  .pico00
@@ -73,7 +123,7 @@ NMI:
 
 
 
-;--- ƒ†[ƒU[VRAM‘‚«Š·‚¦ˆ— -----
+;--- ãƒ¦ãƒ¼ã‚¶ãƒ¼VRAMæ›¸ãæ›ãˆå‡¦ç† -----
 	lda <NMI_CALL_ADR+1
 	beq  .no_usr_nmi
 	jsr .usr_nmi_sub
@@ -87,8 +137,8 @@ NMI:
 	sta	 $2001
 
 
-; ‚h‚q‚pŠ„‚èž‚Ý’lÝ’è=============
-;--- ƒXƒNƒ[ƒ‹ƒŒƒWƒXƒ^Ý’è -----
+; ï¼©ï¼²ï¼±å‰²ã‚Šè¾¼ã¿å€¤è¨­å®š=============
+;--- ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒ¬ã‚¸ã‚¹ã‚¿è¨­å®š -----
 	lda  <BG_SCR_X
 	sta  $2005
 	lda  <BG_SCR_Y
@@ -101,20 +151,23 @@ NMI:
 
 	lda  <HIRQ_ENA
 	beq  .no_irq
-;@	cli			; Š„‚èž‚Ý‰ðœ
+;@	cli			; å‰²ã‚Šè¾¼ã¿è§£é™¤
 
 .no_irq
 
 	lda  PALFADE_VAL
-	bne  .skip_sp	; ƒtƒF[ƒh’†‚ÍƒXƒvƒ‰ƒCƒgXV’âŽ~
+	bne  .skip_sp	; ãƒ•ã‚§ãƒ¼ãƒ‰ä¸­ã¯ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ›´æ–°åœæ­¢
 
-;--- ƒXƒvƒ‰ƒCƒgDMA“]‘— ----- i¦512 clockÁ”ïj
+;--- ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆDMAè»¢é€ ----- ï¼ˆâ€»512 clockæ¶ˆè²»ï¼‰
 	lda  #2
-	sta  $4014		;‚±‚±‚É•K—v
+	sta  $4014		;ã“ã“ã«å¿…è¦
 .skip_sp
 
 
 
+	; Reject a torn mailbox. If the frame stream slipped out of phase the 64
+	; bytes just read are arbitrary pattern data, so the magic byte is checked
+	; before anything acts on them.
 	lda  <PICO_BUF1
 	cmp  #PF_MAGIC_CODE
 	beq  .PF_COM_OK
@@ -125,7 +178,7 @@ NMI:
 ;	lda  <PICO_BUF0
 ;	beq  .PF_COM_NG
 
-	; ƒTƒEƒ“ƒhƒŒƒWƒXƒ^‘‚«ž‚Ý
+	; ã‚µã‚¦ãƒ³ãƒ‰ãƒ¬ã‚¸ã‚¹ã‚¿æ›¸ãè¾¼ã¿
  .if 0
 	ldx  #0
 .sr_loop
@@ -145,6 +198,11 @@ NMI:
 
  .endif
 
+	; APU register replay. The RP2350 runs the music driver on an emulated
+	; 6502 and ships the resulting register writes here as (index, value)
+	; pairs; the console's own APU is what actually makes the sound. The list
+	; is terminated by any value with bit 7 set (rp_system::setPF_APU writes
+	; $FF), and is hard-capped at $30 bytes = 24 pairs per frame.
  .if 1
 	ldx  #0
 .sr_loop
@@ -166,18 +224,18 @@ NMI:
 .PF_COM_NG
 
 ;****************************
-; ‚`‚o‚t§Œäi¦‚o‚o‚tŒã‚Éˆ—‚·‚éj
+; ï¼¡ï¼°ï¼µåˆ¶å¾¡ï¼ˆâ€»ï¼°ï¼°ï¼µå¾Œã«å‡¦ç†ã™ã‚‹ï¼‰
 ;****************************
 ;	jsr  SOUND_SYSTEM
 
 
 ;****************************
-; ‚m‚l‚h‚ÌÅŒã‚ÌÅŒã
+; ï¼®ï¼­ï¼©ã®æœ€å¾Œã®æœ€å¾Œ
 ;****************************
 	ldy  <NMI_SVY
 	ldx  <NMI_SVX
 
-	lda  #0		;NMIˆ—’†‚Ìƒtƒ‰ƒOƒIƒt
+	lda  #0		;NMIå‡¦ç†ä¸­ã®ãƒ•ãƒ©ã‚°ã‚ªãƒ•
 	sta  <NMI_FLG
 
 	lda  <NMI_SVA

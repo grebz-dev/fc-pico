@@ -1,5 +1,10 @@
+/// @file bgm_boss.mmh
+/// @brief Boss music.
+/// @ingroup toolchain
 
 //BGM(1) {
+/// @brief Boss theme.
+/// @ingroup toolchain
 BGM(0) {
 
 
@@ -36,7 +41,7 @@ TR3 L
 	[$kon >d< $dof g+ f $kon d $dof f g+]4
 	]2
 
-// ハイハット＆スネア
+// 繝上う繝上ャ繝茨ｼ�繧ｹ繝阪い
 TR4 L o5
 //	q16 l16
 	l16  v12
@@ -59,7 +64,7 @@ TR5 L
 	]2
 */
 
-// Bメロ部分 ---------------------------
+// B繝｡繝ｭ驛ｨ蛻� ---------------------------
 TR1 
 	Ev2000
 

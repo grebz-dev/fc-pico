@@ -1,3 +1,10 @@
+/// @file bgm_stage_sub.mmh
+
+/// @brief Drum pattern shared by the stage tracks.
+/// @ingroup toolchain
+
+/// @brief Drum pattern reused across the stage tracks.
+/// @ingroup toolchain
 $drum_pt0 {
 	o5 l16  v12
 	[ <$kon $h c $h c $kon $h c $s c $h c $kon $h c> ]7

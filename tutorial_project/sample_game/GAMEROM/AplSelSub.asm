@@ -1,7 +1,12 @@
+;/// @file AplSelSub.asm
+;/// @brief Menu and selection helpers shared by the console-side screens.
+;/// @ingroup gamerom
 ;============================================
-; 	‘I‘ğ‰æ–ÊŒnƒTƒuƒ‹[ƒ`ƒ“
+; 	é¸æŠç”»é¢ç³»ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³
 ;============================================
 
+;/// @brief Prepares the display for a menu screen.
+;/// @ingroup gamerom
 initSelDisp:
 
 	jsr  STOP_SE
@@ -23,33 +28,39 @@ initSelDisp:
 	SET_DATA_SRC  PAL_OVER_ADR
 	jmp setPalData
 
+;/// @brief Palette data for the stage-clear screen.
+;/// @ingroup gamerom
 PAL_CLEAR_ADR:
+;/// @brief Palette data for the game-over screen.
+;/// @ingroup gamerom
 PAL_OVER_ADR:
 	PAL_CLEAR
 
 
 
 ;----------------------
-; ƒnƒCƒXƒRƒAƒ`ƒFƒbƒN
+; ãƒã‚¤ã‚¹ã‚³ã‚¢ãƒã‚§ãƒƒã‚¯
 ;----------------------
+;/// @brief Compares the score against #HISCORES and records a new best.
+;/// @ingroup gamerom
 CHK_HISCORE:
 	LDA	#0
 	STA	<TMP_DISP2
-	LDX	#3			; ã‚ÌŒ…‚©‚çŒ©‚Ä‚¢‚­
+	LDX	#3			; ä¸Šã®æ¡ã‹ã‚‰è¦‹ã¦ã„ã
 ;        LDY     #BGM_CLEAR
 .hichk_00:
 	DEX
 	BMI	.hichk_02
 	LDA	GM_HISCORE,X
 	CMP	GM_SCORE,X
-	BEQ	.hichk_00		; ¡‚ÌŒ…‚ª“¯‚¶‚È‚ç‰º‚ÌŒ…‚ğŒ©‚É‚¢‚­
-	BCS	.hichk_02		; ¡‚ÌŒ…‚ÅƒnƒCƒXƒRƒA‚æ‚è’á‚¢‚È‚çI‚í‚é
+	BEQ	.hichk_00		; ä»Šã®æ¡ãŒåŒã˜ãªã‚‰ä¸‹ã®æ¡ã‚’è¦‹ã«ã„ã
+	BCS	.hichk_02		; ä»Šã®æ¡ã§ãƒã‚¤ã‚¹ã‚³ã‚¢ã‚ˆã‚Šä½ã„ãªã‚‰çµ‚ã‚ã‚‹
 
-	; ƒfƒoƒbƒOƒ‚[ƒh’†‚ÍƒnƒCƒXƒRƒA‚ğXV‚µ‚È‚¢‚æ‚¤‚É‚µ‚½ (2016-06-01 –å^)
+	; ãƒ‡ãƒãƒƒã‚°ãƒ¢ãƒ¼ãƒ‰ä¸­ã¯ãƒã‚¤ã‚¹ã‚³ã‚¢ã‚’æ›´æ–°ã—ãªã„ã‚ˆã†ã«ã—ãŸ (2016-06-01 é–€çœŸ)
 ;	lda	 DEBUG_FLG
 ;	bne	.update_e
 
-	; ƒnƒCƒXƒRƒAXV
+	; ãƒã‚¤ã‚¹ã‚³ã‚¢æ›´æ–°
 	LDA	GM_SCORE+2
 	STA	GM_HISCORE+2
 	LDA	GM_SCORE+1
@@ -65,6 +76,8 @@ CHK_HISCORE:
 	RTS
 
 
+;/// @brief Writes the new high score into the stack page.
+;/// @ingroup gamerom
 save_hiscore:
 	lda  GM_HISCORE+2
 	sta  HISCORES+2
@@ -87,12 +100,16 @@ save_hiscore:
 
 
 
+;/// @brief Erases a drawn string.
+;/// @ingroup gamerom
 STR_CLEAR_2:
 	DRAW_STRING2 "SCORE "
 	rts
 
 
 
+;/// @brief Draws the score.
+;/// @ingroup gamerom
 DRAW_SCORE:
 	LDA	GM_SCORE+2
 	JSR	DRAW_HEX_BYTE
@@ -100,11 +117,11 @@ DRAW_SCORE:
 	JSR	DRAW_HEX_BYTE
 	LDA	GM_SCORE+0
 	JSR	DRAW_HEX_BYTE
-	lda #0				;ƒ_ƒ~[‚O
+	lda #0				;ãƒ€ãƒŸãƒ¼ï¼
 	jmp	DRAW_HEX_BYTE2
 
 ;-----------------------------------
-; PUSH ANY BUTTON “_–Å•`‰æˆ—
+; PUSH ANY BUTTON ç‚¹æ»…æç”»å‡¦ç†
 ;-----------------------------------
 
 DRAW_PUSH_ANY_BUTTON
@@ -114,6 +131,8 @@ DRAW_PUSH_ANY_BUTTON
 	BEQ  DRAW_PUSH_ANY_BUTTON_C
 	DRAW_STRING STR_PUSH_W
 	RTS
+;/// @brief Draws the blinking prompt.
+;/// @ingroup gamerom
 DRAW_PUSH_ANY_BUTTON_C:
 	DRAW_STRING STR_PUSH_C
 	RTS

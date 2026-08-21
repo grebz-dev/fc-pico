@@ -1,7 +1,10 @@
+;/// @file defDebug.h
+;/// @brief Build-time switches for the permanent bank.
+;/// @ingroup bootrom
 
 ;==========================================================
-; デバッグコントロール定義
+; 繝�繝舌ャ繧ｰ繧ｳ繝ｳ繝医Ο繝ｼ繝ｫ螳夂ｾｩ
 ;==========================================================
-; デバッグビルドコントロール
-DEBUG_BUILD EQU  0
+; 繝�繝舌ャ繧ｰ繝薙Ν繝峨さ繝ｳ繝医Ο繝ｼ繝ｫ
+DEBUG_BUILD EQU  0   ;///< Non-zero enables debug behaviour in the permanent bank. 
 

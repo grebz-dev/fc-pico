@@ -2,6 +2,14 @@
     Canvas.h - Simple canvas.
  */
 
+/**
+ * @file Obj3d.cpp
+ * @brief Implementation of the scene-object wrapper and the camera helpers.
+ * @ingroup graphics
+ * @see Obj3d.h, @ref graphics_page
+ */
+
+
 #include "Arduino.h"
 #include "ArduinoGL.h"
 #include "Canvas.h"
@@ -16,6 +24,8 @@
 //========================================================
 
 
+/// @brief Cached camera matrix, reloaded at the start of every Obj3d::draw()
+/// so that objects do not inherit each other's transforms.
 float LookAtMatrices[16];
 
 void initLookAt( int mode ) {

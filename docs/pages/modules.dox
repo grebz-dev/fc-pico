@@ -1,0 +1,89 @@
+/**
+ * @file modules.dox
+ * @brief Declares the module tree used by @c \@ingroup throughout the sources.
+ *
+ * Keeping the group definitions in one file (rather than scattered across
+ * whichever header happened to be documented first) makes the hierarchy easy to
+ * see and to reorder.  Sources only ever @c \@ingroup or @c \@addtogroup these.
+ */
+
+/**
+ * @defgroup fcbus Famicom bus interface
+ * @brief Everything that moves bytes between the 6502 and the RP2350.
+ *
+ * The cartridge presents itself to the console as CHR-ROM on the PPU bus.  Four
+ * PIO state machines handle the electrical protocol, one DMA channel feeds the
+ * outgoing byte stream, and a 64-byte mailbox riding on the tail of each frame
+ * carries commands in both directions.
+ *
+ * @see @ref protocol
+ * @see @ref nes_doom
+ */
+
+/**
+ * @defgroup platform Platform and runtime
+ * @brief Board bring-up, dual-core scheduling, watchdog and debug tracing.
+ * @see @ref architecture
+ */
+
+/**
+ * @defgroup graphics Graphics pipeline
+ * @brief Software rasteriser, OpenGL subset and the framebuffer-to-PPU converter.
+ *
+ * Rendering happens entirely on core 0 into a linear 8-bit canvas, which is then
+ * transposed into the two-bitplane layout the PPU fetches.
+ *
+ * @see @ref graphics_page
+ */
+
+/**
+ * @defgroup audio Audio pipeline
+ * @brief NSF playback via an emulated 6502, relayed to the console's real APU.
+ * @see @ref audio_page
+ */
+
+/**
+ * @defgroup app Application layer
+ * @brief The tutorial sketch: scene state machine, resources and title screen.
+ */
+
+/**
+ * @defgroup sample_app Sample game -- application layer
+ * @brief The shipped game's C++ half: scene machine, screens and resource access.
+ *
+ * A larger application than the tutorial sketch, and a differently shaped one:
+ * the game's rules live in 6502 code executed by rp_fcemu, and this layer feeds
+ * it input, reads its object tables back out and renders them in 3D.
+ *
+ * @see @ref sample_game
+ */
+
+/**
+ * @defgroup gamerom Sample game -- 6502 game ROM
+ * @brief The game itself, as a standalone NROM cartridge image.
+ *
+ * Assembled from @c sample_game/GAMEROM/ into @c map0demo.NES. It is a complete
+ * Famicom game with its own reset vector and NMI handler, and it also exposes a
+ * two-entry jump table at `$E000` so the cartridge can drive it a frame at a
+ * time instead.
+ *
+ * @see @ref sample_game
+ */
+
+/**
+ * @defgroup bootrom 6502 boot ROM
+ * @brief Code that runs on the console's own CPU.
+ *
+ * Split into two independently assembled halves: the erasable main bank
+ * (@c BOOTROM/, `$8000`-`$EFFF`) and the permanent fix bank
+ * (@c BOOTROM_FIX/, `$F000`-`$FFFF`) that owns the reset vectors and the
+ * flash-programming routines.
+ *
+ * @see @ref boot_reflash
+ */
+
+/**
+ * @defgroup toolchain Build toolchain
+ * @brief Assembler, MML compiler, binary converters and cartridge flasher.
+ * @see @ref build_pipeline
+ */

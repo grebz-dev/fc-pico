@@ -1,31 +1,37 @@
+;/// @file defDebug.h
+;/// @brief Build switches: debug features, mapper number and cheat toggles.
+;/// @ingroup gamerom
+;///
+;/// Included first by PG_main.asm so the rest of the assembly can test these.
+;/// `DEBUG_BUILD` and `DEBUG_MODE` are both left on in the shipped source.
 
 ;==========================================================
-; ƒfƒoƒbƒOƒRƒ“ƒgƒ[ƒ‹’è‹`
+; ãƒ‡ãƒãƒƒã‚°ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«å®šç¾©
 ;==========================================================
-; ƒfƒoƒbƒOƒrƒ‹ƒhƒRƒ“ƒgƒ[ƒ‹
-DEBUG_BUILD EQU  1
+; ãƒ‡ãƒãƒƒã‚°ãƒ“ãƒ«ãƒ‰ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«
+DEBUG_BUILD EQU  1		;///< Left on in the shipped source.
 
-; ƒ}ƒbƒp[”Ô†
-MAPPER_NO	EQU 0
+; ãƒãƒƒãƒ‘ãƒ¼ç•ªå·
+MAPPER_NO	EQU 0		;///< iNES mapper number. 0, NROM.
 
-; ƒfƒoƒbƒO‹@”\ON
-DEBUG_MODE = 1
-
-
-DEBUG_NO_GAME_OVER = 0
+; ãƒ‡ãƒãƒƒã‚°æ©Ÿèƒ½ON
+DEBUG_MODE = 1		;///< Enables the in-game debug features.
 
 
-AUTO_SHOT_OFF = 0			; =1 ‚ÌA’Êí’e‚ÌƒI[ƒgƒVƒ‡ƒbƒg‚ğ‚`ƒ{ƒ^ƒ“‰Ÿ‚µ‚Á‚Ï‚È‚µ‚Å’â~o—ˆ‚é
+DEBUG_NO_GAME_OVER = 0		;///< Set to 1 to make the player unkillable.
 
 
-SINGLE_SHOT_TEST = 0		; =1 ©‹@‚Ì’Êí’e1”­‚Ì‚İƒeƒXƒg
-STAGE_TEST		 = 0		; !=0  w’èƒXƒe[ƒW‚©‚çƒXƒ^[ƒg =8 ƒeƒXƒg
+AUTO_SHOT_OFF = 0			; =1 ã®æ™‚ã€é€šå¸¸å¼¾ã®ã‚ªãƒ¼ãƒˆã‚·ãƒ§ãƒƒãƒˆã‚’ï¼¡ãƒœã‚¿ãƒ³æŠ¼ã—ã£ã±ãªã—ã§åœæ­¢å‡ºæ¥ã‚‹		;///< Set to 1 to let a held A button suppress autofire.
 
-MMC_TYPE = 0				; =0 MMC3  =1 AX-A1 =2 INL-SWAP
-NO_COPY_PROTECT =  1		; =1 ƒRƒs[ƒvƒƒeƒNƒg–³‚µ
-FLASH_DEV_CODE = $A4
-FLASH_MAN_CODE = $C2
-WRAM_PROTECT_CODE = 0
 
-ARDUINO_MODE = 0			; =1 ARDUINO “‹Úƒ‚[ƒh
+SINGLE_SHOT_TEST = 0		; =1 è‡ªæ©Ÿã®é€šå¸¸å¼¾1ç™ºã®ã¿ãƒ†ã‚¹ãƒˆ		;///< Set to 1 to limit the player to a single normal shot, for testing.
+STAGE_TEST		 = 0		; !=0  æŒ‡å®šã‚¹ãƒ†ãƒ¼ã‚¸ã‹ã‚‰ã‚¹ã‚¿ãƒ¼ãƒˆ =8 ãƒ†ã‚¹ãƒˆ		;///< Non-zero starts from that stage; 8 selects the test stage.
+
+MMC_TYPE = 0				; =0 MMC3  =1 AX-A1 =2 INL-SWAP		;///< Cartridge board type: 0 MMC3, 1 AX-A1, 2 INL-SWAP. This build assembles as NROM regardless. @see #MAPPER_NO
+NO_COPY_PROTECT =  1		; =1 ã‚³ãƒ”ãƒ¼ãƒ—ãƒ­ãƒ†ã‚¯ãƒˆç„¡ã—		;///< Set to 1 to leave the copy protection out.
+FLASH_DEV_CODE = $A4		;///< Expected flash device code, for the self-flashing path.
+FLASH_MAN_CODE = $C2		;///< Expected flash manufacturer code.
+WRAM_PROTECT_CODE = 0		;///< Write-protect code for battery-backed WRAM.
+
+ARDUINO_MODE = 0			; =1 ARDUINO æ­è¼‰ãƒ¢ãƒ¼ãƒ‰		;///< Set to 1 for the Arduino-hosted build. Left at 0 here; the cartridge drives the ROM through `$E000` instead. @see @ref sample_game
 

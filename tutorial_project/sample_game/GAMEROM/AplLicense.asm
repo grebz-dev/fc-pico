@@ -1,23 +1,37 @@
+;/// @file AplLicense.asm
+;/// @brief Licence screen, on the console's own hardware.
+;/// @ingroup gamerom
+;///
+;/// The cartridge shows the same text from BPE-compressed nametables instead.
+;/// @see @ref sample_game
 
 
+;/// @brief Palette data for the licence screen.
+;/// @ingroup gamerom
 PAL_LICENSE:
 	PAL_STAFF
 
+;/// @brief Licence page 1, BPE-compressed.
+;/// @ingroup gamerom
 BPE_LICENSE0:
 	.incbin		".\CHR\NamLicense0.bpe"
+;/// @brief Licence page 2, BPE-compressed.
+;/// @ingroup gamerom
 BPE_LICENSE1:
 	.incbin		".\CHR\NamLicense1.bpe"
 
 
-LICENSE_DISP_WAIT	EQU  60*10/8
-LICENSE_DISP_SCR	EQU  60* 6/8
+LICENSE_DISP_WAIT	EQU  60*10/8		;///< Frames the licence page is held before it may be dismissed.
+LICENSE_DISP_SCR	EQU  60* 6/8		;///< Scroll position of the licence text.
 
 
 ;============================================
-; NSDLIB ƒ‰ƒCƒZƒ“ƒX‰æ–Ê
+; NSDLIB ãƒ©ã‚¤ã‚»ãƒ³ã‚¹ç”»é¢
 ;============================================
 
 ;=========================================
+;/// @brief Console-side licence screen, showing the NSD.Lib notice.
+;/// @ingroup gamerom
 APL_LICENSE:
 	ldy  #0
 	jsr  clearObj2
@@ -31,7 +45,7 @@ APL_LICENSE:
 	JPTBL	.stg30	; 3
 	JPTBL	.stg40	; 4
 
-;---- ‰Šú‰» ------------------------
+;---- åˆæœŸåŒ– ------------------------
 .stg00:
 	jsr  STOP_BGM
 
@@ -59,7 +73,7 @@ APL_LICENSE:
 	DISP_ON
 	jmp  .stg21
 
-;---- ƒƒCƒ“ ------------------------
+;---- ãƒ¡ã‚¤ãƒ³ ------------------------
 .stg10:
 .stg30:
 	CHK_BIT <KEY_TRG, #KEY_ABRS

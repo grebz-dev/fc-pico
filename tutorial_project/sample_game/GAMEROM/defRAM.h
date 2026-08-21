@@ -1,316 +1,328 @@
+;/// @file defRAM.h
+;/// @brief The RAM map: every variable the game owns, by address.
+;/// @ingroup gamerom
+;///
+;/// Zero page first, since the 6502 addresses it in one byte fewer, then the stack
+;/// page -- which this game also uses for variables that must survive a reset --
+;/// and then work RAM.
+;///
+;/// @warning The C++ side keeps its own copy of part of this map, in
+;///          `sample_game/ap_game.h`. At this revision the 51 addresses that appear
+;///          in both agree, but nothing in the build checks it and the two files are
+;///          edited independently. @see @ref sample_game
 ;========================================
 
 
 ;----------------
-; ƒTƒEƒ“ƒhƒhƒ‰ƒCƒo[‚Ìƒ[ƒN
+; ã‚µã‚¦ãƒ³ãƒ‰ãƒ‰ãƒ©ã‚¤ãƒãƒ¼ã®ãƒ¯ãƒ¼ã‚¯
 ;----------------
-SND_WK0		EQU	$00	; size $32
+SND_WK0		EQU	$00	; size $32		;///< NSD.Lib driver work area, `$32` bytes of zero page.
 
 ;========================================
-;  NSFÄ¶—p
+;  NSFå†ç”Ÿç”¨
 ;========================================
-__ptr		EQU	$05	; ”Ä—pƒ|ƒCƒ“ƒ^ 2byte
-__tmp		EQU	$07
+__ptr		EQU	$05	; æ±ç”¨ãƒã‚¤ãƒ³ã‚¿ 2byte		;///< NSD.Lib general-purpose pointer, 2 bytes.
+__tmp		EQU	$07		;///< NSD.Lib scratch byte.
 
-__flag		EQU $0A
+__flag		EQU $0A		;///< NSD.Lib state flags: playback inhibit, fast-forward, SE priority, SE and BGM busy.
  .if 0
 	lda	#nsd_flag::BGM + nsd_flag::SE
-	sta	__flag		;BGM, SEˆ—‚ğ‹Ö~iRAM–¢‰Šú‰»‘Îôj
+	sta	__flag		;BGM, SEå‡¦ç†ã‚’ç¦æ­¢ï¼ˆRAMæœªåˆæœŸåŒ–å¯¾ç­–ï¼‰
 
 	__flag
-		D... .... : Ä¶§Œä–³Œø
-		...J .... : ‘‘—‚è’†
-		.... PP.. : Œø‰Ê‰¹‚Ì—Dæ“x
-		.... ..S. : ‚r‚dÄ¶’†
-		.... ...B : ‚a‚f‚l‚ªÄ¶’† 
+		D... .... : å†ç”Ÿåˆ¶å¾¡ç„¡åŠ¹
+		...J .... : æ—©é€ã‚Šä¸­
+		.... PP.. : åŠ¹æœéŸ³ã®å„ªå…ˆåº¦
+		.... ..S. : ï¼³ï¼¥å†ç”Ÿä¸­
+		.... ...B : ï¼¢ï¼§ï¼­ãŒå†ç”Ÿä¸­ 
  .endif
 
 ;========================================
-W_AR		EQU	$40	; 16 bit ŒvZ—p  2 bytes
-W_BR		EQU	$42	; 16 bit ŒvZ—p  2 bytes
+W_AR		EQU	$40	; 16 bit è¨ˆç®—ç”¨  2 bytes		;///< 16-bit accumulator A for the `defMacro.h` word operations, 2 bytes.
+W_BR		EQU	$42	; 16 bit è¨ˆç®—ç”¨  2 bytes		;///< 16-bit accumulator B for the `defMacro.h` word operations, 2 bytes.
 
-TMP_SVA		EQU	$44	; ”Ä—p A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVX		EQU	$45	; ”Ä—p X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVY		EQU	$46	; ”Ä—p Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_LOOP_CNT	EQU	$47	; ”Ä—pƒ‹[ƒvƒJƒEƒ“ƒ^
+TMP_SVA		EQU	$44	; æ±ç”¨ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< Saved A register.
+TMP_SVX		EQU	$45	; æ±ç”¨ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< Saved X register.
+TMP_SVY		EQU	$46	; æ±ç”¨ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< Saved Y register.
+TMP_LOOP_CNT	EQU	$47	; æ±ç”¨ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿		;///< General-purpose loop counter.
 
-TMP_SV0		EQU	$48	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV1		EQU	$49	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV2		EQU	$4A	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV3		EQU	$4B	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV4		EQU	$4C	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV5		EQU	$4D	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV6		EQU	$4E	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV7		EQU	$4F	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-
-
-TMP_WRK0	EQU	$50
-TMP_WRK1	EQU	$51
-TMP_WRK2	EQU	$52
-TMP_WRK3	EQU	$53
-
-TMP_DISP2	EQU	TMP_WRK3	; 1 byte  •\¦”Ä—p
+TMP_SV0		EQU	$48	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 0.
+TMP_SV1		EQU	$49	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 1.
+TMP_SV2		EQU	$4A	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 2.
+TMP_SV3		EQU	$4B	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 3.
+TMP_SV4		EQU	$4C	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 4.
+TMP_SV5		EQU	$4D	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 5.
+TMP_SV6		EQU	$4E	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 6.
+TMP_SV7		EQU	$4F	; æ±ç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< General-purpose save slot 7.
 
 
-TMP_COUNT	EQU $54		; 2ƒoƒCƒg
+TMP_WRK0	EQU	$50		;///< Scratch byte 0.
+TMP_WRK1	EQU	$51		;///< Scratch byte 1.
+TMP_WRK2	EQU	$52		;///< Scratch byte 2.
+TMP_WRK3	EQU	$53		;///< Scratch byte 3.
+
+TMP_DISP2	EQU	TMP_WRK3	; 1 byte  è¡¨ç¤ºæ±ç”¨		;///< Display scratch; an alias for #TMP_WRK3.
 
 
-SRC_ADR		EQU	$56		; ”Ä—pƒ\[ƒXƒAƒhƒŒƒX  2 bytes
-DST_ADR		EQU	$58		; ”Ä—pƒfƒXƒeƒBƒl[ƒVƒ‡ƒ“ƒAƒhƒŒƒX  2 bytes
+TMP_COUNT	EQU $54		; 2ãƒã‚¤ãƒˆ		;///< General-purpose counter, 2 bytes.
 
-TMP_ADR0		EQU	$5A		; ”Ä—pƒAƒhƒŒƒX  2 bytes
-TMP_ADR0_IDX	EQU	$5C		; ”Ä—pƒAƒhƒŒƒX  1 bytes
-TMP_ADR1		EQU	$5D		; ”Ä—pƒAƒhƒŒƒX  2 bytes
-TMP_ADR1_IDX	EQU	$5F		; ”Ä—pƒAƒhƒŒƒX  1 bytes
 
-;----------------
-; ƒTƒuƒ‹|ƒ`ƒ“ŒÄ‚Ño‚µƒpƒ‰ƒ[ƒ^[
-;----------------
-PRM_0		EQU $60
-PRM_1		EQU $61
-PRM_2		EQU $62
-PRM_3		EQU $63
-PRM_4		EQU $64
-PRM_5		EQU $65
-PRM_6		EQU $66
-PRM_7		EQU $67
+SRC_ADR		EQU	$56		; æ±ç”¨ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes		;///< Source pointer for the copy and table-walk routines, 2 bytes.
+DST_ADR		EQU	$58		; æ±ç”¨ãƒ‡ã‚¹ãƒ†ã‚£ãƒãƒ¼ã‚·ãƒ§ãƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes		;///< Destination pointer for the copy routines, 2 bytes.
 
-PRM_X_POS	EQU $68
-PRM_Y_POS	EQU $69
-PRM_W_POS	EQU $6A
-PRM_H_POS	EQU $6B
-PRM_WT_POS	EQU $6C
-PRM_HT_POS	EQU $6D
-
+TMP_ADR0		EQU	$5A		; æ±ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes		;///< General-purpose pointer 0, 2 bytes.
+TMP_ADR0_IDX	EQU	$5C		; æ±ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  1 bytes		;///< Index that goes with #TMP_ADR0.
+TMP_ADR1		EQU	$5D		; æ±ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes		;///< General-purpose pointer 1, 2 bytes.
+TMP_ADR1_IDX	EQU	$5F		; æ±ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹  1 bytes		;///< Index that goes with #TMP_ADR1.
 
 ;----------------
-; Še‰æ–Ê–ˆ‚É‰Šú‰»‚µ‚Ä—˜—p‚·‚éƒ[ƒN
+; ã‚µãƒ–ãƒ«ï¼ãƒãƒ³å‘¼ã³å‡ºã—ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼
 ;----------------
-GM_TMP0	 	EQU	$70
-GM_TMP1	 	EQU	$71
-GM_TMP2	 	EQU	$72
-GM_TMP3	 	EQU	$73
-GM_TMP4	 	EQU	$74
-GM_TMP5	 	EQU	$75
-GM_TMP6	 	EQU	$76
-GM_TMP7	 	EQU	$77
-GM_TMP8	 	EQU	$78
-GM_TMP9	 	EQU	$79
-GM_TMP10 	EQU	$7A
+PRM_0		EQU $60		;///< Subroutine parameter 0.
+PRM_1		EQU $61		;///< Subroutine parameter 1.
+PRM_2		EQU $62		;///< Subroutine parameter 2.
+PRM_3		EQU $63		;///< Subroutine parameter 3.
+PRM_4		EQU $64		;///< Subroutine parameter 4.
+PRM_5		EQU $65		;///< Subroutine parameter 5.
+PRM_6		EQU $66		;///< Subroutine parameter 6.
+PRM_7		EQU $67		;///< Subroutine parameter 7.
 
-; ‘I‘ğ‰æ–ÊŒn
-DEBUG_KEY_CNT	EQU GM_TMP5	; ƒfƒoƒbƒO“Ë“üƒ`ƒFƒbƒN—p
-PUSH_CTR	EQU	GM_TMP7	; •¶š•ƒJ[ƒ\ƒ‹“_–Å—p
-
-
-DEBUG_0		EQU  GM_TMP7
-DEBUG_1		EQU  GM_TMP8
-DEBUG_2		EQU  GM_TMP9
-DEBUG_3		EQU  GM_TMP10
-
-; ‹ó‚«
-DEBUG_COM	EQU	$80
-
-
-
-USR_PROG	EQU  $8A	; USRƒvƒƒOƒ‰ƒ€—p
-SP_LOCK		  EQU $8D	; ƒXƒvƒ‰ƒCƒgXV§Œä—p i=1 XV‚µ‚È‚¢j
-
-CACHE_GET_NENMY_NT_FG  EQU $8E
-
-
-PAL_WRK		EQU	$90 		 ;size $20	“]‘——p
-
-;----------------
-; ƒfƒ‚—p
-;----------------
-DEMOMODE_NAM	EQU	$B0
-
-DBD_BGTEST_FLG	EQU	$B1	; ”ñ 0:BG ƒeƒXƒg’† (3,4 –Ê‚Ì…–Ê§Œä—}§‚Ég‚¤)
-
-
-GM_WAIT		EQU	$B2	; 2 bytes  ƒQ[ƒ€‘Ò‚¿
-
-;----------------
-; ˆ——‚¿‘Îô
-;----------------
-ENEMY_FLFG		EQU  $B4	;
-ENEMY_NT_FLFG	EQU  $B5	;
-
-;----------------
-; Šg’£ƒAƒ_ƒvƒ^[ ƒ‚[ƒh
-;----------------
-EXA_MODE	EQU	$B6	; =0 Šg’£ƒ‚[ƒh =1 ƒXƒ^ƒ“ƒhƒAƒƒ“ƒ‚[ƒh
-
-;----------------
-; ƒQ[ƒ€ŠÖ˜A
-;----------------
-DEMO_FG		EQU	$B7	; ƒfƒ‚ƒtƒ‰ƒO
-DEMO_TIMER	EQU	$B8	; ƒfƒ‚ƒ^ƒCƒ}[
-
-
+PRM_X_POS	EQU $68		;///< Subroutine parameter: X position.
+PRM_Y_POS	EQU $69		;///< Subroutine parameter: Y position.
+PRM_W_POS	EQU $6A		;///< Subroutine parameter: width.
+PRM_H_POS	EQU $6B		;///< Subroutine parameter: height.
+PRM_WT_POS	EQU $6C		;///< Subroutine parameter: width in tiles.
+PRM_HT_POS	EQU $6D		;///< Subroutine parameter: height in tiles.
 
 
 ;----------------
-; ƒL[ŠÖ˜A
+; å„ç”»é¢æ¯ã«åˆæœŸåŒ–ã—ã¦åˆ©ç”¨ã™ã‚‹ãƒ¯ãƒ¼ã‚¯
 ;----------------
-KEY_CH0D	EQU	$C0	; ƒ¢PCM ƒmƒCƒYœ‹—p‚É‘İ (Vİ)
-KEY_CH2D	EQU	$C1	; ƒ¢PCM ƒmƒCƒYœ‹—p‚É‘İ (Vİ)
+GM_TMP0	 	EQU	$70		;///< Per-screen scratch 0. Re-initialised whenever a screen starts.
+GM_TMP1	 	EQU	$71		;///< Per-screen scratch 1.
+GM_TMP2	 	EQU	$72		;///< Per-screen scratch 2.
+GM_TMP3	 	EQU	$73		;///< Per-screen scratch 3.
+GM_TMP4	 	EQU	$74		;///< Per-screen scratch 4.
+GM_TMP5	 	EQU	$75		;///< Per-screen scratch 5.
+GM_TMP6	 	EQU	$76		;///< Per-screen scratch 6.
+GM_TMP7	 	EQU	$77		;///< Per-screen scratch 7.
+GM_TMP8	 	EQU	$78		;///< Per-screen scratch 8.
+GM_TMP9	 	EQU	$79		;///< Per-screen scratch 9.
+GM_TMP10 	EQU	$7A		;///< Per-screen scratch 10.
 
-KEY_REL		EQU	$C2	;
-KEY_TRG		EQU	$C3	;
-KEY_OLD		EQU	$C4	;
-KEY_NEW		EQU	$C5	;
-KEY_CH0		EQU	$C6	;
-KEY_CH1		EQU	$C7	;
-KEY_CH2		EQU	$C8	; Šg’£ƒpƒbƒh—p‚É‘İ (Vİ)
-KEY_CH3		EQU	$C9	; Šg’£ƒpƒbƒh—p‚É‘İ (Vİ)
+; é¸æŠç”»é¢ç³»
+DEBUG_KEY_CNT	EQU GM_TMP5	; ãƒ‡ãƒãƒƒã‚°çªå…¥ãƒã‚§ãƒƒã‚¯ç”¨		;///< Counts the debug-entry key gesture. Alias for #GM_TMP5.
+PUSH_CTR	EQU	GM_TMP7	; æ–‡å­—ï¼†ã‚«ãƒ¼ã‚½ãƒ«ç‚¹æ»…ç”¨		;///< Blink counter for menu text and cursors. Alias for #GM_TMP7.
 
-REP_KEY		EQU	$CA	; ƒŠƒs[ƒg—p‚ÌƒL[
-REP_NEW		EQU	$CB	; ƒŠƒs[ƒg‚É‚æ‚é‰Ÿ‰ºó‘Ô
-REP_CNT		EQU	$CC	; ƒEƒFƒCƒgAƒCƒ“ƒ^[ƒoƒ‹‚ÌƒJƒEƒ“ƒ^
 
-BG_STAR_DISP	EQU	$CD	; ƒQ[ƒ€’†BG_STARÅ‘å•\¦”
-BG_STAR_MODE	EQU	$CE	; ƒQ[ƒ€’†BG_STARƒXƒNƒ[ƒ‹ƒ‚[ƒh
+DEBUG_0		EQU  GM_TMP7		;///< Debug menu scratch 0. Alias for #GM_TMP7, so it shares with #PUSH_CTR.
+DEBUG_1		EQU  GM_TMP8		;///< Debug menu scratch 1. Alias for #GM_TMP8.
+DEBUG_2		EQU  GM_TMP9		;///< Debug menu scratch 2. Alias for #GM_TMP9.
+DEBUG_3		EQU  GM_TMP10		;///< Debug menu scratch 3. Alias for #GM_TMP10.
+
+; ç©ºã
+DEBUG_COM	EQU	$80		;///< Debug command byte.
+
+
+
+USR_PROG	EQU  $8A	; USRãƒ—ãƒ­ã‚°ãƒ©ãƒ ç”¨		;///< Per-frame user hook called by `updateMission`; a null high byte disables it.
+SP_LOCK		  EQU $8D	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ›´æ–°åˆ¶å¾¡ç”¨ ï¼ˆ=1 æ›´æ–°ã—ãªã„ï¼‰		;///< Non-zero suspends sprite updates.
+
+CACHE_GET_NENMY_NT_FG  EQU $8E		;///< Set once the enemy-configuration lookup has been cached this frame.
+
+
+PAL_WRK		EQU	$90 		 ;size $20	è»¢é€ç”¨		;///< Palette staging buffer, `$20` bytes, copied to the PPU during vertical blank.
 
 ;----------------
-; IRQˆ—ŠÖ˜A
+; ãƒ‡ãƒ¢ç”¨
 ;----------------
+DEMOMODE_NAM	EQU	$B0		;///< Nametable selection for attract mode.
 
-;HIRQ_ENA	EQU  $CF ; IRQ ƒtƒ‰ƒO§Œä (–¢g—p=0)
+DBD_BGTEST_FLG	EQU	$B1	; é 0:BG ãƒ†ã‚¹ãƒˆä¸­ (3,4 é¢ã®æ°´é¢åˆ¶å¾¡æŠ‘åˆ¶ã«ä½¿ã†)		;///< Non-zero while the BG test is running; suppresses the water effects on stages 3 and 4.
 
-SCR_LINE	EQU	$D0	; size 4 bytes	‘½dƒXƒNƒ[ƒ‹—p (Še’i‚ÌŠJnˆÊ’u)
-BG_SCR_X	EQU	$D4 ; size 4 bytes
 
-BG_BNK		EQU	$DA	; size 6 bytes 
-BG0_BNK		EQU	BG_BNK
-BG1_BNK		EQU	BG_BNK+1
+GM_WAIT		EQU	$B2	; 2 bytes  ã‚²ãƒ¼ãƒ å¾…ã¡		;///< General game wait counter, 2 bytes.
+
+;----------------
+; å‡¦ç†è½ã¡å¯¾ç­–
+;----------------
+ENEMY_FLFG		EQU  $B4	;		;///< Slowdown guard: skips part of the enemy update when the frame is running long.
+ENEMY_NT_FLFG	EQU  $B5	;		;///< Slowdown guard for the enemy-shot update.
+
+;----------------
+; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ ãƒ¢ãƒ¼ãƒ‰
+;----------------
+EXA_MODE	EQU	$B6	; =0 æ‹¡å¼µãƒ¢ãƒ¼ãƒ‰ =1 ã‚¹ã‚¿ãƒ³ãƒ‰ã‚¢ãƒ­ãƒ³ãƒ¢ãƒ¼ãƒ‰		;///< 0 = expansion-adapter mode, 1 = stand-alone.
+
+;----------------
+; ã‚²ãƒ¼ãƒ é–¢é€£
+;----------------
+DEMO_FG		EQU	$B7	; ãƒ‡ãƒ¢ãƒ•ãƒ©ã‚°		;///< Attract-mode flag. Written by the C++ side each time play starts. @see @ref sample_game
+DEMO_TIMER	EQU	$B8	; ãƒ‡ãƒ¢ã‚¿ã‚¤ãƒãƒ¼		;///< Counts down to the attract-mode hand-off.
+
 
 
 
 ;----------------
-; ƒVƒXƒeƒ€ŠÖ˜A
+; ã‚­ãƒ¼é–¢é€£
 ;----------------
-FLG_2000	EQU	$E0
-FLG_2001	EQU	$E1
-BG_SCR_Y	EQU	$E2
+KEY_CH0D	EQU	$C0	; Î”PCM ãƒã‚¤ã‚ºé™¤å»ç”¨ã«å¢—è¨­ (æ–°è¨­)		;///< Raw port 0 read, kept for delta-PCM noise rejection.
+KEY_CH2D	EQU	$C1	; Î”PCM ãƒã‚¤ã‚ºé™¤å»ç”¨ã«å¢—è¨­ (æ–°è¨­)		;///< Raw expansion-port read, kept for delta-PCM noise rejection.
 
-NMI_FLG		EQU	$E3
-PAL_CHG_FG	EQU	$E4		; ƒpƒŒƒbƒg•ÏXƒtƒ‰ƒO
+KEY_REL		EQU	$C2	;		;///< Keys released this frame.
+KEY_TRG		EQU	$C3	;		;///< Keys newly pressed this frame. Written directly by the cartridge. @see @ref sample_game
+KEY_OLD		EQU	$C4	;		;///< Previous frame's held keys, for the edge detector.
+KEY_NEW		EQU	$C5	;		;///< Keys currently held. Written directly by the cartridge. @see @ref sample_game
+KEY_CH0		EQU	$C6	;		;///< Debounced controller 1.
+KEY_CH1		EQU	$C7	;		;///< Debounced controller 2.
+KEY_CH2		EQU	$C8	; æ‹¡å¼µãƒ‘ãƒƒãƒ‰ç”¨ã«å¢—è¨­ (æ–°è¨­)		;///< Debounced expansion pad 1.
+KEY_CH3		EQU	$C9	; æ‹¡å¼µãƒ‘ãƒƒãƒ‰ç”¨ã«å¢—è¨­ (æ–°è¨­)		;///< Debounced expansion pad 2.
 
-SYS_TIMER	EQU	$E5		; 2 bytes
-FLM_TIMER	EQU	$E7		; ƒtƒŒ[ƒ€ƒ^ƒCƒ}[
+REP_KEY		EQU	$CA	; ãƒªãƒ”ãƒ¼ãƒˆç”¨ã®ã‚­ãƒ¼		;///< Key currently being auto-repeated.
+REP_NEW		EQU	$CB	; ãƒªãƒ”ãƒ¼ãƒˆã«ã‚ˆã‚‹æŠ¼ä¸‹çŠ¶æ…‹		;///< Press state produced by auto-repeat.
+REP_CNT		EQU	$CC	; ã‚¦ã‚§ã‚¤ãƒˆã€ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ã®ã‚«ã‚¦ãƒ³ã‚¿		;///< Auto-repeat delay and interval counter.
 
-STG_COD		EQU	$E8
-STG_COD_SUB	EQU	$E9
-
-;----------------
-; ƒoƒ“ƒNŠÖ˜A
-;----------------
-SPT_BNK		EQU	$EA
-SPT_BNK2	EQU	$EB
-A0_BNK		EQU	$EC		; ƒoƒ“ƒNØ‚è‘Ö‚¦ƒŠƒNƒGƒXƒg—p@ÀÛ‚É‚ÍVBank‚ÅØ‚è‘Ö‚í‚é
-
+BG_STAR_DISP	EQU	$CD	; ã‚²ãƒ¼ãƒ ä¸­BG_STARæœ€å¤§è¡¨ç¤ºæ•°		;///< Number of background stars to draw during play.
+BG_STAR_MODE	EQU	$CE	; ã‚²ãƒ¼ãƒ ä¸­BG_STARã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒ¢ãƒ¼ãƒ‰		;///< Background starfield scroll mode.
 
 ;----------------
-; NMI‚©‚çƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€‚ÌƒAƒhƒŒƒX
+; IRQå‡¦ç†é–¢é€£
 ;----------------
-NMI_CALL_BNK	EQU $ED ; 1byte ‚O‚È‚çƒR[ƒ‹‚µ‚È‚¢
-NMI_CALL_ADR	EQU $EE ; 2byte ƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€ƒAƒhƒŒƒX
 
+;HIRQ_ENA	EQU  $CF ; IRQ ãƒ•ãƒ©ã‚°åˆ¶å¾¡ (æœªä½¿ç”¨=0)
 
-TMP_SYS		EQU	$F0		;ƒVƒXƒeƒ€‚Åg‚¤TMP
-TMP_SYS2	EQU	$F1		;ƒVƒXƒeƒ€‚Åg‚¤TMP
-TMP_SYS3	EQU	$F2		;ƒVƒXƒeƒ€‚Åg‚¤TMP
-TMP_SYS4	EQU	$F3		;ƒVƒXƒeƒ€‚Åg‚¤TMP
+SCR_LINE	EQU	$D0	; size 4 bytes	å¤šé‡ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ç”¨ (å„æ®µã®é–‹å§‹ä½ç½®)		;///< Split-scroll start scanlines, 4 bytes, one per band.
+BG_SCR_X	EQU	$D4 ; size 4 bytes		;///< Horizontal scroll per band, 4 bytes.
+
+BG_BNK		EQU	$DA	; size 6 bytes		;///< CHR bank selection, 6 bytes.
+BG0_BNK		EQU	BG_BNK		;///< First CHR bank slot. Alias for #BG_BNK.
+BG1_BNK		EQU	BG_BNK+1		;///< Second CHR bank slot.
+
 
 
 ;----------------
-; ƒTƒEƒ“ƒhŠÖ˜A
+; ã‚·ã‚¹ãƒ†ãƒ é–¢é€£
 ;----------------
-REQ_TMPUP		EQU	$F4	; ƒeƒ“ƒ|ƒAƒbƒv
-REQ_SE_NO		EQU	$F5
-REQ_SE_NO2		EQU	$F6	; 
-REQ_SE_NO3		EQU	$F7	; 
+FLG_2000	EQU	$E0		;///< Shadow of the PPU control register `$2000`.
+FLG_2001	EQU	$E1		;///< Shadow of the PPU mask register `$2001`.
+BG_SCR_Y	EQU	$E2		;///< Vertical scroll.
 
-;LAST_SE_LOCK	EQU	$F8	; “¯ˆêŒø‰Ê‰¹‚ÌÅ’áÄ¶ƒtƒŒ[ƒ€”
-;LAST_SE_NO		EQU	$F9	; ÅŒã‚ÉÄ¶‚µ‚½SE
-REQ_BGM_NO		EQU	$FA
+NMI_FLG		EQU	$E3		;///< Set by the NMI handler; the main loop waits on it to pace itself to the frame.
+PAL_CHG_FG	EQU	$E4		; ãƒ‘ãƒ¬ãƒƒãƒˆå¤‰æ›´ãƒ•ãƒ©ã‚°		;///< Non-zero asks the NMI handler to push #PAL_WRK to the PPU.
+
+SYS_TIMER	EQU	$E5		; 2 bytes		;///< Free-running frame counter, 2 bytes. Advanced in both run modes.
+FLM_TIMER	EQU	$E7		; ãƒ•ãƒ¬ãƒ¼ãƒ ã‚¿ã‚¤ãƒãƒ¼		;///< Frame counter reset per screen.
+
+STG_COD		EQU	$E8		;///< Console-side screen code; the index the `PLY_MAIN` jump table dispatches on.
+STG_COD_SUB	EQU	$E9		;///< Sub-step within the current console-side screen.
+
+;----------------
+; ãƒãƒ³ã‚¯é–¢é€£
+;----------------
+SPT_BNK		EQU	$EA		;///< Sprite CHR bank.
+SPT_BNK2	EQU	$EB		;///< Second sprite CHR bank.
+A0_BNK		EQU	$EC		; ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆãƒªã‚¯ã‚¨ã‚¹ãƒˆç”¨ã€€å®Ÿéš›ã«ã¯VBankã§åˆ‡ã‚Šæ›¿ã‚ã‚‹		;///< Requested PRG bank; the switch itself happens in the vertical-blank handler.
+
+
+;----------------
+; NMIã‹ã‚‰ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
+;----------------
+NMI_CALL_BNK	EQU $ED ; 1byte ï¼ãªã‚‰ã‚³ãƒ¼ãƒ«ã—ãªã„		;///< Bank of the routine the NMI handler should call. Zero means call nothing.
+NMI_CALL_ADR	EQU $EE ; 2byte ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚¢ãƒ‰ãƒ¬ã‚¹		;///< Address of the routine the NMI handler should call, 2 bytes.
+
+
+TMP_SYS		EQU	$F0		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP		;///< System scratch 0.
+TMP_SYS2	EQU	$F1		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP		;///< System scratch 1.
+TMP_SYS3	EQU	$F2		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP		;///< System scratch 2.
+TMP_SYS4	EQU	$F3		;ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP		;///< System scratch 3.
+
+
+;----------------
+; ã‚µã‚¦ãƒ³ãƒ‰é–¢é€£
+;----------------
+REQ_TMPUP		EQU	$F4	; ãƒ†ãƒ³ãƒã‚¢ãƒƒãƒ—		;///< Request a tempo increase.
+REQ_SE_NO		EQU	$F5		;///< Sound-effect request 1. The cartridge plays it and writes back zero. @see @ref sample_game
+REQ_SE_NO2		EQU	$F6	;		;///< Sound-effect request 2.
+REQ_SE_NO3		EQU	$F7	;		;///< Sound-effect request 3. Only the first non-zero request is served per frame.
+
+;LAST_SE_LOCK	EQU	$F8	; åŒä¸€åŠ¹æœéŸ³ã®æœ€ä½å†ç”Ÿãƒ•ãƒ¬ãƒ¼ãƒ æ•°
+;LAST_SE_NO		EQU	$F9	; æœ€å¾Œã«å†ç”Ÿã—ãŸSE
+REQ_BGM_NO		EQU	$FA		;///< Music request. Cleared once started, in either run mode.
 ;REQ_SE_NO		EQU	$FB
-SEQ_CTR			EQU	$FC	; ƒJƒEƒ“ƒ^
+SEQ_CTR			EQU	$FC	; ã‚«ã‚¦ãƒ³ã‚¿		;///< Sound sequence counter.
 ;SND_FLG			EQU	$FD
-__MusBank		EQU $FD
+__MusBank		EQU $FD		;///< Bank the NSD.Lib driver expects its music data in.
 
 
-MASTER_VOL		EQU $FF
+MASTER_VOL		EQU $FF		;///< Master volume for the driver.
 
-WRAM_EXIST	EQU	$100	; 1 byte  ”ñ 0: WRAM ‚ª‘¶İ
+WRAM_EXIST	EQU	$100	; 1 byte  é 0: WRAM ãŒå­˜åœ¨		;///< Non-zero once battery-backed WRAM has been detected.
 				; 1 byte
-HISCORES	EQU	$102	; 8 bytes LV1 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰,
-				;         LV2 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰
-MAGIC		EQU	$10a	; 6 bytes ‹N“®/ƒŠƒZƒbƒg”»•Ê—pƒ}ƒWƒbƒNƒiƒ“ƒo[
+HISCORES	EQU	$102	; 8 bytes LV1 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©,		;///< High scores and their initials, 8 bytes. Kept in the stack page so a reset does not clear it.
+				;         LV2 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©
+MAGIC		EQU	$10a	; 6 bytes èµ·å‹•/ãƒªã‚»ãƒƒãƒˆåˆ¤åˆ¥ç”¨ãƒã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼		;///< 6-byte signature distinguishing a cold boot from a reset.
 
 
 ;----------------
-; ƒ‰ƒ“ƒ_ƒ€ƒVƒXƒeƒ€
+; ãƒ©ãƒ³ãƒ€ãƒ ã‚·ã‚¹ãƒ†ãƒ 
 ;----------------
-RND_SEL		EQU	$10b
-RND_WK0		EQU	$10c
-RND_WK1		EQU	$10d
-RND_WK2		EQU	$10e
-RND_WK3		EQU	$10f
+RND_SEL		EQU	$10b		;///< Selects which random word is read next.
+RND_WK0		EQU	$10c		;///< Random generator state 0.
+RND_WK1		EQU	$10d		;///< Random generator state 1.
+RND_WK2		EQU	$10e		;///< Random generator state 2.
+RND_WK3		EQU	$10f		;///< Random generator state 3.
 
-
-;----------------
-; ƒQ[ƒ€“à•\¦ŠÖ˜A
-;----------------
-GM_SCORE	EQU	$110	; 4 bytes
-GM_HISCORE	EQU	$114	; 4 bytes ƒnƒCƒXƒRƒAÀì‹Æ—p
-SCR_CHG_SW	EQU	$118	; 1 byte  ƒXƒRƒA•Ï‰»ƒtƒ‰ƒO
-
-DEBUG_FLG		EQU	$11a	; ƒfƒoƒbƒOƒ‚[ƒh“Ë“üƒtƒ‰ƒO
-DEBUG_MT_FLG	EQU	$11b	; ƒfƒoƒbƒOƒ‚[ƒh“Ë“üƒtƒ‰ƒO
-
-
-PLY_LIFE		EQU $11e	; B c‹@”
-PLY_CONTINUE	EQU $11f	; ƒRƒ“ƒeƒBƒjƒ…[‰ñ” ƒJƒEƒ“ƒgãŒÀ99
 
 ;----------------
-; ‚»‚Ì‘¼
+; ã‚²ãƒ¼ãƒ å†…è¡¨ç¤ºé–¢é€£
 ;----------------
-DEBUG_SEL	EQU	$120
+GM_SCORE	EQU	$110	; 4 bytes		;///< Score, 4 bytes of packed BCD, least significant first. Read by the cartridge for the game-over screen.
+GM_HISCORE	EQU	$114	; 4 bytes ãƒã‚¤ã‚¹ã‚³ã‚¢å®Ÿä½œæ¥­ç”¨		;///< High score being edited, 4 bytes.
+SCR_CHG_SW	EQU	$118	; 1 byte  ã‚¹ã‚³ã‚¢å¤‰åŒ–ãƒ•ãƒ©ã‚°		;///< Set when the score changed, so the display is redrawn.
 
-DEBUG_DT0	EQU	$121
-DEBUG_DT1	EQU	$122
-DEBUG_DT2	EQU	$123
-DEBUG_DT3	EQU	$124
-DEBUG_DT4	EQU	$125
-DEBUG_DT5	EQU	$126
-DEBUG_DT6	EQU	$127
-DEBUG_DT7	EQU	$128
-
-DEBUG_DT	EQU	DEBUG_DT0
+DEBUG_FLG		EQU	$11a	; ãƒ‡ãƒãƒƒã‚°ãƒ¢ãƒ¼ãƒ‰çªå…¥ãƒ•ãƒ©ã‚°		;///< Debug mode entered.
+DEBUG_MT_FLG	EQU	$11b	; ãƒ‡ãƒãƒƒã‚°ãƒ¢ãƒ¼ãƒ‰çªå…¥ãƒ•ãƒ©ã‚°		;///< Mission-type debug mode entered.
 
 
-PLY_STAGE		EQU	DEBUG_DT0	; ƒXƒe[ƒW”Ô†
-DBD_SOUND_TST	EQU	DEBUG_DT1	; ƒTƒEƒ“ƒhƒeƒXƒg
-DBD_M_TYPE		EQU	DEBUG_DT2	; ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv
-DBD_MT_SUB		EQU	DEBUG_DT3	; ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒvƒTƒu
-DBD_STEP_JUMP	EQU	DEBUG_DT4	; ƒXƒeƒbƒvƒWƒƒƒ“ƒv
+PLY_LIFE		EQU $11e	; B æ®‹æ©Ÿæ•°		;///< Lives remaining. Drawn by the cartridge in the status line.
+PLY_CONTINUE	EQU $11f	; ã‚³ãƒ³ãƒ†ã‚£ãƒ‹ãƒ¥ãƒ¼å›æ•° ã‚«ã‚¦ãƒ³ãƒˆä¸Šé™99		;///< Continues used, counted to 99.
+
+;----------------
+; ãã®ä»–
+;----------------
+DEBUG_SEL	EQU	$120		;///< Selected row in the debug menu.
+
+DEBUG_DT0	EQU	$121		;///< Debug data slot 0.
+DEBUG_DT1	EQU	$122		;///< Debug data slot 1.
+DEBUG_DT2	EQU	$123		;///< Debug data slot 2.
+DEBUG_DT3	EQU	$124		;///< Debug data slot 3.
+DEBUG_DT4	EQU	$125		;///< Debug data slot 4.
+DEBUG_DT5	EQU	$126		;///< Debug data slot 5.
+DEBUG_DT6	EQU	$127		;///< Debug data slot 6.
+DEBUG_DT7	EQU	$128		;///< Debug data slot 7.
+
+DEBUG_DT	EQU	DEBUG_DT0		;///< Base of the debug data slots. Alias for #DEBUG_DT0.
+
+
+PLY_STAGE		EQU	DEBUG_DT0	; ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·		;///< Current stage, 1-based. @warning An alias for #DEBUG_DT0: real game state living in a debug slot. The cartridge writes it by that address. @see @ref sample_game
+DBD_SOUND_TST	EQU	DEBUG_DT1	; ã‚µã‚¦ãƒ³ãƒ‰ãƒ†ã‚¹ãƒˆ		;///< Debug sound test selection. Alias for #DEBUG_DT1.
+DBD_M_TYPE		EQU	DEBUG_DT2	; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—		;///< Debug mission type. Alias for #DEBUG_DT2.
+DBD_MT_SUB		EQU	DEBUG_DT3	; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—ã‚µãƒ–		;///< Debug mission sub-type. Alias for #DEBUG_DT3.
+DBD_STEP_JUMP	EQU	DEBUG_DT4	; ã‚¹ãƒ†ãƒƒãƒ—ã‚¸ãƒ£ãƒ³ãƒ—		;///< Debug step jump. Alias for #DEBUG_DT4.
 
 
 
 ;========================================
-; ƒTƒEƒ“ƒhƒ[ƒN
+; ã‚µã‚¦ãƒ³ãƒ‰ãƒ¯ãƒ¼ã‚¯
 ; $200-$328
 ;========================================
-SND_WK1		EQU	$200	; size $128
+SND_WK1		EQU	$200	; size $128		;///< NSD.Lib driver work area, `$128` bytes.
 
 ;========================================
-;  NSFÄ¶—p
+;  NSFå†ç”Ÿç”¨
 ;========================================
-_eff		EQU $200		; Œø‰Ê‰¹ƒe[ƒuƒ‹ŠJn”Ô†
-_play		EQU $201		; ƒtƒŒ[ƒ€ƒI[ƒo[–h~—p•Ï”
+_eff		EQU $200		; åŠ¹æœéŸ³ãƒ†ãƒ¼ãƒ–ãƒ«é–‹å§‹ç•ªå·		;///< First entry of the sound-effect table.
+_play		EQU $201		; ãƒ•ãƒ¬ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼é˜²æ­¢ç”¨å¤‰æ•°		;///< Guard the driver uses to avoid overrunning a frame.
 
 
 
@@ -320,142 +332,142 @@ _play		EQU $201		; ƒtƒŒ[ƒ€ƒI[ƒo[–h~—p•Ï”
 
 
 ;-----------------------------------------------------
-; ‚±‚±‚©‚ç‰º‚Ì$300‘ä‚Ìƒ[ƒN‚Í ƒXƒe[ƒWŠJn‚É‚OƒNƒŠƒA[
+; ã“ã“ã‹ã‚‰ä¸‹ã®$300å°ã®ãƒ¯ãƒ¼ã‚¯ã¯ ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹æ™‚ã«ï¼ã‚¯ãƒªã‚¢ãƒ¼
 ;-----------------------------------------------------
-CLEAR_300W_TOP  EQU  $32E
+CLEAR_300W_TOP  EQU  $32E		;///< First address of the block `FCP_GAME_INIT` zeroes at the start of a stage.
 
 
 
-MISSON_ATK_NO	EQU  $384	; B ƒ~ƒbƒVƒ‡ƒ“UŒ‚”Ô†
-MISSON_ATK_IDX	EQU  $385	; B ƒ~ƒbƒVƒ‡ƒ“UŒ‚ƒCƒ“ƒfƒbƒNƒX
-MISSON_ATK_CNT	EQU  $386	; B ƒ~ƒbƒVƒ‡ƒ“UŒ‚ƒJƒEƒ“ƒ^[
+MISSON_ATK_NO	EQU  $384	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒç•ªå·		;///< Mission attack number.
+MISSON_ATK_IDX	EQU  $385	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹		;///< Index into the mission attack table.
+MISSON_ATK_CNT	EQU  $386	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒã‚«ã‚¦ãƒ³ã‚¿ãƒ¼		;///< Mission attack counter.
 
 
-MISSON_LDBG0	EQU  $38A	; B ƒ~ƒbƒVƒ‡ƒ“BG”Ô†
-MISSON_LDBG1	EQU  $38B	; B ƒ~ƒbƒVƒ‡ƒ“BG”Ô†
-MISSON_LDBG2	EQU  $38C	; B ƒ~ƒbƒVƒ‡ƒ“BG”Ô†
+MISSON_LDBG0	EQU  $38A	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³BGç•ªå·		;///< Mission background number 0.
+MISSON_LDBG1	EQU  $38B	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³BGç•ªå·		;///< Mission background number 1.
+MISSON_LDBG2	EQU  $38C	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³BGç•ªå·		;///< Mission background number 2.
 
-MISSON_ANM_NO	EQU  $38D	; B ƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒ”Ô†
-MISSON_ANM_CNT	EQU  $38E	; B ƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒƒJƒEƒ“ƒ^[
-;---- ƒ~ƒbƒVƒ‡ƒ“—pƒ\ƒtƒgƒXƒ^ƒbƒN -------
-MISSON_PC_SP	EQU  $38F	; B ƒ~ƒbƒVƒ‡ƒ“PCƒXƒ^ƒbƒNƒ|ƒCƒ“ƒ^
+MISSON_ANM_NO	EQU  $38D	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡ç•ªå·		;///< Mission animation number.
+MISSON_ANM_CNT	EQU  $38E	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼		;///< Mission animation counter.
+;---- ãƒŸãƒƒã‚·ãƒ§ãƒ³ç”¨ã‚½ãƒ•ãƒˆã‚¹ã‚¿ãƒƒã‚¯ -------
+MISSON_PC_SP	EQU  $38F	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³PCã‚¹ã‚¿ãƒƒã‚¯ãƒã‚¤ãƒ³ã‚¿		;///< Stack pointer into #MISSON_STACK.
 
-MISSON_STACK	EQU $390		; 16byte ƒ~ƒbƒVƒ‡ƒ“—pƒXƒ^ƒbƒN
-
-;----------------
-; ƒ~ƒbƒVƒ‡ƒ“§ŒäŒnƒ[ƒN
-;----------------
-MISSON_NO		EQU $3A0	; B ƒXƒe[ƒW“àƒ~ƒbƒVƒ‡ƒ“”Ô†
-MISSON_TYPE		EQU $3A1	; B ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv
-MISSON_TYPE_SUB	EQU $3A2	; B ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv
-MISSON_WAIT		EQU $3A3	; B MISSON_PC‚ÌŸ‚Ìˆ—‚Ü‚Å‚ÌƒEƒFƒCƒg
-MISSON_PC		EQU $3A4	; W ƒ~ƒbƒVƒ‡ƒ“PC
-
-MISSON_LOOP_CNT	EQU $3A6	; B ƒ~ƒbƒVƒ‡ƒ“ ƒ‹[ƒvƒJƒEƒ“ƒ^
-MISSON_FLG		EQU $3A9	; B ƒ~ƒbƒVƒ‡ƒ“ ƒtƒ‰ƒO
-MISSON_STEP		EQU $3AA	; B ƒ~ƒbƒVƒ‡ƒ“ ˆ—ƒXƒeƒbƒv
-MISSON_TMP		EQU $3AB	; B ƒ~ƒbƒVƒ‡ƒ“ ”Ä—p
-
-SECRET_STAT		EQU $3AC	; B ƒV[ƒNƒŒƒbƒgó‘Ô(0:‰Šú’l 1:‰ğ•ú 2:æ“¾)
-SECRET_LIFE_ADD	EQU $3AD	; B ƒV[ƒNƒŒƒbƒgƒAƒCƒeƒ€Šl“¾‚Ìƒ‰ƒCƒtƒ{[ƒiƒX
-
-MISSON_ASM		EQU $3AE	; W ƒ~ƒbƒVƒ‡ƒ“–ˆƒtƒŒ[ƒ€Š„‚İˆ—
-
-ENEMY_ATK_LV	EQU $3B0	; B “G‚ÌUŒ‚LV 
-							;  0:UŒ‚‚µ‚È‚¢ 1:©‹@‘_‚¢’e 2:ƒz[ƒ~ƒ“ƒO’e
-							;  3:©‹@‘_‚¢•ƒz[ƒ~ƒ“ƒO 4: ‚‘¬ƒz[ƒ~ƒ“ƒO
-
-MISSON_CMP_P	EQU $3B1    ; B ”äŠr–½—ß‚Ìƒtƒ‰ƒO•Û‘¶
-
-DAM_BG_FLASH	EQU $3B2	; ƒ_ƒ[ƒW‚a‚fƒtƒ‰ƒbƒVƒ…
+MISSON_STACK	EQU $390		; 16byte ãƒŸãƒƒã‚·ãƒ§ãƒ³ç”¨ã‚¹ã‚¿ãƒƒã‚¯		;///< The mission interpreter's call stack, 16 bytes.
 
 ;----------------
-; ƒvƒŒ[ƒ„[ƒ[ƒN
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³åˆ¶å¾¡ç³»ãƒ¯ãƒ¼ã‚¯
 ;----------------
-PLY_ANM_NO		EQU $3B3	; ƒAƒjƒ[ƒVƒ‡ƒ“”Ô†
-PLY_FORM		EQU $3B4	; ƒtƒH[ƒ[ƒVƒ‡ƒ“
-PLY_DISP_FG		EQU $3B5	; ƒvƒŒ[ƒ„[•\¦§Œä
-PLY_MUTEKI_TM	EQU $3B6	; –³“Gƒ^ƒCƒ}[
+MISSON_NO		EQU $3A0	; B ã‚¹ãƒ†ãƒ¼ã‚¸å†…ãƒŸãƒƒã‚·ãƒ§ãƒ³ç•ªå·		;///< Mission index within the stage.
+MISSON_TYPE		EQU $3A1	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—		;///< Mission opcode. `$FF` halts the interpreter, and is what the cartridge reads as stage-cleared. @see @ref sample_game
+MISSON_TYPE_SUB	EQU $3A2	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—		;///< Mission sub-type. Top two bits set #ENEMY_ATK_LV, bottom six index the script table.
+MISSON_WAIT		EQU $3A3	; B MISSON_PCã®æ¬¡ã®å‡¦ç†ã¾ã§ã®ã‚¦ã‚§ã‚¤ãƒˆ		;///< Frames the script is suspended for.
+MISSON_PC		EQU $3A4	; W ãƒŸãƒƒã‚·ãƒ§ãƒ³PC		;///< Mission script program counter, 2 bytes.
 
-;---- ƒ{ƒXƒ~ƒbƒVƒ‡ƒ“—p ƒ[ƒN -------
-BM_DEATH_ANM	EQU $3B7		; w ƒ{ƒX€–SƒAƒjƒ
-BM_DEATH_MSC	EQU $3B9		; w ƒ{ƒX€–Sƒ~ƒbƒVƒ‡ƒ“ƒXƒNƒŠƒvƒg
+MISSON_LOOP_CNT	EQU $3A6	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿		;///< Loop counter for `MC_LOOP_CNT`.
+MISSON_FLG		EQU $3A9	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ ãƒ•ãƒ©ã‚°		;///< Mission flags.
+MISSON_STEP		EQU $3AA	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ å‡¦ç†ã‚¹ãƒ†ãƒƒãƒ—		;///< Step within the current mission opcode.
+MISSON_TMP		EQU $3AB	; B ãƒŸãƒƒã‚·ãƒ§ãƒ³ æ±ç”¨		;///< Mission scratch byte.
 
-SHOT_TARGET		EQU $3BB
+SECRET_STAT		EQU $3AC	; B ã‚·ãƒ¼ã‚¯ãƒ¬ãƒƒãƒˆçŠ¶æ…‹(0:åˆæœŸå€¤ 1:è§£æ”¾ 2:å–å¾—)		;///< Secret item state: 0 initial, 1 revealed, 2 collected.
+SECRET_LIFE_ADD	EQU $3AD	; B ã‚·ãƒ¼ã‚¯ãƒ¬ãƒƒãƒˆã‚¢ã‚¤ãƒ†ãƒ ç²å¾—æ™‚ã®ãƒ©ã‚¤ãƒ•ãƒœãƒ¼ãƒŠã‚¹		;///< Life bonus awarded for the secret item.
 
+MISSON_ASM		EQU $3AE	; W ãƒŸãƒƒã‚·ãƒ§ãƒ³æ¯ãƒ•ãƒ¬ãƒ¼ãƒ å‰²è¾¼ã¿å‡¦ç†		;///< Per-frame mission hook, 2 bytes.
+
+ENEMY_ATK_LV	EQU $3B0	; B æ•µã®æ”»æ’ƒLV		;///< Enemy attack level: 0 none, 1 aimed, 2 homing, 3 both, 4 fast homing.
+							;  0:æ”»æ’ƒã—ãªã„ 1:è‡ªæ©Ÿç‹™ã„å¼¾ 2:ãƒ›ãƒ¼ãƒŸãƒ³ã‚°å¼¾
+							;  3:è‡ªæ©Ÿç‹™ã„ï¼†ãƒ›ãƒ¼ãƒŸãƒ³ã‚° 4: é«˜é€Ÿãƒ›ãƒ¼ãƒŸãƒ³ã‚°
+
+MISSON_CMP_P	EQU $3B1    ; B æ¯”è¼ƒå‘½ä»¤æ™‚ã®ãƒ•ãƒ©ã‚°ä¿å­˜		;///< Saved flags from the last mission compare, for the conditional jumps.
+
+DAM_BG_FLASH	EQU $3B2	; ãƒ€ãƒ¡ãƒ¼ã‚¸ï¼¢ï¼§ãƒ•ãƒ©ãƒƒã‚·ãƒ¥		;///< Frames of damage flash owed. The cartridge reads it but the code acting on it is commented out.
 
 ;----------------
-; ƒvƒŒ[ƒ„[ƒ[ƒN
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ãƒ¯ãƒ¼ã‚¯
 ;----------------
+PLY_ANM_NO		EQU $3B3	; ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ç•ªå·		;///< Player animation state. `PLY_AN_DEAD` here is what ends a run under the cartridge.
+PLY_FORM		EQU $3B4	; ãƒ•ã‚©ãƒ¼ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³		;///< Player formation.
+PLY_DISP_FG		EQU $3B5	; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼è¡¨ç¤ºåˆ¶å¾¡		;///< Player display control.
+PLY_MUTEKI_TM	EQU $3B6	; ç„¡æ•µã‚¿ã‚¤ãƒãƒ¼		;///< Invulnerability frames left. Drives the blink on the cartridge side.
 
-PLY_OBJ_KIND	EQU	$500
-PLY_OBJ_DIR		EQU	$501
-PSHOT_KIND		EQU	$502
-PSHOT_DIR		EQU	$503
+;---- ãƒœã‚¹ãƒŸãƒƒã‚·ãƒ§ãƒ³ç”¨ ãƒ¯ãƒ¼ã‚¯ -------
+BM_DEATH_ANM	EQU $3B7		; w ãƒœã‚¹æ­»äº¡ã‚¢ãƒ‹ãƒ¡		;///< Boss death animation pointer, 2 bytes.
+BM_DEATH_MSC	EQU $3B9		; w ãƒœã‚¹æ­»äº¡ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¹ã‚¯ãƒªãƒ—ãƒˆ		;///< Boss death mission script pointer, 2 bytes.
 
-POS_PLY_X		EQU $520
-POS_PLY_Y		EQU $521
-
-;----------------
-; ©‹@‚Ì’Êí’eƒ[ƒN
-;----------------
-PSHOT_A_X	 EQU (POS_PLY_X+2)
-PSHOT_A_Y	 EQU (POS_PLY_Y+2)	; =0 ‚Ì‚ÍƒXƒ^ƒ“ƒoƒCó‘Ô
-PSHOT_A_SUU	 EQU 15
-
-
-PLY_OBJ_WX		EQU	$540
-PLY_OBJ_WY		EQU	$541
-PSHOT_A_WX		 EQU (PLY_OBJ_WX+2)
-PSHOT_A_WY		 EQU (PLY_OBJ_WY+2)
-
-
+SHOT_TARGET		EQU $3BB		;///< Current homing-shot target.
 
 
 ;----------------
-; “G‚Ìƒm[ƒ}ƒ‹’eƒ[ƒN
-; $600-$6AF 8x22ƒZƒbƒg
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ãƒ¯ãƒ¼ã‚¯
 ;----------------
-ENEMY_NT_WORK	EQU	$600
-ENEMY_NT_KIND	EQU	$600
-ENEMY_NT_MP		EQU	$601	; ˆÚ“®ƒpƒ^[ƒ“”Ô†
-ENEMY_NT_DT		EQU	$602	; “Áê§Œä—pƒf[ƒ^
-ENEMY_NT_HP		EQU	$603	; ‘Ï‹v—Í
-ENEMY_NT_X		EQU $604	; W
-ENEMY_NT_Y		EQU $606	; W
 
-ENEMY_NT_SIZE	 EQU 8
-ENEMY_NT_SUU	 EQU 22
+PLY_OBJ_KIND	EQU	$500		;///< Player object kind.
+PLY_OBJ_DIR		EQU	$501		;///< Player facing.
+PSHOT_KIND		EQU	$502		;///< First player-shot kind; stride 2.
+PSHOT_DIR		EQU	$503		;///< First player-shot direction; selects the sprite tile on the cartridge side.
+
+POS_PLY_X		EQU $520		;///< Player X in screen pixels.
+POS_PLY_Y		EQU $521		;///< Player Y in screen pixels.
 
 ;----------------
-; ”š”­‰‰oƒ[ƒN
-; $6B0-$6D7 3x13ƒZƒbƒg
+; è‡ªæ©Ÿã®é€šå¸¸å¼¾ãƒ¯ãƒ¼ã‚¯
 ;----------------
-BAKU_EFC_X	 EQU $6B0
-BAKU_EFC_Y	 EQU $6B1
-BAKU_EFC_CNT EQU $6B2
+PSHOT_A_X	 EQU (POS_PLY_X+2)		;///< First player-shot X; stride 2 bytes per shot.
+PSHOT_A_Y	 EQU (POS_PLY_Y+2)	; =0 ã®æ™‚ã¯ã‚¹ã‚¿ãƒ³ãƒã‚¤çŠ¶æ…‹		;///< First player-shot Y. Zero marks the slot standing by.
+PSHOT_A_SUU	 EQU 15		;///< Number of player-shot slots.
 
-BAKU_EFC_SUU EQU 13
+
+PLY_OBJ_WX		EQU	$540		;///< Player X sub-pixel fraction.
+PLY_OBJ_WY		EQU	$541		;///< Player Y sub-pixel fraction.
+PSHOT_A_WX		 EQU (PLY_OBJ_WX+2)		;///< First player-shot X fraction.
+PSHOT_A_WY		 EQU (PLY_OBJ_WY+2)		;///< First player-shot Y fraction.
+
 
 
 
 ;----------------
-; ƒpƒŒƒbƒgŠÖ˜A
+; æ•µã®ãƒãƒ¼ãƒãƒ«å¼¾ãƒ¯ãƒ¼ã‚¯
+; $600-$6AF 8x22ã‚»ãƒƒãƒˆ
 ;----------------
-PALFADE_TIME	EQU	$6D7	; ƒpƒŒƒbƒgƒtƒF[ƒh‘¬“x
-PALFADE_CNT		EQU	$6D8	; ƒpƒŒƒbƒgƒtƒF[ƒhƒJƒEƒ“ƒ^
-PALFADE_VAL		EQU	$6D9	; ‰ÁZ’lAŒ¸Z’l
-PALFADE_ADD		EQU	$6DA	; •Ï‰»‚Ì‰ÁZ’l
-PALFADE_MASK	EQU	$60B	; •Ï‰»‚³‚¹‚È‚¢ƒpƒŒƒbƒgƒrƒbƒgw’è
+ENEMY_NT_WORK	EQU	$600		;///< Base of the enemy table: #ENEMY_NT_SUU entries of #ENEMY_NT_SIZE bytes, `$600`-`$6AF`.
+ENEMY_NT_KIND	EQU	$600		;///< Enemy kind; 0 marks the slot free. One of the `NTK_*` values.
+ENEMY_NT_MP		EQU	$601	; ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³ç•ªå·		;///< Movement pattern number.
+ENEMY_NT_DT		EQU	$602	; ç‰¹æ®Šåˆ¶å¾¡ç”¨ãƒ‡ãƒ¼ã‚¿		;///< Per-pattern control byte.
+ENEMY_NT_HP		EQU	$603	; è€ä¹…åŠ›		;///< Hit points.
+ENEMY_NT_X		EQU $604	; W		;///< Enemy X, 16-bit; the high byte is the screen pixel.
+ENEMY_NT_Y		EQU $606	; W		;///< Enemy Y, 16-bit; the high byte is the screen pixel.
 
-;--- ‹ó‚«‚ ‚è ---
+ENEMY_NT_SIZE	 EQU 8		;///< Bytes per enemy entry.
+ENEMY_NT_SUU	 EQU 22		;///< Number of enemy slots.
+
+;----------------
+; çˆ†ç™ºæ¼”å‡ºãƒ¯ãƒ¼ã‚¯
+; $6B0-$6D7 3x13ã‚»ãƒƒãƒˆ
+;----------------
+BAKU_EFC_X	 EQU $6B0		;///< Base of the explosion table, `$6B0`-`$6D7`; stride 3 bytes.
+BAKU_EFC_Y	 EQU $6B1		;///< Explosion Y.
+BAKU_EFC_CNT EQU $6B2		;///< Animation frame; 0 is a free slot. Advanced by the cartridge, not by this ROM. @see @ref sample_game
+
+BAKU_EFC_SUU EQU 13		;///< Number of explosion slots.
+
+
+
+;----------------
+; ãƒ‘ãƒ¬ãƒƒãƒˆé–¢é€£
+;----------------
+PALFADE_TIME	EQU	$6D7	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦		;///< Frames between fade steps.
+PALFADE_CNT		EQU	$6D8	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚«ã‚¦ãƒ³ã‚¿		;///< Counts down to the next fade step.
+PALFADE_VAL		EQU	$6D9	; åŠ ç®—å€¤ã€æ¸›ç®—å€¤		;///< Current fade level.
+PALFADE_ADD		EQU	$6DA	; å¤‰åŒ–ã®åŠ ç®—å€¤		;///< Amount added to #PALFADE_VAL each step; its sign picks fade-in or fade-out.
+PALFADE_MASK	EQU	$60B	; å¤‰åŒ–ã•ã›ãªã„ãƒ‘ãƒ¬ãƒƒãƒˆãƒ“ãƒƒãƒˆæŒ‡å®š		;///< Bit mask of palette entries to leave alone during a fade. @warning Almost certainly a typo for `$6DB`. At `$60B` it lands inside #ENEMY_NT_WORK -- slot 1's #ENEMY_NT_HP -- and the only `sta` to it, in SysPallet.asm, is commented out. So a console-side fade masks itself with whatever hit points enemy 1 happens to have. Not reachable under the cartridge, which fades with `rp_system::FadeOut()` instead. @see @ref sample_game
+
+;--- ç©ºãã‚ã‚Š ---
 ; 6DC-6DF
 
 
-PAL_WRK2	EQU	$6E0 	;size $20	ƒtƒF[ƒh’†“]‘——p
+PAL_WRK2	EQU	$6E0 	;size $20	ãƒ•ã‚§ãƒ¼ãƒ‰ä¸­è»¢é€ç”¨		;///< Second palette staging buffer used during a fade, `$20` bytes.
 
 
-OBJ_BUF		EQU	$700		; 256 bytes
-BPE_BUF 	EQU	$700		; BEP“WŠJƒoƒbƒtƒ@
+OBJ_BUF		EQU	$700		; 256 bytes		;///< Sprite assembly buffer, 256 bytes.
+BPE_BUF 	EQU	$700		; BEPå±•é–‹ãƒãƒƒãƒ•ã‚¡		;///< BPE decompression buffer. Shares its address with #OBJ_BUF, so the two may not be live at once.
 
 

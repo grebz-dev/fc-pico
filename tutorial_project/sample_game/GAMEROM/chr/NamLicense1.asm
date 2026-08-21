@@ -1,3 +1,9 @@
+;/// @file NamLicense1.asm
+;/// @brief Licence page 2 as a full nametable, assembled then BPE-compressed.
+;/// @ingroup gamerom
+
+;/// @brief Licence page 2 as nametable data, 32x30 tiles.
+;/// @ingroup gamerom
 TXT_LICENSE2:
 	db "                                "
 	db "  THIS SOFTWARE IS PROVIDED BY  "

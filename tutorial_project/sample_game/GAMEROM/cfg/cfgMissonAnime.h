@@ -1,7 +1,12 @@
+;/// @file cfgMissonAnime.h
+;/// @brief Mission animation sequences.
+;/// @ingroup gamerom
 ;===============================================================================================
-;	ƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒˆ—
+;	ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡å‡¦ç†
 ;
 ;===============================================================================================
+;/// @brief Runs the HARADIUS mission animation.
+;/// @ingroup gamerom
 MissionAnimeHARA:
 	lda  <PRM_1
 	pha
@@ -17,7 +22,7 @@ MissionAnimeHARA:
 
 
 ;--------------------------
-;  SP“GUŒ‚ƒpƒ^[ƒ“
+;  SPæ•µæ”»æ’ƒãƒ‘ã‚¿ãƒ¼ãƒ³
 ;--------------------------
 .misson_atk_sub
 	lda  MISSON_ATK_CNT
@@ -47,7 +52,7 @@ MissionAnimeHARA:
 	lsr  a
 	TBL_JUMP
 	JPTBL	.no_mission_anm		; 0
-;	JPTBL	.misson_anm_01		; 1 ŸŒ³öqƒGƒtƒFƒNƒg
+;	JPTBL	.misson_anm_01		; 1 æ¬¡å…ƒæ½œèˆªã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
 
 
 .no_mission_anm
@@ -55,7 +60,7 @@ MissionAnimeHARA:
 	rts
 
 ;--------------------------
-;  ƒe[ƒuƒ‹‘I‘ğŒ^ƒAƒjƒ
+;  ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠå‹ã‚¢ãƒ‹ãƒ¡
 ;--------------------------
 .misson_anm_tblsel
 	lda  MISSON_ANM_CNT
@@ -63,7 +68,7 @@ MissionAnimeHARA:
 	dec  MISSON_ANM_CNT
 	rts
 .setAnmSP
-	; oŒ»•p“x—”{ŒÅ’è’l
+	; å‡ºç¾é »åº¦ä¹±æ•°ï¼‹å›ºå®šå€¤
 	lda  MISSON_ANM_NO
 	tay
 	and  #$03
@@ -73,7 +78,7 @@ MissionAnimeHARA:
 	adc  .tblCntAdd,x
 	sta  MISSON_ANM_CNT
 	tya
-	; ƒZƒbƒgƒe[ƒuƒ‹‘I‘ğ
+	; ã‚»ãƒƒãƒˆãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠ
 	and  #%0111_1100
 	sta  <TMP_WRK0
 	jsr  GET_RND
@@ -89,7 +94,7 @@ MissionAnimeHARA:
 
 
 ;------------------------------------
-; “GƒZƒbƒg–½—ß areg À•W”Ô†
+; æ•µã‚»ãƒƒãƒˆå‘½ä»¤ areg åº§æ¨™ç•ªå·
 ;------------------------------------
 .setEnemyNT_hara:
 	asl a
@@ -172,62 +177,62 @@ MissionAnimeHARA:
 
 
 .tblData
-	; X,Y,’e‚Ìí—Ş,’e‚ÌˆÚ“®ƒpƒ^[ƒ“
-	; ‰E‚©‚çè¦Î
+	; X,Y,å¼¾ã®ç¨®é¡,å¼¾ã®ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³
+	; å³ã‹ã‚‰éš•çŸ³
 	db  250,-1,NTK_METEO,$40*1+$20		;0
 	db  250,-1,NTK_METEO,$40*1+$20-1	;1
 	db  250,-1,NTK_METEO,$40*2+$20+1	;2
 	db  250,-1,NTK_METEO,$40*0+$20-2  	;3
 
-	; ¶‚©‚çè¦Î
+	; å·¦ã‹ã‚‰éš•çŸ³
 	db  6,-1,NTK_METEO,$40*1+$00	;4
 	db  6,-1,NTK_METEO,$40*2+$00-1	;5
 	db  6,-1,NTK_METEO,$40*0+$00+1	;6
 	db  6,-1,NTK_METEO,$40*1+$40-2	;7
 
-	; ã‚©‚çè¦Î
+	; ä¸Šã‹ã‚‰éš•çŸ³
 	db  -1,6,NTK_METEO,$40*1+$10	;8
 	db  -1,6,NTK_METEO,$40*1+$10-1	;9
 	db  -1,6,NTK_METEO,$40*2+$10+1	;10
 	db  -1,6,NTK_METEO,$40*0+$10	;11
 
-	; ‰º‚©‚çè¦Î
+	; ä¸‹ã‹ã‚‰éš•çŸ³
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*1+$30		;12
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*1+$30-1	;13
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*2+$30+1	;14
 	db  -1,ENEMY_LINE_SUU-6,NTK_METEO,$40*0+$30-2	;15
 
-	; ã‚©‚çƒUƒR ã‚¢ƒUƒR‚Ì‚İ
+	; ä¸Šã‹ã‚‰ã‚¶ã‚³ å¼±ã„ã‚¶ã‚³ã®ã¿
 	db  -1, 6,NTK_SPZK0,$40*2+$10+0	;16
 	db  -1, 6,NTK_SPZK0,$40*3+$10+0	;17
 	db  -1, 6,NTK_SPZK0,$40*1+$10-0	;18
 	db  -1, 6,NTK_SPZK0,$40*2+$10+0	;19
 
-	; ã‚©‚çƒUƒR d‚¢ƒUƒRƒ~ƒbƒNƒX
+	; ä¸Šã‹ã‚‰ã‚¶ã‚³ ç¡¬ã„ã‚¶ã‚³ãƒŸãƒƒã‚¯ã‚¹
 	db  -1, 6,NTK_SPZK0,$40*3+$10+0	;20
 	db  -2, 6,NTK_SPZK0,$40*2+$10+0	;21
 	db  -1, 6,NTK_SPZK0,$40*3+$10-0	;22
 	db  -3, 6,NTK_SPZK1,$40*1+$10+0	;23
 
-	; ‘O‚©‚çƒUƒR ƒuƒ‰ƒbƒNƒ^ƒCƒK[‘à
+	; å‰ã‹ã‚‰ã‚¶ã‚³ ãƒ–ãƒ©ãƒƒã‚¯ã‚¿ã‚¤ã‚¬ãƒ¼éšŠ
 	db  -1, 6,NTK_SPZK2,$40*3+$10+0	;24
 	db  -1, 6,NTK_SPZK2,$40*3+$10+0	;25
 	db  -1, 6,NTK_SPZK2,$40*3+$10-0	;26
 	db  -1, 6,NTK_SPZK2,$40*3+$10+0	;27
 
-	; ƒ[ƒvƒCƒ“ ãƒUƒR
+	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ å¼±ã‚¶ã‚³
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;28
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;29
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;30
 	db  -1,-1,NTK_WARP,NTK_SPZK0		;31
 
-	; ƒ[ƒvƒCƒ“ ãƒUƒR
+	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ å¼±ã‚¶ã‚³
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;32
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;33
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;34
 	db  -1,-1,NTK_WARP,NTK_SPZK2		;35
 
-	; ƒ[ƒvƒCƒ“ è¦Î
+	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ éš•çŸ³
 	db  -1,-1,NTK_WARP,NTK_METEO		;36
 	db  -1,-1,NTK_WARP,NTK_METEO		;37
 	db  -1,-1,NTK_WARP,NTK_METEO		;38
@@ -236,21 +241,23 @@ MissionAnimeHARA:
 
 
 ;------------------------------
-;	SP“G‚©‚ç’e”­Ë
+;	SPæ•µã‹ã‚‰å¼¾ç™ºå°„
 ;
-;  Areg = UŒ‚ƒpƒ^[ƒ“
+;  Areg = æ”»æ’ƒãƒ‘ã‚¿ãƒ¼ãƒ³
 ;------------------------------
+;/// @brief Fires from a special enemy; the accumulator selects the attack pattern.
+;/// @ingroup gamerom
 shotSpEnemy:
 	TBL_JUMP
-	JPTBL	shotSp00		; 0		UŒ‚‚µ‚È‚¢
-	JPTBL	shotSp01		; 1		‘S“G‚ª©‹@•ûŒü‚É1”­Œ‚‚Â
-	JPTBL	shotSp02		; 2		‘S“G‚ªƒz[ƒ~ƒ“ƒO’e‚ğ1”­Œ‚‚Â
+	JPTBL	shotSp00		; 0		æ”»æ’ƒã—ãªã„
+	JPTBL	shotSp01		; 1		å…¨æ•µãŒè‡ªæ©Ÿæ–¹å‘ã«1ç™ºæ’ƒã¤
+	JPTBL	shotSp02		; 2		å…¨æ•µãŒãƒ›ãƒ¼ãƒŸãƒ³ã‚°å¼¾ã‚’1ç™ºæ’ƒã¤
 
 shotSp01
 	jsr  shotSpTargetIDX
 	bcc  .end
 
-	; ’e”­Ë
+	; å¼¾ç™ºå°„
 	lda  ENEMY_NT_X+1,x
 	ldy  ENEMY_NT_Y+1,x
 	jsr  setEnemyNT2
@@ -265,7 +272,7 @@ shotSp02
 	jsr  shotSpTargetIDX
 	bcc  .end
 
-	; ’e”­Ë
+	; å¼¾ç™ºå°„
 	lda  ENEMY_NT_X+1,x
 	ldy  ENEMY_NT_Y+1,x
 	jsr  setEnemyNT2
@@ -288,8 +295,10 @@ shotSp02
 	rts
 	
 ;----------------------------------
-;  ”­Ë‚·‚éSP“G‚ÌIDX‚ğæ“¾
+;  ç™ºå°„ã™ã‚‹SPæ•µã®IDXã‚’å–å¾—
 ;----------------------------------
+;/// @brief Returns the index of the special enemy that should fire.
+;/// @ingroup gamerom
 shotSpTargetIDX:
 	lda  MISSON_ATK_IDX
 	inc  MISSON_ATK_IDX

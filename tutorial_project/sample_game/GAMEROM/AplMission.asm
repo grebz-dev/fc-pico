@@ -1,17 +1,38 @@
+;/// @file AplMission.asm
+;/// @brief The mission engine: a bytecode interpreter for stage scripts.
+;/// @ingroup gamerom
+;///
+;/// A stage is not code, it is a script. `MISSON_PC` is a program counter into a
+;/// byte stream built from the `MC_*` macros in defMission.h, and
+;/// `mainMissionControl` is the interpreter that walks it.
+;///
+;/// The interpreter has more of a machine than the name suggests: a wait counter
+;/// that suspends the script for a number of frames, a loop counter, conditional
+;/// jumps, and a real call stack in `MISSON_STACK` indexed by `MISSON_PC_SP`, so
+;/// one script can call another. Scripts may not nest calls, though; the comment
+;/// at the head of cfgMissonHara.h says so plainly.
+;///
+;/// `MISSON_TYPE` doubles as the halt flag. Set to `$FF` the interpreter stops,
+;/// and that is exactly what the C++ side watches for to decide a stage is clear.
+;/// @see @ref sample_game
 ;=====================================
 ;
-;	ƒ~ƒbƒVƒ‡ƒ“§ŒäƒvƒƒOƒ‰ƒ€
+;	ãƒŸãƒƒã‚·ãƒ§ãƒ³åˆ¶å¾¡ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 ;
 ;
 ;=====================================
 
 
 ;-------------------
-;	‰Šú‰»
+;	åˆæœŸåŒ–
 ;-------------------
+;/// @brief Starts the first mission of the current stage.
+;/// @ingroup gamerom
 initMission:
 	lda  #0
 	sta  MISSON_NO
+;/// @brief Reads the next entry from the stage table and starts that mission.
+;/// @ingroup gamerom
 getMission:
 	lda  #0
 	sta  MISSON_STEP
@@ -84,13 +105,13 @@ getMission:
 	rts
 
 
-; UŒ‚”Ô†ƒZƒbƒg
+; æ”»æ’ƒç•ªå·ã‚»ãƒƒãƒˆ
 .atk_no
 	lda  MISSON_TYPE_SUB
 	sta  MISSON_ATK_NO
 	jmp  getMission
 
-; ƒAƒjƒ[ƒVƒ‡ƒ“”Ô†ƒZƒbƒg
+; ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ç•ªå·ã‚»ãƒƒãƒˆ
 .anm_no
 	lda  MISSON_TYPE_SUB
 	sta  MISSON_ANM_NO
@@ -98,8 +119,13 @@ getMission:
 
 
 ;-------------------
-;	ƒ~ƒbƒVƒ‡ƒ“XVˆ—iƒƒCƒ“‚©‚ç–ˆƒtƒŒ[ƒ€ƒR[ƒ‹j
+;	ãƒŸãƒƒã‚·ãƒ§ãƒ³æ›´æ–°å‡¦ç†ï¼ˆãƒ¡ã‚¤ãƒ³ã‹ã‚‰æ¯ãƒ•ãƒ¬ãƒ¼ãƒ ã‚³ãƒ¼ãƒ«ï¼‰
 ;-------------------
+;/// @brief Advances the mission engine by one frame.
+;/// @ingroup gamerom
+;///
+;/// Returns immediately once `MISSON_TYPE` reads `$FF`, which is the halt state
+;/// and the signal the cartridge reads as stage-cleared.
 updateMission:
 	jsr  .u001
 	lda  <USR_PROG+1
@@ -115,21 +141,28 @@ updateMission:
 
 .u000
 	TBL_JUMP
-	JPTBL	mi_Hara		; 0  BGƒUƒR“G
-	JPTBL	mi_Hara		; 1  BGƒUƒR“G
-	JPTBL	mi_Hara		; 2  BGƒUƒR“G
-	JPTBL	mi_Hara		; 3  BGƒUƒR“G
-	JPTBL	mi_Hara		; 4  BGƒUƒR“G
+	JPTBL	mi_Hara		; 0  BGã‚¶ã‚³æ•µ
+	JPTBL	mi_Hara		; 1  BGã‚¶ã‚³æ•µ
+	JPTBL	mi_Hara		; 2  BGã‚¶ã‚³æ•µ
+	JPTBL	mi_Hara		; 3  BGã‚¶ã‚³æ•µ
+	JPTBL	mi_Hara		; 4  BGã‚¶ã‚³æ•µ
+;/// @brief Mission handler that does nothing. Fills unused jump-table slots.
+;/// @ingroup gamerom
 mi_dmy:
 	rts
 
 
 ;=================================
-; ƒ~ƒbƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‹ƒVƒXƒeƒ€
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚·ã‚¹ãƒ†ãƒ 
 ;=================================
 ;----------------------
-;  ‰Šú‰»
+;  åˆæœŸåŒ–
 ;----------------------
+;/// @brief Loads the script for a mission and points `MISSON_PC` at its start.
+;/// @ingroup gamerom
+;///
+;/// The sub-type byte is read two ways at once: its top two bits become the enemy
+;/// attack level, and its bottom six index the script table for the mission type.
 initMissionControl:
 	lda  MISSON_TYPE
 	asl  a
@@ -142,7 +175,7 @@ initMissionControl:
 	lda  MISSON_TYPE_SUB
 	tay
 	and  #$C0
-	sta  ENEMY_ATK_LV	;  “G‚ÌUŒ‚ƒŒƒxƒ‹İ’è
+	sta  ENEMY_ATK_LV	;  æ•µã®æ”»æ’ƒãƒ¬ãƒ™ãƒ«è¨­å®š
 	tya
 	and  #$3F
 	asl  a
@@ -167,7 +200,7 @@ initMissionControl:
 
 
 ;----------------------
-;  ƒ~ƒbƒVƒ‡ƒ“ƒXƒ^ƒbƒN
+;  ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¹ã‚¿ãƒƒã‚¯
 ;----------------------
 pushMstack_areg
 	ldx  MISSON_PC_SP
@@ -183,8 +216,14 @@ popMstack_areg
 
 
 ;----------------------
-;  ƒƒCƒ“
+;  ãƒ¡ã‚¤ãƒ³
 ;----------------------
+;/// @brief The bytecode interpreter: executes one step of the mission script.
+;/// @ingroup gamerom
+;///
+;/// Counts `MISSON_WAIT` down first and does nothing while it is non-zero, which
+;/// is how a script sleeps. Otherwise it fetches the opcode at `MISSON_PC` and
+;/// dispatches on it. @see defMission.h for the opcodes.
 mainMissionControl:
 	lda  MISSON_WAIT
 	beq  .control
@@ -207,11 +246,11 @@ mainMissionControl:
 
 	sbc  #_MC_BASE
 	TBL_JUMP
-	JPTBL	.mc_mempop		; _MC_MEMPOP	  ƒƒ‚ƒŠ[ 1ƒoƒCƒg POP
-	JPTBL	.mc_mempush		; _MC_MEMPUSH	  ƒƒ‚ƒŠ[ 1ƒoƒCƒg PUSH
-	JPTBL	.mc_memcmp		; _MC_MEMCMP	  ƒƒ‚ƒŠ[”äŠr 1ƒoƒCƒg”Å ƒAƒhƒŒƒXA’l
-	JPTBL	.mc_memadd		; _MC_MEMADD	  ƒƒ‚ƒŠ[‰ÁZ 1ƒoƒCƒg”Å ƒAƒhƒŒƒXA’l
-	JPTBL	.mc_nouse		; @_MC_VRAMSET	  VRAMƒZƒbƒg@ƒAƒhƒŒƒXA’l
+	JPTBL	.mc_mempop		; _MC_MEMPOP	  ãƒ¡ãƒ¢ãƒªãƒ¼ 1ãƒã‚¤ãƒˆ POP
+	JPTBL	.mc_mempush		; _MC_MEMPUSH	  ãƒ¡ãƒ¢ãƒªãƒ¼ 1ãƒã‚¤ãƒˆ PUSH
+	JPTBL	.mc_memcmp		; _MC_MEMCMP	  ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒ 1ãƒã‚¤ãƒˆç‰ˆ ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
+	JPTBL	.mc_memadd		; _MC_MEMADD	  ãƒ¡ãƒ¢ãƒªãƒ¼åŠ ç®— 1ãƒã‚¤ãƒˆç‰ˆ ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
+	JPTBL	.mc_nouse		; @_MC_VRAMSET	  VRAMã‚»ãƒƒãƒˆã€€ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
 	JPTBL	.mc_pgcall2		;F1 _MC_PGCALL2
 	JPTBL	.mc_dummy		;F2
 	JPTBL	.mc_memclr		;F3 _MC_MEMCLR
@@ -233,7 +272,7 @@ mainMissionControl:
 	rts
 
 	;------------------
-	; ˆ—‹¤’Ê‰»
+	; å‡¦ç†å…±é€šåŒ–
 	;------------------
 .getSCR_DST_ADR
 	jsr  getSCR_ADR_DATA
@@ -245,19 +284,19 @@ mainMissionControl:
 
 
 	;------------------
-	; –¢g—p
+	; æœªä½¿ç”¨
 	;------------------
 .mc_nouse:
 
 	;------------------
-	; ƒf[ƒ^ƒGƒ“ƒh
+	; ãƒ‡ãƒ¼ã‚¿ã‚¨ãƒ³ãƒ‰
 	;------------------
 .mc_end
 	sec
 	rts
 
 	;-------------------------------------
-	; ƒEƒFƒCƒgƒ^ƒCƒ}[ƒZƒbƒg‚µ‚Äƒe[ƒuƒ‹ƒfƒR[ƒhI—¹
+	; ã‚¦ã‚§ã‚¤ãƒˆã‚¿ã‚¤ãƒãƒ¼ã‚»ãƒƒãƒˆã—ã¦ãƒ†ãƒ¼ãƒ–ãƒ«ãƒ‡ã‚³ãƒ¼ãƒ‰çµ‚äº†
 	;-------------------------------------
 .mc_wait
 	sta  MISSON_WAIT
@@ -271,7 +310,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒR[ƒ‹
+	; ã‚³ãƒ¼ãƒ«
 	;------------------
 .mc_call
 	jsr  getSCR_ADR_DATA
@@ -279,17 +318,17 @@ mainMissionControl:
 	jsr  getSCR_ADR_DATA
 	pha
 
-	; –ß‚èæƒAƒhƒŒƒX‚ğƒZƒbƒg
+	; æˆ»ã‚Šå…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚»ãƒƒãƒˆ
 	lda  <SRC_ADR+0
 	jsr  pushMstack_areg
 	lda  <SRC_ADR+1
 	jsr  pushMstack_areg
 
-	; ƒ‹[ƒvƒJƒEƒ“ƒ^[‚ğƒZƒbƒg
+	; ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ã‚’ã‚»ãƒƒãƒˆ
 	lda  MISSON_LOOP_CNT
 	jsr  pushMstack_areg
 
-	; ƒR[ƒ‹æƒAƒhƒŒƒX‚ÉPC‚ğ‘‚«Š·‚¦
+	; ã‚³ãƒ¼ãƒ«å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ã«PCã‚’æ›¸ãæ›ãˆ
 	pla
 	sta  <SRC_ADR+1
 	pla
@@ -297,7 +336,7 @@ mainMissionControl:
 	jmp  .loop
 
 	;------------------
-	; ƒŠƒ^[ƒ“
+	; ãƒªã‚¿ãƒ¼ãƒ³
 	;------------------
 .mc_ret
 	jsr  popMstack_areg
@@ -310,7 +349,7 @@ mainMissionControl:
 	jmp  .loop
 
 	;------------------
-	; ƒ‹[ƒvƒJƒEƒ“ƒ^[ƒZƒbƒg
+	; ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ã‚»ãƒƒãƒˆ
 	;------------------
 .mc_loop_cnt
 	jsr  getSCR_ADR_DATA
@@ -319,7 +358,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ğŒ•tƒWƒƒƒ“ƒv
+	; æ¡ä»¶ä»˜ã‚¸ãƒ£ãƒ³ãƒ—
 	;------------------
 .mc_jmp
 	jsr  getSCR_ADR_DATA
@@ -332,12 +371,12 @@ mainMissionControl:
 	jsr  .mcj_sub
 	bcs  .mc_jump00
 
-	; ƒWƒƒƒ“ƒv‚µ‚È‚¢‚ÅAŸ‚Ì–½—ß‚Ö
+	; ã‚¸ãƒ£ãƒ³ãƒ—ã—ãªã„ã§ã€æ¬¡ã®å‘½ä»¤ã¸
 	pla
 	pla
 	jmp  .loop
 
-	; w’èƒAƒhƒŒƒX‚ÉƒWƒƒƒ“ƒv
+	; æŒ‡å®šã‚¢ãƒ‰ãƒ¬ã‚¹ã«ã‚¸ãƒ£ãƒ³ãƒ—
 .mc_jump00
 	pla
 	sta  <SRC_ADR+1
@@ -348,8 +387,8 @@ mainMissionControl:
 
 
 ;-------------------------------------
-; ğŒ•tƒWƒƒƒ“ƒv‚ÌğŒ”»’èƒTƒu
-;   ƒWƒƒƒ“ƒv‚·‚éê‡ cƒtƒ‰ƒOƒZƒbƒg
+; æ¡ä»¶ä»˜ã‚¸ãƒ£ãƒ³ãƒ—ã®æ¡ä»¶åˆ¤å®šã‚µãƒ–
+;   ã‚¸ãƒ£ãƒ³ãƒ—ã™ã‚‹å ´åˆ cãƒ•ãƒ©ã‚°ã‚»ãƒƒãƒˆ
 ;-------------------------------------
 .mcj_sub
 	txa
@@ -366,15 +405,15 @@ mainMissionControl:
 	JPTBL  .MCJ_CMP_NC
 
 
-; –³ğŒƒWƒƒƒ“ƒv ----------
+; ç„¡æ¡ä»¶ã‚¸ãƒ£ãƒ³ãƒ— ----------
 
-; BOSS HP”äŠr@–¢g—p ----------
+; BOSS HPæ¯”è¼ƒã€€æœªä½¿ç”¨ ----------
 .MCJ_BOSS_HP
 .MCJ_JMP
 	sec
 	rts
 
-; ƒ‹[ƒvƒJƒEƒ“ƒgƒ_ƒEƒ“ ----------
+; ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ ----------
 .MCJ_LOOP_CNT
 	dec  MISSON_LOOP_CNT
 	bne  .MCJ_JMP
@@ -382,7 +421,7 @@ mainMissionControl:
 	rts
 
 
-; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªZ‚È‚çƒWƒƒƒ“ƒv ----------
+; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒZãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ— ----------
 .MCJ_CMP_Z
 	lda  MISSON_CMP_P
 	pha
@@ -391,7 +430,7 @@ mainMissionControl:
 	clc
 	rts
 
-; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªNZ‚È‚çƒWƒƒƒ“ƒv ----------
+; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒNZãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ— ----------
 .MCJ_CMP_NZ
 	lda  MISSON_CMP_P
 	pha
@@ -400,7 +439,7 @@ mainMissionControl:
 	clc
 	rts
 
-; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªC‚È‚çƒWƒƒƒ“ƒv ----------
+; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒCãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ— ----------
 .MCJ_CMP_C
 	lda  MISSON_CMP_P
 	pha
@@ -409,7 +448,7 @@ mainMissionControl:
 	clc
 	rts
 
-; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªNC‚È‚çƒWƒƒƒ“ƒv ----------
+; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒNCãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ— ----------
 .MCJ_CMP_NC
 	lda  MISSON_CMP_P
 	pha
@@ -420,7 +459,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒvƒƒOƒ‰ƒ€ƒR[ƒ‹ƒAƒhƒŒƒXƒZƒbƒg”Å
+	; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆç‰ˆ
 	;------------------
 .mc_pgcall2
 	jsr  getSCR_ADR_DATA
@@ -429,7 +468,7 @@ mainMissionControl:
 	sta  <TMP_ADR0 +1
 
 	;------------------
-	; ƒvƒƒOƒ‰ƒ€ƒR[ƒ‹
+	; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚³ãƒ¼ãƒ«
 	;------------------
 .mc_pgcall
 	jsr  .mc_pgcall_sub
@@ -448,7 +487,7 @@ mainMissionControl:
 	jmp  getSCR_ADR_DATA
 
 	;------------------
-	; ƒƒ‚ƒŠ[ƒRƒs[ ‚QƒoƒCƒg”Å
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚³ãƒ”ãƒ¼ ï¼’ãƒã‚¤ãƒˆç‰ˆ
 	;------------------
 .mc_memcpy2
 	jsr  .getSCR_DST_ADR
@@ -469,7 +508,7 @@ mainMissionControl:
 	jmp  .loop
 
 	;------------------
-	; ƒƒ‚ƒŠ[ƒRƒs[ NƒoƒCƒg”Å
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚³ãƒ”ãƒ¼ Nãƒã‚¤ãƒˆç‰ˆ
 	;------------------
 .mc_memcpyn
 	jsr  getSCR_ADR_DATA
@@ -491,7 +530,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒƒ‚ƒŠ[ƒZƒbƒg ‚QƒoƒCƒg”Å
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚»ãƒƒãƒˆ ï¼’ãƒã‚¤ãƒˆç‰ˆ
 	;------------------
 .mc_memset2
 	jsr  .getSCR_DST_ADR
@@ -506,7 +545,7 @@ mainMissionControl:
 	jmp  .loop
 
 	;------------------
-	; ƒƒ‚ƒŠ[ƒZƒbƒg
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚»ãƒƒãƒˆ
 	;------------------
 .mc_memset
 	jsr  .getSCR_DST_ADR
@@ -516,7 +555,7 @@ mainMissionControl:
 	jmp  .loop
 
 	;------------------
-	; ƒƒ‚ƒŠ[ƒNƒŠƒA
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¯ãƒªã‚¢
 	;------------------
 .mc_memclr
 	jsr  .getSCR_DST_ADR
@@ -532,7 +571,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒƒ‚ƒŠ[‰ÁZ
+	; ãƒ¡ãƒ¢ãƒªãƒ¼åŠ ç®—
 	;------------------
 .mc_memadd
 	jsr  .getSCR_DST_ADR
@@ -544,7 +583,7 @@ mainMissionControl:
 	jmp  .loop
 
 	;------------------
-	; ƒƒ‚ƒŠ[”äŠr
+	; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒ
 	;------------------
 .mc_memcmp
 	jsr  .getSCR_DST_ADR
@@ -558,7 +597,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒƒ‚ƒŠ[PUSH
+	; ãƒ¡ãƒ¢ãƒªãƒ¼PUSH
 	;------------------
 .mc_mempush
 	jsr  .getSCR_DST_ADR
@@ -569,7 +608,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒƒ‚ƒŠ[POP
+	; ãƒ¡ãƒ¢ãƒªãƒ¼POP
 	;------------------
 .mc_mempop
 	jsr  .getSCR_DST_ADR
@@ -580,7 +619,7 @@ mainMissionControl:
 
 
 	;------------------
-	; ƒpƒŒƒbƒgƒZƒbƒg
+	; ãƒ‘ãƒ¬ãƒƒãƒˆã‚»ãƒƒãƒˆ
 	;------------------
 .mc_palset
 	jsr  getSCR_ADR_DATA

@@ -1,6 +1,9 @@
+;/// @file AplMiHara.asm
+;/// @brief The HARADIUS mission type: the ordinary waves of minions.
+;/// @ingroup gamerom
 ;=====================================
 ;
-;	ƒ~ƒbƒVƒ‡ƒ“@HARADIUS§ŒäƒvƒƒOƒ‰ƒ€
+;	ãƒŸãƒƒã‚·ãƒ§ãƒ³ã€€HARADIUSåˆ¶å¾¡ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 ;
 ;
 ;=====================================
@@ -11,6 +14,8 @@
 
 
 
+;/// @brief The HARADIUS mission handler; the ordinary waves.
+;/// @ingroup gamerom
 mi_Hara:
 	lda MISSON_STEP
 	TBL_JUMP
@@ -22,9 +27,11 @@ mi_Hara:
 
 
 ;-----------------------
-;		ƒ{ƒX‰Šú‰»
+;		ãƒœã‚¹åˆæœŸåŒ–
 ;-----------------------
 
+;/// @brief Initialises the mission's boss.
+;/// @ingroup gamerom
 mi_HaraInit:
 	jsr  initMissionControl
 	jsr  setGameCommonPal
@@ -35,8 +42,10 @@ mi_HaraInit:
 
 
 ;-----------------------
-;		ˆÚ“®
+;		ç§»å‹•
 ;-----------------------
+;/// @brief Moves the mission's boss.
+;/// @ingroup gamerom
 mi_HaraMove:
 	jsr  MissionAnimeHARA
 	jsr  mainMissionControl
@@ -61,17 +70,21 @@ mi_HaraMove:
 
 
 ;-----------------------
-;		BGÁ‹
+;		BGæ¶ˆå»
 ;-----------------------
+;/// @brief Erases the mission's background.
+;/// @ingroup gamerom
 mi_HaraClear:
 	inc MISSON_STEP
 .wait
 	rts
 
 ;-----------------------
-;		ƒ{ƒXÁ–Å
+;		ãƒœã‚¹æ¶ˆæ»…
 ;-----------------------
 
+;/// @brief Runs the boss's departure.
+;/// @ingroup gamerom
 mi_HaraOUT:
 	jmp getMission
 

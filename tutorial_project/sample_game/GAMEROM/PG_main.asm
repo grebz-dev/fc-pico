@@ -1,12 +1,25 @@
+;/// @file PG_main.asm
+;/// @brief Assembly root: iNES header, bank layout and the two entry points.
+;/// @ingroup gamerom
+;///
+;/// The whole ROM is assembled from this one file. It declares an NROM cartridge
+;/// -- 32 KB PRG in four `.BANK`s, 8 KB CHR, mapper 0, vertical mirroring -- and
+;/// then pulls in every other source in the order the banks require.
+;///
+;/// It also holds the pair of entry points that make this ROM unusual. `INIT` and
+;/// `NMI`, vectored at `$FFFA`, are what a real Famicom runs. `jvcFCP_GAME_INIT`
+;/// and `jvcFCP_GAME_MAIN`, at the fixed addresses `$E000` and `$E004`, are what
+;/// the cartridge calls instead when the ROM is being driven a frame at a time by
+;/// the RP2350. @see @ref sample_game
 
-	.list			; ƒŠƒXƒeƒBƒ“ƒOƒtƒ@ƒCƒ‹o—Í
-	.mlist			; ƒŠƒXƒeƒBƒ“ƒOƒtƒ@ƒCƒ‹ã‚Åƒ}ƒNƒ‚ğ“WŠJ
+	.list			; ãƒªã‚¹ãƒ†ã‚£ãƒ³ã‚°ãƒ•ã‚¡ã‚¤ãƒ«å‡ºåŠ›
+	.mlist			; ãƒªã‚¹ãƒ†ã‚£ãƒ³ã‚°ãƒ•ã‚¡ã‚¤ãƒ«ä¸Šã§ãƒã‚¯ãƒ­ã‚’å±•é–‹
 
 	.INCLUDE	"defDebug.h"
 
-        .inesprg 2		; ƒvƒƒOƒ‰ƒ€ƒoƒ“ƒN”
-        .ineschr 1		; CHR ƒoƒ“ƒN”
-        .inesmir 1		; 0:V ‚’¼‚Q‰æ–Êi …•½ƒ~ƒ‰[j 1:H …•½‚Q‰æ–Êi‚’¼ƒ~ƒ‰[j
+        .inesprg 2		; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ãƒãƒ³ã‚¯æ•°
+        .ineschr 1		; CHR ãƒãƒ³ã‚¯æ•°
+        .inesmir 1		; 0:V å‚ç›´ï¼’ç”»é¢ï¼ˆ æ°´å¹³ãƒŸãƒ©ãƒ¼ï¼‰ 1:H æ°´å¹³ï¼’ç”»é¢ï¼ˆå‚ç›´ãƒŸãƒ©ãƒ¼ï¼‰
         .inesmap 0		; mapper #0
 
 	.INCLUDE	"defMacro.h"
@@ -20,7 +33,7 @@
 	.code
 
 	;========================================
-	; ƒQ[ƒ€ƒoƒ“ƒN0
+	; ã‚²ãƒ¼ãƒ ãƒãƒ³ã‚¯0
 	;========================================
 	.BANK		0
 	ORG  $8000
@@ -41,7 +54,7 @@
 	.INCLUDE	".\cfg\cfgGame.h"
 	.INCLUDE	".\cfg\cfgEnemyNT.h"
 	.INCLUDE	".\cfg\cfgStage.h"
-	.INCLUDE	".\cfg\cfgMissonSP.h"		; ƒTƒuƒ‹[ƒ`ƒ“
+	.INCLUDE	".\cfg\cfgMissonSP.h"		; ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³
 	.INCLUDE	".\cfg\cfgMissonHara.h"
 	.INCLUDE	".\cfg\cfgMissonAnime.h"
 
@@ -53,7 +66,7 @@
 	.INCLUDE	"AplOver.asm"
 
 	.INCLUDE	"AplGameDisp.asm"
-	.INCLUDE	"AplGame.asm"		;ƒQ[ƒ€–{‘Ì
+	.INCLUDE	"AplGame.asm"		;ã‚²ãƒ¼ãƒ æœ¬ä½“
 	.INCLUDE	"AplGameSub.asm"
 
 	.INCLUDE	"AplEnemy.asm"
@@ -65,28 +78,46 @@
       ORG     $E000
 ;-----------------------------
 ;  $E000
-;  ƒQ[ƒ€•Ï”‰Šú‰»@FC PICO—p
+;  ã‚²ãƒ¼ãƒ å¤‰æ•°åˆæœŸåŒ–ã€€FC PICOç”¨
 ; 
 ;-----------------------------
+;/// @brief Cartridge entry point at `$E000`: start a stage.
+;/// @ingroup gamerom
+;///
+;/// One of the two fixed addresses the RP2350 calls. `jsr` to the real routine
+;/// and then `brk`, which is what returns control to the emulator.
+;/// @see @ref sample_game
 jvcFCP_GAME_INIT:
 	jsr  FCP_GAME_INIT
 	brk
 ;-----------------------------
 ;  $E004
-;  ƒQ[ƒ€–{‘Ìˆ—@FC PICO—p
+;  ã‚²ãƒ¼ãƒ æœ¬ä½“å‡¦ç†ã€€FC PICOç”¨
 ; 
 ;-----------------------------
+;/// @brief Cartridge entry point at `$E004`: advance the stage by one frame.
+;/// @ingroup gamerom
+;/// @note The addresses matter, not the names: `ap_game.cpp` calls
+;///       `emu.run(0xE000 + 4 * n)`, so these two must stay four bytes apart and
+;///       at the top of bank 3.
+;/// @see @ref sample_game
 jvcFCP_GAME_MAIN:
 	jsr  FCP_GAME_MAIN
 	brk
 
 
 
+;/// @brief Resets the game variables for a new stage.
+;/// @ingroup gamerom
+;///
+;/// Clears the `$300` page of work RAM, sets the starting position and lives, and
+;/// seeds the mission engine. It sets `STG_COD` to the play state as well, though
+;/// nothing under the cartridge reads it -- the console-side jump table does.
 FCP_GAME_INIT:
 	lda  #0
 	sta  <DEMO_FG
 
-	lda  #ST_MAIN        ;ƒvƒŒƒC‰æ–Ê‚Ö
+	lda  #ST_MAIN        ;ãƒ—ãƒ¬ã‚¤ç”»é¢ã¸
 	STA	<STG_COD
 
 	LDA	#0
@@ -116,6 +147,12 @@ FCP_GAME_INIT:
 	rts
 
 
+;/// @brief One frame of the game, without any drawing.
+;/// @ingroup gamerom
+;///
+;/// The whole of what the cartridge runs: advance the mission script, move every
+;/// object, run the death animation if the player is in it, then step the timers.
+;/// The object tables are left in RAM for the RP2350 to read.
 FCP_GAME_MAIN:
 	jsr updateMission
 	jsr moveGameObj
@@ -140,7 +177,16 @@ FCP_GAME_MAIN:
 	.INCLUDE	"AplSelSub.asm"
 
 
+;/// @brief Alternate name for the console-side main loop; falls straight into #PLY_MAIN.
+;/// @ingroup gamerom
 PLY_MAIN_S:
+;/// @brief Console-side main loop: dispatch on `STG_COD`.
+;/// @ingroup gamerom
+;///
+;/// The other half of the ROM's dual personality. On a real Famicom this jump
+;/// table walks the whole game -- title, play, clear, game over, licence -- and
+;/// entry 5 is the same play state the cartridge reaches directly.
+;/// @note Never entered when the ROM runs under the cartridge.
 PLY_MAIN:
 	inc  <FLM_TIMER
 	lda  <STG_COD	;
@@ -156,10 +202,16 @@ PLY_MAIN:
 	JPTBL	APL_LICENSE		; 8
 
 
+;/// @brief Falls into #JMP_NEXT_STG. Fills a slot in the jump table.
+;/// @ingroup gamerom
 JMP_NEXT_STG2:
 
+;/// @brief Advances #STG_COD to the next console-side screen.
+;/// @ingroup gamerom
 JMP_NEXT_STG:
 	INC	<STG_COD
+;/// @brief Does nothing. The jump-table entry for a screen with no handler.
+;/// @ingroup gamerom
 JMP_RTS:
 	RTS
 
@@ -175,7 +227,9 @@ JMP_RTS:
 
 
 
-; HIRQŠ„‚è‚İƒGƒ“ƒgƒŠ
+; HIRQå‰²ã‚Šè¾¼ã¿ã‚¨ãƒ³ãƒˆãƒª
+;/// @brief IRQ vector. An immediate `rti`; this cartridge has no IRQ source.
+;/// @ingroup gamerom
 IRQ_ENTRY:
 	rti
 

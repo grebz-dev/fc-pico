@@ -2,12 +2,32 @@
     ap_game.h
  */
 
+/**
+ * @file ap_game.cpp
+ * @brief The play screen: drives the emulated game ROM and renders its state.
+ * @ingroup sample_app
+ *
+ * One frame here is: post the controller bytes into the emulated RAM, run the
+ * ROM's `$E004` entry until it hits `brk`, then walk the object tables it left
+ * behind and rebuild the 3D scene from them.
+ *
+ * Sound is relayed the same way. The ROM raises a request byte, this side plays
+ * it and writes the byte back to zero, which is the acknowledgement.
+ */
+
 
 #include "ap_main.h"
 
 ap_game ap_g;
 
 
+/**
+ * @brief NES palette for the play screen: four background sets, then four sprite sets.
+ * @ingroup sample_app
+ * @note Sent to the console with rp_system::setPalData(). These are real NES
+ *       palette indices; the cartridge does not choose the colours, the console's
+ *       PPU does.
+ */
 const uint8_t pal_game[] = {
 	// BG PAL
 	0x0F, 0x15, 0x11, 0x30,

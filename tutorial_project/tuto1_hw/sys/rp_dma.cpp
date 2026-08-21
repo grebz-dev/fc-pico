@@ -2,6 +2,18 @@
     rp_dma.h - DMA関連
  */
 
+/**
+ * @file rp_dma.cpp
+ * @brief Implementation of the PIO-fed DMA wrapper.
+ * @ingroup fcbus
+ *
+ * A long trailing `#if 0` block preserves the manual channel-configuration
+ * recipe the wrapper replaced; it is reference material, not dead code to remove.
+ *
+ * @see rp_dma.h
+ */
+
+
 
 
 

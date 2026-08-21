@@ -2,13 +2,26 @@
     rp_system.h
  */
 
+/**
+ * @file ap_main.cpp
+ * @brief Scene dispatch, the object pool and the starfield.
+ * @ingroup sample_app
+ *
+ * Defines the two globals the whole application hangs off: #ap, the scene
+ * machine, and #emu, the 6502 running the game ROM.
+ *
+ * @note The banner comment above says rp_system.h. Several files in this tree
+ *       carry the wrong name in that banner; it is a copy-paste artefact and not
+ *       a sign that the file is something else.
+ */
+
 
 #include "ap_main.h"
 
 
-ap_main ap;
+ap_main ap;  ///< The one application instance, declared in ap_main.h.
 
-rp_fcemu emu;
+rp_fcemu emu; ///< The emulated 6502 running the game ROM, declared in ap_main.h.
 
 
 void ap_main::init() {

@@ -1,13 +1,26 @@
+;/// @file SysKey.asm
+;/// @brief Controller reading and the two-frame debounce.
+;/// @ingroup gamerom
+;///
+;/// Produces the held-key and newly-pressed-key bytes the rest of the game reads.
+;/// A key must appear in two consecutive reads before it counts, which is what
+;/// makes the boot-time reset gesture reliable.
+;///
+;/// @note Under the cartridge these bytes are not read from the port at all: the
+;///       RP2350 writes them straight into `KEY_NEW` and `KEY_TRG`.
+;///       @see @ref sample_game
 ;========================================
 ; Key System
 ;========================================
 
-SYSKEY_OLD  EQU  0
+SYSKEY_OLD  EQU  0		;///< Previous read, used by the two-frame debounce.
 
 
 ;*****************************************
-;ƒL[‚Ì•ûŒü‚ðŽæ“¾
+;ã‚­ãƒ¼ã®æ–¹å‘ã‚’å–å¾—
 ;*****************************************
+;/// @brief Converts the held direction keys into one of the `KDIR_*` values.
+;/// @ingroup gamerom
 KEY_DIR:
 	lda  <KEY_NEW
 	and  #$0F
@@ -17,7 +30,7 @@ KEY_DIR:
 
 
 .tbl
-	db  KDIR_N	; 0000 “ü—Í–³‚µ
+	db  KDIR_N	; 0000 å…¥åŠ›ç„¡ã—
 	db  KDIR_R	; 0001 KEY_RIGHT
 	db  KDIR_L	; 0010 KEY_LEFT
 	db  KDIR_N	; 0011 KEY_RIGHT + KEY_LEFT
@@ -38,9 +51,16 @@ KEY_DIR:
 ; KEY RTN       *
 ;****************
 ;
+;/// @brief Reads the controller and updates the held and newly-pressed bytes.
+;/// @ingroup gamerom
+;///
+;/// A key is reported only once it has appeared in two consecutive reads, which
+;/// is what makes the boot-time WRAM reset gesture dependable.
+;/// @note Not called under the cartridge: the RP2350 writes `KEY_NEW` and
+;///       `KEY_TRG` itself. @see @ref sample_game
 KEY_RTN:
 	;----------------------------------------------------------------------
-	; 4 ‰ñ“Çž‚Ý”Å
+	; 4 å›žèª­è¾¼ã¿ç‰ˆ
 	;----------------------------------------------------------------------
 	lda	<KEY_NEW
 	sta	<KEY_OLD
@@ -76,49 +96,49 @@ KEY_RTN:
 
 	lda	<KEY_TRG
 	and	#(KEY_UP|KEY_DOWN|KEY_LEFT|KEY_RIGHT)
-	beq	.main			; V‚½‚É‰Ÿ‚³‚ê‚½ƒL[‚ª‚È‚¢?
+	beq	.main			; æ–°ãŸã«æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ãŒãªã„?
 
 	tay
-	lda  ro_keytable, y		; “¯Žž‰Ÿ‚µ‘Îô (‰ºã‰E¶‚Ì‡‚É—Dæ)
-	sta	<REP_KEY		; V‚½‚É‰Ÿ‚³‚ê‚½ƒL[‚ðƒŠƒs[ƒg—p‚ÉÝ’è
+	lda  ro_keytable, y		; åŒæ™‚æŠ¼ã—å¯¾ç­– (ä¸‹ä¸Šå³å·¦ã®é †ã«å„ªå…ˆ)
+	sta	<REP_KEY		; æ–°ãŸã«æŠ¼ã•ã‚ŒãŸã‚­ãƒ¼ã‚’ãƒªãƒ”ãƒ¼ãƒˆç”¨ã«è¨­å®š
 	lda	#REP_WAIT
-	sta	<REP_CNT		; ‰‰ñƒEƒFƒCƒg
+	sta	<REP_CNT		; åˆå›žã‚¦ã‚§ã‚¤ãƒˆ
 	.if	1
 	 .if	 REP_WAIT
-	  bne	.press			; =bra  ‰Ÿ‚µŽn‚ß‚Í‰Ÿ‰º‚ ‚è
+	  bne	.press			; =bra  æŠ¼ã—å§‹ã‚ã¯æŠ¼ä¸‹ã‚ã‚Š
 	 .else
-	  beq	.press			; =bra  ‰Ÿ‚µŽn‚ß‚Í‰Ÿ‰º‚ ‚è
+	  beq	.press			; =bra  æŠ¼ã—å§‹ã‚ã¯æŠ¼ä¸‹ã‚ã‚Š
 	 .endif
 	.else
-	 lda	#0			; ‰Ÿ‚µŽn‚ß‚Í‰Ÿ‰º‚È‚µ (trigger ‚É”C‚¹‚é)
+	 lda	#0			; æŠ¼ã—å§‹ã‚ã¯æŠ¼ä¸‹ãªã— (trigger ã«ä»»ã›ã‚‹)
 	 beq	.set			; =bra
 	.endif
 .main:
 	lda	<KEY_NEW
 	and	<REP_KEY
-	beq	.set			; ƒŠƒs[ƒg—pƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚È‚¢ (a=0)?
+	beq	.set			; ãƒªãƒ”ãƒ¼ãƒˆç”¨ã‚­ãƒ¼ãŒæŠ¼ã•ã‚Œã¦ã„ãªã„ (a=0)?
 
-	dec	<REP_CNT		; ƒEƒFƒCƒg‚ÌƒJƒEƒ“ƒgƒ_ƒEƒ“
-	beq	.press			; ‰‰ñƒEƒFƒCƒgI—¹‚©?
+	dec	<REP_CNT		; ã‚¦ã‚§ã‚¤ãƒˆã®ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³
+	beq	.press			; åˆå›žã‚¦ã‚§ã‚¤ãƒˆçµ‚äº†ã‹?
 	lda	<REP_CNT
 	eor	#-REP_INTERVAL
-	cmp	#1			; c = 0:ˆê’v / 1:•sˆê’v
-	lda	#0			; ƒJƒEƒ“ƒ^‰Šú’l ‚Ü‚½‚Í ‰Ÿ‰ºƒL[‚È‚µ
-	bcs	.set			; 2 ‰ñ–ÚˆÈ~‚ÌƒEƒFƒCƒgI—¹‚Å‚È‚¢‚©?
+	cmp	#1			; c = 0:ä¸€è‡´ / 1:ä¸ä¸€è‡´
+	lda	#0			; ã‚«ã‚¦ãƒ³ã‚¿åˆæœŸå€¤ ã¾ãŸã¯ æŠ¼ä¸‹ã‚­ãƒ¼ãªã—
+	bcs	.set			; 2 å›žç›®ä»¥é™ã®ã‚¦ã‚§ã‚¤ãƒˆçµ‚äº†ã§ãªã„ã‹?
 
-	sta	<REP_CNT		; ƒJƒEƒ“ƒ^‚ð–ß‚·B
+	sta	<REP_CNT		; ã‚«ã‚¦ãƒ³ã‚¿ã‚’æˆ»ã™ã€‚
 .press:
 	lda	<REP_KEY
 .set:
-	sta	<REP_NEW		; ƒŠƒs[ƒg‚É‚æ‚è ON/OFF ‚³‚ê‚é‰Ÿ‰ºó‘Ô
+	sta	<REP_NEW		; ãƒªãƒ”ãƒ¼ãƒˆã«ã‚ˆã‚Š ON/OFF ã•ã‚Œã‚‹æŠ¼ä¸‹çŠ¶æ…‹
 	rts
 
 	;----------------------------------------------------------------------
-	; 4 ‰ñ“Çž‚Ý”Å - 1 ‰ñ•ªƒTƒu
+	; 4 å›žèª­è¾¼ã¿ç‰ˆ - 1 å›žåˆ†ã‚µãƒ–
 	;----------------------------------------------------------------------
-	; ‚±‚¿‚ç‚Ì”Å‚Í 2 ƒtƒŒ[ƒ€ŠÔ‚Å‚Ì”äŠr‚ðs‚í‚È‚¢‚½‚ßA
-	; ”½‰ž‚ª—Ç‚­‚È‚Á‚ÄŠù‘¶‚ÌƒQ[ƒ€ƒoƒ‰ƒ“ƒX‚É‰e‹¿‚ªo‚Ä‚µ‚Ü‚Á‚½B
-	; ‚»‚Ì‚½‚ßA‚â‚Þ‚È‚­Žg—p‚µ‚È‚¢‚±‚Æ‚Æ‚È‚Á‚½B
+	; ã“ã¡ã‚‰ã®ç‰ˆã¯ 2 ãƒ•ãƒ¬ãƒ¼ãƒ é–“ã§ã®æ¯”è¼ƒã‚’è¡Œã‚ãªã„ãŸã‚ã€
+	; åå¿œãŒè‰¯ããªã£ã¦æ—¢å­˜ã®ã‚²ãƒ¼ãƒ ãƒãƒ©ãƒ³ã‚¹ã«å½±éŸ¿ãŒå‡ºã¦ã—ã¾ã£ãŸã€‚
+	; ãã®ãŸã‚ã€ã‚„ã‚€ãªãä½¿ç”¨ã—ãªã„ã“ã¨ã¨ãªã£ãŸã€‚
 .read:
 	lda	#1			; 2
 	sta	<KEY_NEW		; 3
@@ -133,11 +153,13 @@ KEY_RTN:
 	bcc	.read_loop		; 3x
 					;-1
 	lda	<KEY_NEW		; 3
-	nop				; 2  ’²®—p
+	nop				; 2  èª¿æ•´ç”¨
 	rts				; 6  (153)
 
 	;----------------------------------------------------------------------
 ;;	Align	16
+;/// @brief Direction lookup table: key bits to `KDIR_*`.
+;/// @ingroup gamerom
 ro_keytable:		;2143
 	.db	%0000	;----
 	.db	%0001	;---R

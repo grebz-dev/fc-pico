@@ -1,16 +1,19 @@
+;/// @file defGame.h
+;/// @brief Application step codes and sprite constants.
+;/// @ingroup bootrom
 
 ;----------------
-; ŠeíP’è‹`
+; å„ç¨®På®šç¾©
 ;----------------
-SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
+SP_CLR_Y	EQU 240   ;///< Y coordinate that parks a sprite off screen. ; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚¯ãƒªã‚¢ãƒ¼Y
 
 ;----------------
-; STEP’è‹`
+; STEPå®šç¾©
 ;----------------
-ST_INIT		EQU	 0	; ‰Šú‰»
-;ST_EXA00	EQU	 1	; Šg’£ƒVƒXƒeƒ€‹N“®ƒ`ƒFƒbƒN
-ST_MAIN		EQU	 2
+ST_INIT		EQU	 0   ;///< Application step: initialisation. ; åˆæœŸåŒ–
+;ST_EXA00	EQU	 1	; æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ èµ·å‹•ãƒã‚§ãƒƒã‚¯
+ST_MAIN		EQU	 2   ;///< Application step: main scene. 
 
-ST_MAX		EQU	 7	; ƒXƒeƒbƒv‚ÌÅ‘å’l
+ST_MAX		EQU	 7   ;///< Number of application steps. ; ã‚¹ãƒ†ãƒƒãƒ—ã®æœ€å¤§å€¤
 
 

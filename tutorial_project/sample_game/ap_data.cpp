@@ -2,6 +2,19 @@
     ap_data.cpp
  */
 
+/**
+ * @file ap_data.cpp
+ * @brief Where the resource archive and the 3D model data land in flash.
+ * @ingroup sample_app
+ *
+ * Includes the generated `res/resdata.c` -- the packed archive of boot ROM, game
+ * ROM, music, artwork and licence pages -- plus one generated `.c` per 3D model.
+ * The models are separate arrays rather than archive entries because they are
+ * linked structures, not opaque blobs.
+ *
+ * @see @ref generated_resources
+ */
+
 #include "ap_data.h"
 
 #include "res/resdata.c"
@@ -19,8 +32,8 @@
 #include "res/mdl_bullet.c"
 
 
-const unsigned char *_font;
-const unsigned char *_acOBJ;
+const unsigned char *_font;  ///< Resolved by initResData(); declared in ap_data.h.
+const unsigned char *_acOBJ; ///< Resolved by initResData(); declared in ap_data.h.
 
 
 void initResData() {
@@ -28,6 +41,16 @@ void initResData() {
 	_font = getResData( CHR_FONT );
 }
 
+/**
+ * @brief Selects which archive a resource id refers to.
+ * @param resid Resource id; `resid / 10000` picks the archive, 0 being the one
+ *              linked into the firmware and anything else #RES_DATA_ADR.
+ * @return Pointer to the archive's index table: pairs of `int`, offset then size,
+ *         one pair per entry, in `binlink.lst` order.
+ * @note The offsets are relative to the start of the archive, which is why the
+ *       table pointer doubles as the base pointer in getResData().
+ * @ingroup sample_app
+ */
 int*  getResHead( int resid ) {
 	int sel = resid / 10000;
 	if ( sel == 0 ) {
