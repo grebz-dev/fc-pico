@@ -1,0 +1,57 @@
+name: doom-sim
+
+on:
+  push:
+    paths: ['doom/fcbus/**', 'doom/sim/**', '.github/workflows/doom-sim.yml']
+  pull_request:
+    paths: ['doom/fcbus/**', 'doom/sim/**']
+  workflow_dispatch:
+
+jobs:
+  pioemu:
+    name: PIO program tests (pioemu)
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: python3 -m pip install rp2040-pio-emulator adafruit-circuitpython-pioasm pytest
+      - run: python3 -m pytest doom/sim/pioemu -q
+
+  fullchip:
+    name: Full-chip simulation (rp2040js, RP2040 build of the test pattern)
+    runs-on: ubuntu-24.04
+    continue-on-error: true          # optional level; flip to false once stable (plan/09 L5)
+    env:
+      PICO_SDK_TAG: "2.1.1"
+      ARM_GCC_RELEASE: "13.2.Rel1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - uses: actions/cache@v4
+        id: sdk-cache
+        with:
+          path: pico-sdk
+          key: pico-sdk-${{ env.PICO_SDK_TAG }}-v1
+      - if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$PICO_SDK_TAG" https://github.com/raspberrypi/pico-sdk.git
+          git -C pico-sdk submodule update --init --depth 1
+      - uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: ${{ env.ARM_GCC_RELEASE }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+      - name: Build RP2040 variant of the test-pattern firmware
+        run: |
+          sudo apt-get update && sudo apt-get install -y cmake ninja-build
+          cmake -S doom -B build-rp2040 -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DPICO_SDK_PATH="$PWD/pico-sdk" -DPICO_BOARD=pico -DPICO_PLATFORM=rp2040
+          cmake --build build-rp2040 --target fcpico_testpattern
+      - name: Run the virtual PPU bus against the firmware
+        working-directory: doom/sim/fullchip/rp2040js
+        run: |
+          npm ci
+          npm test -- --uf2 ../../../../build-rp2040/port/fcpico_testpattern.uf2 --frames 3
