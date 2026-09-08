@@ -1,0 +1,4 @@
+[submodule "doom/rp2040-doom"]
+	path = doom/rp2040-doom
+	url = https://github.com/grebz-dev/rp2040-doom.git
+	branch = claude/doom-fc-pico-nes-2bb1bx
