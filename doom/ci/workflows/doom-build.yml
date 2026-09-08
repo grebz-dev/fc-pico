@@ -1,0 +1,137 @@
+name: doom-build
+
+on:
+  push:
+    paths: ['doom/**', '.github/workflows/doom-build.yml']
+  pull_request:
+    paths: ['doom/**']
+  workflow_dispatch:
+
+env:
+  PICO_SDK_TAG: "2.1.1"
+  PICOTOOL_TAG: "2.1.1"
+  ARM_GCC_RELEASE: "13.2.Rel1"
+
+jobs:
+  firmware:
+    name: RP2350 firmware
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true          # doom/rp2040-doom only; tinyusb is not needed
+      - name: Workflow templates are in sync
+        run: diff -r doom/ci/workflows .github/workflows
+      - name: Cache pico-sdk
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: pico-sdk
+          key: pico-sdk-${{ env.PICO_SDK_TAG }}-v1
+      - name: Fetch pico-sdk
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$PICO_SDK_TAG" https://github.com/raspberrypi/pico-sdk.git
+          git -C pico-sdk submodule update --init --depth 1
+      - uses: carlosperate/arm-none-eabi-gcc-action@v1
+        with:
+          release: ${{ env.ARM_GCC_RELEASE }}
+      - name: Host packages
+        run: sudo apt-get update && sudo apt-get install -y cmake ninja-build python3 python3-pip
+      - name: Configure (rp2350, MinSizeRel)
+        run: >
+          cmake -S doom -B build-rp2350 -G Ninja
+          -DCMAKE_BUILD_TYPE=MinSizeRel
+          -DPICO_SDK_PATH="$PWD/pico-sdk"
+          -DPICO_BOARD=fcpico -DPICO_PLATFORM=rp2350-arm-s
+          -DPICOTOOL_FETCH_FROM_GIT_PATH="$PWD/picotool-src"
+      - name: Build
+        run: cmake --build build-rp2350 --target fcpico_testpattern fcpico_doom
+      - name: Generated protocol files are fresh
+        run: python3 doom/tools/gen_protocol.py --check
+      - name: Flash layout check and size report
+        run: |
+          python3 doom/tools/flash_layout_check.py build-rp2350/port/fcpico_doom.elf | tee size-report.txt
+          arm-none-eabi-size -A build-rp2350/port/fcpico_doom.elf >> size-report.txt
+          arm-none-eabi-nm --size-sort -S build-rp2350/port/fcpico_doom.elf | tail -40 >> size-report.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fcpico-firmware
+          path: |
+            build-rp2350/port/*.uf2
+            build-rp2350/port/*.elf
+            build-rp2350/port/*.map
+            size-report.txt
+
+  host:
+    name: Host build, unit tests, goldens
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: true
+      - name: Cache pico-sdk
+        id: sdk-cache
+        uses: actions/cache@v4
+        with:
+          path: pico-sdk
+          key: pico-sdk-${{ env.PICO_SDK_TAG }}-v1
+      - name: Fetch pico-sdk
+        if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$PICO_SDK_TAG" https://github.com/raspberrypi/pico-sdk.git
+          git -C pico-sdk submodule update --init --depth 1
+      - name: Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libsdl2-dev libsdl2-mixer-dev libsdl2-net-dev libpng-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r doom/tools/requirements.txt
+      - name: Configure (host)
+        run: >
+          cmake -S doom -B build-host -G Ninja
+          -DCMAKE_BUILD_TYPE=RelWithDebInfo
+          -DPICO_SDK_PATH="$PWD/pico-sdk" -DPICO_PLATFORM=host
+          -DFCPICO_BUILD_TESTS=ON
+      - name: Build
+        run: cmake --build build-host
+      - name: Unit tests (ctest)
+        run: ctest --test-dir build-host --output-on-failure
+      - name: Python tests
+        run: python3 -m pytest doom/tests -q
+      - name: Demo golden run (L2/L3)
+        run: |
+          mkdir -p out
+          build-host/rp2040-doom/src/fcpico_doom_host --whx doom/rp2040-doom/doom1.whx --demo 1 --frames 600 --lockstep --dump-stream out
+          python3 doom/tests/goldens/check.py out
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: host-demo-frames
+          path: out/*.png
+
+  bootrom:
+    name: 6502 boot ROM
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Wine (32-bit) for nesasm.exe
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+          sudo apt-get install -y wine32:i386 python3-pip
+          python3 -m pip install py65 pytest
+      - name: Toolchain gate -- re-assemble the tutorial ROM with a pinned stamp
+        run: doom/bootrom/ci/tutorial_md5_gate.sh   # expects rom.NES MD5 B6CD675342B6C8AD79E537E2C9860579
+      - name: Build the Doom boot ROM twice and compare
+        run: |
+          doom/bootrom/build.sh && cp doom/bootrom/out/doom.nes /tmp/a.nes
+          doom/bootrom/build.sh && cmp /tmp/a.nes doom/bootrom/out/doom.nes
+      - name: Fix bank unchanged
+        run: python3 doom/tools/nes/check_fixbank.py doom/bootrom/out/doom.nes tutorial_project/BOOTROM/bootrom_fixr.bin
+      - name: NMI cycle budget and register order (py65)
+        run: python3 -m pytest doom/tests/bootrom -q
+      - uses: actions/upload-artifact@v4
+        with:
+          name: doom-bootrom
+          path: doom/bootrom/out/

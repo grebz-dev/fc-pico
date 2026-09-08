@@ -34,6 +34,7 @@ and what FC PICO changes.
 | `tutorial_project/mml/` | Music sources (NSD.Lib MML) and the compiler that turns them into an NSF. |
 | `tutorial_project/rom/` | Cartridge flashing via `anago`. |
 | `tools/doxygen/` | Documentation tooling. |
+| `doom/` | Plan (and, as work proceeds, sources) for running Doom on the cartridge; see @ref doom_port. `doom/rp2040-doom/` is a git submodule. |
 
 ## Where to start
 
@@ -54,6 +55,7 @@ Then, by task:
 - Setting up a toolchain -> @ref dev_setup
 - Editing the sources -> @ref conventions
 - Reading the shipped game rather than the tutorial -> @ref sample_game
+- Running Doom on the cartridge (plan) -> @ref doom_port
 
 ## Building
 
