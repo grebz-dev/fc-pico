@@ -1,4 +1,7 @@
-# bootrom -- the Doom boot ROM for the console (planned)
+# bootrom -- the Doom boot ROM for the console
+
+Present now: `version.inc` (the build stamp) and `gen/protocol.inc` (generated from
+`fcbus/fcbus_protocol.h`). The assembly sources are task P2-T1.
 
 A new erasable bank (`$8000`-`$EFFF`) assembled with `nesasm 2.51+autozp` (run under Wine on
 Linux), derived from `tutorial_project/BOOTROM/` at task P2-T1. The permanent fix bank

@@ -70,6 +70,53 @@ model to reproduce 15,490 exactly. Until then the model is parameterised
 (`reads_per_line`, `head_words`, `line_stride_words`) and the defaults reproduce the firmware's
 buffer layout.
 
+### Prior-art evidence (read from the sources, no hardware)
+
+**PiPU / NES DOOM** (`rasteri/PiPU`, GPL; the origin of the technique) drives the *whole*
+PPU bus from an FX2LP with no console VRAM, so it answers every fetch. Its frame structure
+(`ppusquirt/nesstuff.h`) is the clearest statement of the fetch order:
+
+```
+PPUScanline = tiles[32] (NT, AT, low, high each) + sprites[8] + nexttiles[2] + 2 unused NT fetches = 170 bytes
+PPUFrame    = ScanLines[241] + OtherData[32]                                                   = 41002 bytes
+```
+
+and `FitFrame()` places a line's first two tiles into the *previous* scanline's
+`nexttiles` and tiles 2..31 into `tiles[0..29]`, i.e. the stream is the linear sequence
+tile 0, 1, 2, ..., 33 per line (tiles 32 and 33 are fetched but never displayed). That is
+exactly `convVram()`'s 34-word stride. PiPU's NES program reads its 32-byte block with one
+dummy read plus nine extra reads "to flush the FIFO", writes the pad byte three times to
+`$21C0`, and sets a palette per 8x1 slice through the *attribute byte in the stream* -- which
+FC PICO cannot do, because its attribute fetches come from console VRAM.
+
+Counting pattern-space reads in that structure gives 34 x 2 = 68 per line (sprite fetches
+excluded, they hit `$1000`), 241 x 68 = 16,388 per frame, versus the 15,425 that
+`PPU_COUNT_VAL` implies for the picture. The difference is 963 = 241 x 4 - 1: **exactly one
+two-tile pair per line goes uncounted** -- either the two prefetch tiles (dots 321-336) or
+the two off-screen tiles (dots 241-256). Which one, and why, is what the P0-T9 trace must
+show (hypotheses: the board's CS1 decode is gated during that slot; the PIO `jmp PIN`
+samples CS1 before it is valid there; the PPU's `/RD` is not asserted for those fetches on
+this signal). The stream *layout* is unaffected either way: the tutorial firmware works with
+the 34-word stride, so the PPU consumes 34 words per line from the DMA regardless of what
+the counter sees. The model in 09 therefore separates "bytes consumed per line" (34 words,
+fixed) from "reads counted per line" (parameter, default 64).
+
+**Sync alternative.** PiPU's FX2 does not count at all: it measures the time since `/RD`
+last fell and, when the gap exceeds a threshold (`countUp > 50` iterations), treats it as
+vertical blank and resets its FIFO to the frame start. The vblank gap (no pattern fetches
+from the end of line 239 until the NMI's `$2007` reads) is easy to see from a PIO program.
+This is recorded in 11 (R1) as the fallback if the count-based sync proves fragile.
+
+**FC PICO GB** (`axsann/FC_PICO_GB`, the second implementation on this board) confirms
+`PPU_COUNT_VAL = 15426 + FC_COM_BUF_SIZE` with a 16-byte mailbox (15,442), the same
+34-word/31-head layout, and the same DMA re-arm window, though it accepts counts in
+`[VAL-2, VAL]` rather than `[VAL-2, VAL+2]`. It overclocks to 276 MHz with
+`vreg_set_voltage(VREG_VOLTAGE_1_15)` and `set_sys_clock_pll(1656 MHz, 6, 1)`, runs
+everything on core 0, and for audio sends only *changed* APU registers per frame, with a
+rule that avoids retriggering notes: `$4003/$4007/$400B/$400F` are rewritten only when the
+channel was not written in the previous frame (a new note) or when the period bits changed
+(`docs`: "連続書き込み ... スキップ (クリック回避)"). `fcapu` adopts the same rule.
+
 ## Console-side budgets for Doom
 
 | Resource | Budget | Where it goes |

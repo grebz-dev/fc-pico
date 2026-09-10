@@ -1,4 +1,7 @@
-# port -- firmware entry point and board glue (planned)
+# port -- firmware entry point and board glue
+
+Present now: `flash_layout.h` (the single source of truth for flash addresses; checked by
+`tools/flash_layout_check.py`). Everything else below is planned.
 
 `main.c` (clock/voltage, `stdio`, launching the engine), `flash_layout.h` (the single source
 of truth for flash addresses), `cli.c` (serial debug CLI: `stats`, `pattern`, `trace`, `dump`),

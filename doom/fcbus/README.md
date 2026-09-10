@@ -1,11 +1,14 @@
-# fcbus -- the cartridge bus library (planned)
+# fcbus -- the cartridge bus library
 
 Plain-C, pico-sdk implementation of the FC PICO cartridge bus, wire-compatible with the shipped
 v1 protocol and extended to v2. Specification: `../plan/02-architecture.md`,
 `../plan/03-protocol-v2.md`; origin: `tutorial_project/tuto1_hw/sys/{rp_system,rp_dma}.*` and
 `sys/pio/fcppu.pio` (copied verbatim here at task P0-T5).
 
-Planned files:
+Present now: `fcbus_protocol.h` (the single source of truth, task P0-T4) and `fcppu.pio`
+(byte-identical copy of `tutorial_project/tuto1_hw/sys/pio/fcppu.pio`; a CI step diffs the two).
+
+Files:
 
 | File | Role |
 |------|------|
