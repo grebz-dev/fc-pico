@@ -26,6 +26,7 @@ Numbers the design has to respect. Each row says where it comes from. Rows marke
 | NMI entry + `rti` | ~13 cycles | |
 | `$2007` read/write | 4 cycles each (`lda abs` / `sta abs`) | plus 3 for the paired zero-page store/load |
 | Sprite DMA (`$4014`) | 513-514 cycles | **not needed by Doom** -- reclaimed |
+| Tutorial NMI, measured with py65 (`tests/bootrom/`) | 577 cycles vblank-critical (dummy + 64 mailbox reads, reply, PPU registers); 1149 total with sprite DMA and no APU pairs; **1724 total worst case** (24 pairs + sprite DMA); APU replay 23.7 cycles per pair | `tests/bootrom/tutorial_nmi_cycles.json`; entry sequence (7) included; DMA stall modelled as +513 |
 | Controller read (4x majority vote, fix bank `BR_KEY_RTN`) | ~650 cycles | runs in the main loop, not the NMI |
 | Handshake spin (`PICO_COM_WAIT`) | 256 x (`dex` 2 + `bne` 3) = 1280 cycles = **0.72 ms** | `docs/pages/protocol.md` says "roughly 1.3 ms"; the arithmetic says 0.72 ms. Treat 0.7 ms as the budget for any cartridge response. |
 | PPU bus timing | Each PPU memory access spans 2 dots (~372 ns); /RD is asserted for roughly one dot (~186 ns). The cartridge must turn the bus around and present data inside that window. | nesdev wiki "PPU rendering" (verify; site was unreachable when this was written) |
@@ -121,7 +122,7 @@ channel was not written in the previous frame (a new note) or when the period bi
 
 | Resource | Budget | Where it goes |
 |----------|--------|---------------|
-| NMI, NTSC | 2273 cycles, target **<= 1900** used (15% margin) | mailbox read at 7 cycles/byte, attribute write at 7 cycles/byte, palette write, APU replay at ~16 cycles/pair, register restore |
+| NMI, NTSC | 2273 cycles, target **<= 1900** used (15% margin) | mailbox read at 7 cycles/byte, attribute write at 7 cycles/byte, palette write, APU replay at 24 cycles/pair (measured), register restore |
 | Main loop | everything else (~27,500 cycles/frame) | controller read (650), command execution, bulk data mode when requested |
 | Zero page | fully allocated in the tutorial ROM; the Doom ROM reallocates from scratch | 03, 07 |
 | PRG | 32 KB: `$8000`-`$ECFF` free for Doom code + DPCM, `$ED00`-`$EFFF` fixed, `$F000`+ untouchable | 07 |
