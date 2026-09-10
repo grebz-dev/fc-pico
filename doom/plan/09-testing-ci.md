@@ -165,10 +165,15 @@ runs the **real boot ROM**; a custom mapper forwards the cartridge's side of the
 | S5 | save/load | save in E1M1, reset, load; `SAVING` video type shows the frozen frame; no DMA under-run |
 | S6 | soak (nightly) | 100,000 frames of demos looping; counters: resyncs, drops, conversion max |
 
-Lua API used: `emu.addEventCallback(fn, emu.eventType.endFrame)`, `emu.addMemoryCallback(fn,
-emu.callbackType.write, 0x4000, 0x4017)` and `callbackType.exec` on the `rti`, `emu.getState()`
-(scanline), `emu.read()`, `emu.setInput()`, `emu.takeScreenshot()`, `emu.log()`, `emu.exit(code)`.
-Verify exact names against the pinned Mesen2's `LuaDocumentation.json`.
+Lua API (names verified against Mesen2's `UI/Debugger/Documentation/LuaDocumentation.json`):
+`emu.addEventCallback(fn, eventType)`, `emu.addMemoryCallback(fn, callbackType, startAddress,
+endAddress, cpuType, memoryType)` (write callbacks on `$4000`-`$4017`, exec callbacks on the
+NMI's `rti`), `emu.read(address, memoryType)` with memory types `nesMemory`, `nesPpuMemory`
+and their side-effect-free `nesDebug` / `nesPpuDebug` variants (use the debug variants for
+assertions so the model's read counter is not disturbed), `emu.setInput(table, port, subPort)`,
+`emu.getState()` (PPU scanline/cycle), `emu.takeScreenshot()` / `emu.getScreenBuffer()`,
+`emu.log(text)`, and `emu.stop(exitCode)` to end a `--testRunner` run (the command-line help
+text refers to it as `emu.exit`; use whichever the pinned build accepts, and pin the build).
 
 ### CI
 
@@ -197,6 +202,64 @@ Checklist per milestone lives in `10-workplan.md`; results are appended to
 `doom/HARDWARE-LOG.md` by the human running the session (template provided). An agent that
 cannot run hardware records what it needs in `doom/HARDWARE-REQUESTS.md` and continues with
 everything that does not depend on it (see 12).
+
+### The trace sampler (P0-T9), concretely
+
+A second PIO block samples the three strobes at a fixed rate into RAM; no timestamps needed.
+
+```
+.program fctrace            ; PIO1 SM0, in-base = GPIO 17, clkdiv chosen for a 40 ns sample period
+.wrap_target
+    in pins, 5              ; GP17 CS1, GP18 PA12(nc), GP19 PA13(nc), GP20 /RD, GP21 /WR
+.wrap                       ; autopush at 30 bits: 6 samples per word
+```
+
+DMA the RX FIFO into a 64K-word buffer (the test-pattern firmware has the RAM), trigger on
+the heartbeat so the capture starts at a known point, stop when full (~15.7 ms at 40 ns, one
+frame less the vblank tail; capture twice with a half-frame offset to cover everything).
+`tools/trace_decode.py` reconstructs, per frame: every `/RD` falling edge with its CS1 level
+and the interval to the previous edge, runs of 2-dot-spaced qualifying reads (a tile pair),
+the per-line count of qualifying reads, the vblank gap, and the `$2007` write and read
+bursts. The deliverable is the per-line count and the *timing position* of any uncounted
+pair (see 01, "Prior-art evidence").
+
+### Vblank-gap synchronisation (fallback, from PiPU)
+
+If the count-based sync misbehaves on some consoles, the same sampler logic gives a second
+sync source: a PIO program that raises an interrupt when `/RD` has been idle for longer than
+any in-picture gap (the sprite-fetch window is 64 dots ~ 12 us; the vblank gap is > 1 ms).
+The ISR then restarts the DMA at the gap instead of at the controller packet, and the count
+becomes a check rather than the trigger. Recorded as R1's mitigation in 11; not planned
+unless needed.
+
+### The Mesen2 mapper, concretely
+
+```cpp
+class FcPico : public BaseMapper {
+    fcpico_cart_t *_cart; uint16_t _cs1_mask = 0xE000;   // pattern space: (addr & mask) == 0
+    uint16_t GetPrgPageSize() override { return 0x8000; }
+    uint16_t GetChrPageSize() override { return 0x2000; }
+    uint32_t GetChrRamSize() override { return 0x2000; } // never read: every pattern fetch is intercepted
+    bool EnableCustomVramRead() override { return true; }
+    void InitMapper() override { SelectPrgPage(0, 0); SelectChrPage(0, 0);
+                                 _cart = fcpico_cart_create(getenv("FCPICO_CART_MODE"), getenv("FCPICO_WHX")); }
+    uint8_t MapperReadVram(uint16_t addr, MemoryOperationType type) override {
+        if ((addr & _cs1_mask) == 0 && IsRealPpuRead(type))       // rendering fetches and CPU $2007 reads, not debugger peeks
+            return fcpico_cart_ppu_read(_cart);
+        return InternalReadVram(addr);                             // nametables/attributes from CIRAM as on hardware
+    }
+    void MapperWriteVram(uint16_t addr, uint8_t value) override {
+        if ((addr & _cs1_mask) == 0) fcpico_cart_ppu_write(_cart, value);   // $2007 writes to the port
+        else InternalWriteVram(addr, value);
+    }
+};
+```
+
+`fcpico_cart_ppu_write()` runs the `fcbus` dispatcher; on a heartbeat it performs the
+ISR-equivalent synchronously (count check, buffer swap) before returning, so the next
+`ppu_read` already comes from the new stream. `_cs1_mask` becomes a runtime parameter once
+P0-T10 has established the real decode. The `.nes` image is `doom.nes` with its header's mapper
+field rewritten to the private number (`tools/nes/set_mapper.py`); the PRG bytes are untouched.
 
 ## GitHub Actions
 

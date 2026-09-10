@@ -121,9 +121,10 @@ in the fcpico target.
                                               --(sfx2apu.py --auto / hand .sfx)--> script
 ```
 
-- **FamiStudio** (MIT, cross-platform, has a command-line mode: MIDI import and VGM/NSF/engine
-  exports -- confirm the exact `midi-import` / `vgm-export` option names against the current
-  docs, which were unreachable when this was written) is the arranging tool. Its project files
+- **FamiStudio** (MIT, cross-platform; command-line form `FamiStudio <input> <command>
+  <output> [-options]`, full option list via its `-help`; the docs site was unreachable when
+  this was written, so P4-T3 records the exact `midi-import`, `.ftm` import and `vgm-export`
+  option names in this section) is the arranging tool. Its project files
   (`.fms`) are checked in under `doom/assets/music/` so arrangements are reproducible; a human
   can improve them in the GUI without touching code.
 - `vgm2apus.py` converts the VGM register log (frame-accurate for NES) into the stream format,
@@ -143,6 +144,46 @@ in the fcpico target.
 
 Music needed for the shareware episode: `D_E1M1`-`D_E1M9`, `D_INTER`, `D_INTRO`, `D_INTROA`,
 `D_VICTOR`, `D_BUNNY` (13 streams). At ~2-6 KB each after thinning they fit in firmware flash.
+
+## Existing arrangements to start from
+
+`rasteri/PiPU` (GPL) ships `music/DOOM.ftm`, a FamiTracker module with eight Doom songs
+arranged for the 2A03: **Intro, Inter, E1M1, E1M2, E1M3, E1M4, E2M1, E3M1** (plus `DOOM.nsf`
+and a `famitone`-style driver on the NES side). FamiStudio imports `.ftm`, so P4-T4 starts by
+importing that module, exporting VGM per song and converting with `vgm2apus.py`; only
+`D_E1M5`-`D_E1M9`, `D_VICTOR` and `D_BUNNY` need new arrangements (auto or human). Licensing:
+the module is distributed under the repository's GPL; reusing it in this GPLv2/GPLv3-mixed
+firmware is compatible, with attribution to Andrew Tait in `LICENSES.md` (decision H6 still
+applies to taste). Verify the songs' completeness by listening once in FamiStudio.
+
+## Note-retrigger rule (from FC PICO GB)
+
+When the sequencer emits register writes from a per-frame register image (the VGM path
+produces one), rewriting `$4003/$4007/$400B/$400F` restarts the envelope and the length
+counter and produces an audible click. FC PICO GB's rule, adopted here: write the
+high-period register only when (a) the channel was not written in the previous frame -- a
+new note -- or (b) the period bits (`$4003` bits 0-2 and `$4002`) changed. Volume/duty
+(`$4000`) and sweep (`$4001`) are written whenever they change. `vgm2apus.py` applies the rule
+offline so the stream already contains only necessary writes.
+
+## `.apus` stream format
+
+```
+offset  size  field
+0       4     magic "APUS"
+4       1     version = 1
+5       1     flags: bit0 PAL timing (period table), bit1 reserved
+6       2     loop_frame (little endian; 0xFFFF = no loop)
+8       4     frame_count
+12      4     body_len
+16      ...   body
+body:   frame := count(u8: 0..15) then count x (reg u8 in 0..0x17, value u8)
+        | silence(u8: 0x80 | k, k in 1..127 frames with no writes)
+```
+
+`count <= 12` is enforced by the tool so that 3-4 pairs per frame remain for effects under the
+v2 cap of 15 pairs (`APU_PAIRS_MAX_V2`). Streams are stored in flash as `const uint8_t[]`
+via `respack.py`; the sequencer reads them with a byte cursor and no decompression.
 
 ## Tests
 
