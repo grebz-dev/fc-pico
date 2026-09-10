@@ -102,6 +102,17 @@ the 34-word stride, so the PPU consumes 34 words per line from the DMA regardles
 the counter sees. The model in 09 therefore separates "bytes consumed per line" (34 words,
 fixed) from "reads counted per line" (parameter, default 64).
 
+**A four-byte prelude from the PIO itself.** `fcppu_r` starts with `mov osr, null`, and
+`pio_sm_restart()` (called in `ppu_dma()` at every re-arm) clears the OSR and its shift
+counter. In both cases the OSR is "full" of zeros, so the first four `out pins, 8` after a
+re-arm emit `0x00` from the OSR before the first autopull takes a word from the DMA buffer --
+pioemu reproduces this (`sim/pioemu/test_fcppu_r.py`, the cold-start test) and the RP2040
+datasheet's description of `SM_RESTART` and `MOV OSR` implies it. The two manual
+`out pins, 8` nudges in `ppu_dma()` consume from this prelude. Consequence for the model:
+the stream the PPU sees is `[4 x 0x00] + buffer`, which is a two-word offset relative to the
+buffer indices and part of why line 0 sits at word 31 rather than a round number. The
+`ppubus` model carries this as `osr_prelude_bytes` (default 4) alongside the per-line count.
+
 **Sync alternative.** PiPU's FX2 does not count at all: it measures the time since `/RD`
 last fell and, when the gap exceeds a threshold (`countUp > 50` iterations), treats it as
 vertical blank and resets its FIFO to the frame start. The vblank gap (no pattern fetches
