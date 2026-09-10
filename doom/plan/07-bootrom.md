@@ -95,7 +95,11 @@ and only then anything that can spill past vblank.
 
 The APU replay after the PPU work may legally spill past the end of vblank (APU registers are
 not rendering-sensitive), so the real constraint is the 1595-cycle critical section, which has
-a 30% margin. If measurement (P2-T3) shows the critical section over 1900 cycles, options in
+a 30% margin. The per-item costs above are validated by measurement: the py65 harness in
+`tests/bootrom/` reports the tutorial NMI at 577 critical cycles for 65 `$2007` reads plus
+reply and register restore (7.0 cycles per read byte, as budgeted), 23.7 cycles per APU pair,
+and 1724 cycles total in its worst case (24 pairs, sprite DMA on). The same harness runs
+against `doom.nes` unchanged once it exists (P2-T2). If measurement (P2-T3) shows the critical section over 1900 cycles, options in
 order: read the attribute block only when `ATTR_VALID` (the cartridge knows what it sent and
 adjusts the expected read count: v2.1), send half the attribute table per frame, drop the
 palette block (send palettes through `PF_COM_VRAM` pokes).
