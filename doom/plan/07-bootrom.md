@@ -106,6 +106,125 @@ possible. Nothing after the packet may touch `$2006`/`$2007`.
 `jobPICO` (v1 command executor: `PF_COM_DMOD`, fades, VRAM pokes) runs from the main loop as
 in the tutorial, reading the first 16 mailbox bytes.
 
+### The v2 NMI, as nesasm (draft to be assembled in P2-T2)
+
+Names come from `gen/protocol.inc`; `RCV_PICO_BUF` is the tutorial's unrolled 8-byte read
+macro, `SND_PICO_BUF` its mirror image (8 x `lda <zp / sta $2007`).
+
+```asm
+NMI:
+	bit  $2002                 ; clear vblank flag, reset the $2005/$2006 toggle
+	sta  <NMI_SVA
+	incw <SYS_TIMER
+	lda  <NMI_FLG              ; re-entrancy guard
+	beq  .ok
+	lda  <NMI_SVA
+	rti
+.ok
+	inc  <NMI_FLG
+	stx  <NMI_SVX
+	sty  <NMI_SVY
+
+	; 1. mailbox: 128 bytes from the cartridge port ($2006/$2007 traffic first)
+	SET_VRAM_ADD2 #$0800
+	lda  $2007                 ; mandatory dummy read
+	RCV_PICO_BUF  MBX_ZP_LO+$00 ; bytes 0..7   -> $20..$27
+	RCV_PICO_BUF  MBX_ZP_LO+$08
+	RCV_PICO_BUF  MBX_ZP_LO+$10
+	RCV_PICO_BUF  MBX_ZP_LO+$18
+	RCV_PICO_BUF  MBX_ZP_LO+$20
+	RCV_PICO_BUF  MBX_ZP_LO+$28
+	RCV_PICO_BUF  MBX_ZP_LO+$30
+	RCV_PICO_BUF  MBX_ZP_LO+$38 ; bytes 56..63 -> $58..$5F
+	RCV_PICO_BUF  MBX_ZP_HI+$00 ; bytes 64..71 -> $C0..$C7 (attribute table)
+	RCV_PICO_BUF  MBX_ZP_HI+$08
+	RCV_PICO_BUF  MBX_ZP_HI+$10
+	RCV_PICO_BUF  MBX_ZP_HI+$18
+	RCV_PICO_BUF  MBX_ZP_HI+$20
+	RCV_PICO_BUF  MBX_ZP_HI+$28
+	RCV_PICO_BUF  MBX_ZP_HI+$30
+	RCV_PICO_BUF  MBX_ZP_HI+$38 ; bytes 120..127 -> $F8..$FF
+
+	; 2. validity: a torn mailbox is neither applied nor executed
+	lda  <MBX_ZP_LO+MBX_MAGIC
+	cmp  #PF_MAGIC_CODE
+	beq  .valid
+	lda  #0
+	sta  <MBX_ZP_LO+MBX_CMD    ; PF_COM_NONE, so jobPICO runs nothing
+	sta  <MBX_ZP_LO+MBX_FLAGS
+	beq  .no_vram
+.valid
+	; 3. attribute table, 64 bytes
+	lda  <MBX_ZP_LO+MBX_FLAGS
+	and  #MBX_FLAG_ATTR_VALID
+	beq  .no_attr
+	SET_VRAM_ADD2 #$23C0
+	SND_PICO_BUF  MBX_ZP_HI+$00
+	SND_PICO_BUF  MBX_ZP_HI+$08
+	SND_PICO_BUF  MBX_ZP_HI+$10
+	SND_PICO_BUF  MBX_ZP_HI+$18
+	SND_PICO_BUF  MBX_ZP_HI+$20
+	SND_PICO_BUF  MBX_ZP_HI+$28
+	SND_PICO_BUF  MBX_ZP_HI+$30
+	SND_PICO_BUF  MBX_ZP_HI+$38
+.no_attr
+	; 4. BG palette, 16 bytes
+	lda  <MBX_ZP_LO+MBX_FLAGS
+	and  #MBX_FLAG_PAL_VALID
+	beq  .no_vram
+	SET_VRAM_ADD2 #$3F00
+	SND_PICO_BUF  MBX_ZP_LO+MBX_PAL
+	SND_PICO_BUF  MBX_ZP_LO+MBX_PAL+8
+.no_vram
+
+	; 5. controller packet: the v2 heartbeat, last $2006/$2007 traffic of the frame
+	SET_VRAM_ADD2 #$0800
+	lda  #FP_COM_KEY
+	sta  $2007
+	lda  <KEY_NEW              ; pad 1, from the fix bank's KEY_RTN in the main loop
+	sta  $2007
+	lda  <KEY2_NEW             ; pad 2, from KEY_RTN2 in this bank
+	sta  $2007
+
+	; 6. restore t: nametable 0, scroll (0,0); rendering settings
+	lda  <FLG_2000
+	sta  $2000
+	lda  <FLG_2001
+	sta  $2001
+	lda  #0
+	sta  $2005
+	sta  $2005
+	; ---- end of the vblank-critical section ----
+
+	; 7. APU replay: (reg,value) pairs, terminated by a byte with bit 7 set
+	lda  <MBX_ZP_LO+MBX_FLAGS
+	and  #MBX_FLAG_APU_VALID
+	beq  .apu_end
+	ldx  #0
+.apu_loop
+	ldy  <MBX_ZP_LO+MBX_APU,x  ; zp,X: 4 cycles
+	bmi  .apu_end
+	inx
+	lda  <MBX_ZP_LO+MBX_APU,x
+	inx
+	sta  $4000,y               ; abs,Y: 5 cycles
+	cpx  #MBX_APU_LEN
+	bne  .apu_loop
+.apu_end
+
+	; 8. epilogue
+	ldy  <NMI_SVY
+	ldx  <NMI_SVX
+	lda  #0
+	sta  <NMI_FLG
+	lda  <NMI_SVA
+	rti
+```
+
+Cycle accounting per step is the table above; `tests/bootrom/nmi_harness.py` measures the
+real thing once the ROM assembles (the same harness already measures the tutorial NMI, see
+01).
+
 ## Main loop
 
 ```

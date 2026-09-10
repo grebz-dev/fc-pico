@@ -92,9 +92,17 @@ Engine-side changes needed for this to work (documented in the fork's `FCPICO-PO
 | `resources` | -- | `fcres.h` | boot ROM image + music + SFX archive as a C array |
 
 The host build of the engine currently relies on `pico_host_sdl` for `scanvideo`; the fcpico
-host target must not need SDL. P0-T3 verifies that pico-sdk's `host` platform plus the small
-shim in `sim/host_shim/` (threads for `multicore`, semaphores) is enough; if not, the shim grows
-until it is.
+host target must not need SDL. Inspection of pico-sdk 2.1.1 (`src/host/`): the base host
+platform provides `pico_stdlib`, `pico_time` (via `pico_time_adapter`), `hardware_sync`,
+`hardware_gpio`, `hardware_irq`, `hardware_timer`, `hardware_divider`, `pico_printf` and the
+**headers only** of `pico_multicore` (`multicore_launch_core1`, the inter-core FIFO, lockout);
+its README says the implementations of multicore, alarms and audio/scanvideo come from
+`pico-host-sdl`. There is no PIO or DMA on the host, which is why `fcbus` has a separate host
+backend. `sim/host_shim/` therefore implements, with pthreads: `multicore_launch_core1`
+(thread), the FIFO (mutex + condvar queue), `multicore_lockout_*` (no-ops), and whatever
+alarm-pool function the engine reaches (`I_GetTime` uses `time_us_64()`, which the base host
+provides). Semaphores (`pico/sem.h`) and spin locks are common code and work on the host as is.
+P0-T3 confirms the list by linking; nothing else is expected to be missing.
 
 ## Flash layout (`port/flash_layout.h`, checked by `tools/flash_layout_check.py`)
 

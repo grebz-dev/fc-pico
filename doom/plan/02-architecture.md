@@ -140,3 +140,96 @@ lives in the fix bank.
   without recalibrating**).
 - Scrolling. Scroll is always (0,0); `$2005` is written every NMI to keep the address latch
   deterministic.
+
+## API sketches
+
+The seams between modules, as C prototypes. These are the contracts the tasks in 10 implement;
+names are binding, signatures may grow.
+
+### `fcbus/fcbus.h`
+
+```c
+typedef enum { FCBUS_PROTO_UNKNOWN = 0, FCBUS_PROTO_V1 = 1, FCBUS_PROTO_V2 = 2 } fcbus_proto_t;
+typedef enum { FCBUS_ST_IDLE, FCBUS_ST_INIT, FCBUS_ST_RUN, FCBUS_ST_DATA } fcbus_state_t;
+
+typedef struct {
+    const uint8_t *rom_image;      // 32 KB PRG served to FP_COM_VER / FP_COM_ROM (no iNES header)
+    fcbus_proto_t  proto_default;  // what to assume before the first packet (V1)
+    void (*on_init)(uint8_t stage);          // FP_COM_INI received (thread context deferred)
+    void (*on_heartbeat)(void);              // called from the ISR after the DMA decision
+} fcbus_config_t;
+
+typedef struct {
+    uint32_t frames, resyncs, dma_stops, hb_timeouts, torn;
+    uint32_t last_count;           // qualifying reads in the last frame
+    uint16_t count_hist[9];        // VAL-4 .. VAL+4
+    uint32_t isr_max_us;
+} fcbus_stats_t;
+
+void      fcbus_init(const fcbus_config_t *cfg);
+void      fcbus_attach_irq(void);            // on the core that services PIO0_IRQ_0 (core 1)
+fcbus_state_t fcbus_state(void);
+fcbus_proto_t fcbus_proto(void);
+
+// stream and mailbox: the converter writes the back buffer, then publishes
+uint16_t *fcbus_stream_back(void);           // VRAM_BUF_BYTES_V2 bytes, word-addressed
+uint8_t  *fcbus_mailbox_back(void);          // FC_COM_BUF_SIZE_V2 bytes, v1 layout in the first 64
+static inline uint16_t *fcbus_stream_word(uint16_t *buf, int line, int tile)
+    { return buf + VRAM_HEAD_WORDS + line * VRAM_LINE_WORDS + tile; }
+bool      fcbus_back_is_free(void);          // false while a publish is pending
+void      fcbus_publish(void);               // back becomes "next"; the ISR swaps at the heartbeat
+
+// per-frame contributions from other modules (into the back mailbox)
+bool      fcbus_apu_write(uint8_t reg, uint8_t val);   // false when the frame's pair cap is reached
+bool      fcbus_cmd(uint8_t pf_com);                   // PF_COM_DMOD / FDIN / FDOT
+bool      fcbus_cmd_vram(uint16_t addr, uint8_t val);  // PF_COM_VRAM poke (v1 path for attributes)
+void      fcbus_attr_table(const uint8_t attr[64]);    // v2: whole table + ATTR_VALID
+void      fcbus_palette(const uint8_t pal[16]);        // v2: BG palette + PAL_VALID
+
+// inputs latched by the ISR
+uint16_t  fcbus_pads(void);                  // (pad2 << 8) | pad1
+uint32_t  fcbus_frame_no(void);
+
+// bulk data mode (thread context only; blocks; DMA stopped meanwhile)
+bool      fcbus_data_upload(uint16_t vram_addr, const uint8_t *data, uint16_t len);
+
+const fcbus_stats_t *fcbus_stats(void);
+
+// core (backend-independent), used by both backends and by tests
+typedef enum { FCBUS_ARM, FCBUS_ARM_NUDGE1, FCBUS_ARM_NUDGE2, FCBUS_STOP } fcbus_sync_t;
+fcbus_sync_t fcbus_sync_decide(uint32_t count, uint32_t expected);
+void      fcbus_rx_byte(uint8_t b);          // the dispatcher: opcodes, packets, raw keys
+
+// host backend only
+int       fcbus_host_ppu_read(void);         // next byte the PPU would get; -1 when the DMA is stopped
+void      fcbus_host_ppu_write(uint8_t b);   // a $2007 write; heartbeats run the ISR-equivalent inline
+```
+
+### `fcvideo.h` (engine side declares, fc-pico side implements)
+
+```c
+void fcvideo_init(const uint8_t playpal[14 * 768], int preset);
+void fcvideo_frame_begin(int video_type, int next_pal);   // called on core 1 before stage A
+void fcvideo_line_sink(int y, const uint8_t line320[320]); // stage A output, y in 0..199
+void fcvideo_frame_end(void);                              // stages B-E, fcbus_publish()
+// host and tests: the same pipeline over a whole frame
+void fcvideo_convert_frame8(const uint8_t frame[320 * 200], int pal_no,
+                            uint16_t *stream, uint8_t attr[64], uint8_t pal[16]);
+uint32_t fcvideo_last_convert_us(void);
+```
+
+### `fcapu.h`
+
+```c
+typedef struct { const uint8_t *streams[16]; const uint8_t *sfx_scripts; const uint8_t *dpcm_table; } fcapu_bank_t;
+void fcapu_init(const fcapu_bank_t *bank);
+void fcapu_music_play(int mus_id, bool loop);
+void fcapu_music_stop(void);
+void fcapu_music_pause(bool paused);
+void fcapu_music_volume(int vol_0_15);
+int  fcapu_sfx_start(int sfx_id, int vol_0_127);   // voice handle or -1
+void fcapu_sfx_stop(int handle);
+bool fcapu_sfx_playing(int handle);
+void fcapu_pump(void);                              // once per heartbeat; emits via fcbus_apu_write
+const fcapu_stats_t *fcapu_stats(void);            // pairs per frame max, deferred, dropped
+```

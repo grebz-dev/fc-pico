@@ -131,6 +131,23 @@ Backdrop `$0F` (black) in both. Values are NES palette indices; hue numbers (`$x
 `$x6` red, `$x9` green, `$x0` grey) chosen to match Doom's dominant materials. The k-means
 derivation tool in P2-T6 may replace these with data-driven picks.
 
+### What NES DOOM did (PiPU `frameprocess.c`), and what to copy
+
+- Palette set (in `S_ChangeMusic` it is sent per level together with the track):
+  P0 `$10 $09 $2D` (grey, dark green, dark grey), P1 `$07 $28 $18` (browns/orange), P2
+  `$02 $01 $11` (blues), P3 `$06 $16 $3D` (reds + light grey), backdrop `$0F`. Add this as
+  preset C in `fcvideo_presets.h`; it is the only set known to have been judged on a real TV.
+- Pre-processing before matching: brightness +30 (saturating), contrast factor
+  `259*(50+255)/(255*(259-50))`, then an 8x8 Bayer offset (+/-30) added to R, G and B, then
+  nearest colour by a CCIR-601-weighted distance (`0.75 * weighted RGB^2 + luma^2`). We do the
+  equivalent offline when building `err`/`lut` (the dither pattern is baked into the LUT),
+  so the per-pixel cost stays one lookup.
+- Palette choice per 8x1 slice by majority vote of the per-pixel best palette
+  (`FindBestPalForSlice`). Ours is per 16x16 block and cost-based; the majority vote is a
+  cheaper alternative if stage C proves too slow (256 lookups + a 4-way argmax per block).
+- Two lookup tables over the full 24-bit RGB space (17 MB) traded memory for speed on the Pi;
+  on the RP2350 the 256-entry Doom palette makes the tables 1-16 KB.
+
 ## Frame pacing and buffer handoff
 
 - The heartbeat (`fcbus` ISR) pends `LOW_PRIO_IRQ` every console frame (60.1 Hz).
