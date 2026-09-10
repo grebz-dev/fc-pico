@@ -64,8 +64,6 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Dict, List
 
-import pytest
-
 from pioemu import State
 
 # ---------------------------------------------------------------------------
@@ -248,8 +246,3 @@ def timeline_source(timeline: List[int]):
         return timeline[index]
 
     return _source
-
-
-@pytest.fixture(scope="session")
-def pins() -> Dict[str, int]:
-    return pin_defines()
