@@ -11,6 +11,27 @@ submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes
 
 ---
 
+## Status (kept current; details in `../PROGRESS.md`)
+
+| Task | State | Evidence |
+|------|-------|----------|
+| P0-T1 | not started (CI templates exist in `ci/workflows/`; the host-only CMake configuration is in progress) | -- |
+| P0-T2, P0-T3 | not started; the host multicore shim (`sim/host_shim/`) is in progress | -- |
+| P0-T4 | **done** | `tools/gen_protocol.py --check`; `pytest tests/protocol` (72) |
+| P0-T5 | core logic in progress as `fcbus/fcbus_core.c` (host-testable); device backend and test-pattern firmware not started | -- |
+| P0-T6 | in progress (`fcbus/fcbus_host.c`) | -- |
+| P0-T7 | in progress (`sim/ppubus/`, `tools/ppu_decode.py`, `tools/fcvideo_ref.py`) | -- |
+| P0-T8 | **done** (fcppu_dir skipped by design) | `pytest sim/pioemu` (13 passed, 1 skipped) |
+| P0-T9, P0-T10 | blocked on hardware (`HARDWARE-REQUESTS.md` HR-1) | -- |
+| P0-T11, P0-T12 | not started | -- |
+| P0-T13 | partial: `LICENSES.md` drafted; enquiry HA-1 pending | -- |
+| P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` drafted; tests in progress | -- |
+| P2-T2 (harness part) | **done** for the tutorial ROM: `tests/bootrom/nmi_harness.py`, measurements in 01 | `pytest tests/bootrom` (17) |
+| P4-T3 (partial) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` drafted; tests in progress | -- |
+| everything else | not started | -- |
+
+---
+
 ## Phase 0 -- Foundations (milestone M0)
 
 ### P0-T1 Superbuild skeleton and LED-blink firmware
