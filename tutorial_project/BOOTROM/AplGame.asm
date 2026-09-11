@@ -1,11 +1,21 @@
+;/// @file AplGame.asm
+;/// @brief The tutorial application running on the console.
+;/// @ingroup bootrom
+;///
+;/// Deliberately minimal. It clears the screen, performs the #FP_COM_INI
+;/// handshake that tells the cartridge which stage to start on, and then does
+;/// nothing but run @ref jobPICO every frame. All graphics come from the
+;/// cartridge. @see @ref architecture
 
+;/// @brief The application's 32-byte palette: 16 background entries then 16 sprite entries.
+;/// @ingroup bootrom
 PAL_GAME_ADR:
-	DB	$0F,$1A,$14,$30 ;(—Î) 
-	DB	$0F,$2A,$2A,$2A ;(Ô) 
-	DB	$0F,$15,$27,$30 ;(Â) 
+	DB	$0F,$1A,$14,$30 ;(ç·‘) 
+	DB	$0F,$2A,$2A,$2A ;(èµ¤) 
+	DB	$0F,$15,$27,$30 ;(é’) 
 	DB	$0F,$1A,$1A,$1A ; 
-	;	ƒXƒvƒ‰ƒCƒg—pƒpƒŒƒbƒg
-	DB	$0F,$0F,$20,$20 ;ƒXƒvƒ‰ƒCƒg0
+	;	ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ãƒ‘ãƒ¬ãƒƒãƒˆ
+	DB	$0F,$0F,$20,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ0
 	DB	$0F,$1A,$17,$29
 	DB	$0F,$15,$19,$20
 	DB	$0F,$21,$10,$20
@@ -13,8 +23,10 @@ PAL_GAME_ADR:
 
 
 ;=====================================
-;ƒvƒŒƒC‰æ–Ê
+;ãƒ—ãƒ¬ã‚¤ç”»é¢
 ;=====================================
+;/// @brief Application step handler; runs the scene then clears unused sprites.
+;/// @ingroup bootrom
 APL_GAME:
 	jsr PLY_STG_MAIN
 	
@@ -30,14 +42,14 @@ APL_GAME:
 ;@	jsr  .disp_debug_obj
 	
 	
-	; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ğ”ñ•\¦‚É‚·‚é
+	; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’éè¡¨ç¤ºã«ã™ã‚‹
 	jsr clearObj
 
 ;	lda  <STG_COD	;
 ;	cmp  #ST_MAIN
 ;	beq  .skip
 ;	lda  <FLG_2000
-;	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+;	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 ;.skip
 	rts
 
@@ -88,6 +100,8 @@ APL_GAME:
 
 
 
+;/// @brief Dispatches on #STG_COD_SUB to the scene's init or main body.
+;/// @ingroup bootrom
 PLY_STG_MAIN:
 	LDA	<STG_COD_SUB
 	TBL_JUMP
@@ -95,6 +109,8 @@ PLY_STG_MAIN:
 	JPTBL	PLY_STG_1	; 1
 
 ;****** INIT ************
+;/// @brief Scene init: clears the screen and sends #FP_COM_INI with the starting stage.
+;/// @ingroup bootrom
 PLY_STG_0:
 	DISP_OFF
 ;	INC	<NMI_FLG
@@ -124,7 +140,7 @@ PLY_STG_0:
 
 	SET_VRAM_ADD2 #$3F00
 	ldy  #32
-	lda  #$1F		; •
+	lda  #$1F		; é»’
 	jsr  SYS_VRAM_WLP
 
 ;	CHK_BIT	<KEY_NEW, #KEY_A
@@ -136,7 +152,7 @@ PLY_STG_0:
 	lda  #FP_COM_INI
 	sta  $2007
 	lda  <PICO_STAGE
-	sta  $2007		; 0‚¾‚Á‚½‚çƒ^ƒCƒgƒ‹‰æ–Ê
+	sta  $2007		; 0ã ã£ãŸã‚‰ã‚¿ã‚¤ãƒˆãƒ«ç”»é¢
 
 
 	lda  #0
@@ -156,6 +172,8 @@ PLY_STG_0:
 
 
 ;****** MAIN ***********
+;/// @brief Scene main: runs @ref jobPICO every frame.
+;/// @ingroup bootrom
 PLY_STG_1:
  .if DEBUG_BUILD
 	CHK_BIT	<KEY_TRG, #KEY_A

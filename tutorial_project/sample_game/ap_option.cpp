@@ -2,6 +2,18 @@
     ap_option.cpp
 */
 
+/**
+ * @file ap_option.cpp
+ * @brief Options menu: stage select, sound test, MP3 settings and the save.
+ * @ingroup sample_app
+ *
+ * Rows are described by `op_cfg[]` and held in ap_option::op_dt. Row 5 opens the
+ * licence screen and row 6 saves and leaves; the rest only edit a value.
+ *
+ * @note Row 2's action falls through into row 3's on purpose -- toggling MP3
+ *       playback also has to stop whatever is currently sounding.
+ */
+
 
 #include "ap_main.h"
 
@@ -10,6 +22,7 @@ ap_option ap_op;
 
 
 
+/// @brief NES palette for the options menu. @ingroup sample_app
 const uint8_t pal_option[] = {
 	// BG PAL
 	0x0F,0x01,0x15,0x20,
@@ -23,6 +36,17 @@ const uint8_t pal_option[] = {
 	0x0F,0x21,0x10,0x20
 };
 
+/**
+ * @brief Inclusive minimum and maximum for each menu row, in row order.
+ * @ingroup sample_app
+ *
+ * Seven pairs for #OPTION_MENU_MAX rows: stage, sound test, MP3 enable, MP3
+ * volume, game mode, and then LICENSE and SAVE & EXIT, which take no value and
+ * are pinned to `0,0`.
+ *
+ * @note Internal linkage, being `const` at namespace scope, so ap_license.cpp's
+ *       table of the same name is a different object and the two do not collide.
+ */
 const uint8_t op_cfg[] = {
 	// MIN,MAX
 	1,3,

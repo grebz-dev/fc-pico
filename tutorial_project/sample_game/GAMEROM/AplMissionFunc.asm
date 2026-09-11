@@ -1,14 +1,19 @@
+;/// @file AplMissionFunc.asm
+;/// @brief The `MC_*` opcode implementations the mission interpreter dispatches to.
+;/// @ingroup gamerom
 ;=====================================
 ;
-;	ƒ~ƒbƒVƒ‡ƒ“‚©‚çŒÄ‚Ño‚³‚ê‚éŠg’£ŠÖ”
+;	ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‹ã‚‰å‘¼ã³å‡ºã•ã‚Œã‚‹æ‹¡å¼µé–¢æ•°
 ;
 ;=====================================
 
 
 
 ;-------------------------------------------------------
-;	ƒXƒe[ƒWŠJŽnƒ‰ƒCƒtƒZƒbƒg
+;	ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹ãƒ©ã‚¤ãƒ•ã‚»ãƒƒãƒˆ
 ;-------------------------------------------------------
+;/// @brief Sets the life count for the start of a stage.
+;/// @ingroup gamerom
 PLY_LIFE_SET:
 	lda  PLY_CONTINUE
 	clc
@@ -18,9 +23,13 @@ PLY_LIFE_SET:
 
 
 
+;/// @brief Stage palette set 1.
+;/// @ingroup gamerom
 STAGE_PAL1:
 	PAL_STAGE_COM
 
+;/// @brief Stage palette set 2.
+;/// @ingroup gamerom
 STAGE_PAL2:
 	PAL_STAGE01
 	PAL_STAGE02
@@ -32,8 +41,10 @@ STAGE_PAL2:
 	PAL_STAGE01
 
 ;------------------------------------
-; ƒQ[ƒ€‰æ–Ê‹¤’ÊƒpƒŒƒbƒgƒZƒbƒg
+; ã‚²ãƒ¼ãƒ ç”»é¢å…±é€šãƒ‘ãƒ¬ãƒƒãƒˆã‚»ãƒƒãƒˆ
 ;------------------------------------
+;/// @brief Installs the palette shared by every play screen.
+;/// @ingroup gamerom
 setGameCommonPal:
 	PAL_CHG
 	ldy  #0

@@ -1,12 +1,19 @@
+;/// @file AplBgStar.asm
+;/// @brief The scrolling starfield drawn into the background layer.
+;/// @ingroup gamerom
+;///
+;/// Console-only. The cartridge draws its own starfield out of 3D points.
 ;=====================================
 ;
-;	BG— ‚É—¬‚ê‚é¯ƒVƒXƒeƒ€ 8x16ƒXƒvƒ‰ƒCƒgê—p
+;	BGè£ã«æµã‚Œã‚‹æ˜Ÿã‚·ã‚¹ãƒ†ãƒ  8x16ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆå°‚ç”¨
 ;
 ;
 ;=====================================
-BG_STAR_MAX   equ 16			; BG¯‚Ì•\¦”ƒfƒtƒHƒ‹ƒg
+BG_STAR_MAX   equ 16			; BGæ˜Ÿã®è¡¨ç¤ºæ•°ãƒ‡ãƒ•ã‚©ãƒ«ãƒˆ		;///< Default number of background stars.
 
 
+;/// @brief Seeds the background starfield.
+;/// @ingroup gamerom
 initGameBgStarObj:
 	lda  #BG_STAR_MAX
 	sta  <BG_STAR_DISP
@@ -15,9 +22,11 @@ initGameBgStarObj:
 	rts
 
 ;-----------------------------------
-;  BG—¬¯•\¦
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJnˆÊ’u
+;  BGæµæ˜Ÿè¡¨ç¤º
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Emits the starfield sprites, starting at the OAM index in Y.
+;/// @ingroup gamerom
 createBgStarObj:
 	ldx  <FLM_TIMER
 	stx  <TMP_SV0
@@ -44,11 +53,13 @@ createBgStarObj:
 	bne  createBgStarObj2
 	rts
 ;-----------------------------------
-;  BG—¬¯•\¦iŠg’£”Åj
-; a reg = •\¦ŒÂ”i‹ô”’PˆÊ
-; x reg = ƒXƒNƒ[ƒ‹’l0-255
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJnˆÊ’u
+;  BGæµæ˜Ÿè¡¨ç¤ºï¼ˆæ‹¡å¼µç‰ˆï¼‰
+; a reg = è¡¨ç¤ºå€‹æ•°ï¼ˆå¶æ•°å˜ä½
+; x reg = ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«å€¤0-255
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Starfield entry point that skips the setup.
+;/// @ingroup gamerom
 createBgStarObj2:
 	stx  <TMP_SV0
 	lsr  a
@@ -69,10 +80,10 @@ createBgStarObj2:
 	sta	OBJ_BUF +1,y	; pat
 
 
-;	bit7:‚’¼”½“](‚P‚Å”½“])
-;	bit6:…•½”½“](‚P‚Å”½“])
-;	bit5:BG‚Æ‚Ì—Dæ‡ˆÊ(0:è‘OA1:‰œ)
-;	bit0-1:ƒpƒŒƒbƒg‚ÌãˆÊ2bit	
+;	bit7:å‚ç›´åè»¢(ï¼‘ã§åè»¢)
+;	bit6:æ°´å¹³åè»¢(ï¼‘ã§åè»¢)
+;	bit5:BGã¨ã®å„ªå…ˆé †ä½(0:æ‰‹å‰ã€1:å¥¥)
+;	bit0-1:ãƒ‘ãƒ¬ãƒƒãƒˆã®ä¸Šä½2bit	
 	lda #$23
 	sta	OBJ_BUF +2,y	; pal
 	
@@ -90,7 +101,7 @@ createBgStarObj2:
 	sta <TMP_LOOP_CNT
 	ldx #0
 .loop2
-	; ”{‘¬
+	; å€é€Ÿ
 	lda TBL_BG_STAR_X,x
 	clc
 	adc <TMP_SV0
@@ -106,10 +117,10 @@ createBgStarObj2:
 	sta	OBJ_BUF +1,y	; pat
 
 
-;	bit7:‚’¼”½“](‚P‚Å”½“])
-;	bit6:…•½”½“](‚P‚Å”½“])
-;	bit5:BG‚Æ‚Ì—Dæ‡ˆÊ(0:è‘OA1:‰œ)
-;	bit0-1:ƒpƒŒƒbƒg‚ÌãˆÊ2bit	
+;	bit7:å‚ç›´åè»¢(ï¼‘ã§åè»¢)
+;	bit6:æ°´å¹³åè»¢(ï¼‘ã§åè»¢)
+;	bit5:BGã¨ã®å„ªå…ˆé †ä½(0:æ‰‹å‰ã€1:å¥¥)
+;	bit0-1:ãƒ‘ãƒ¬ãƒƒãƒˆã®ä¸Šä½2bit	
 	lda #$80+$23
 	sta	OBJ_BUF +2,y	; pal
 	
@@ -131,13 +142,15 @@ createBgStarObj2:
 
 ;=====================================
 ;
-;	BG— ‚É—¬‚ê‚é¯ƒVƒXƒeƒ€ 8x16ƒXƒvƒ‰ƒCƒgê—p ƒf[ƒ^ƒe[ƒuƒ‹
+;	BGè£ã«æµã‚Œã‚‹æ˜Ÿã‚·ã‚¹ãƒ†ãƒ  8x16ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆå°‚ç”¨ ãƒ‡ãƒ¼ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«
 ;
 ;
 ;=====================================
-BG_STAR_CHR   equ $31		; BG¯‚ÌƒLƒƒƒ‰”Ô†
+BG_STAR_CHR   equ $31		; BGæ˜Ÿã®ã‚­ãƒ£ãƒ©ç•ªå·		;///< CHR tile used for a background star.
 
 
+;/// @brief Starting X for each background star.
+;/// @ingroup gamerom
 TBL_BG_STAR_X:
 	db $00,$20,$40,$60
 	db $80,$A0,$C0,$E0
@@ -152,6 +165,8 @@ TBL_BG_STAR_X:
 	db $98,$B8,$D8,$F8
 
 
+;/// @brief Starting Y for each background star.
+;/// @ingroup gamerom
 TBL_BG_STAR_Y:
 	db 32+2,76,240,50
 	db 100,8,180,64
@@ -167,6 +182,8 @@ TBL_BG_STAR_Y:
 
 
 
+;/// @brief CHR tile for each background star.
+;/// @ingroup gamerom
 TBL_BG_STAR_CHR:
 	db BG_STAR_CHR+ 0,BG_STAR_CHR+ 2,BG_STAR_CHR+ 4,BG_STAR_CHR+ 6
 	db BG_STAR_CHR+ 0,BG_STAR_CHR+ 2,BG_STAR_CHR+ 4,BG_STAR_CHR+ 6

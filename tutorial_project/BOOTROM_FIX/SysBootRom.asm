@@ -1,14 +1,30 @@
+;/// @file SysBootRom.asm
+;/// @brief Cold boot, self-test, version handshake and flash programming.
+;/// @ingroup bootrom
+;///
+;/// The permanent bank's substance. It brings the console up, decides whether the
+;/// program bank needs replacing, and if so erases and reprograms it with bytes
+;/// streamed from the cartridge over the PPU bus.
+;///
+;/// @warning The flash routines copy themselves into RAM before running, because
+;///          a flash device cannot be read while it is busy. Do not "simplify"
+;///          them back into direct calls. @see @ref boot_reflash
 ;=====================================================
 ;
-;	‹N“®‰Šú‰»ˆ—
+;	èµ·å‹•æ™‚åˆæœŸåŒ–å‡¦ç†
 ;
 ;=====================================================
 
 
 
 ;===================================================================
-;	ƒtƒ@ƒ~ƒRƒ“‰Šú‰»
+;	ãƒ•ã‚¡ãƒŸã‚³ãƒ³åˆæœŸåŒ–
 ;===================================================================
+;/// @brief Cold boot entry, reached from the 6502 reset vector.
+;/// @details Silences the hardware, clears VRAM and RAM, installs the system font,
+;///          then chooses between normal boot, erase and update. Holding Start
+;///          forces an erase. @see @ref boot_reflash
+;/// @ingroup bootrom
 BR_INIT:
 	sei
 	cld
@@ -29,7 +45,7 @@ BR_INIT:
 
 
 	;===============================
-	;	ƒOƒ‰ƒtƒBƒbƒNŠÖ˜A‰Šú‰»
+	;	ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯é–¢é€£åˆæœŸåŒ–
 	;===============================
 .v2:
 	bit	 $2002  ;ppu__status
@@ -53,21 +69,21 @@ BR_INIT:
 
 
 	;===============================
-	;	ƒXƒNƒ[ƒ‹ƒŒƒWƒXƒ^‰Šú‰»
+	;	ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒ¬ã‚¸ã‚¹ã‚¿åˆæœŸåŒ–
 	;===============================
 	lda  #0
 	sta  $2005
 	sta  $2005
 
 	;===============================
-	;	PICOƒŠƒZƒbƒg
+	;	PICOãƒªã‚»ãƒƒãƒˆ
 	;===============================
 	SET_VRAM_ADD2	#$0800
 	lda  #FP_COM_RST
 	sta  $2007
 
 	;===============================
-	; ƒXƒvƒ‰ƒCƒg‰Šú‰»
+	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆåˆæœŸåŒ–
 	;===============================
 	lda  #0
 	sta  $2003
@@ -82,21 +98,21 @@ BR_INIT:
 	bne  .loop_spclr
 
 	;===============================
-	;	ƒpƒŒƒbƒgƒNƒŠƒA
+	;	ãƒ‘ãƒ¬ãƒƒãƒˆã‚¯ãƒªã‚¢
 	;===============================
-	; ‘S‚Ä”’‚É‚µ‚ÄƒŠƒZƒbƒg‚ÌƒSƒ~‚ğ‰B‚·
+	; å…¨ã¦ç™½ã«ã—ã¦ãƒªã‚»ãƒƒãƒˆæ™‚ã®ã‚´ãƒŸã‚’éš ã™
 	SET_VRAM_ADD2 #$3F00
 	ldy	#32
-	lda	#$30			; ”’
+	lda	#$30			; ç™½
 	jsr  .SYS_VRAM_WLP
 
 	SET_VRAM_ADD2 #$3F00
 	ldy  #1
-	lda  #$1F		; •
+	lda  #$1F		; é»’
 	jsr  .SYS_VRAM_WLP
 
 	;===============================
-	; ƒl[ƒ€ƒe[ƒuƒ‹‰Šú‰»
+	; ãƒãƒ¼ãƒ ãƒ†ãƒ¼ãƒ–ãƒ«åˆæœŸåŒ–
 	;===============================
 	jsr  .SYS_CLEAR_BG
 	SET_VRAM_ADD2 #$2C00
@@ -104,7 +120,7 @@ BR_INIT:
 
 
 	;===============================
-	; ‰ŠúƒLƒƒƒ‰ƒf[ƒ^“]‘—
+	; åˆæœŸã‚­ãƒ£ãƒ©ãƒ‡ãƒ¼ã‚¿è»¢é€
 	;===============================
 
 	jsr  TRANS_SYS_FONT
@@ -120,7 +136,7 @@ BR_INIT:
 	bne  .chk_ram100
 
 	;=======================
-	; ƒƒ‚ƒŠ[ƒNƒŠƒA       *
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¯ãƒªã‚¢       *
 	;=======================
 .ram_clear:
 	lda  #0
@@ -128,7 +144,7 @@ BR_INIT:
 .CLR_LOP:
 	sta	<$00 ,x
 
-; ‚±‚Ì—Ìˆæ‚É’u‚¢‚½ƒnƒCƒXƒRƒA‚ğƒŠƒZƒbƒg‚É‚à•Û‚³‚¹‚é‚½‚ßA
+; ã“ã®é ˜åŸŸã«ç½®ã„ãŸãƒã‚¤ã‚¹ã‚³ã‚¢ã‚’ãƒªã‚»ãƒƒãƒˆæ™‚ã«ã‚‚ä¿æŒã•ã›ã‚‹ãŸã‚ã€
 ;        STA     $0100,X
 	sta  $0200,X
 	sta  $0300,X
@@ -140,15 +156,15 @@ BR_INIT:
 	bne  .CLR_LOP
 
 
-	jsr  .SYS_CLEAR_SP	; ƒXƒvƒ‰ƒCƒg‚ğ‰æ–ÊŠO‚É‰Šú‰»
+	jsr  .SYS_CLEAR_SP	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’ç”»é¢å¤–ã«åˆæœŸåŒ–
 
 
 	;===============================
-	; ‰‰ñƒL[“ü—Íƒ`ƒFƒbƒN
+	; åˆå›ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯
 	;===============================
-	; WRAM ‹­§‰Šú‰»‘€ì‚É•K—v
-	; ˜A‘± 2 ƒtƒŒ[ƒ€‚Å“¯‚¶ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚È‚¢‚Æ
-	; u‰Ÿ‚³‚ê‚½v‚Æ”»’è‚³‚ê‚È‚¢‚½‚ßA2 ‰ñ‚Ì“Ç‚İ‚ğs‚í‚¹‚éB
+	; WRAM å¼·åˆ¶åˆæœŸåŒ–æ“ä½œã«å¿…è¦
+	; é€£ç¶š 2 ãƒ•ãƒ¬ãƒ¼ãƒ ã§åŒã˜ã‚­ãƒ¼ãŒæŠ¼ã•ã‚Œã¦ã„ãªã„ã¨
+	; ã€ŒæŠ¼ã•ã‚ŒãŸã€ã¨åˆ¤å®šã•ã‚Œãªã„ãŸã‚ã€2 å›ã®èª­è¾¼ã¿ã‚’è¡Œã‚ã›ã‚‹ã€‚
 	jsr  KEY_RTN
 	jsr  KEY_RTN
 
@@ -163,12 +179,12 @@ BR_INIT:
 	bne  .rom_update
 
 	;===============================
-	; ƒƒ‚ƒŠ[ƒeƒXƒg
+	; ãƒ¡ãƒ¢ãƒªãƒ¼ãƒ†ã‚¹ãƒˆ
 	;===============================
 	jsr  BOOT_MEMTEST
 
 	;===============================
-	; ROMƒo[ƒWƒ‡ƒ“ƒ`ƒFƒbƒN
+	; ROMãƒãƒ¼ã‚¸ãƒ§ãƒ³ãƒã‚§ãƒƒã‚¯
 	;===============================
 	jsr  CHK_ROMVER
 	bcs  .rom_erace 
@@ -180,10 +196,10 @@ BR_INIT:
 	jsr  MAIN_SETUP
 
 
-	; PPU §Œäƒtƒ‰ƒO 1 ‰Šú‰»
+	; PPU åˆ¶å¾¡ãƒ•ãƒ©ã‚° 1 åˆæœŸåŒ–
 	lda	#FLG_PPU2000
 	sta	<FLG_2000
-	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 
 	sei
 
@@ -199,7 +215,7 @@ BR_INIT:
 
 ;==============================================================================
 ;
-;					‹N“®ROM—pƒTƒuƒ‹[ƒ`ƒ“
+;					èµ·å‹•ROMç”¨ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³
 ;
 ;==============================================================================
 
@@ -238,9 +254,13 @@ BR_INIT:
 
 
 ;------------------------------------------------------------------------------
-;				•¶š—ñ•`‰æ
-;				\1 = •¶š—ñ
+;				æ–‡å­—åˆ—æç”»
+;				\1 = æ–‡å­—åˆ—
 ;------------------------------------------------------------------------------
+;/// @brief Draws an inline string literal.
+;/// @ingroup bootrom
+;/// @details The text follows the call site; the macro fakes a return address so
+;///          execution resumes past the embedded data.
 BR_DRAW_STRING2 MACRO
 	LDA  #HIGH (.end\@ -1)
 	PHA
@@ -256,6 +276,8 @@ BR_DRAW_STRING2 MACRO
 .end\@:
 	ENDM
 
+;/// @brief Draws a NUL-terminated string; the fix bank's own copy, independent of the erasable bank.
+;/// @ingroup bootrom
 BR_DRAW_STRING_SUB:
 	ldy  #0
 .drst00:
@@ -272,10 +294,12 @@ BR_DRAW_STRING_SUB:
 	rts
 
 ;=======================
-; 16i”@”š•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ğw’è
-;   A reg •`‰æ‚·‚é”’l
+; 16é€²æ•°ã€€æ•°å­—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   A reg æç”»ã™ã‚‹æ•°å€¤
 ;=======================
+;/// @brief Draws one byte as two hexadecimal digits.
+;/// @ingroup bootrom
 BR_DRAW_HEX_BYTE:
 	TAY
 	LSR A
@@ -303,6 +327,8 @@ BR_DRAW_HEX_BYTE:
 	rts
 
 
+;/// @brief Spin delay giving the cartridge time to answer. @see PICO_COM_WAIT
+;/// @ingroup bootrom
 BR_PICO_COM_WAIT:
 	ldx  #0
 .wait
@@ -311,6 +337,8 @@ BR_PICO_COM_WAIT:
 	rts
 
 
+;/// @brief Fatal error stop: beeps and halts.
+;/// @ingroup bootrom
 BR_ERROR_EMD:
 	DEBUG_HALT
 	rts
@@ -318,9 +346,15 @@ BR_ERROR_EMD:
 
 ;==============================================================================
 ;
-;					ROMƒo[ƒWƒ‡ƒ“ƒ`ƒFƒbƒN
-; CFlag = ONFROMƒo[ƒWƒ‡ƒ“ƒAƒbƒv
+;					ROMãƒãƒ¼ã‚¸ãƒ§ãƒ³ãƒã‚§ãƒƒã‚¯
+; CFlag = ONï¼šROMãƒãƒ¼ã‚¸ãƒ§ãƒ³ã‚¢ãƒƒãƒ—
 ;==============================================================================
+;/// @brief Compares the local build stamp with the cartridge's copy.
+;/// @details Sends #FP_COM_VER and reads back 16 bytes. A mismatch returns carry
+;///          set, meaning the program bank must be replaced. If the reply does not
+;///          begin "20" the cartridge is not responding at all and the console
+;///          prints `PICO NOT FOUND` and halts. @see @ref boot_reflash
+;/// @ingroup bootrom
 CHK_ROMVER:
 
 	lda  #0
@@ -333,11 +367,11 @@ CHK_ROMVER:
 
 	jsr  BR_PICO_COM_WAIT
 
-	; PICO‚©‚çƒf[ƒ^æ“¾
+	; PICOã‹ã‚‰ãƒ‡ãƒ¼ã‚¿å–å¾—
 	SET_VRAM_ADD2	#$0800
-	lda  $2007	; ƒ_ƒ~[ƒŠ[ƒh
+	lda  $2007	; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 .head
-	lda  $2007	; ƒwƒbƒ_[ƒ`ƒFƒbƒN
+	lda  $2007	; ãƒ˜ãƒƒãƒ€ãƒ¼ãƒã‚§ãƒƒã‚¯
 	cmp  #'C'
 	bne  .head
 
@@ -370,11 +404,11 @@ CHK_ROMVER:
 	jsr  BR_VBLANK_END
 
 	ldx  #60*2
-	jsr  BR_WAIT_VBLANK_X		; •\¦ƒEƒFƒCƒg
+	jsr  BR_WAIT_VBLANK_X		; è¡¨ç¤ºã‚¦ã‚§ã‚¤ãƒˆ
  .endif
 
 
-	; ROMƒo[ƒWƒ‡ƒ“ˆê’vƒ`ƒFƒbƒN
+	; ROMãƒãƒ¼ã‚¸ãƒ§ãƒ³ä¸€è‡´ãƒã‚§ãƒƒã‚¯
 	lda  #0
 	tax
 	tay
@@ -412,7 +446,7 @@ CHK_ROMVER:
 	jsr  BR_VBLANK_END
 
 	ldx  #30*1
-	jsr  BR_WAIT_VBLANK_X		; •\¦ƒEƒFƒCƒg
+	jsr  BR_WAIT_VBLANK_X		; è¡¨ç¤ºã‚¦ã‚§ã‚¤ãƒˆ
  .endif
 	jmp CHK_ROMVER
 
@@ -449,9 +483,11 @@ CHK_ROMVER:
 
 ;==============================================================================
 ;
-;					‹N“®@ƒƒ‚ƒŠ[ƒeƒXƒg
+;					èµ·å‹•æ™‚ã€€ãƒ¡ãƒ¢ãƒªãƒ¼ãƒ†ã‚¹ãƒˆ
 ;
 ;==============================================================================
+;/// @brief Walks work RAM and any expansion RAM, showing a running byte count.
+;/// @ingroup bootrom
 BOOT_MEMTEST:
 
 	lda  #%000_01_0_00		; NO-NMI
@@ -460,7 +496,7 @@ BOOT_MEMTEST:
 	sta	 $2001
 
 	ldx  #30
-	jsr  BR_WAIT_VBLANK_X		; Šg’£RAM‚ªˆÀ’è‚·‚é‚Ü‚Å0.5•bƒEƒFƒCƒg
+	jsr  BR_WAIT_VBLANK_X		; æ‹¡å¼µRAMãŒå®‰å®šã™ã‚‹ã¾ã§0.5ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 
 	jsr  BEEP_PI
@@ -471,7 +507,7 @@ BOOT_MEMTEST:
 	SET_VRAM_ADD2	#$2000 + 32*2 + 1
 	BR_DRAW_STRING2 "MEMORY"
 
-	jsr  .chkExRAM	; Šg’£RAMƒ`ƒFƒbƒN
+	jsr  .chkExRAM	; æ‹¡å¼µRAMãƒã‚§ãƒƒã‚¯
 	bcs  .skip_01
 
 	SET_VRAM_ADD2	#$2000 + 32*2 + 14
@@ -496,12 +532,12 @@ BOOT_MEMTEST:
 	bne  .memchk_loop
 .memchk_loop_end
 
-	jsr  .chkExRAM	; Šg’£RAMƒ`ƒFƒbƒN
+	jsr  .chkExRAM	; æ‹¡å¼µRAMãƒã‚§ãƒƒã‚¯
 	bcs  .skip_exram00
 	jmp  .skip_exram
 .skip_exram00
 	;------------------------
-	; EXRAMƒ`ƒFƒbƒN
+	; EXRAMãƒã‚§ãƒƒã‚¯
 	;------------------------
 
 ;	ldx  #60
@@ -541,7 +577,7 @@ BOOT_MEMTEST:
 	jsr  BR_VBLANK_END
 
 	cpy  #$80
-;	cpy  #$81	; NG“®ìƒ`ƒFƒbƒN—p
+;	cpy  #$81	; NGå‹•ä½œãƒã‚§ãƒƒã‚¯ç”¨
 	beq  .memchk_loop2_end
 
 
@@ -578,10 +614,10 @@ BOOT_MEMTEST:
 	rts
 
 ;===============================
-;	Šg’£RAMƒ`ƒFƒbƒN ExRAM‚ ‚ê‚ÎCFlag =1
+;	æ‹¡å¼µRAMãƒã‚§ãƒƒã‚¯ ExRAMã‚ã‚Œã°CFlag =1
 ;===============================
 .chkExRAM:
-	; Šg’£RAMƒ`ƒFƒbƒN
+	; æ‹¡å¼µRAMãƒã‚§ãƒƒã‚¯
 	lda  $6000
 	tay
 	eor  #$FF
@@ -598,8 +634,8 @@ BOOT_MEMTEST:
 
 
 ;--------------------------------
-; ƒƒ‚ƒŠ[ƒ`ƒFƒbƒN•¶š—ñƒZƒbƒg
-; Y reg = •\¦•¶š—ñƒCƒ“ƒfƒbƒNƒX
+; ãƒ¡ãƒ¢ãƒªãƒ¼ãƒã‚§ãƒƒã‚¯æ–‡å­—åˆ—ã‚»ãƒƒãƒˆ
+; Y reg = è¡¨ç¤ºæ–‡å­—åˆ—ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 ;--------------------------------
 .MEMCHK_STR:
 	sty  <TMP_SVY
@@ -650,7 +686,7 @@ BOOT_MEMTEST:
 .add_memchk_str
 	stx  <TMP_SVX
 
-	; MEM_DISP‚É256‰ÁZ
+	; MEM_DISPã«256åŠ ç®—
 	clc
 	lda  <MEM_DISP+0
 	adc  #6
@@ -664,7 +700,7 @@ BOOT_MEMTEST:
 	adc  #2
 	sta  <MEM_DISP+2
 	
-	; 10i”•â³
+	; 10é€²æ•°è£œæ­£
 	ldx  #0
 .loop_ms00
 	lda  MEM_DISP,x
@@ -683,9 +719,11 @@ BOOT_MEMTEST:
 
 
 ;--------------------------------
-; ƒƒ‚ƒŠ[ƒ`ƒFƒbƒN•¶š—ñƒZƒbƒg
-; Y reg = ƒ`ƒFƒbƒNƒAƒhƒŒƒXƒCƒ“ƒfƒbƒNƒX
+; ãƒ¡ãƒ¢ãƒªãƒ¼ãƒã‚§ãƒƒã‚¯æ–‡å­—åˆ—ã‚»ãƒƒãƒˆ
+; Y reg = ãƒã‚§ãƒƒã‚¯ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
 ;--------------------------------
+;/// @brief Read/write tests one 256-byte page.
+;/// @ingroup bootrom
 MEMCHK_SUB:
 	cpy  #0
 	bne  .ram_nozp
@@ -756,9 +794,13 @@ MEMCHK_SUB:
 
 ;==============================================================================
 ;
-;					ROMÁ‹ƒVƒXƒeƒ€
+;					ROMæ¶ˆå»ã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;==============================================================================
+;/// @brief Erases the program bank `$8000`-`$EFFF`, sector by sector.
+;/// @warning Stops at `$F000`: this bank erases everything except itself, which is
+;///          what makes a failed update recoverable.
+;/// @ingroup bootrom
 ROM_ERACE:
 	jsr  BEEP_PI
 	lda  #%000_01_0_00		; NO-NMI
@@ -777,7 +819,7 @@ ROM_ERACE:
 	bne  .loop
 	inc  <DST_ADR +1
 	lda  <DST_ADR +1
-	cmp  #$F0			; Á‹I—¹ƒAƒhƒŒƒX
+	cmp  #$F0			; æ¶ˆå»çµ‚äº†ã‚¢ãƒ‰ãƒ¬ã‚¹
 	beq  .loop_end
 	bne  .loop
 
@@ -797,7 +839,7 @@ ROM_ERACE:
 	
 	jsr  BR_VBLANK_END
 
-	; Á‹ƒRƒ}ƒ“ƒhÀs
+	; æ¶ˆå»ã‚³ãƒãƒ³ãƒ‰å®Ÿè¡Œ
 	jsr  CPU_FlashSectorElase
 	jmp  .loop
 
@@ -808,25 +850,29 @@ ROM_ERACE:
 	jsr  BR_VBLANK_END
 
 	ldx  #60*1
-	jsr  BR_WAIT_VBLANK_X		; Šg’£RAM‚ªˆÀ’è‚·‚é‚Ü‚Å0.5•bƒEƒFƒCƒg
+	jsr  BR_WAIT_VBLANK_X		; æ‹¡å¼µRAMãŒå®‰å®šã™ã‚‹ã¾ã§0.5ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 	jmp  INIT
 
 
 ;-----------------------------------
-; CPU FLASHƒZƒNƒ^[ƒCƒŒ[ƒXƒRƒ}ƒ“ƒh
+; CPU FLASHã‚»ã‚¯ã‚¿ãƒ¼ã‚¤ãƒ¬ãƒ¼ã‚¹ã‚³ãƒãƒ³ãƒ‰
 ;-----------------------------------
  .if 0
-‚±‚ÌƒV[ƒPƒ“ƒX‚Í“¯‚ÉÁ‹‚·‚éƒZƒNƒ^‚ÌƒAƒhƒŒƒX‚ÉƒZƒNƒ^Á‹ƒRƒ}ƒ“ƒhi30hj‚ğ
-ˆø‚«‘±‚«ƒ‰ƒCƒg‚³‚¹‚é‚±‚Æ‚Ås‚¢‚Ü‚·BÅŒã‚ÌƒZƒNƒ^Á‹ƒRƒ}ƒ“ƒh‚ÌWE —§ã‚è‚©‚ç
-50 ms ‚Ìƒ^ƒCƒ€ƒAƒEƒgŠúŠÔI—¹‚É‚æ‚èƒZƒNƒ^Á‹‚ªŠJn‚³‚ê‚Ü‚·B‚Â‚Ü‚èC•¡”‚ÌƒZƒN
-ƒ^‚ğ“¯‚ÉÁ‹‚·‚éê‡‚ÍCŸ‚ÌÁ‹ƒZƒNƒ^‚ğ‚»‚ê‚¼‚ê50 ms ˆÈ“à‚É“ü—Í‚·‚é•K—v‚ª‚ ‚èC
-‚»‚êˆÈŒã‚Å‚ÍƒRƒ}ƒ“ƒh‚Íó‚¯•t‚¯‚ç‚ê‚È‚¢‚±‚Æ‚ª‚ ‚è‚Ü‚·Bˆø‚«‘±‚­ƒZƒNƒ^Á‹ƒRƒ}ƒ“ƒh‚ª
-—LŒø‚©‚Ç‚¤‚©‚ÍDQ3 ‚É‚Äƒ‚ƒjƒ^‰Â”\‚Å‚·iu3Dƒ‰ƒCƒg“®ìó‘Ôi5jDQ 3EƒZƒNƒ^Á‹ƒ^ƒCƒ}vQÆj
+ã“ã®ã‚·ãƒ¼ã‚±ãƒ³ã‚¹ã¯åŒæ™‚ã«æ¶ˆå»ã™ã‚‹ã‚»ã‚¯ã‚¿ã®ã‚¢ãƒ‰ãƒ¬ã‚¹ã«ã‚»ã‚¯ã‚¿æ¶ˆå»ã‚³ãƒãƒ³ãƒ‰ï¼ˆ30hï¼‰ã‚’
+å¼•ãç¶šããƒ©ã‚¤ãƒˆã•ã›ã‚‹ã“ã¨ã§è¡Œã„ã¾ã™ã€‚æœ€å¾Œã®ã‚»ã‚¯ã‚¿æ¶ˆå»ã‚³ãƒãƒ³ãƒ‰ã®WE ç«‹ä¸Šã‚Šã‹ã‚‰
+50 ms ã®ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆæœŸé–“çµ‚äº†ã«ã‚ˆã‚Šã‚»ã‚¯ã‚¿æ¶ˆå»ãŒé–‹å§‹ã•ã‚Œã¾ã™ã€‚ã¤ã¾ã‚Šï¼Œè¤‡æ•°ã®ã‚»ã‚¯
+ã‚¿ã‚’åŒæ™‚ã«æ¶ˆå»ã™ã‚‹å ´åˆã¯ï¼Œæ¬¡ã®æ¶ˆå»ã‚»ã‚¯ã‚¿ã‚’ãã‚Œãã‚Œ50 ms ä»¥å†…ã«å…¥åŠ›ã™ã‚‹å¿…è¦ãŒã‚ã‚Šï¼Œ
+ãã‚Œä»¥å¾Œã§ã¯ã‚³ãƒãƒ³ãƒ‰ã¯å—ã‘ä»˜ã‘ã‚‰ã‚Œãªã„ã“ã¨ãŒã‚ã‚Šã¾ã™ã€‚å¼•ãç¶šãã‚»ã‚¯ã‚¿æ¶ˆå»ã‚³ãƒãƒ³ãƒ‰ãŒ
+æœ‰åŠ¹ã‹ã©ã†ã‹ã¯DQ3 ã«ã¦ãƒ¢ãƒ‹ã‚¿å¯èƒ½ã§ã™ï¼ˆã€Œ3ï¼ãƒ©ã‚¤ãƒˆå‹•ä½œçŠ¶æ…‹ï¼ˆ5ï¼‰DQ 3ãƒ»ã‚»ã‚¯ã‚¿æ¶ˆå»ã‚¿ã‚¤ãƒã€å‚ç…§ï¼‰
 
  .endif
 
 ;-----------------------------------
+;/// @brief Erases one flash sector using the JEDEC command sequence.
+;/// @warning Copies itself into RAM at #FLASH_EXEC_BUF and runs from there with
+;///          interrupts masked, because flash cannot be read while it is busy.
+;/// @ingroup bootrom
 CPU_FlashSectorElase:
 	ldy  #0
 .loop_cpy
@@ -862,13 +908,13 @@ CPU_FlashSectorElase:
 	lda  #$30
 	sta  [DST_ADR],y
 
-	; Q3 ƒ^ƒCƒ€ƒAƒEƒgƒrƒbƒgƒ`ƒFƒbƒN
+	; Q3 ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆãƒ“ãƒƒãƒˆãƒã‚§ãƒƒã‚¯
 .loop_to
 	lda  $8000 + $000
 	and  #$08
 	bne  .loop_to
 
-	; Q6 ƒgƒOƒ‹ƒrƒbƒgƒ`ƒFƒbƒN
+	; Q6 ãƒˆã‚°ãƒ«ãƒ“ãƒƒãƒˆãƒã‚§ãƒƒã‚¯
 
 .loop_tc
 	lda  $8000 + $000
@@ -877,7 +923,7 @@ CPU_FlashSectorElase:
 .write_end
 .time_limit_over
 
-	; ƒZƒNƒ^[Á‹’†’f
+	; ã‚»ã‚¯ã‚¿ãƒ¼æ¶ˆå»ä¸­æ–­
 	rts
 .mem_exec_end
 
@@ -885,9 +931,13 @@ CPU_FlashSectorElase:
 
 ;==============================================================================
 ;
-;					ROMXVƒVƒXƒeƒ€
+;					ROMæ›´æ–°ã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;==============================================================================
+;/// @brief Reprograms the program bank with bytes streamed from the cartridge.
+;/// @details Requests each page with #FP_COM_ROM and programs it directly from
+;///          `$2007`. @see rp_system::rom_dma
+;/// @ingroup bootrom
 ROM_UPDATE:
 	jsr  BEEP_PO
 	lda  #%000_01_0_00		; NO-NMI
@@ -907,7 +957,7 @@ ROM_UPDATE:
 	jsr  BR_VBLANK_START
 
 	
-	; •\¦OFF
+	; è¡¨ç¤ºOFF
 	lda  #%000_00_110
 	sta	 $2001
 
@@ -926,7 +976,7 @@ ROM_UPDATE:
 .loop
 
 	;----------------------------
-	; ROM ƒf[ƒ^ƒŠƒNƒGƒXƒg
+	; ROM ãƒ‡ãƒ¼ã‚¿ãƒªã‚¯ã‚¨ã‚¹ãƒˆ
 	;----------------------------
 	SET_VRAM_ADD2	#$0800
 	lda  #FP_COM_ROM
@@ -936,16 +986,16 @@ ROM_UPDATE:
 
 	jsr  BR_PICO_COM_WAIT
 
-	; PICO‚©‚çƒf[ƒ^æ“¾
+	; PICOã‹ã‚‰ãƒ‡ãƒ¼ã‚¿å–å¾—
 	SET_VRAM_ADD2	#$0800
-	lda  $2007	; ƒ_ƒ~[ƒŠ[ƒh
+	lda  $2007	; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 ;.head
-;	lda  $2007	; ƒwƒbƒ_[ƒ`ƒFƒbƒN
+;	lda  $2007	; ãƒ˜ãƒƒãƒ€ãƒ¼ãƒã‚§ãƒƒã‚¯
 ;	cmp  #'C'
 ;	bne  .head
 
 
-	; ‘‚«‚İƒRƒ}ƒ“ƒhÀs
+	; æ›¸ãè¾¼ã¿ã‚³ãƒãƒ³ãƒ‰å®Ÿè¡Œ
 	lda  #0
 	sta  <W_AR+0
 	jsr  CPU_FlashPorgram
@@ -953,12 +1003,12 @@ ROM_UPDATE:
 	
 	inc  <DST_ADR +1
 	lda  <DST_ADR +1
-	cmp  #$F0			; Á‹I—¹ƒAƒhƒŒƒX
+	cmp  #$F0			; æ¶ˆå»çµ‚äº†ã‚¢ãƒ‰ãƒ¬ã‚¹
 	bne  .loop
 
 
 .loop_end
-	; •\¦ON
+	; è¡¨ç¤ºON
 	lda  #%000_01_110
 	sta	 $2001
 
@@ -976,14 +1026,17 @@ ROM_UPDATE:
 
 
 ;-----------------------------------
-; CPU FLASHƒZƒNƒ^[ƒvƒƒOƒ‰ƒ€
+; CPU FLASHã‚»ã‚¯ã‚¿ãƒ¼ãƒ—ãƒ­ã‚°ãƒ©ãƒ 
 ;-----------------------------------
-; in:  SRC_ADR ƒf[ƒ^ƒAƒhƒŒƒX
-; in:  DST_ADR ‘‚«‚ŞƒAƒhƒŒƒX
-; in:  W_AR+0  ‘‚«‚ŞƒTƒCƒY
+; in:  SRC_ADR ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹
+; in:  DST_ADR æ›¸ãè¾¼ã‚€ã‚¢ãƒ‰ãƒ¬ã‚¹
+; in:  W_AR+0  æ›¸ãè¾¼ã‚€ã‚µã‚¤ã‚º
 ;
-; zƒtƒ‰ƒO‚ªNZ‚È‚çƒGƒ‰[I—¹
+; zãƒ•ãƒ©ã‚°ãŒNZãªã‚‰ã‚¨ãƒ©ãƒ¼çµ‚äº†
 
+;/// @brief Programs one flash page, polling DQ6 and then verifying.
+;/// @warning Also RAM-resident. @see CPU_FlashSectorElase
+;/// @ingroup bootrom
 CPU_FlashPorgram:
 	ldy  #0
 .loop_cpy
@@ -1015,19 +1068,19 @@ CPU_FlashPorgram:
 	lda  #$A0
 	sta  $D555
 	
-	lda  $2007	; ƒ_ƒ~[ƒŠ[ƒh
+	lda  $2007	; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 	sta  [SRC_ADR],y
 	sta  [DST_ADR],y
 
 ;	BEEP $104,%11110011
 
-	; Q6 ƒgƒOƒ‹ƒrƒbƒgƒ`ƒFƒbƒN
+	; Q6 ãƒˆã‚°ãƒ«ãƒ“ãƒƒãƒˆãƒã‚§ãƒƒã‚¯
 .loop_tc
 	lda  $8000 + $000
 	cmp  $8000 + $000
 	bne  .loop_tc
 
-	; ‹­§ƒŠ[ƒhƒ‚[ƒh
+	; å¼·åˆ¶ãƒªãƒ¼ãƒ‰ãƒ¢ãƒ¼ãƒ‰
 
 	lda  [SRC_ADR],y
 	cmp  [DST_ADR],y
@@ -1046,9 +1099,13 @@ CPU_FlashPorgram:
 
 ;==============================================================================
 ;
-;					ƒVƒXƒeƒ€FONT
+;					ã‚·ã‚¹ãƒ†ãƒ FONT
 ;
 ;==============================================================================
+;/// @brief Expands the 1bpp system font into both pattern tables.
+;/// @note On real hardware the cartridge supplies the pattern data, so this is what
+;///       makes boot messages visible before the cartridge takes over.
+;/// @ingroup bootrom
 BR_TRANS_SYS_FONT:
 	inc  <NMI_FLG
 
@@ -1100,18 +1157,22 @@ BR_TRANS_SYS_FONT:
 
 
 
+;/// @brief The 1bpp system font data, included from `font1b_0.chr`.
+;/// @ingroup bootrom
 CHR_SYS_FONT:
 	.INCBIN		"font1b_0.chr"
 
 ;==============================================================================
 ;
-;					NMI‹Ö~Œ^@‰æ–Ê•\¦ƒVƒXƒeƒ€@BOOTROM—p
+;					NMIç¦æ­¢å‹ã€€ç”»é¢è¡¨ç¤ºã‚·ã‚¹ãƒ†ãƒ ã€€BOOTROMç”¨
 ;
 ;==============================================================================
 
 ;--------------------------------
-; XƒŒƒW‚Åw’èƒtƒŒ[ƒ€ƒEƒFƒCƒg
+; Xãƒ¬ã‚¸ã§æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã‚¦ã‚§ã‚¤ãƒˆ
 ;--------------------------------
+;/// @brief Waits X frames with interrupts disabled.
+;/// @ingroup bootrom
 BR_WAIT_VBLANK_X:
 	jsr  BR_VBLANK_START
 
@@ -1122,63 +1183,71 @@ BR_WAIT_VBLANK_X:
 	rts
 
 
+;/// @brief Ends a no-NMI vertical blank.
+;/// @ingroup bootrom
 BR_VBLANK_END:
 	RESET_SCR_XY
 	WAIT_VBLANK_END
 	rts
 
 
+;/// @brief Begins a no-NMI vertical blank.
+;/// @ingroup bootrom
 BR_VBLANK_START:
-;	jsr   KEY_RTN		;--- ƒL[“ü—Íƒ`ƒFƒbƒN -----
+;	jsr   KEY_RTN		;--- ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯ -----
 	WAIT_VBLANK
 
-;--- ƒXƒvƒ‰ƒCƒgDMA“]‘— ----- i¦512 clockÁ”ïj
-;	lda  #2			;‚±‚±‚É•K—v
-;	sta  $4014		;‚±‚±‚É•K—v
+;--- ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆDMAè»¢é€ ----- ï¼ˆâ€»512 clockæ¶ˆè²»ï¼‰
+;	lda  #2			;ã“ã“ã«å¿…è¦
+;	sta  $4014		;ã“ã“ã«å¿…è¦
 	rts
 
 
 
 ;===============================
-;	‹N“®‰¹uƒsv
+;	èµ·å‹•éŸ³ã€Œãƒ”ã€
 ;===============================
+;/// @brief Short high beep, used as a boot progress cue.
+;/// @ingroup bootrom
 BR_BEEP_PI:
 	lda #0
 	sta $4015
 
-	lda #%00000001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P‚ğ—LŒø‚É‚·‚é
+	lda #%00000001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘ã‚’æœ‰åŠ¹ã«ã™ã‚‹
 	sta $4015
 	
-	lda #%10_01_1111	; Duty”äE’·‚³–³ŒøEŒ¸Š–³ŒøEŒ¸Š—¦
-	sta $4000	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P§ŒäƒŒƒWƒXƒ^‚P
-	lda #%0_000_0_000	; ƒXƒC[ƒv—LŒøE•Ï‰»—¦E•ûŒüE•Ï‰»—Ê
-	sta $4001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P§ŒäƒŒƒWƒXƒ^‚Q
-	lda #56			; ü”g”(‰ºˆÊ8ƒrƒbƒg)
-;	lda #112		; ü”g”(‰ºˆÊ8ƒrƒbƒg)
-	sta $4002	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚Pü”g”ƒŒƒWƒXƒ^‚P
-	lda #%00000_000 +(HIGH(0) &7)	; Ä¶ŠÔEü”g”(ãˆÊ3ƒrƒbƒg)
-	sta $4003	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚Pü”g”ƒŒƒWƒXƒ^‚Q
+	lda #%10_01_1111	; Dutyæ¯”ãƒ»é•·ã•ç„¡åŠ¹ãƒ»æ¸›è¡°ç„¡åŠ¹ãƒ»æ¸›è¡°ç‡
+	sta $4000	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘åˆ¶å¾¡ãƒ¬ã‚¸ã‚¹ã‚¿ï¼‘
+	lda #%0_000_0_000	; ã‚¹ã‚¤ãƒ¼ãƒ—æœ‰åŠ¹ãƒ»å¤‰åŒ–ç‡ãƒ»æ–¹å‘ãƒ»å¤‰åŒ–é‡
+	sta $4001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘åˆ¶å¾¡ãƒ¬ã‚¸ã‚¹ã‚¿ï¼’
+	lda #56			; å‘¨æ³¢æ•°(ä¸‹ä½8ãƒ“ãƒƒãƒˆ)
+;	lda #112		; å‘¨æ³¢æ•°(ä¸‹ä½8ãƒ“ãƒƒãƒˆ)
+	sta $4002	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘å‘¨æ³¢æ•°ãƒ¬ã‚¸ã‚¹ã‚¿ï¼‘
+	lda #%00000_000 +(HIGH(0) &7)	; å†ç”Ÿæ™‚é–“ãƒ»å‘¨æ³¢æ•°(ä¸Šä½3ãƒ“ãƒƒãƒˆ)
+	sta $4003	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘å‘¨æ³¢æ•°ãƒ¬ã‚¸ã‚¹ã‚¿ï¼’
 	rts
 
 
 ;===============================
-;	‹N“®‰¹uƒ|v
+;	èµ·å‹•éŸ³ã€Œãƒã€
 ;===============================
+;/// @brief Short low beep, used as a boot progress cue.
+;/// @ingroup bootrom
 BR_BEEP_PO:
 	lda #0
 	sta $4015
 
-	lda #%00000001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P‚ğ—LŒø‚É‚·‚é
+	lda #%00000001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘ã‚’æœ‰åŠ¹ã«ã™ã‚‹
 	sta $4015
 	
-	lda #%10_01_1111	; Duty”äE’·‚³–³ŒøEŒ¸Š–³ŒøEŒ¸Š—¦
-	sta $4000	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P§ŒäƒŒƒWƒXƒ^‚P
-	lda #%0_000_0_000	; ƒXƒC[ƒv—LŒøE•Ï‰»—¦E•ûŒüE•Ï‰»—Ê
-	sta $4001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P§ŒäƒŒƒWƒXƒ^‚Q
-	lda #112		; ü”g”(‰ºˆÊ8ƒrƒbƒg)
-	sta $4002	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚Pü”g”ƒŒƒWƒXƒ^‚P
-	lda #%00000_000 +(HIGH(0) &7)	; Ä¶ŠÔEü”g”(ãˆÊ3ƒrƒbƒg)
-	sta $4003	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚Pü”g”ƒŒƒWƒXƒ^‚Q
+	lda #%10_01_1111	; Dutyæ¯”ãƒ»é•·ã•ç„¡åŠ¹ãƒ»æ¸›è¡°ç„¡åŠ¹ãƒ»æ¸›è¡°ç‡
+	sta $4000	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘åˆ¶å¾¡ãƒ¬ã‚¸ã‚¹ã‚¿ï¼‘
+	lda #%0_000_0_000	; ã‚¹ã‚¤ãƒ¼ãƒ—æœ‰åŠ¹ãƒ»å¤‰åŒ–ç‡ãƒ»æ–¹å‘ãƒ»å¤‰åŒ–é‡
+	sta $4001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘åˆ¶å¾¡ãƒ¬ã‚¸ã‚¹ã‚¿ï¼’
+	lda #112		; å‘¨æ³¢æ•°(ä¸‹ä½8ãƒ“ãƒƒãƒˆ)
+	sta $4002	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘å‘¨æ³¢æ•°ãƒ¬ã‚¸ã‚¹ã‚¿ï¼‘
+	lda #%00000_000 +(HIGH(0) &7)	; å†ç”Ÿæ™‚é–“ãƒ»å‘¨æ³¢æ•°(ä¸Šä½3ãƒ“ãƒƒãƒˆ)
+	sta $4003	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘å‘¨æ³¢æ•°ãƒ¬ã‚¸ã‚¹ã‚¿ï¼’
 	rts
 
 

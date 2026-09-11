@@ -1,231 +1,242 @@
+;/// @file SysEqu.h
+;/// @brief RAM map for the erasable bank: zero page, work RAM and cartridge RAM.
+;/// @ingroup bootrom
+;///
+;/// The layout worth knowing is the mailbox at `$20`-`$5F`, which is where the
+;/// cartridge's per-frame command block lands. Everything from #PICO_BUF0 to
+;/// #PICO_BUF38 is one contiguous 64-byte structure, not eight separate
+;/// variables. @see @ref protocol
+;///
+;/// @warning Zero page is fully allocated. Adding a variable means finding a
+;///          genuinely unused slot, not appending to the end.
 ;========================================
 
 ;========================================
 
-W_AR			EQU	$00	; 16 bit ŒvŽZ—p  2 bytes
-W_BR			EQU	$02	; 16 bit ŒvŽZ—p  2 bytes
+W_AR			EQU	$00   ;///< General 16-bit accumulator for arithmetic, 2 bytes. ; 16 bit è¨ˆç®—ç”¨  2 bytes
+W_BR			EQU	$02   ;///< Second general 16-bit accumulator, 2 bytes. ; 16 bit è¨ˆç®—ç”¨  2 bytes
 
-TMP_SVA			EQU	$04	; ”Ä—p A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVX			EQU	$05	; ”Ä—p X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVY			EQU	$06	; ”Ä—p Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_LOOP_CNT	EQU	$07	; ”Ä—pƒ‹[ƒvƒJƒEƒ“ƒ^
+TMP_SVA			EQU	$04   ;///< Scratch save slot for the A register. ; æ±Žç”¨ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVX			EQU	$05   ;///< Scratch save slot for the X register. ; æ±Žç”¨ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVY			EQU	$06   ;///< Scratch save slot for the Y register. ; æ±Žç”¨ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_LOOP_CNT	EQU	$07   ;///< General-purpose loop counter. ; æ±Žç”¨ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿
 
-SRC_ADR			EQU	$08	; ”Ä—pƒ\[ƒXƒAƒhƒŒƒX  2 bytes
-DST_ADR			EQU	$0A	; ”Ä—pƒfƒXƒeƒBƒl[ƒVƒ‡ƒ“ƒAƒhƒŒƒX  2 bytes
+SRC_ADR			EQU	$08   ;///< General 16-bit source pointer used by the copy routines. ; æ±Žç”¨ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
+DST_ADR			EQU	$0A   ;///< General 16-bit destination pointer used by the copy routines. ; æ±Žç”¨ãƒ‡ã‚¹ãƒ†ã‚£ãƒãƒ¼ã‚·ãƒ§ãƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
 
-TMP_SYS			EQU	$0C		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
-TMP_SYS2		EQU	$0D		;ƒVƒXƒeƒ€‚ÅŽg‚¤TMP
-TMP_COUNT		EQU $0E
+TMP_SYS			EQU	$0C   ;///< System scratch byte. ; ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_SYS2		EQU	$0D   ;///< Second system scratch byte. ; ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_COUNT		EQU $0E    ;///< System scratch counter.
 
-TMP_SV0		EQU	$10	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV1		EQU	$11	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV2		EQU	$12	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV3		EQU	$13	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV4		EQU	$14	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV5		EQU	$15	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV6		EQU	$16	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SV7		EQU	$17	; ”Ä—pƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
+TMP_SV0		EQU	$10   ;///< General register save slot 0. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV1		EQU	$11   ;///< General register save slot 1. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV2		EQU	$12   ;///< General register save slot 2. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV3		EQU	$13   ;///< General register save slot 3. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV4		EQU	$14   ;///< General register save slot 4. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV5		EQU	$15   ;///< General register save slot 5. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV6		EQU	$16   ;///< General register save slot 6. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SV7		EQU	$17   ;///< General register save slot 7. ; æ±Žç”¨ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
 
-GM_TMP0	 	EQU	$18
-GM_TMP1	 	EQU	$19
-GM_TMP2	 	EQU	$1A
-GM_TMP3	 	EQU	$1B
+GM_TMP0	 	EQU	$18    ;///< Application scratch byte 0.
+GM_TMP1	 	EQU	$19    ;///< Application scratch byte 1.
+GM_TMP2	 	EQU	$1A    ;///< Application scratch byte 2.
+GM_TMP3	 	EQU	$1B    ;///< Application scratch byte 3.
 
-NMI_SVA		EQU	$1C	; NMIŠ„‚èž‚Ý A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-NMI_SVX		EQU	$1D	; NMIŠ„‚èž‚Ý X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-NMI_SVY		EQU	$1E	; NMIŠ„‚èž‚Ý Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-
-
-
-; PICO’ÊM—p 64byte
-PICO_BUF0	EQU  $20
-PICO_BUF1	EQU  $21
-PICO_BUF2	EQU  $22
-PICO_BUF3	EQU  $23
-PICO_BUF4	EQU  $24
-PICO_BUF5	EQU  $25
-PICO_BUF6	EQU  $26
-PICO_BUF7	EQU  $27
-PICO_BUF8	EQU  $28
-
-PICO_BUF10	EQU  $30
-PICO_BUF18	EQU  $38
-PICO_BUF20	EQU  $40
-PICO_BUF28	EQU  $48
-PICO_BUF30	EQU  $50
-PICO_BUF38	EQU  $58
-
-PICO_SNDREG	EQU  PICO_BUF10
+NMI_SVA		EQU	$1C   ;///< A register saved on entry to @ref NMI. ; NMIå‰²ã‚Šè¾¼ã¿ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+NMI_SVX		EQU	$1D   ;///< X register saved on entry to @ref NMI. ; NMIå‰²ã‚Šè¾¼ã¿ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+NMI_SVY		EQU	$1E   ;///< Y register saved on entry to @ref NMI. ; NMIå‰²ã‚Šè¾¼ã¿ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
 
 
-PICO_COM	EQU  $60		; PICO‚ÖƒRƒ}ƒ“ƒh‘—M—p
-PICO_MODE	EQU  $61		; PICO‚Ì“®ìƒ‚[ƒh
 
-PICO_STAGE	EQU  $62		; PICO‚Ö“n‚·ƒXƒe[ƒW”Ô†
+; PICOé€šä¿¡ç”¨ 64byte
+PICO_BUF0	EQU  $20    ;///< Mailbox byte 0; unused. The mailbox spans `$20`-`$5F`. @see @ref protocol
+PICO_BUF1	EQU  $21    ;///< Mailbox byte 1; holds #PF_MAGIC_CODE and is checked before any command runs.
+PICO_BUF2	EQU  $22    ;///< Mailbox byte 2; first command slot, where @ref jobPICO starts.
+PICO_BUF3	EQU  $23    ;///< Mailbox byte 3.
+PICO_BUF4	EQU  $24    ;///< Mailbox byte 4.
+PICO_BUF5	EQU  $25    ;///< Mailbox byte 5.
+PICO_BUF6	EQU  $26    ;///< Mailbox byte 6.
+PICO_BUF7	EQU  $27    ;///< Mailbox byte 7.
+PICO_BUF8	EQU  $28    ;///< Mailbox byte 8; start of the second unrolled read block.
 
-; ‹ó‚«
+PICO_BUF10	EQU  $30    ;///< Mailbox offset `$10`; start of the APU register area.
+PICO_BUF18	EQU  $38    ;///< Mailbox offset `$18`.
+PICO_BUF20	EQU  $40    ;///< Mailbox offset `$20`.
+PICO_BUF28	EQU  $48    ;///< Mailbox offset `$28`.
+PICO_BUF30	EQU  $50    ;///< Mailbox offset `$30`.
+PICO_BUF38	EQU  $58    ;///< Mailbox offset `$38`; last block of the 64-byte mailbox.
+
+PICO_SNDREG	EQU  PICO_BUF10    ;///< APU (register, value) pairs, terminated by `$FF`. Mirrors #PICO_SNDREG on the C++ side.
 
 
-GM_WAIT		EQU	$72	; 2 bytes  ƒQ[ƒ€‘Ò‚¿
+PICO_COM	EQU  $60   ;///< One command byte queued for the cartridge; sent and cleared by @ref NMI. ; PICOã¸ã‚³ãƒžãƒ³ãƒ‰é€ä¿¡ç”¨
+PICO_MODE	EQU  $61   ;///< Retry counter used while waiting for the cartridge during boot. ; PICOã®å‹•ä½œãƒ¢ãƒ¼ãƒ‰
 
-;----------------
-; ˆ——Ž‚¿‘Îô
-;----------------
+PICO_STAGE	EQU  $62   ;///< Stage number sent with #FP_COM_INI; 0 selects the title screen. ; PICOã¸æ¸¡ã™ã‚¹ãƒ†ãƒ¼ã‚¸ç•ªå·
+
+; ç©ºã
+
+
+GM_WAIT		EQU	$72   ;///< Frame countdown used by the application wait helpers. ; 2 bytes  ã‚²ãƒ¼ãƒ å¾…ã¡
 
 ;----------------
-; Šg’£ƒAƒ_ƒvƒ^[ ƒ‚[ƒh
-;----------------
-EXA_MODE	EQU	$76	; =0 Šg’£ƒ‚[ƒh =1 ƒXƒ^ƒ“ƒhƒAƒƒ“ƒ‚[ƒh
-
-;----------------
-; ƒQ[ƒ€ŠÖ˜A
-;----------------
-DEMO_TIMER	EQU	$78	; ƒfƒ‚ƒ^ƒCƒ}[
-
-
-
-;----------------
-; ƒL[ŠÖ˜A
+; å‡¦ç†è½ã¡å¯¾ç­–
 ;----------------
 
-
-KEY_REL		EQU	$82	;
-KEY_TRG		EQU	$83	;
-KEY_OLD		EQU	$84	;
-KEY_NEW		EQU	$85	;
-KEY_CH1		EQU	TMP_SYS
-KEY_CH3		EQU	TMP_SYS2
-
-REP_KEY		EQU	$8A	; ƒŠƒs[ƒg—p‚ÌƒL[
-REP_NEW		EQU	$8B	; ƒŠƒs[ƒg‚É‚æ‚é‰Ÿ‰ºó‘Ô
-REP_CNT		EQU	$8C	; ƒEƒFƒCƒgAƒCƒ“ƒ^[ƒoƒ‹‚ÌƒJƒEƒ“ƒ^
-
+;----------------
+; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ ãƒ¢ãƒ¼ãƒ‰
+;----------------
+EXA_MODE	EQU	$76   ;///< 0 when an FC-EXA adapter was detected, 1 for the normal FC PICO path. ; =0 æ‹¡å¼µãƒ¢ãƒ¼ãƒ‰ =1 ã‚¹ã‚¿ãƒ³ãƒ‰ã‚¢ãƒ­ãƒ³ãƒ¢ãƒ¼ãƒ‰
 
 ;----------------
-; IRQˆ—ŠÖ˜A
+; ã‚²ãƒ¼ãƒ é–¢é€£
 ;----------------
-HIRQ_ENA	EQU		$8F ; IRQ ƒtƒ‰ƒO§Œä (–¢Žg—p=0)
-BG_SCR_X	EQU		$94 ; size 4 bytes
-
-
-;----------------
-; ƒVƒXƒeƒ€ŠÖ˜A
-;----------------
-FLG_2000	EQU	$B0
-FLG_2001	EQU	$B1
-BG_SCR_Y	EQU	$B2
-
-NMI_FLG		EQU	$B3
-PAL_CHG_FG	EQU	$B4		; ƒpƒŒƒbƒg•ÏXƒtƒ‰ƒO
-
-SYS_TIMER	EQU	$B5		; 2 bytes
-FLM_TIMER	EQU	$B7		; ƒtƒŒ[ƒ€ƒ^ƒCƒ}[
-
-STG_COD		EQU	$B8
-STG_COD_SUB	EQU	$B9
+DEMO_TIMER	EQU	$78   ;///< Countdown for the attract-mode timeout. @see SET_TIMEOUT ; ãƒ‡ãƒ¢ã‚¿ã‚¤ãƒžãƒ¼
 
 
 
 ;----------------
-; NMI‚©‚çƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€‚ÌƒAƒhƒŒƒX
+; ã‚­ãƒ¼é–¢é€£
 ;----------------
-NMI_CALL_BNK	EQU $BD ; 1byte ‚O‚È‚çƒR[ƒ‹‚µ‚È‚¢
-NMI_CALL_ADR	EQU $BE ; 2byte ƒR[ƒ‹‚·‚éƒvƒƒOƒ‰ƒ€ƒAƒhƒŒƒX
 
 
-TMP_WRK0	EQU	$C0
-TMP_WRK1	EQU	$C1
-TMP_WRK2	EQU	$C2
-TMP_WRK3	EQU	$C3
+KEY_REL		EQU	$82    ;///< Keys released this frame.
+KEY_TRG		EQU	$83    ;///< Keys pressed this frame (rising edge).
+KEY_OLD		EQU	$84    ;///< Previous frame's held keys, used to derive edges.
+KEY_NEW		EQU	$85    ;///< Currently-held keys; also the byte sent to the cartridge each frame as the frame heartbeat.
+KEY_CH1		EQU	TMP_SYS    ;///< Scratch slot for the first controller sample of the majority vote.
+KEY_CH3		EQU	TMP_SYS2    ;///< Scratch slot for the third controller sample of the majority vote.
 
-TMP_DISP2	EQU	TMP_WRK3	; 1 byte  •\Ž¦”Ä—p
-
-
-SPRITE1		EQU	$200	; 256 bytes
+REP_KEY		EQU	$8A   ;///< Direction currently being auto-repeated. ; ãƒªãƒ”ãƒ¼ãƒˆç”¨ã®ã‚­ãƒ¼
+REP_NEW		EQU	$8B   ;///< Auto-repeat events generated this frame. ; ãƒªãƒ”ãƒ¼ãƒˆã«ã‚ˆã‚‹æŠ¼ä¸‹çŠ¶æ…‹
+REP_CNT		EQU	$8C   ;///< Frames remaining until the next auto-repeat event. ; ã‚¦ã‚§ã‚¤ãƒˆã€ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ã®ã‚«ã‚¦ãƒ³ã‚¿
 
 
 ;----------------
-; ƒpƒŒƒbƒgŠÖ˜A
+; IRQå‡¦ç†é–¢é€£
 ;----------------
-PALFADE_TIME	EQU	$306	; ƒpƒŒƒbƒgƒtƒF[ƒh‘¬“x
-PALFADE_CNT		EQU	$307	; ƒpƒŒƒbƒgƒtƒF[ƒhƒJƒEƒ“ƒ^
-PALFADE_VAL		EQU	$308	; ‰ÁŽZ’lAŒ¸ŽZ’l
-PALFADE_ADD		EQU	$309	; •Ï‰»‚Ì‰ÁŽZ’l
-PALFADE_MASK	EQU	$30A	; •Ï‰»‚³‚¹‚È‚¢ƒpƒŒƒbƒgƒrƒbƒgŽw’è
+HIRQ_ENA	EQU		$8F   ;///< Scanline IRQ enable. @note Vestigial; the hardware is not present. ; IRQ ãƒ•ãƒ©ã‚°åˆ¶å¾¡ (æœªä½¿ç”¨=0)
+BG_SCR_X	EQU		$94   ;///< Horizontal scroll, written to `$2005` during vertical blank. ; size 4 bytes
 
 
-MP3_VOL		EQU	$329
-MP3_BANK	EQU	$32A
+;----------------
+; ã‚·ã‚¹ãƒ†ãƒ é–¢é€£
+;----------------
+FLG_2000	EQU	$B0    ;///< Shadow of PPU register `$2000`, restored every vertical blank.
+FLG_2001	EQU	$B1    ;///< Shadow of PPU register `$2001`, restored every vertical blank.
+BG_SCR_Y	EQU	$B2    ;///< Vertical scroll, clamped to 239 before being written to `$2005`.
 
-HISCORES	EQU	$32C	; 4 bytes ƒnƒCƒXƒRƒA
+NMI_FLG		EQU	$B3    ;///< Re-entrancy guard for @ref NMI; non-zero means a handler is already running.
+PAL_CHG_FG	EQU	$B4   ;///< Set when #PAL_WRK differs from the hardware palette, so @ref transPALLET uploads it. ; ãƒ‘ãƒ¬ãƒƒãƒˆå¤‰æ›´ãƒ•ãƒ©ã‚°
 
-PAL_WRK		EQU	$330	 ;size $20	“]‘——p
+SYS_TIMER	EQU	$B5   ;///< Free-running 16-bit frame counter, incremented by @ref NMI. @see WAIT_VSYNC ; 2 bytes
+FLM_TIMER	EQU	$B7   ;///< Per-scene frame counter, reset on scene change. ; ãƒ•ãƒ¬ãƒ¼ãƒ ã‚¿ã‚¤ãƒžãƒ¼
 
-
-
-
-PICO_DATA_BUF  EQU	$400	; PICO ‚Ìƒf[ƒ^“Ç‚Ýž‚Ýƒoƒbƒtƒ@
-
-
-
+STG_COD		EQU	$B8    ;///< Current application step. @see SET_STG_COD
+STG_COD_SUB	EQU	$B9    ;///< Sub-step within the current step; 0 means the step's init has not run.
 
 
 
 ;----------------
-; Šg’£ƒAƒ_ƒvƒ^[ŠÖ˜A
+; NMIã‹ã‚‰ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã®ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;----------------
-EXS_HIRQ_REG = $4800
+NMI_CALL_BNK	EQU $BD   ;///< Bank for the optional user vertical-blank hook. ; 1byte ï¼ãªã‚‰ã‚³ãƒ¼ãƒ«ã—ãªã„
+NMI_CALL_ADR	EQU $BE   ;///< Address of the optional user vertical-blank hook; a zero high byte disables it. ; 2byte ã‚³ãƒ¼ãƒ«ã™ã‚‹ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚¢ãƒ‰ãƒ¬ã‚¹
+
+
+TMP_WRK0	EQU	$C0    ;///< Application work byte 0.
+TMP_WRK1	EQU	$C1    ;///< Application work byte 1.
+TMP_WRK2	EQU	$C2    ;///< Application work byte 2.
+TMP_WRK3	EQU	$C3    ;///< Application work byte 3.
+
+TMP_DISP2	EQU	TMP_WRK3   ;///< Alias of #TMP_WRK3 used by the display helpers. ; 1 byte  è¡¨ç¤ºæ±Žç”¨
+
+
+SPRITE1		EQU	$200   ;///< OAM shadow, 256 bytes; transferred by writing 2 to `$4014`. ; 256 bytes
+
+
+;----------------
+; ãƒ‘ãƒ¬ãƒƒãƒˆé–¢é€£
+;----------------
+PALFADE_TIME	EQU	$306   ;///< Frames between fade steps. ; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰é€Ÿåº¦
+PALFADE_CNT		EQU	$307   ;///< Frames remaining until the next fade step. ; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ•ã‚§ãƒ¼ãƒ‰ã‚«ã‚¦ãƒ³ã‚¿
+PALFADE_VAL		EQU	$308   ;///< Current fade level; non-zero suppresses sprite DMA in @ref NMI. ; åŠ ç®—å€¤ã€æ¸›ç®—å€¤
+PALFADE_ADD		EQU	$309   ;///< Amount added to #PALFADE_VAL each step; sign selects in or out. ; å¤‰åŒ–ã®åŠ ç®—å€¤
+PALFADE_MASK	EQU	$30A   ;///< Per-entry mask selecting which palette groups the fade affects. ; å¤‰åŒ–ã•ã›ãªã„ãƒ‘ãƒ¬ãƒƒãƒˆãƒ“ãƒƒãƒˆæŒ‡å®š
+
+
+MP3_VOL		EQU	$329    ;///< MP3 volume, mirrored from the cartridge's save data.
+MP3_BANK	EQU	$32A    ;///< Selected MP3 bank.
+
+HISCORES	EQU	$32C   ;///< High score table. @note Deliberately preserved across a reset. ; 4 bytes ãƒã‚¤ã‚¹ã‚³ã‚¢
+
+PAL_WRK		EQU	$330   ;///< 32-byte palette shadow; the only source @ref transPALLET uploads from. ; size $20	è»¢é€ç”¨
+
+
+
+
+PICO_DATA_BUF  EQU	$400   ;///< Staging buffer for bulk transfers, 256 bytes. @see xPF_COM_DMOD ; PICO ã®ãƒ‡ãƒ¼ã‚¿èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡
+
+
+
+
+
+
+;----------------
+; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼é–¢é€£
+;----------------
+EXS_HIRQ_REG = $4800   ;///< Scanline IRQ latch on the expansion adapter, `$4800`. @note Vestigial; not present on FC PICO. 
 
 
 
 ;----------------
 ; WRAM
 ;----------------
-W_TEST		EQU	$6000	; 1 byte  bit7: WRAM ‘¶Ýƒtƒ‰ƒO
+W_TEST		EQU	$6000   ;///< Cartridge RAM probe address used by the boot self-test. ; 1 byte  bit7: WRAM å­˜åœ¨ãƒ•ãƒ©ã‚°
 				;(1 bytes)
-W_HISCORES	EQU	$6002	; 8 bytes LV1 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰
-				;         LV2 ‚ÌƒnƒCƒXƒRƒA,ƒLƒƒƒ‰
-W_MAGIC		EQU	$600a	; 6 bytes WRAM ‰Šú‰»Ï‚Ý”»•Ê—pƒ}ƒWƒbƒNƒiƒ“ƒo[
+W_HISCORES	EQU	$6002   ;///< High scores in cartridge RAM. ; 8 bytes LV1 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©
+				;         LV2 ã®ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©
+W_MAGIC		EQU	$600a   ;///< Magic value marking cartridge RAM as initialised. ; 6 bytes WRAM åˆæœŸåŒ–æ¸ˆã¿åˆ¤åˆ¥ç”¨ãƒžã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼
 
 
-WIFI_BUF EQU $7000
+WIFI_BUF EQU $7000    ;///< Wi-Fi receive buffer. @note Vestigial FC-EXA feature.
 
-BURST_READ_BUF EQU $7100
+BURST_READ_BUF EQU $7100    ;///< Burst-read buffer. @note Vestigial FC-EXA feature.
 
-HTTP_BUF	EQU	$7400		; HTTPƒf[ƒ^“Ç‚Ýž‚Ý
+HTTP_BUF	EQU	$7400   ;///< HTTP buffer. @note Vestigial FC-EXA feature. ; HTTPãƒ‡ãƒ¼ã‚¿èª­ã¿è¾¼ã¿
 
 
 ;----------------
 ; PPU
 ;----------------
-; MMC3‚ÌIRQ‚ðŽg‚¤ê‡‚Í BG ‚ð$0000”Ô’n, Spr ‚ð$1000”Ô’n‚É”z’u‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
-FLG_PPU2000	EQU	%100_01_0_00
+; MMC3ã®IRQã‚’ä½¿ã†å ´åˆã¯ BG ã‚’$0000ç•ªåœ°, Spr ã‚’$1000ç•ªåœ°ã«é…ç½®ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
+FLG_PPU2000	EQU	%100_01_0_00    ;///< Default `$2000`: NMI on, 8x8 sprites, both pattern tables at `$0000`, +1 address increment.
 				; NMI gen,master,SP8x8,BG$0000,SP$0000,+1,v0,h0
 
 
-FLG_PPU2001	EQU	%000_11_11_0
+FLG_PPU2001	EQU	%000_11_11_0    ;///< Default `$2001`: background and sprites enabled, including in the leftmost 8 pixels.
 
 
 ;----------------
 ; KEY BIT CODE
 ;----------------
-KEY_A		EQU	$80
-KEY_B		EQU	$40
-KEY_SEL		EQU	$20
-KEY_RUN		EQU	$10
-KEY_UP		EQU	$08
-KEY_DOWN	EQU	$04
-KEY_LEFT	EQU	$02
-KEY_RIGHT	EQU	$01
+KEY_A		EQU	$80    ;///< A button.
+KEY_B		EQU	$40    ;///< B button.
+KEY_SEL		EQU	$20    ;///< Select button.
+KEY_RUN		EQU	$10    ;///< Start button.
+KEY_UP		EQU	$08    ;///< D-pad up.
+KEY_DOWN	EQU	$04    ;///< D-pad down.
+KEY_LEFT	EQU	$02    ;///< D-pad left.
+KEY_RIGHT	EQU	$01    ;///< D-pad right.
 
-KEY_AB		EQU	$C0
-KEY_ABRS	EQU	$F0
+KEY_AB		EQU	$C0    ;///< Mask matching either action button.
+KEY_ABRS	EQU	$F0    ;///< Mask matching A, B, Select or Start.
 
 
 ;----------------
-; ƒL[ƒŠƒs[ƒgÝ’è
+; ã‚­ãƒ¼ãƒªãƒ”ãƒ¼ãƒˆè¨­å®š
 ;----------------
-REP_WAIT	EQU	24	; ƒŠƒs[ƒgŠJŽn‚Ü‚Å‚ÌŽžŠÔ (ƒtƒŒ[ƒ€”)
-REP_INTERVAL	EQU	 8	; ƒŠƒs[ƒgŠÔŠu (ƒtƒŒ[ƒ€”)
+REP_WAIT	EQU	24   ;///< Frames a direction must be held before auto-repeat begins. ; ãƒªãƒ”ãƒ¼ãƒˆé–‹å§‹ã¾ã§ã®æ™‚é–“ (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
+REP_INTERVAL	EQU	 8   ;///< Frames between auto-repeat events. ; ãƒªãƒ”ãƒ¼ãƒˆé–“éš” (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
 
 

@@ -1,3 +1,25 @@
+/**
+ * @file programcore.nut
+ * @brief anago generic programming driver.
+ * @ingroup toolchain
+ *
+ * Loads the board script, sanity-checks the mapper number, erases, then runs the
+ * CPU and PPU transfers as coroutines.
+ *
+ * @note Doxygen parses Squirrel with its C parser, which does not recognise the
+ *       `function` keyword. Parameters are therefore described in prose rather
+ *       than with `@param`, which would not match the parsed signature.
+ *
+ * @see @ref flashing
+ */
+
+/**
+ * @brief Computes the bank range a transfer should cover.
+ * @details Takes the transfer descriptor to fill in, the transfer mode (3 full,
+ *          1 top half, 2 bottom half), the ROM image size and the target device
+ *          capacity.
+ * @return The `{start, end}` bank range.
+ */
 function loopsize_get(t, trans, image_size, device_size)
 {
 	local trans_full = 3, trans_top = 1, trans_bottom = 2; //header.h enum transtype
@@ -22,6 +44,13 @@ function loopsize_get(t, trans, image_size, device_size)
 	return loop;
 }
 
+/**
+ * @brief Dry run: reports what would be programmed, without writing.
+ * @details Parameters are, in order: the device handle, the board description
+ *          script, the expected mapper number, then the transfer mode, image
+ *          size and device capacity for the CPU bus and again for the PPU bus.
+ * @return Nothing.
+ */
 function testrun(
 	d, script, mapper, 
 	cpu_trans, cpu_image_size, cpu_device_size,
@@ -50,6 +79,15 @@ function testrun(
 	}
 }
 
+/**
+ * @brief Erases and reprograms the cartridge.
+ * @details Parameters are, in order: the device handle, the board description
+ *          script, the expected mapper number, then the transfer mode, image
+ *          size and device capacity for the CPU bus and again for the PPU bus.
+ * @details Runs the CPU and PPU transfers as coroutines after the erase
+ *          completes. @see @ref flashing
+ * @return Nothing.
+ */
 function program(
 	d, script, mapper, 
 	cpu_trans, cpu_image_size, cpu_device_size,

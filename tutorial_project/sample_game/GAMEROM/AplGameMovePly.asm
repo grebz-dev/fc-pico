@@ -1,12 +1,15 @@
+;/// @file AplGameMovePly.asm
+;/// @brief Player movement and the response to the controller bytes.
+;/// @ingroup gamerom
 ;=======================================================================
 ;=======================================================================
 ;=======================================================================
 ;
-;  ŠeíƒQ[ƒ€OBJˆÚ“®ˆ—
+;  å„ç¨®ã‚²ãƒ¼ãƒ OBJç§»å‹•å‡¦ç†
 ;
 
 ;-----------------------------------
-; ©‹@ƒWƒƒƒ“ƒv’†ˆÚ“®
+; è‡ªæ©Ÿã‚¸ãƒ£ãƒ³ãƒ—ä¸­ç§»å‹•
 ;-----------------------------------
 movePlyMoveObj
 	jsr  PLY_KEY_CHK
@@ -16,11 +19,17 @@ movePlyMoveObj
 
 
 ;=====================================
-;ƒvƒŒƒCƒ„[ƒL[ƒ`ƒFƒbƒN
+;ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ã‚­ãƒ¼ãƒã‚§ãƒƒã‚¯
 ;=====================================
+;/// @brief Turns the controller bytes into player movement and shots.
+;/// Reads #KEY_NEW and #KEY_TRG, which under the cartridge were written by the
+;/// C++ side rather than read from the port. @see @ref sample_game
+;/// @ingroup gamerom
 PLY_KEY_CHK:
 
 
+;/// @brief Continuation of the play phase after the input check.
+;/// @ingroup gamerom
 PLY_STG_1A:
 ;	lda	 PALFADE_TIME
 ;	bne  .end
@@ -43,6 +52,8 @@ PLY_STG_1A:
 ;--- PLAY MAIN ----
 	jsr PLY_SHOT_A
 
+;/// @brief Main input handler during play.
+;/// @ingroup gamerom
 P1_KEYJOB:
 	ldx #0
 	jsr  shotHorming
@@ -112,7 +123,7 @@ P1_KEYJOB:
 	CHK_BIT <KEY_NEW, #KEY_RIGHT
     beq  .p21_0
 	;==========================
-	; ‰EƒL[
+	; å³ã‚­ãƒ¼
 	;==========================
 	lda POS_PLY_X
 	cmp #PLY_LIM_XH
@@ -124,7 +135,7 @@ P1_KEYJOB:
 	CHK_BIT <KEY_NEW, #KEY_LEFT
     beq  .p21_1
 	;==========================
-	; ¶ƒL[
+	; å·¦ã‚­ãƒ¼
 	;==========================
 	lda POS_PLY_X
 	cmp #PLY_LIM_XL
@@ -137,7 +148,7 @@ P1_KEYJOB:
 	CHK_BIT <KEY_NEW, #KEY_UP
     beq  .p21_2
 	;==========================
-	; ãƒL[
+	; ä¸Šã‚­ãƒ¼
 	;==========================
 	jmp  P1_UP
 
@@ -146,8 +157,10 @@ P1_KEYJOB:
     beq  .end
 
 	;==========================
-	; ‰ºƒL[
+	; ä¸‹ã‚­ãƒ¼
 	;==========================
+;/// @brief Handles the down key.
+;/// @ingroup gamerom
 P1_DOWN:
 
 	lda POS_PLY_Y
@@ -159,6 +172,8 @@ P1_DOWN:
 	rts
 
 
+;/// @brief Handles the up key.
+;/// @ingroup gamerom
 P1_UP:
 	lda POS_PLY_Y
 	cmp #PLY_LIM_YL

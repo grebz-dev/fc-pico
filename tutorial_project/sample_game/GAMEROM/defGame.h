@@ -1,148 +1,156 @@
+;/// @file defGame.h
+;/// @brief Game-wide constants: PPU flags, key bits, sound slots and object kinds.
+;/// @ingroup gamerom
+;///
+;/// @warning The sound slot numbers here are the same numbering the C++ side
+;///          declares in `ap_main.h`, and the key bits are the same bits the
+;///          cartridge writes into `KEY_NEW`. Both are duplicated by hand.
+;///          @see @ref sample_game
 
 ;----------------
 ; PPU
 ;----------------
-; MMC3‚ÌIRQ‚ğg‚¤ê‡‚Í BG ‚ğ$0000”Ô’n, Spr ‚ğ$1000”Ô’n‚É”z’u‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
-FLG_PPU2000	EQU	%101_01_0_00
+; MMC3ã®IRQã‚’ä½¿ã†å ´åˆã¯ BG ã‚’$0000ç•ªåœ°, Spr ã‚’$1000ç•ªåœ°ã«é…ç½®ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
+FLG_PPU2000	EQU	%101_01_0_00		;///< PPU control value: NMI on, 8x8 sprites, BG and sprites both at pattern table 0.
 				; NMI gen,master,SP8x8,BG$0000,SP$0000,+1,v0,h0
 
 
-FLG_PPU2001	EQU	%000_11_11_0
+FLG_PPU2001	EQU	%000_11_11_0		;///< PPU mask value: background and sprites enabled, including the leftmost column.
 
 
 ;----------------
 ; KEY BIT CODE
 ;----------------
-KEY_A		EQU	$80
-KEY_B		EQU	$40
-KEY_SEL		EQU	$20
-KEY_RUN		EQU	$10
-KEY_UP		EQU	$08
-KEY_DOWN	EQU	$04
-KEY_LEFT	EQU	$02
-KEY_RIGHT	EQU	$01
+KEY_A		EQU	$80		;///< Controller bit, A.
+KEY_B		EQU	$40		;///< Controller bit, B.
+KEY_SEL		EQU	$20		;///< Controller bit, Select.
+KEY_RUN		EQU	$10		;///< Controller bit, Start.
+KEY_UP		EQU	$08		;///< Controller bit, up.
+KEY_DOWN	EQU	$04		;///< Controller bit, down.
+KEY_LEFT	EQU	$02		;///< Controller bit, left.
+KEY_RIGHT	EQU	$01		;///< Controller bit, right.
 
-KEY_AB		EQU	$C0
-KEY_ABRS	EQU	$F0
+KEY_AB		EQU	$C0		;///< Mask matching either action button.
+KEY_ABRS	EQU	$F0		;///< Mask matching A, B, Select or Start.
 
 
 ;----------------
 ; KEY DIR
 ;----------------
-KDIR_N		EQU $FF
-KDIR_U		EQU $00
-KDIR_UR		EQU $01
-KDIR_R		EQU $02
-KDIR_DR		EQU $03
-KDIR_D		EQU $04
-KDIR_DL		EQU $05
-KDIR_L		EQU $06
-KDIR_UL		EQU $07
+KDIR_N		EQU $FF		;///< Direction: neutral.
+KDIR_U		EQU $00		;///< Direction: up. The eight directions run clockwise from here.
+KDIR_UR		EQU $01		;///< Direction: up-right.
+KDIR_R		EQU $02		;///< Direction: right.
+KDIR_DR		EQU $03		;///< Direction: down-right.
+KDIR_D		EQU $04		;///< Direction: down.
+KDIR_DL		EQU $05		;///< Direction: down-left.
+KDIR_L		EQU $06		;///< Direction: left.
+KDIR_UL		EQU $07		;///< Direction: up-left.
 
 
 ;----------------
-; ƒL[ƒŠƒs[ƒgİ’è
+; ã‚­ãƒ¼ãƒªãƒ”ãƒ¼ãƒˆè¨­å®š
 ;----------------
-REP_WAIT	EQU	24	; ƒŠƒs[ƒgŠJn‚Ü‚Å‚ÌŠÔ (ƒtƒŒ[ƒ€”)
-REP_INTERVAL	EQU	 8	; ƒŠƒs[ƒgŠÔŠu (ƒtƒŒ[ƒ€”)
+REP_WAIT	EQU	24	; ãƒªãƒ”ãƒ¼ãƒˆé–‹å§‹ã¾ã§ã®æ™‚é–“ (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)		;///< Frames held before auto-repeat starts.
+REP_INTERVAL	EQU	 8	; ãƒªãƒ”ãƒ¼ãƒˆé–“éš” (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)		;///< Frames between auto-repeat presses.
 
 
 ;----------------
-; ƒoƒ“ƒN’è‹`
+; ãƒãƒ³ã‚¯å®šç¾©
 ;----------------
-PBNK_SYS	EQU  $00
+PBNK_SYS	EQU  $00		;///< PRG bank holding the system code.
 
 
 
 ;----------------
-; ŠeíP’è‹`
+; å„ç¨®På®šç¾©
 ;----------------
-SP_CLR_Y	EQU 240		; ƒXƒvƒ‰ƒCƒgƒNƒŠƒA[Y
+SP_CLR_Y	EQU 240		; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚¯ãƒªã‚¢ãƒ¼Y		;///< Y value that parks a sprite off-screen.
 
 ;----------------
-; STEP’è‹`
+; STEPå®šç¾©
 ;----------------
-ST_INIT		EQU	 0	; ‰Šú‰»
-ST_EXA00	EQU	 1	; Šg’£ƒVƒXƒeƒ€‹N“®ƒ`ƒFƒbƒN
-ST_TITLE	EQU	 2
-ST_OPTION	EQU	 3
-ST_DEBUG	EQU	 4
-ST_MAIN		EQU	 5
-ST_CLEAR	EQU	 6
-ST_OVER		EQU	 7
-ST_LICENSE	EQU	 8	; ƒ‰ƒCƒZƒ“ƒX
+ST_INIT		EQU	 0	; åˆæœŸåŒ–		;///< Console-side screen code: initialise.
+ST_EXA00	EQU	 1	; æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ èµ·å‹•ãƒã‚§ãƒƒã‚¯		;///< Console-side screen code: probe for the expansion adapter.
+ST_TITLE	EQU	 2		;///< Console-side screen code: title.
+ST_OPTION	EQU	 3		;///< Console-side screen code: options.
+ST_DEBUG	EQU	 4		;///< Console-side screen code: debug menu.
+ST_MAIN		EQU	 5		;///< Console-side screen code: play. The only one the cartridge sets, in `FCP_GAME_INIT`.
+ST_CLEAR	EQU	 6		;///< Console-side screen code: stage clear.
+ST_OVER		EQU	 7		;///< Console-side screen code: game over.
+ST_LICENSE	EQU	 8	; ãƒ©ã‚¤ã‚»ãƒ³ã‚¹		;///< Console-side screen code: licence.
 
-ST_MAX		EQU	 9	; ƒXƒeƒbƒv‚ÌÅ‘å’l
+ST_MAX		EQU	 9	; ã‚¹ãƒ†ãƒƒãƒ—ã®æœ€å¤§å€¤		;///< Number of console-side screen codes.
 
 
 
 ;==========================================================
-; ƒfƒ‚ƒ^ƒCƒ}[ŠÖ˜A’è‹`
+; ãƒ‡ãƒ¢ã‚¿ã‚¤ãƒãƒ¼é–¢é€£å®šç¾©
 ;==========================================================
-TITLE_DEMO_TM	EQU	(7*60/16)	; –ñ7•b
-GAME_DEMO_TM	EQU	(15*60/16)	; –ñ15•b
-CREDIT_DEMO_TM	EQU	(5*60/16)	; –ñ5•b
+TITLE_DEMO_TM	EQU	(7*60/16)	; ç´„7ç§’		;///< Title idle time before attract mode, about 7 seconds. Counted in units of 16 frames.
+GAME_DEMO_TM	EQU	(15*60/16)	; ç´„15ç§’		;///< Attract-mode play length, about 15 seconds.
+CREDIT_DEMO_TM	EQU	(5*60/16)	; ç´„5ç§’		;///< Credit screen length, about 5 seconds.
 
 
 
 ;==========================================================
-; ƒvƒŒ[ƒ„[ƒAƒjƒ§ŒäŠÖ˜A’è‹`
+; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ã‚¢ãƒ‹ãƒ¡åˆ¶å¾¡é–¢é€£å®šç¾©
 ;==========================================================
-PLY_AN_WAIT		EQU  0		; ‘Ò‹@
-PLY_AN_CHARGE	EQU  1		; ƒ`ƒƒ[ƒW
-PLY_AN_SHOTA	EQU  2		; ƒVƒ‡ƒbƒgA
-PLY_AN_SHOTB	EQU  3		; ƒVƒ‡ƒbƒgB
-PLY_AN_DEAD		EQU  4		; €–SƒAƒjƒ
+PLY_AN_WAIT		EQU  0		; å¾…æ©Ÿ		;///< Player animation: idle.
+PLY_AN_CHARGE	EQU  1		; ãƒãƒ£ãƒ¼ã‚¸		;///< Player animation: charging.
+PLY_AN_SHOTA	EQU  2		; ã‚·ãƒ§ãƒƒãƒˆA		;///< Player animation: shot A.
+PLY_AN_SHOTB	EQU  3		; ã‚·ãƒ§ãƒƒãƒˆB		;///< Player animation: shot B.
+PLY_AN_DEAD		EQU  4		; æ­»äº¡ã‚¢ãƒ‹ãƒ¡		;///< Player animation: dying. The cartridge watches #PLY_ANM_NO for this value.
 
 
 
 ;----------------
-; ƒTƒEƒ“ƒh’è‹`
+; ã‚µã‚¦ãƒ³ãƒ‰å®šç¾©
 ;----------------
-BGM_BOSS	EQU  1	;
-BGM_STAGE	EQU  2	;
-BGM_CLEAR	EQU  3	;
-BGM_OVER	EQU  4	;
+BGM_BOSS	EQU  1	;		;///< Music slot: boss.
+BGM_STAGE	EQU  2	;		;///< Music slot: stage. The C++ side calls the same slot `BGM_MAIN`. @see @ref sample_game
+BGM_CLEAR	EQU  3	;		;///< Music slot: stage clear.
+BGM_OVER	EQU  4	;		;///< Music slot: game over.
 
-SE_TOP_NO	EQU  5
+SE_TOP_NO	EQU  5		;///< First sound-effect slot. Everything below it is music.
 
-SE_CUR_SEL		EQU  (SE_TOP_NO+0)	; 00 ƒJ[ƒ\ƒ‹ ˆÚ“®
-SE_CUR_ENT		EQU  (SE_TOP_NO+1)	; 01 ƒJ[ƒ\ƒ‹ Œˆ’è
-SE_CUR_CAN		EQU  (SE_TOP_NO+2)	; 02 ƒJ[ƒ\ƒ‹ ƒLƒƒƒ“ƒZƒ‹@(ƒIƒvƒVƒ‡ƒ“ g—p)
-SE_SHOT_A		EQU  (SE_TOP_NO+3)	; 03 ©‹@ƒVƒ‡ƒbƒg‰¹
-SE_PLY_DAME		EQU  (SE_TOP_NO+4)	; 04 ©‹@ƒ_ƒ[ƒW‰¹
-SE_PLY_DEAD		EQU  (SE_TOP_NO+5)	; 05 ©‹@€–S
-SE_PLY_FORM		EQU  (SE_TOP_NO+6)	; 06 ©‹@ƒtƒH[ƒ[ƒVƒ‡ƒ“ƒ`ƒFƒ“ƒW
+SE_CUR_SEL		EQU  (SE_TOP_NO+0)	; 00 ã‚«ãƒ¼ã‚½ãƒ« ç§»å‹•		;///< Menu cursor moved.
+SE_CUR_ENT		EQU  (SE_TOP_NO+1)	; 01 ã‚«ãƒ¼ã‚½ãƒ« æ±ºå®š		;///< Menu item confirmed.
+SE_CUR_CAN		EQU  (SE_TOP_NO+2)	; 02 ã‚«ãƒ¼ã‚½ãƒ« ã‚­ãƒ£ãƒ³ã‚»ãƒ«ã€€(ã‚ªãƒ—ã‚·ãƒ§ãƒ³ ä½¿ç”¨)		;///< Menu cancelled.
+SE_SHOT_A		EQU  (SE_TOP_NO+3)	; 03 è‡ªæ©Ÿã‚·ãƒ§ãƒƒãƒˆéŸ³		;///< Player shot.
+SE_PLY_DAME		EQU  (SE_TOP_NO+4)	; 04 è‡ªæ©Ÿãƒ€ãƒ¡ãƒ¼ã‚¸éŸ³		;///< Player hit.
+SE_PLY_DEAD		EQU  (SE_TOP_NO+5)	; 05 è‡ªæ©Ÿæ­»äº¡		;///< Player destroyed.
+SE_PLY_FORM		EQU  (SE_TOP_NO+6)	; 06 è‡ªæ©Ÿãƒ•ã‚©ãƒ¼ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒã‚§ãƒ³ã‚¸		;///< Formation change.
 
-SE_BAKU_S		EQU  (SE_TOP_NO+7)	; 07 “G Œ‚”j “GƒTƒCƒY¬ ƒUƒR
-SE_BAKU_M		EQU  (SE_TOP_NO+8)	; 08 “G Œ‚”j “GƒTƒCƒY’† ƒUƒR
-SE_BAKU_L		EQU  (SE_TOP_NO+9)	; 09 “G Œ‚”j “GƒTƒCƒY‘å ƒ{ƒX
+SE_BAKU_S		EQU  (SE_TOP_NO+7)	; 07 æ•µ æ’ƒç ´ æ•µã‚µã‚¤ã‚ºå° ã‚¶ã‚³		;///< Small enemy destroyed.
+SE_BAKU_M		EQU  (SE_TOP_NO+8)	; 08 æ•µ æ’ƒç ´ æ•µã‚µã‚¤ã‚ºä¸­ ã‚¶ã‚³		;///< Medium enemy destroyed.
+SE_BAKU_L		EQU  (SE_TOP_NO+9)	; 09 æ•µ æ’ƒç ´ æ•µã‚µã‚¤ã‚ºå¤§ ãƒœã‚¹		;///< Boss destroyed.
 
-SE_NO_DAME		EQU  (SE_TOP_NO+10)	; 10 “G–³“G‰¹
-SE_DAME			EQU  (SE_TOP_NO+11)	; 11 ƒ_ƒ[ƒWó‚¯‰¹
+SE_NO_DAME		EQU  (SE_TOP_NO+10)	; 10 æ•µç„¡æ•µéŸ³		;///< Hit an invulnerable enemy.
+SE_DAME			EQU  (SE_TOP_NO+11)	; 11 ãƒ€ãƒ¡ãƒ¼ã‚¸å—ã‘éŸ³		;///< Enemy took damage.
 
-SE_BOSS_MOVE1	EQU  (SE_TOP_NO+12)	; 12 ƒ{ƒXˆÚ“®1
-SE_BOSS_MOVE2	EQU  (SE_TOP_NO+13)	; 13 ƒ{ƒXˆÚ“®2
+SE_BOSS_MOVE1	EQU  (SE_TOP_NO+12)	; 12 ãƒœã‚¹ç§»å‹•1		;///< Boss movement, variant 1.
+SE_BOSS_MOVE2	EQU  (SE_TOP_NO+13)	; 13 ãƒœã‚¹ç§»å‹•2		;///< Boss movement, variant 2.
 
-SE_BOSS_ATK1	EQU  (SE_TOP_NO+14)	; 14 ƒ{ƒXUŒ‚
-SE_TITLE		EQU  (SE_TOP_NO+15)	; 15 ƒ^ƒCƒgƒ‹‚r‚d
-SE_START_JET	EQU  (SE_TOP_NO+16)	; 16 ƒXƒ^[ƒgƒWƒFƒbƒg
-SE_HADOU_CHG	EQU  (SE_TOP_NO+17)	; 17 ”g“®–C@ƒ`ƒƒ[ƒW
-SE_HADOU_SHT	EQU  (SE_TOP_NO+18)	; 18 ”g“®–C@”­Ë
-SE_DM_DIVE		EQU  (SE_TOP_NO+19)	; 19 ŸŒ³öq
-SE_YAMATO_S		EQU  (SE_TOP_NO+20)	; 20 ƒ„ƒ}ƒg”­i
+SE_BOSS_ATK1	EQU  (SE_TOP_NO+14)	; 14 ãƒœã‚¹æ”»æ’ƒ		;///< Boss attack.
+SE_TITLE		EQU  (SE_TOP_NO+15)	; 15 ã‚¿ã‚¤ãƒˆãƒ«ï¼³ï¼¥		;///< Title-screen sting.
+SE_START_JET	EQU  (SE_TOP_NO+16)	; 16 ã‚¹ã‚¿ãƒ¼ãƒˆã‚¸ã‚§ãƒƒãƒˆ		;///< Launch thruster.
+SE_HADOU_CHG	EQU  (SE_TOP_NO+17)	; 17 æ³¢å‹•ç ²ã€€ãƒãƒ£ãƒ¼ã‚¸		;///< Wave cannon charging.
+SE_HADOU_SHT	EQU  (SE_TOP_NO+18)	; 18 æ³¢å‹•ç ²ã€€ç™ºå°„		;///< Wave cannon fired.
+SE_DM_DIVE		EQU  (SE_TOP_NO+19)	; 19 æ¬¡å…ƒæ½œèˆª		;///< Dimensional dive.
+SE_YAMATO_S		EQU  (SE_TOP_NO+20)	; 20 ãƒ¤ãƒãƒˆç™ºé€²		;///< Launch sequence.
 
-SNDTST_MAX   EQU (SE_TOP_NO+21)
+SNDTST_MAX   EQU (SE_TOP_NO+21)		;///< One past the last sound slot; the sound test counts to it.
 
 
-SE_TITLE_START	EQU  SE_CUR_ENT
-SE_POWUP		EQU  SE_CUR_ENT
-SE_BAKU_EFC		EQU  SE_BAKU_S
-SE_BAKU_BG		EQU  SE_BAKU_M
+SE_TITLE_START	EQU  SE_CUR_ENT		;///< Alias for #SE_CUR_ENT, used when starting a game.
+SE_POWUP		EQU  SE_CUR_ENT		;///< Alias for #SE_CUR_ENT, used for a power-up.
+SE_BAKU_EFC		EQU  SE_BAKU_S		;///< Alias for #SE_BAKU_S.
+SE_BAKU_BG		EQU  SE_BAKU_M		;///< Alias for #SE_BAKU_M.
 
-SE_SPECIAL	EQU	 SE_PLY_FORM	;
+SE_SPECIAL	EQU	 SE_PLY_FORM	;		;///< Alias for #SE_PLY_FORM.
 
-BGM_GAME_CLEAR  EQU  BGM_CLEAR
+BGM_GAME_CLEAR  EQU  BGM_CLEAR		;///< Alias for #BGM_CLEAR.
 
 
 

@@ -1,5 +1,5 @@
 /*
- BPE ƒfƒR[ƒh
+ BPE ãƒ‡ã‚³ãƒ¼ãƒ‰
  */
 
 #include "Arduino.h"
@@ -12,7 +12,7 @@
 
 #define BUF_SIZE2 0x100
 
-//1ƒtƒŒ[ƒ€ƒfƒR[ƒh
+//1ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ã‚³ãƒ¼ãƒ‰
 ulong frame_decode2( int len, uint8_t *pdic, uint8_t pass, uint8_t *wbuf ) {
 	uint8_t  dt_buf[BUF_SIZE2];
 	uint8_t  ix_buf[BUF_SIZE2];
@@ -55,7 +55,7 @@ ulong frame_decode2( int len, uint8_t *pdic, uint8_t pass, uint8_t *wbuf ) {
 }
 
 
-//ƒfƒR[ƒh
+//ãƒ‡ã‚³ãƒ¼ãƒ‰
 int bpe_decode( uint8_t *buf, uint8_t *wbuf ) {
 
 	uint8_t *bpe_io;
@@ -65,16 +65,16 @@ int bpe_decode( uint8_t *buf, uint8_t *wbuf ) {
 	int ret;
 
 	while (1) {
-		//ƒwƒbƒ_“Ç‚İ‚İ
-		uint8_t pass = buf[dp++];		// ƒJƒEƒ“ƒg
+		//ãƒ˜ãƒƒãƒ€èª­ã¿è¾¼ã¿
+		uint8_t pass = buf[dp++];		// ã‚«ã‚¦ãƒ³ãƒˆ
 		if (pass == 0) {
 			return decompsize_sum;
 		}
 
-		unsigned short decompsize = (buf[dp+1] << 8) + buf[dp];	// L’£ƒTƒCƒY
+		unsigned short decompsize = (buf[dp+1] << 8) + buf[dp];	// ä¼¸å¼µã‚µã‚¤ã‚º
 		dp +=2;
 
-		unsigned  short compsize = (buf[dp+1] << 8) + buf[dp];	// ˆ³kƒTƒCƒY
+		unsigned  short compsize = (buf[dp+1] << 8) + buf[dp];	// åœ§ç¸®ã‚µã‚¤ã‚º
 		dp +=2;
 
 		//printf("pass:%d decompsize:%d compsize:%d\n", pass, decompsize, compsize);
@@ -85,7 +85,7 @@ int bpe_decode( uint8_t *buf, uint8_t *wbuf ) {
 		
 		ret = frame_decode2( compsize, bpe_io, pass,  &wbuf[ decompsize_sum ] );
 		if (decompsize != ret) {
-			//printf("\n“WŠJƒGƒ‰[(orig=%d %d)\n", decompsize, ret);
+			//printf("\nå±•é–‹ã‚¨ãƒ©ãƒ¼(orig=%d %d)\n", decompsize, ret);
 			return -1;
 		}
 		decompsize_sum += decompsize;
@@ -97,7 +97,7 @@ int bpe_decode( uint8_t *buf, uint8_t *wbuf ) {
 }
 /*
 
-//ƒfƒR[ƒh
+//ãƒ‡ã‚³ãƒ¼ãƒ‰
 ulong bpe_dec(uchar *infile, uchar *outfile)
 {
 	
@@ -116,13 +116,13 @@ ulong bpe_dec(uchar *infile, uchar *outfile)
 
 	ifp = fopen(infile, "rb");
 	if (ifp == NULL) {
-		puts("“ü—Íƒtƒ@ƒCƒ‹ƒI[ƒvƒ“ƒGƒ‰[");
+		puts("å…¥åŠ›ãƒ•ã‚¡ã‚¤ãƒ«ã‚ªãƒ¼ãƒ—ãƒ³ã‚¨ãƒ©ãƒ¼");
 		return -1;
 	}
 
 	fsiz = fread(buf,  1, BUF_SIZE, ifp);
 	if( fsiz  == 0) {
-		puts("\nƒf[ƒ^‚ª“Ç‚İ‚ß‚È‚¢");
+		puts("\nãƒ‡ãƒ¼ã‚¿ãŒèª­ã¿è¾¼ã‚ãªã„");
 		return -1;
 	}
 	
@@ -130,7 +130,7 @@ ulong bpe_dec(uchar *infile, uchar *outfile)
 	
 	ofp = fopen(outfile, "wb");
 	if (ofp == NULL) {
-		puts("o—Íƒtƒ@ƒCƒ‹ƒI[ƒvƒ“ƒGƒ‰[");
+		puts("å‡ºåŠ›ãƒ•ã‚¡ã‚¤ãƒ«ã‚ªãƒ¼ãƒ—ãƒ³ã‚¨ãƒ©ãƒ¼");
 		return -1;
 	}
 
@@ -138,16 +138,16 @@ ulong bpe_dec(uchar *infile, uchar *outfile)
 	data = malloc(framesize);
 
 	while (1) {
-		//ƒwƒbƒ_“Ç‚İ‚İ
-		pass = buf[dp++];		// ƒJƒEƒ“ƒg
+		//ãƒ˜ãƒƒãƒ€èª­ã¿è¾¼ã¿
+		pass = buf[dp++];		// ã‚«ã‚¦ãƒ³ãƒˆ
 		if (pass == 0) {
 			break;
 		}
 
-		decompsize = (buf[dp+1] << 8) + buf[dp];	// L’£ƒTƒCƒY
+		decompsize = (buf[dp+1] << 8) + buf[dp];	// ä¼¸å¼µã‚µã‚¤ã‚º
 		dp +=2;
 
-		compsize = (buf[dp+1] << 8) + buf[dp];	// ˆ³kƒTƒCƒY
+		compsize = (buf[dp+1] << 8) + buf[dp];	// åœ§ç¸®ã‚µã‚¤ã‚º
 		dp +=2;
 
 		printf("pass:%d decompsize:%d compsize:%d\n", pass, decompsize, compsize);
@@ -158,7 +158,7 @@ ulong bpe_dec(uchar *infile, uchar *outfile)
 		
 		ret = frame_decode2(data, compsize, bpe_io, pass );
 			if (decompsize != ret) {
-			printf("\n“WŠJƒGƒ‰[(orig=%d %d)\n", decompsize, ret);
+			printf("\nå±•é–‹ã‚¨ãƒ©ãƒ¼(orig=%d %d)\n", decompsize, ret);
 			break;
 		}
 		decompsize_sum += decompsize;
@@ -173,11 +173,11 @@ ulong bpe_dec(uchar *infile, uchar *outfile)
 	before = fsiz;
 	after = ftell(ofp);
 	
-//	printf("L’£ : %d->%d(%6.2f%%) crc=%x(%s)\n",
+//	printf("ä¼¸å¼µ : %d->%d(%6.2f%%) crc=%x(%s)\n",
 //		before, after, ((double)after/before)*100.0,
 //		crc32, crc32 == crc32_orig ? "TRUE" : "FALSE"
 //		);
-	printf("L’£ : %d->%d(%6.2f%%) \n",
+	printf("ä¼¸å¼µ : %d->%d(%6.2f%%) \n",
 		before, after, ((double)after/before)*100.0
 		);
 
@@ -189,9 +189,9 @@ ulong bpe_dec(uchar *infile, uchar *outfile)
 
 
 void usage(void) {
-	puts("bpe BPEƒGƒ“ƒR[ƒ_");
-	puts("ƒGƒ“ƒR[ƒh [-e] infile [outfile] [-bƒtƒŒ[ƒ€ƒTƒCƒY]");
-	puts("ƒfƒR[ƒh -d infile [outfile]");
+	puts("bpe BPEã‚¨ãƒ³ã‚³ãƒ¼ãƒ€");
+	puts("ã‚¨ãƒ³ã‚³ãƒ¼ãƒ‰ [-e] infile [outfile] [-bãƒ•ãƒ¬ãƒ¼ãƒ ã‚µã‚¤ã‚º]");
+	puts("ãƒ‡ã‚³ãƒ¼ãƒ‰ -d infile [outfile]");
 	return ;
 }
 
@@ -204,7 +204,7 @@ int main(int argc, char **argv)
 		return 0;
 	}
 	
-	//‰Šú‰»
+	//åˆæœŸåŒ–
 	in[0] = out[0] = 0;
 	mode = ENCODE;
 	framesize = DEFAULTFRAMESIZE;
@@ -216,7 +216,7 @@ int main(int argc, char **argv)
 			if (argv[n][1] == 'b') framesize = atoi(&argv[n][2]);
 		} else {
 			
-			//ƒtƒ@ƒCƒ‹–¼
+			//ãƒ•ã‚¡ã‚¤ãƒ«å
 			if (in[0] != 0 && out[0] == 0) strcpy(out, argv[n]);
 			if (in[0] == 0) strcpy(in, argv[n]);
 		}
@@ -238,7 +238,7 @@ int main(int argc, char **argv)
 	}
 	
 	if (framesize <= 0 || framesize > 65535) framesize = DEFAULTFRAMESIZE;
-	framesize = (int)(framesize/12) * 12;//ƒAƒ‰ƒCƒ“ƒƒ“ƒg
+	framesize = (int)(framesize/12) * 12;//ã‚¢ãƒ©ã‚¤ãƒ³ãƒ¡ãƒ³ãƒˆ
 	
 	if (mode == ENCODE) {
 //		bpe_enc(in, out, framesize);

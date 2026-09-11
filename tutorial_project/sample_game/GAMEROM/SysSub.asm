@@ -1,19 +1,30 @@
+;/// @file SysSub.asm
+;/// @brief Shared subroutines: arithmetic, VRAM queueing and object helpers.
+;/// @ingroup gamerom
+;///
+;/// General-purpose routines used across the game. The VRAM helpers queue writes
+;/// for the NMI handler to drain rather than touching `$2006`/`$2007` directly,
+;/// because outside vertical blank that would corrupt the display.
 ;===================================================================
 ;
-;			ŒÅ’èƒoƒ“ƒN‚É’u‚­”Ä—pƒ‹[ƒ`ƒ“
+;			å›ºå®šãƒãƒ³ã‚¯ã«ç½®ãæ±Žç”¨ãƒ«ãƒ¼ãƒãƒ³
 ;
 ;===================================================================
 ;--------------------------------
-; STG_COD ƒZƒbƒg  A reg -> STG_COD
+; STG_COD ã‚»ãƒƒãƒˆ  A reg -> STG_COD
 ;--------------------------------
+;/// @brief Sets #STG_COD from the accumulator.
+;/// @ingroup gamerom
 SET_STG_COD:
+;/// @brief Sets #STG_COD and clears the sub-step.
+;/// @ingroup gamerom
 SET_STG_COD2:
 	STA	<STG_COD
 
 ;	JSR	STOP_SE
 
 	sei
-	inc	<NMI_FLG	;ƒnƒ“ƒO–hŽ~
+	inc	<NMI_FLG	;ãƒãƒ³ã‚°é˜²æ­¢
 
 	lda  #0
 	sta  <NMI_CALL_ADR+1
@@ -23,33 +34,45 @@ SET_STG_COD2:
 	sta  <KEY_TRG
 	dec  <NMI_FLG
 
-	DISP_OFF		; ‰æ–Êoff
+	DISP_OFF		; ç”»é¢off
 
 	rts
 
 
 
 ;******* GM_WAIT **********************
+;/// @brief Waits on #GM_WAIT or a key press, whichever comes first.
+;/// @ingroup gamerom
 ST_GM_WKEY:
 	CHK_BIT	<KEY_TRG, #KEY_ABRS
 	bne  st_gm_w01
 
+;/// @brief Waits until #GM_WAIT reaches zero.
+;/// @ingroup gamerom
 ST_GM_WAIT:
 	dec <GM_WAIT
 	bne  st_gm_w00
 
+;/// @brief Inner loop of #ST_GM_WAIT.
+;/// @ingroup gamerom
 st_gm_w01:
 	inc  <STG_COD_SUB
+;/// @brief Inner loop of #ST_GM_WAIT.
+;/// @ingroup gamerom
 st_gm_w00:
 	rts
 
+;/// @brief Wait entry point that skips the counter setup.
+;/// @ingroup gamerom
 ST_GM_WAIT2:
 	jsr  SLOW_DEC_GM_WAIT
 	beq  st_gm_w01
 	rts
 
 
-;******* ƒtƒF[ƒhI—¹‘Ò‚¿ **********************
+;******* ãƒ•ã‚§ãƒ¼ãƒ‰çµ‚äº†å¾…ã¡ **********************
+;/// @brief Waits for a palette fade to finish.
+;/// @ingroup gamerom
 ST_FADE_WAIT:
 	lda  PALFADE_TIME
 	bne  st_gm_w00
@@ -57,9 +80,11 @@ ST_FADE_WAIT:
 	rts
 
 ;-------------------------------------
-; 8ƒtƒŒ[ƒ€–ˆ‚ÉƒJƒEƒ“ƒgƒ_ƒEƒ“‚·‚é GM_WAIT
-; ƒJƒEƒ“ƒg‚ªƒ[ƒ‚È‚çƒ[ƒƒtƒ‰ƒOƒZƒbƒg
+; 8ãƒ•ãƒ¬ãƒ¼ãƒ æ¯Žã«ã‚«ã‚¦ãƒ³ãƒˆãƒ€ã‚¦ãƒ³ã™ã‚‹ GM_WAIT
+; ã‚«ã‚¦ãƒ³ãƒˆãŒã‚¼ãƒ­ãªã‚‰ã‚¼ãƒ­ãƒ•ãƒ©ã‚°ã‚»ãƒƒãƒˆ
 ;-------------------------------------
+;/// @brief Decrements #GM_WAIT and sets the zero flag when it reaches zero.
+;/// @ingroup gamerom
 SLOW_DEC_GM_WAIT:
 	lda  <SYS_TIMER
 	and  #$07
@@ -70,10 +95,12 @@ SLOW_DEC_GM_WAIT:
 
 
 ;=======================
-; [SCR_ADR] ‚©‚ç‚PƒoƒCƒg A reg ‚É“ü‚ê‚ÄƒAƒhƒŒƒX‚ðƒCƒ“ƒNƒŠƒƒ“ƒg
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  OUT: A reg  Žæ“¾‚µ‚½ƒf[ƒ^
+; [SCR_ADR] ã‹ã‚‰ï¼‘ãƒã‚¤ãƒˆ A reg ã«å…¥ã‚Œã¦ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  OUT: A reg  å–å¾—ã—ãŸãƒ‡ãƒ¼ã‚¿
 ;=======================
+;/// @brief Reads the byte at #SRC_ADR into the accumulator.
+;/// @ingroup gamerom
 getSCR_ADR_DATA:
 	sty  <TMP_SYS
 	ldy  #0
@@ -84,20 +111,26 @@ getSCR_ADR_DATA:
 	plp
 	rts
 
+;/// @brief Increments #SRC_ADR.
+;/// @ingroup gamerom
 incSCR_ADR:
 	incw <SRC_ADR
 	rts
 
+;/// @brief Decrements #SRC_ADR.
+;/// @ingroup gamerom
 decSCR_ADR:
 	decw <SRC_ADR
 	rts
 
 
 ;----------------------
-;  SRC_ADR‚É‰ÁŽZ
+;  SRC_ADRã«åŠ ç®—
 ;  Areg = LOW
 ;  Xreg = High
 ;----------------------
+;/// @brief Adds X:A to #SRC_ADR.
+;/// @ingroup gamerom
 addSCR_ADR:
 	clc
 	adc  <SRC_ADR+0
@@ -109,13 +142,17 @@ addSCR_ADR:
 
 
 ;=======================
-; Areg ‚ð [DST_ADR] ‚ÉƒZƒbƒg‚µ‚ÄƒAƒhƒŒƒX‚ðƒCƒ“ƒNƒŠƒƒ“ƒg
-;  IN: DST_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  ”j‰ó Y
+; Areg ã‚’ [DST_ADR] ã«ã‚»ãƒƒãƒˆã—ã¦ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;  IN: DST_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  ç ´å£Š Y
 ;=======================
+;/// @brief Stores the accumulator at #DST_ADR. Destroys Y.
+;/// @ingroup gamerom
 setDST_ADR_DATA:
 	ldy   #0
 	sta   [DST_ADR],Y
+;/// @brief Increments #DST_ADR.
+;/// @ingroup gamerom
 incDST_ADR:
 	inc  <DST_ADR
 	bne  .end
@@ -127,8 +164,10 @@ incDST_ADR:
 
 
 ;=======================
-; ƒLƒƒƒŠ[ƒtƒ‰ƒO”½“]
+; ã‚­ãƒ£ãƒªãƒ¼ãƒ•ãƒ©ã‚°åè»¢
 ;=======================
+;/// @brief Inverts the carry flag.
+;/// @ingroup gamerom
 revCFlag:
 	bcc  .set
 	clc
@@ -140,12 +179,16 @@ revCFlag:
 
 
 ;-----------------------------------
-; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ðƒNƒŠƒA[‚·‚é
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJŽnˆÊ’u
+; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’ã‚¯ãƒªã‚¢ãƒ¼ã™ã‚‹
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Parks a run of sprites off-screen, starting at the index in Y.
+;/// @ingroup gamerom
 clearObj:
 	cpy  #0
 	beq  clearObj_end
+;/// @brief Sprite clear entry point that skips the setup.
+;/// @ingroup gamerom
 clearObj2:
 	lda  #SP_CLR_Y
 .spclr_loop
@@ -155,16 +198,20 @@ clearObj2:
 	iny
 	iny
 	bne .spclr_loop
+;/// @brief Common tail of the sprite clear routines.
+;/// @ingroup gamerom
 clearObj_end:
 	rts
 
 
 
 ;=======================
-; •¶Žš—ñ•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   DRAW_STRING ‚Å•¶Žš—ñ‚ÌŠi”[ƒAƒhƒŒƒX‚ðŽw’è
+; æ–‡å­—åˆ—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   DRAW_STRING ã§æ–‡å­—åˆ—ã®æ ¼ç´ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
 ;=======================
+;/// @brief Draws the string whose address the `DRAW_STRING` macro supplied.
+;/// @ingroup gamerom
 DRAW_STRING_SUB:
 	sta  <SRC_ADR+1
 	ldy  #0
@@ -182,10 +229,12 @@ DRAW_STRING_SUB:
 	rts
 
 ;=======================
-; •¶Žš—ñƒNƒŠƒA[
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   DRAW_STRING ‚Å•¶Žš—ñ‚ÌŠi”[ƒAƒhƒŒƒX‚ðŽw’è
+; æ–‡å­—åˆ—ã‚¯ãƒªã‚¢ãƒ¼
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   DRAW_STRING ã§æ–‡å­—åˆ—ã®æ ¼ç´ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
 ;=======================
+;/// @brief Erases a string previously drawn by #DRAW_STRING_SUB.
+;/// @ingroup gamerom
 CLR_STRING_SUB:
 	sta  <SRC_ADR+1
 	ldy  #0
@@ -201,10 +250,12 @@ CLR_STRING_SUB:
 
 
 ;=======================
-; 16i”@”Žš•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   A reg •`‰æ‚·‚é”’l
+; 16é€²æ•°ã€€æ•°å­—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   A reg æç”»ã™ã‚‹æ•°å€¤
 ;=======================
+;/// @brief Draws the accumulator as two hexadecimal digits.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE:
 	tay
 	lsr  a
@@ -213,6 +264,8 @@ DRAW_HEX_BYTE:
 	lsr  a
 	jsr  DRAW_HEX_BYTE2
 	tya
+;/// @brief Hex draw entry point that skips the setup.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE2:
 	and  #$0f
 	cmp  #10
@@ -228,10 +281,12 @@ DRAW_HEX_BYTE2:
 	rts
 
 ;=======================
-; 16i”@”Žš•`‰æ
-;   SET_VRAM ‚Å“]‘—æVRAMƒAƒhƒŒƒX‚ðŽw’è
-;   A reg •`‰æ‚·‚é”’l
+; 16é€²æ•°ã€€æ•°å­—æç”»
+;   SET_VRAM ã§è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚’æŒ‡å®š
+;   A reg æç”»ã™ã‚‹æ•°å€¤
 ;=======================
+;/// @brief Draws a hexadecimal byte using the in-game font.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE_GM:
 	tay
 	lsr  a
@@ -240,6 +295,8 @@ DRAW_HEX_BYTE_GM:
 	lsr  a
 	jsr  DRAW_HEX_BYTE2_GM
 	tya
+;/// @brief In-game hex draw entry point that skips the setup.
+;/// @ingroup gamerom
 DRAW_HEX_BYTE2_GM:
 	and  #$0f
 	clc
@@ -249,13 +306,15 @@ DRAW_HEX_BYTE2_GM:
 	rts
 
 ;=======================
-; 2i‰»10i 8ƒrƒbƒg‰ÁŽZ
-;   A reg ‰ÁŽZ‚·‚é’liBCD’lj
-;   X reg $1xx ‚Ìƒ[ƒN‚Ì‰ºˆÊƒAƒhƒŒƒX8bit
+; 2é€²åŒ–10é€² 8ãƒ“ãƒƒãƒˆåŠ ç®—
+;   A reg åŠ ç®—ã™ã‚‹å€¤ï¼ˆBCDå€¤ï¼‰
+;   X reg $1xx ã®ãƒ¯ãƒ¼ã‚¯ã®ä¸‹ä½ã‚¢ãƒ‰ãƒ¬ã‚¹8bit
 ;=======================
 
+;/// @brief Adds to a packed BCD value in the stack page, addressed by X.
+;/// @ingroup gamerom
 BCD_ADD:
-	; ‰ÁŽZ‚·‚é’l‚ðã‰º4ƒrƒbƒg‚¸‚Â‚É•ª—£
+	; åŠ ç®—ã™ã‚‹å€¤ã‚’ä¸Šä¸‹4ãƒ“ãƒƒãƒˆãšã¤ã«åˆ†é›¢
 	tay
 	and  #$0F
 	sta  <TMP_SV0
@@ -279,7 +338,7 @@ BCD_ADD:
 	lsr  a
 	sta  <TMP_SV3
 
-	; ‰ºˆÊ4ƒrƒbƒg‚ð‰ÁŽZ
+	; ä¸‹ä½4ãƒ“ãƒƒãƒˆã‚’åŠ ç®—
 	lda  <TMP_SV0
 	clc
 	adc  <TMP_SV2
@@ -287,10 +346,12 @@ BCD_ADD:
 	bcc  BCD_00
 	sbc  #10
 	inc  <TMP_SV1
+;/// @brief Inner step of #BCD_ADD.
+;/// @ingroup gamerom
 BCD_00:
 	sta  <TMP_SV2
 
-	; ãˆÊ4ƒrƒbƒg‚ð‰ÁŽZ
+	; ä¸Šä½4ãƒ“ãƒƒãƒˆã‚’åŠ ç®—
 	lda  <TMP_SV1
 	clc
 	adc  <TMP_SV3
@@ -302,6 +363,8 @@ BCD_00:
 	lda  #1
 	jmp  BCD_ADD
 
+;/// @brief Inner step of #BCD_ADD.
+;/// @ingroup gamerom
 BCD_01:
 	asl  a
 	asl  a
@@ -313,9 +376,11 @@ BCD_01:
 
 
 ;=======================
-; 2i‰»10i ƒCƒ“ƒNƒŠƒƒ“ƒg
-;   X reg $1xx ‚Ìƒ[ƒN‚Ì‰ºˆÊƒAƒhƒŒƒX8bit
+; 2é€²åŒ–10é€² ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;   X reg $1xx ã®ãƒ¯ãƒ¼ã‚¯ã®ä¸‹ä½ã‚¢ãƒ‰ãƒ¬ã‚¹8bit
 ;=======================
+;/// @brief Increments a packed BCD value in the stack page.
+;/// @ingroup gamerom
 BCD_INC:
 	lda  $100,x
 	and  #$0F
@@ -340,9 +405,11 @@ BCD_INC:
 
 
 ;=======================
-; 2i‰»10i ƒfƒNƒŠƒƒ“ƒg
-;   X reg $1xx ‚Ìƒ[ƒN‚Ì‰ºˆÊƒAƒhƒŒƒX8bit
+; 2é€²åŒ–10é€² ãƒ‡ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
+;   X reg $1xx ã®ãƒ¯ãƒ¼ã‚¯ã®ä¸‹ä½ã‚¢ãƒ‰ãƒ¬ã‚¹8bit
 ;=======================
+;/// @brief Decrements a packed BCD value in the stack page.
+;/// @ingroup gamerom
 BCD_DEC:
 	lda  $100,x
 	and  #$0F
@@ -366,8 +433,10 @@ BCD_DEC:
 	jmp  BCD_DEC
 
 ;---------------------------------------------
-; Areg ‚Ì’l‚ðBCD‚É•ÏŠ·:99ˆÈã‚Ì’l‚Í99‚É‚È‚é
+; Areg ã®å€¤ã‚’BCDã«å¤‰æ›:99ä»¥ä¸Šã®å€¤ã¯99ã«ãªã‚‹
 ;---------------------------------------------
+;/// @brief Converts the accumulator to BCD, saturating at 99.
+;/// @ingroup gamerom
 convBCD:
 	cmp  #99
 	bcc  .no_over
@@ -396,7 +465,11 @@ convBCD:
 ;=======================
 ; SPRITE   CLEAR       *
 ;=======================
+;/// @brief Parks every sprite off-screen.
+;/// @ingroup gamerom
 SYS_CLEAR_SP:
+;/// @brief Inner loop of #SYS_CLEAR_SP.
+;/// @ingroup gamerom
 SPT_CLR_RTN:
 	ldx #0
 	lda #$F1
@@ -414,8 +487,12 @@ SPT_CLR_RTN:
 ;=======================
 ; VRAM CLEAR
 ;=======================
+;/// @brief Clears VRAM.
+;/// @ingroup gamerom
 SYS_CLEAR_BG:
 	SET_VRAM_ADD2 #$2000
+;/// @brief VRAM clear entry point that skips the setup.
+;/// @ingroup gamerom
 SYS_CLEAR_BG2:
 	lda	#$00
 	ldy	#0
@@ -423,6 +500,8 @@ SYS_CLEAR_BG2:
 	jsr SYS_VRAM_WLP
 	jsr SYS_VRAM_WLP
 
+;/// @brief Inner write loop of the VRAM clear.
+;/// @ingroup gamerom
 SYS_VRAM_WLP:
 	sta  $2007
 	dey
@@ -432,42 +511,50 @@ SYS_VRAM_WLP:
 
 
 ;------------------------------------------------------------------------------
-;				•\Ž¦on
+;				è¡¨ç¤ºon
 ;------------------------------------------------------------------------------
+;/// @brief Turns rendering on.
+;/// @ingroup gamerom
 _disp_on_sub:
 	lda  #0
-	sta  <NMI_FLG	; Š„‚èž‚Ý‹–‰Â
+	sta  <NMI_FLG	; å‰²ã‚Šè¾¼ã¿è¨±å¯
 
-	jsr  WAIT_VSYNC	; IRQ‚ð“­‚©‚¹‚é‚½‚ßAŽŸƒtƒŒ[ƒ€‚É‚È‚é‚Ü‚Å‘Ò‚ÂB
+	jsr  WAIT_VSYNC	; IRQã‚’åƒã‹ã›ã‚‹ãŸã‚ã€æ¬¡ãƒ•ãƒ¬ãƒ¼ãƒ ã«ãªã‚‹ã¾ã§å¾…ã¤ã€‚
 
 	lda  #FLG_PPU2001
-	sta  <FLG_2001	; ‰æ–ÊON
+	sta  <FLG_2001	; ç”»é¢ON
 	rts
 
 ;------------------------------------------------------------------------------
-;				•\Ž¦off
+;				è¡¨ç¤ºoff
 ;------------------------------------------------------------------------------
+;/// @brief Turns rendering off, so VRAM may be written freely.
+;/// @ingroup gamerom
 _disp_off_sub:
 	lda  #0
-	sta  <FLG_2001	; ‰æ–ÊOFF
-	jsr  WAIT_VSYNC	; ‰æ–Êoff‚É‚È‚é‚Ì‚ÍŽŸ‚ÌƒtƒŒ[ƒ€‚©‚ç‚È‚Ì‚ÅA‘Ò‚ÂB
+	sta  <FLG_2001	; ç”»é¢OFF
+	jsr  WAIT_VSYNC	; ç”»é¢offã«ãªã‚‹ã®ã¯æ¬¡ã®ãƒ•ãƒ¬ãƒ¼ãƒ ã‹ã‚‰ãªã®ã§ã€å¾…ã¤ã€‚
 
 	lda  #1
-	sta  <NMI_FLG	; Š„‚èž‚Ý‹ÖŽ~
+	sta  <NMI_FLG	; å‰²ã‚Šè¾¼ã¿ç¦æ­¢
 	rts
 
 
 
 ;--------------------
-; VSYNC ‘Ò‚¿
+; VSYNC å¾…ã¡
 ;--------------------
+;/// @brief Waits for the next vertical blank, via #NMI_FLG.
+;/// @note Never returns under the cartridge, which raises no NMI. Nothing on the
+;///       `$E004` path calls it. @see @ref sample_game
+;/// @ingroup gamerom
 WAIT_VSYNC:
 	lda  <FLG_2000
 	beq  .end
 	lda  <SYS_TIMER
 .loop:
 	cmp  <SYS_TIMER
-	beq  .loop		; NMII—¹‘Ò‚¿
+	beq  .loop		; NMIçµ‚äº†å¾…ã¡
 .end
 	rts
 
@@ -476,8 +563,10 @@ WAIT_VSYNC:
 ;========================================
 
 ;*****************************************
-; Areg ‚É 0-255‚Ì‹[Ž——”‚ð•Ô‚·
+; Areg ã« 0-255ã®æ“¬ä¼¼ä¹±æ•°ã‚’è¿”ã™
 ;*****************************************
+;/// @brief Returns a pseudo-random byte in the accumulator.
+;/// @ingroup gamerom
 GET_RND:
 	stx  <TMP_SVX
 	lda  RND_SEL
@@ -492,10 +581,12 @@ GET_RND:
 
 
 ;*****************************************
-; Areg ‚É —”‚ÌÅ‘å’lƒZƒbƒg
+; Areg ã« ä¹±æ•°ã®æœ€å¤§å€¤ã‚»ãƒƒãƒˆ
 ;
-; Areg ‚É Žw’è‚µ‚½”’l–¢–ž‚Ì‹[Ž——”‚ð•Ô‚·
+; Areg ã« æŒ‡å®šã—ãŸæ•°å€¤æœªæº€ã®æ“¬ä¼¼ä¹±æ•°ã‚’è¿”ã™
 ;*****************************************
+;/// @brief Returns a pseudo-random byte below the supplied limit.
+;/// @ingroup gamerom
 GET_RND_N:
 	sta  <TMP_SVA
 .get_rndn_00:

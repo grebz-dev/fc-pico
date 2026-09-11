@@ -1,301 +1,312 @@
+;/// @file defMission.h
+;/// @brief Mission bytecode: the opcode numbers and the macros that emit them.
+;/// @ingroup gamerom
+;///
+;/// Each `MC_*` macro writes one instruction: an opcode byte and its operands.
+;/// The tables in `cfg/` are written entirely in these macros, so a stage script
+;/// reads as assembly but assembles to data.
+;///
+;/// The mission types at the top -- `MT_HARA` and the rest -- select which script
+;/// table a mission runs from. The `$FB`-`$FF` range is reserved for control
+;/// rather than content, with `MT_END` at `$FF`.
 
 ;==========================================================
-; ƒ~ƒbƒVƒ‡ƒ“§ŒäŠÖ˜A’è‹`
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³åˆ¶å¾¡é–¢é€£å®šç¾©
 ;==========================================================
-MT_HARA		EQU  0		; HARADIUSƒ~ƒbƒVƒ‡ƒ“
-MT_FLET		EQU  1		; ŠÍ‘àƒ~ƒbƒVƒ‡ƒ“
-MT_BOSS		EQU  2		; ƒ{ƒX“Gƒ~ƒbƒVƒ‡ƒ“
-MT_EVNT		EQU  3		; ƒCƒxƒ“ƒg
+MT_HARA		EQU  0		; HARADIUSãƒŸãƒƒã‚·ãƒ§ãƒ³		;///< Ordinary wave mission. Runs a script from cfgMissonHara.h.
+MT_FLET		EQU  1		; è‰¦éšŠãƒŸãƒƒã‚·ãƒ§ãƒ³		;///< Fleet mission.
+MT_BOSS		EQU  2		; ãƒœã‚¹æ•µãƒŸãƒƒã‚·ãƒ§ãƒ³		;///< Boss mission.
+MT_EVNT		EQU  3		; ã‚¤ãƒ™ãƒ³ãƒˆ		;///< Scripted event.
 
-MT_MAX		EQU  4		; ƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒvMAX
+MT_MAX		EQU  4		; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—MAX		;///< Number of real mission types; the values above are control codes.
 
-;---- “Áêƒ~ƒbƒVƒ‡ƒ“§Œä ----
-MT_ATK_NO	EQU  $FB	; ƒ~ƒbƒVƒ‡ƒ“UŒ‚”Ô†ƒZƒbƒg
-MT_ANM_NO	EQU  $FC	; ƒ~ƒbƒVƒ‡ƒ“ƒAƒjƒ”Ô†ƒZƒbƒg
-MT_BOSSJMP	EQU  $FD	; ƒfƒ‚‚ÌŠJnƒ{ƒXƒ~ƒbƒVƒ‡ƒ“‚ÉƒWƒƒƒ“ƒv
-MT_DEMOJMP	EQU  $FE	; ƒfƒ‚‚ÌŠJnƒ~ƒbƒVƒ‡ƒ“‚ÉƒWƒƒƒ“ƒv
-MT_END		EQU  $FF	; ƒ~ƒbƒVƒ‡ƒ“I—¹
-
-
-;==========================================================
-; ƒ~ƒbƒVƒ‡ƒ“ƒTƒu@ƒoƒŠƒG[ƒVƒ‡ƒ“ƒ^ƒCƒv
-;==========================================================
-MTSV_0		EQU  $00
-MTSV_1		EQU  $40
-MTSV_2		EQU  $80
-MTSV_3		EQU  $C0
-
-;==========================================================
-; ƒ~ƒbƒVƒ‡ƒ“@ƒAƒjƒ”Ô†(‰ºˆÊ‚Qƒrƒbƒg‚ÍƒoƒŠƒG[ƒVƒ‡ƒ“”Ô†j
-;==========================================================
-MTA_OFF			EQU  $00*4		; ƒAƒjƒƒIƒt
-
-
-MTA_ASTRO_F		EQU  $80+0*4	; è¦Î@‰E‚©‚ç
-MTA_ASTRO_B		EQU  $80+1*4	; è¦Î@¶‚©‚ç
-MTA_ASTRO_U		EQU  $80+2*4	; è¦Î@ã‚©‚ç
-MTA_ASTRO_D		EQU  $80+3*4	; è¦Î@‰º‚©‚ç
-MTA_ZAKO_F0		EQU  $80+4*4	; “G@‘O‚©‚ç ãƒUƒR‚Ì‚İ
-MTA_ZAKO_F1		EQU  $80+5*4	; “G@‘O‚©‚ç dƒUƒRMIX
-MTA_ZAKO_F2		EQU  $80+6*4	; “G@‘O‚©‚ç ƒuƒ‰ƒbƒNƒ^ƒCƒK[‘à
-MTA_WARPIN0		EQU  $80+7*4	; ƒ[ƒvIN ãƒUƒR
-MTA_WARPIN1		EQU  $80+8*4	; ƒ[ƒvIN ƒuƒ‰ƒbƒNƒ^ƒCƒK[
-MTA_WARPIN2		EQU  $80+9*4	; ƒ[ƒvIN è¦Î
+;---- ç‰¹æ®ŠãƒŸãƒƒã‚·ãƒ§ãƒ³åˆ¶å¾¡ ----
+MT_ATK_NO	EQU  $FB	; ãƒŸãƒƒã‚·ãƒ§ãƒ³æ”»æ’ƒç•ªå·ã‚»ãƒƒãƒˆ		;///< Control: set the mission attack number.
+MT_ANM_NO	EQU  $FC	; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¢ãƒ‹ãƒ¡ç•ªå·ã‚»ãƒƒãƒˆ		;///< Control: set the mission animation number.
+MT_BOSSJMP	EQU  $FD	; ãƒ‡ãƒ¢æ™‚ã®é–‹å§‹ãƒœã‚¹ãƒŸãƒƒã‚·ãƒ§ãƒ³ã«ã‚¸ãƒ£ãƒ³ãƒ—		;///< Control: in attract mode, jump to the boss mission.
+MT_DEMOJMP	EQU  $FE	; ãƒ‡ãƒ¢æ™‚ã®é–‹å§‹ãƒŸãƒƒã‚·ãƒ§ãƒ³ã«ã‚¸ãƒ£ãƒ³ãƒ—		;///< Control: in attract mode, jump to the demo's first mission.
+MT_END		EQU  $FF	; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†		;///< Halt. Also what the cartridge reads as stage-cleared.
 
 
 ;==========================================================
-; ƒ~ƒbƒVƒ‡ƒ“@SP“GUŒ‚ƒpƒ^[ƒ“(‰ºˆÊ‚Qƒrƒbƒg‚ÍUŒ‚•p“xj
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚µãƒ–ã€€ãƒãƒªã‚¨ãƒ¼ã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—
 ;==========================================================
-MAA_OFF			EQU  $00*4		; UŒ‚ƒIƒt
-MAA_1SHOT		EQU  $01*4		; ‚P”­UŒ‚
-MAA_3SHOT		EQU  $02*4		; ‚R”­UŒ‚
+MTSV_0		EQU  $00		;///< Mission sub-value 0.
+MTSV_1		EQU  $40		;///< Mission sub-value 1.
+MTSV_2		EQU  $80		;///< Mission sub-value 2.
+MTSV_3		EQU  $C0		;///< Mission sub-value 3.
+
+;==========================================================
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã€€ã‚¢ãƒ‹ãƒ¡ç•ªå·(ä¸‹ä½ï¼’ãƒ“ãƒƒãƒˆã¯ãƒãƒªã‚¨ãƒ¼ã‚·ãƒ§ãƒ³ç•ªå·ï¼‰
+;==========================================================
+MTA_OFF			EQU  $00*4		; ã‚¢ãƒ‹ãƒ¡ã‚ªãƒ•		;///< Mission animation: none.
+
+
+MTA_ASTRO_F		EQU  $80+0*4	; éš•çŸ³ã€€å³ã‹ã‚‰		;///< Mission animation: meteors from the right.
+MTA_ASTRO_B		EQU  $80+1*4	; éš•çŸ³ã€€å·¦ã‹ã‚‰		;///< Mission animation: meteors from the left.
+MTA_ASTRO_U		EQU  $80+2*4	; éš•çŸ³ã€€ä¸Šã‹ã‚‰		;///< Mission animation: meteors from above.
+MTA_ASTRO_D		EQU  $80+3*4	; éš•çŸ³ã€€ä¸‹ã‹ã‚‰		;///< Mission animation: meteors from below.
+MTA_ZAKO_F0		EQU  $80+4*4	; æ•µã€€å‰ã‹ã‚‰ å¼±ã‚¶ã‚³ã®ã¿		;///< Mission animation: minions head-on, weak only.
+MTA_ZAKO_F1		EQU  $80+5*4	; æ•µã€€å‰ã‹ã‚‰ ç¡¬ã‚¶ã‚³MIX		;///< Mission animation: minions head-on, mixed with armoured ones.
+MTA_ZAKO_F2		EQU  $80+6*4	; æ•µã€€å‰ã‹ã‚‰ ãƒ–ãƒ©ãƒƒã‚¯ã‚¿ã‚¤ã‚¬ãƒ¼éšŠ		;///< Mission animation: minions head-on, the Black Tiger squadron.
+MTA_WARPIN0		EQU  $80+7*4	; ãƒ¯ãƒ¼ãƒ—IN å¼±ã‚¶ã‚³		;///< Mission animation: weak minions warping in.
+MTA_WARPIN1		EQU  $80+8*4	; ãƒ¯ãƒ¼ãƒ—IN ãƒ–ãƒ©ãƒƒã‚¯ã‚¿ã‚¤ã‚¬ãƒ¼		;///< Mission animation: Black Tigers warping in.
+MTA_WARPIN2		EQU  $80+9*4	; ãƒ¯ãƒ¼ãƒ—IN éš•çŸ³		;///< Mission animation: meteors warping in.
+
+
+;==========================================================
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã€€SPæ•µæ”»æ’ƒãƒ‘ã‚¿ãƒ¼ãƒ³(ä¸‹ä½ï¼’ãƒ“ãƒƒãƒˆã¯æ”»æ’ƒé »åº¦ï¼‰
+;==========================================================
+MAA_OFF			EQU  $00*4		; æ”»æ’ƒã‚ªãƒ•		;///< Mission attack: none.
+MAA_1SHOT		EQU  $01*4		; ï¼‘ç™ºæ”»æ’ƒ		;///< Mission attack: single shot.
+MAA_3SHOT		EQU  $02*4		; ï¼“ç™ºæ”»æ’ƒ		;///< Mission attack: three-way shot.
 
 
 
 ;----------------------------------------------
-; ƒ~ƒbƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‹ƒR[ƒh
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚³ãƒ¼ãƒ‰
 ;----------------------------------------------
-_MC_END			EQU  $00
-_MC_CALL	 	EQU  $FF	; MC_CALL, ŒÄ‚Ño‚µæƒAƒhƒŒƒXƒ‰ƒxƒ‹@@ƒR[ƒ‹‚Íæ‚©‚çƒR[ƒ‹‚Í•s‰Â
-_MC_RET			EQU  $FE
-_MC_LOOP_CNT	EQU  $FD	; MC_LOOP_CNT, iƒ‹[ƒv‰ñ”j
-_MC_JMP			EQU  $FC	; MC_JMP, ƒWƒƒƒ“ƒvğŒ, ƒWƒƒƒ“ƒvæƒAƒhƒŒƒX
-_MC_ZAKO		EQU  $FB	; G‹›“GƒZƒbƒg
-_MC_MEMCPYN		EQU  $FA	; ƒƒ‚ƒŠ[ƒRƒs[ NƒoƒCƒg”Å
-_MC_MEMCPY2		EQU  $F9	; ƒƒ‚ƒŠ[ƒRƒs[ 2ƒoƒCƒg”Å
-_MC_BOSS_NS		EQU  $F8	; ƒ{ƒX’Êí’e”­Ë
-_MC_PALSET		EQU  $F7	; ƒpƒŒƒbƒg‘‚«Š·‚¦
-_MC_MEMSET		EQU  $F6	; ƒƒ‚ƒŠ[ƒZƒbƒg 1ƒoƒCƒg”Å
-_MC_MEMSET2		EQU  $F5	; ƒƒ‚ƒŠ[ƒZƒbƒg 2ƒoƒCƒg”Å
-_MC_PGCALL		EQU  $F4	; ƒvƒƒOƒ‰ƒ€ƒR[ƒ‹ ƒvƒƒOƒ‰ƒ€‚ğŒÄ‚Ño‚·
-_MC_MEMCLR		EQU  $F3	; ƒƒ‚ƒŠ[ƒNƒŠƒA[
+_MC_END			EQU  $00		;///< Opcode: halt the script.
+_MC_CALL	 	EQU  $FF	; MC_CALL, å‘¼ã³å‡ºã—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ©ãƒ™ãƒ«ã€€ã€€ã‚³ãƒ¼ãƒ«ã¯å…ˆã‹ã‚‰ã‚³ãƒ¼ãƒ«ã¯ä¸å¯		;///< Opcode: call another script. A called script may not itself call.
+_MC_RET			EQU  $FE		;///< Opcode: return from a call.
+_MC_LOOP_CNT	EQU  $FD	; MC_LOOP_CNT, ï¼ˆãƒ«ãƒ¼ãƒ—å›æ•°ï¼‰		;///< Opcode: load the loop counter.
+_MC_JMP			EQU  $FC	; MC_JMP, ã‚¸ãƒ£ãƒ³ãƒ—æ¡ä»¶, ã‚¸ãƒ£ãƒ³ãƒ—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹		;///< Opcode: conditional jump.
+_MC_ZAKO		EQU  $FB	; é›‘é­šæ•µã‚»ãƒƒãƒˆ		;///< Opcode: spawn a minion.
+_MC_MEMCPYN		EQU  $FA	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚³ãƒ”ãƒ¼ Nãƒã‚¤ãƒˆç‰ˆ		;///< Opcode: copy N bytes.
+_MC_MEMCPY2		EQU  $F9	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚³ãƒ”ãƒ¼ 2ãƒã‚¤ãƒˆç‰ˆ		;///< Opcode: copy 2 bytes.
+_MC_BOSS_NS		EQU  $F8	; ãƒœã‚¹é€šå¸¸å¼¾ç™ºå°„		;///< Opcode: boss fires a normal shot.
+_MC_PALSET		EQU  $F7	; ãƒ‘ãƒ¬ãƒƒãƒˆæ›¸ãæ›ãˆ		;///< Opcode: rewrite part of the palette.
+_MC_MEMSET		EQU  $F6	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚»ãƒƒãƒˆ 1ãƒã‚¤ãƒˆç‰ˆ		;///< Opcode: store a byte.
+_MC_MEMSET2		EQU  $F5	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚»ãƒƒãƒˆ 2ãƒã‚¤ãƒˆç‰ˆ		;///< Opcode: store a word.
+_MC_PGCALL		EQU  $F4	; ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚³ãƒ¼ãƒ« ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’å‘¼ã³å‡ºã™		;///< Opcode: call a 6502 subroutine.
+_MC_MEMCLR		EQU  $F3	; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¯ãƒªã‚¢ãƒ¼		;///< Opcode: clear a region.
 
-_MC_BG_ANIME	EQU  $F2	;  BG‚ÉƒAƒjƒ[ƒVƒ‡ƒ“ƒf[ƒ^‚ğƒZƒbƒg‚·‚é
-_MC_PGCALL2		EQU  $F1	;  ƒoƒ“ƒN•t‚«ƒvƒƒOƒ‰ƒ€ƒR[ƒ‹ ƒvƒƒOƒ‰ƒ€‚ğŒÄ‚Ño‚·
-;_MC_VRAMSET		EQU  $F0	;  VRAMƒZƒbƒg@ƒAƒhƒŒƒXA’l
-_MC_MEMADD		EQU  $EF	;  ƒƒ‚ƒŠ[‰ÁZ 1ƒoƒCƒg”Å ƒAƒhƒŒƒXA’l
-_MC_MEMCMP		EQU  $EE	;  ƒƒ‚ƒŠ[”äŠr 1ƒoƒCƒg”Å ƒAƒhƒŒƒXA’l
-_MC_MEMPUSH		EQU  $ED	;  ƒƒ‚ƒŠ[ 1ƒoƒCƒg PUSH
-_MC_MEMPOP		EQU  $EC	;  ƒƒ‚ƒŠ[ 1ƒoƒCƒg POP
-
-
-_MC_BASE	EQU  $EC		; ƒRƒ}ƒ“ƒh—\–ñ‚ÌŠJn”Ô†
+_MC_BG_ANIME	EQU  $F2	;  BGã«ã‚¢ãƒ‹ãƒ¡ãƒ¼ã‚·ãƒ§ãƒ³ãƒ‡ãƒ¼ã‚¿ã‚’ã‚»ãƒƒãƒˆã™ã‚‹		;///< Opcode: install background animation data.
+_MC_PGCALL2		EQU  $F1	;  ãƒãƒ³ã‚¯ä»˜ããƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚³ãƒ¼ãƒ« ãƒ—ãƒ­ã‚°ãƒ©ãƒ ã‚’å‘¼ã³å‡ºã™		;///< Opcode: call a 6502 subroutine in a named bank.
+;_MC_VRAMSET		EQU  $F0	;  VRAMã‚»ãƒƒãƒˆã€€ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤
+_MC_MEMADD		EQU  $EF	;  ãƒ¡ãƒ¢ãƒªãƒ¼åŠ ç®— 1ãƒã‚¤ãƒˆç‰ˆ ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤		;///< Opcode: add to a byte.
+_MC_MEMCMP		EQU  $EE	;  ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒ 1ãƒã‚¤ãƒˆç‰ˆ ã‚¢ãƒ‰ãƒ¬ã‚¹ã€å€¤		;///< Opcode: compare a byte, leaving the result in #MISSON_CMP_P.
+_MC_MEMPUSH		EQU  $ED	;  ãƒ¡ãƒ¢ãƒªãƒ¼ 1ãƒã‚¤ãƒˆ PUSH		;///< Opcode: push a byte onto the mission stack.
+_MC_MEMPOP		EQU  $EC	;  ãƒ¡ãƒ¢ãƒªãƒ¼ 1ãƒã‚¤ãƒˆ POP		;///< Opcode: pop a byte from the mission stack.
 
 
-;----------------------------------------------
-; ƒ~ƒbƒVƒ‡ƒ“Šg’£ŠÖ”ƒR[ƒh
-;----------------------------------------------
-
+_MC_BASE	EQU  $EC		; ã‚³ãƒãƒ³ãƒ‰äºˆç´„ã®é–‹å§‹ç•ªå·		;///< First reserved opcode number.
 
 
 ;----------------------------------------------
-; ƒ~ƒbƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‹ƒR[ƒh@ƒWƒƒƒ“ƒvğŒ
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³æ‹¡å¼µé–¢æ•°ã‚³ãƒ¼ãƒ‰
 ;----------------------------------------------
-MCJ_JMP			EQU  0		; –³ğŒƒWƒƒƒ“ƒv
-MCJ_LOOP_CNT	EQU  1		; ƒ‹[ƒvƒJƒEƒ“ƒ^[‚ğƒ}ƒCƒiƒX‚P‚µ‚Äƒ[ƒ‚Å‚È‚¯‚ê‚ÎƒWƒƒƒ“ƒv
-							; MC_LOOP_CNT‚Å‚ ‚ç‚©‚¶‚ßƒ‹[ƒv‰ñ”ƒZƒbƒg
 
-;MCJ_BOSS_HP		EQU  2		; ƒ{ƒX‚g‚o‚ªƒ{ƒX‚g‚o”äŠrƒf[ƒ^‚æ‚è‘å‚«‚¯‚ê‚ÎƒWƒƒƒ“ƒv
-MCJ_ENEMY_Z		EQU  3		; BG“G‚Ìc‚è‚ªƒ[ƒ‚È‚çƒWƒƒƒ“ƒv
-MCJ_EBG_TAG_Z	EQU  4		; w’èƒ^ƒO‚Ì‚a‚f“G‚ªƒ[ƒ‚È‚çƒWƒƒƒ“ƒv
-MCJ_ESP_TAG_Z	EQU  5		; w’èƒ^ƒO‚Ì‚r‚o“G‚ªƒ[ƒ‚È‚çƒWƒƒƒ“ƒv
-MCJ_CMP_Z		EQU  6		; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªZ‚È‚çƒWƒƒƒ“ƒv
-MCJ_CMP_NZ		EQU  7		; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªNZ‚È‚çƒWƒƒƒ“ƒv
-MCJ_CMP_C		EQU  8		; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªC‚È‚çƒWƒƒƒ“ƒv
-MCJ_CMP_NC		EQU  9		; ƒƒ‚ƒŠ[”äŠrŒ‹‰Ê‚ªNC‚È‚çƒWƒƒƒ“ƒv
+
+
+;----------------------------------------------
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ã‚³ãƒ¼ãƒ‰ã€€ã‚¸ãƒ£ãƒ³ãƒ—æ¡ä»¶
+;----------------------------------------------
+MCJ_JMP			EQU  0		; ç„¡æ¡ä»¶ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: always.
+MCJ_LOOP_CNT	EQU  1		; ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿ãƒ¼ã‚’ãƒã‚¤ãƒŠã‚¹ï¼‘ã—ã¦ã‚¼ãƒ­ã§ãªã‘ã‚Œã°ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: decrement the loop counter and jump while non-zero.
+							; MC_LOOP_CNTã§ã‚ã‚‰ã‹ã˜ã‚ãƒ«ãƒ¼ãƒ—å›æ•°ã‚»ãƒƒãƒˆ
+
+;MCJ_BOSS_HP		EQU  2		; ãƒœã‚¹ï¼¨ï¼°ãŒãƒœã‚¹ï¼¨ï¼°æ¯”è¼ƒãƒ‡ãƒ¼ã‚¿ã‚ˆã‚Šå¤§ãã‘ã‚Œã°ã‚¸ãƒ£ãƒ³ãƒ—
+MCJ_ENEMY_Z		EQU  3		; BGæ•µã®æ®‹ã‚ŠãŒã‚¼ãƒ­ãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: no background enemies left.
+MCJ_EBG_TAG_Z	EQU  4		; æŒ‡å®šã‚¿ã‚°ã®ï¼¢ï¼§æ•µãŒã‚¼ãƒ­ãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: no tagged background enemies left.
+MCJ_ESP_TAG_Z	EQU  5		; æŒ‡å®šã‚¿ã‚°ã®ï¼³ï¼°æ•µãŒã‚¼ãƒ­ãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: no tagged special enemies left.
+MCJ_CMP_Z		EQU  6		; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒZãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: last compare was equal.
+MCJ_CMP_NZ		EQU  7		; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒNZãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: last compare was not equal.
+MCJ_CMP_C		EQU  8		; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒCãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: last compare set carry.
+MCJ_CMP_NC		EQU  9		; ãƒ¡ãƒ¢ãƒªãƒ¼æ¯”è¼ƒçµæœãŒNCãªã‚‰ã‚¸ãƒ£ãƒ³ãƒ—		;///< Jump condition: last compare cleared carry.
 
 
 ;----------------
-; ƒ~ƒbƒVƒ‡ƒ“ƒRƒ“ƒgƒ[ƒ‹ƒ}ƒNƒ
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚³ãƒ³ãƒˆãƒ­ãƒ¼ãƒ«ãƒã‚¯ãƒ­
 ;----------------
 
-MC_END MACRO
+MC_END MACRO		;///< Emits #_MC_END.
 	DB	_MC_END
 	ENDM
 
-MC_CALL MACRO
+MC_CALL MACRO		;///< Emits #_MC_CALL and a target address.
 	DB	_MC_CALL
-	DW  \1			; ŒÄ‚Ño‚µæƒAƒhƒŒƒXƒ‰ƒxƒ‹
+	DW  \1			; å‘¼ã³å‡ºã—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ©ãƒ™ãƒ«
 	ENDM
 
-MC_RET MACRO
+MC_RET MACRO		;///< Emits #_MC_RET.
 	DB	_MC_RET
 	ENDM
 
-MC_LOOP_CNT MACRO
+MC_LOOP_CNT MACRO		;///< Emits #_MC_LOOP_CNT and an iteration count.
 	DB	_MC_LOOP_CNT
-	DB  \1			; ƒ‹[ƒv‰ñ”
+	DB  \1			; ãƒ«ãƒ¼ãƒ—å›æ•°
 	ENDM
 
-MC_JMP MACRO
+MC_JMP MACRO		;///< Emits #_MC_JMP, a target and one condition byte.
 	DB	_MC_JMP
-	DW  \1			; ƒWƒƒƒ“ƒvæƒAƒhƒŒƒXƒ‰ƒxƒ‹
-	DB  \2			; ƒWƒƒƒ“ƒvğŒ
+	DW  \1			; ã‚¸ãƒ£ãƒ³ãƒ—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ©ãƒ™ãƒ«
+	DB  \2			; ã‚¸ãƒ£ãƒ³ãƒ—æ¡ä»¶
 	DB  0
 	ENDM
 
-MC_JMP2 MACRO
+MC_JMP2 MACRO		;///< Emits #_MC_JMP, a target and two condition bytes.
 	DB	_MC_JMP
-	DW  \1			; ƒWƒƒƒ“ƒvæƒAƒhƒŒƒXƒ‰ƒxƒ‹
-	DB  \2			; ƒWƒƒƒ“ƒvğŒ
-	DB  \3			; ƒWƒƒƒ“ƒvğŒ
+	DW  \1			; ã‚¸ãƒ£ãƒ³ãƒ—å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ©ãƒ™ãƒ«
+	DB  \2			; ã‚¸ãƒ£ãƒ³ãƒ—æ¡ä»¶
+	DB  \3			; ã‚¸ãƒ£ãƒ³ãƒ—æ¡ä»¶
 	ENDM
 
 
 
-MC_ZAKO MACRO
+MC_ZAKO MACRO		;///< Emits #_MC_ZAKO: kind, movement pattern, and an X offset halved on the way in.
 	DB	_MC_ZAKO
-	DB  \1			; í—Ş
-	DB  \2			; ˆÚ“®ƒpƒ^[ƒ“iÅ‰ºˆÊƒrƒbƒg=1 ‚ÅX²”½“]j
-	DB  ((\3) /2)		; ‚wƒIƒtƒZƒbƒg 0-511 (1/2‚µ‚ÄƒZƒbƒg‚³‚ê‚éj
-	DB  \4			; ‚xƒIƒtƒZƒbƒg -128 ‚©‚ç 127@‚Ü‚Å
+	DB  \1			; ç¨®é¡
+	DB  \2			; ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³ï¼ˆæœ€ä¸‹ä½ãƒ“ãƒƒãƒˆ=1 ã§Xè»¸åè»¢ï¼‰
+	DB  ((\3) /2)		; ï¼¸ã‚ªãƒ•ã‚»ãƒƒãƒˆ 0-511 (1/2ã—ã¦ã‚»ãƒƒãƒˆã•ã‚Œã‚‹ï¼‰
+	DB  \4			; ï¼¹ã‚ªãƒ•ã‚»ãƒƒãƒˆ -128 ã‹ã‚‰ 127ã€€ã¾ã§
 	ENDM
 
 
 ;-------------------------------
-;  LBF_ZAKO —p’e”­Ë
+;  LBF_ZAKO ç”¨å¼¾ç™ºå°„
 ;-------------------------------
-MC_BOSS_NS MACRO
+MC_BOSS_NS MACRO		;///< Emits #_MC_BOSS_NS: background index, target and shot kind.
 	DB	_MC_BOSS_NS
 	DB  \1			; LASTER_BG IDX
-	DB  \2			; ƒ^[ƒQƒbƒg
-	DB  \3			; ’e‚Ìí—Ş
-	DB  \4			; ˆÚ“®ƒpƒ^[ƒ“
+	DB  \2			; ã‚¿ãƒ¼ã‚²ãƒƒãƒˆ
+	DB  \3			; å¼¾ã®ç¨®é¡
+	DB  \4			; ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³
 	ENDM
 
-MC_BOSS_SS MACRO
+MC_BOSS_SS MACRO		;///< Emits a boss special shot: X and Y offsets and a parameter.
 	DB	_MC_BOSS_SS
-	DB  \1			; ‚wƒIƒtƒZƒbƒg -128 ‚©‚ç 127@‚Ü‚Å
-	DB  \2			; ‚xƒIƒtƒZƒbƒg -128 ‚©‚ç 127@‚Ü‚Å
-	DB  \3			; ƒpƒ‰ƒ[ƒ^[
+	DB  \1			; ï¼¸ã‚ªãƒ•ã‚»ãƒƒãƒˆ -128 ã‹ã‚‰ 127ã€€ã¾ã§
+	DB  \2			; ï¼¹ã‚ªãƒ•ã‚»ãƒƒãƒˆ -128 ã‹ã‚‰ 127ã€€ã¾ã§
+	DB  \3			; ãƒ‘ãƒ©ãƒ¡ãƒ¼ã‚¿ãƒ¼
 	ENDM
 
-MC_BOSS_HS MACRO
+MC_BOSS_HS MACRO		;///< Emits a boss homing shot: X and Y offsets and a shot kind.
 	DB	_MC_BOSS_HS
-	DB  \1			; ‚wƒIƒtƒZƒbƒg -128 ‚©‚ç 127@‚Ü‚Å
-	DB  \2			; ‚xƒIƒtƒZƒbƒg -128 ‚©‚ç 127@‚Ü‚Å
-	DB  \3			; ’e‚Ìí—Ş
-	DB  \4			; ˆÚ“®ƒpƒ^[ƒ“
+	DB  \1			; ï¼¸ã‚ªãƒ•ã‚»ãƒƒãƒˆ -128 ã‹ã‚‰ 127ã€€ã¾ã§
+	DB  \2			; ï¼¹ã‚ªãƒ•ã‚»ãƒƒãƒˆ -128 ã‹ã‚‰ 127ã€€ã¾ã§
+	DB  \3			; å¼¾ã®ç¨®é¡
+	DB  \4			; ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³
 	ENDM
 
-MC_PALSET MACRO
+MC_PALSET MACRO		;///< Emits #_MC_PALSET: a palette slot and three colours.
 	DB	_MC_PALSET
-	DB  \1			; ƒZƒbƒgˆÊ’u 4xN +1 (N= 0`7)
-	DB  \2,\3,\4	; ƒpƒŒƒbƒgƒf[ƒ^
+	DB  \1			; ã‚»ãƒƒãƒˆä½ç½® 4xN +1 (N= 0ï½7)
+	DB  \2,\3,\4	; ãƒ‘ãƒ¬ãƒƒãƒˆãƒ‡ãƒ¼ã‚¿
 	ENDM
 
-MC_MEMSET MACRO
+MC_MEMSET MACRO		;///< Emits #_MC_MEMSET: address and byte.
 	DB	_MC_MEMSET
-	DW  \1			; ‘‚«Š·‚¦ƒAƒhƒŒƒX
-	DB  \2			; ‘‚«Š·‚¦ƒf[ƒ^
+	DW  \1			; æ›¸ãæ›ãˆã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \2			; æ›¸ãæ›ãˆãƒ‡ãƒ¼ã‚¿
 	ENDM
 
-MC_MEMSET2 MACRO
+MC_MEMSET2 MACRO		;///< Emits #_MC_MEMSET2: address and word.
 	DB	_MC_MEMSET2
-	DW  \1			; ‘‚«Š·‚¦ƒAƒhƒŒƒX
-	DW  \2			; ‘‚«Š·‚¦ƒf[ƒ^
+	DW  \1			; æ›¸ãæ›ãˆã‚¢ãƒ‰ãƒ¬ã‚¹
+	DW  \2			; æ›¸ãæ›ãˆãƒ‡ãƒ¼ã‚¿
 	ENDM
 
-MC_MEMSET3B MACRO
+MC_MEMSET3B MACRO		;///< Emits a three-byte store.
 	DB	_MC_MEMSET2
-	DW  \1			; ‘‚«Š·‚¦ƒAƒhƒŒƒX
-	DB  \2,\3		; ‘‚«Š·‚¦ƒf[ƒ^
+	DW  \1			; æ›¸ãæ›ãˆã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \2,\3		; æ›¸ãæ›ãˆãƒ‡ãƒ¼ã‚¿
 	DB	_MC_MEMSET
-	DW  \1+2		; ‘‚«Š·‚¦ƒAƒhƒŒƒX
-	DB  \4			; ‘‚«Š·‚¦ƒf[ƒ^
+	DW  \1+2		; æ›¸ãæ›ãˆã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \4			; æ›¸ãæ›ãˆãƒ‡ãƒ¼ã‚¿
 	ENDM
 
-MC_MEMADD MACRO
+MC_MEMADD MACRO		;///< Emits #_MC_MEMADD: address and addend.
 	DB	_MC_MEMADD
-	DW  \1			; ƒAƒhƒŒƒX
-	DB  \2			; ‰ÁZƒf[ƒ^
+	DW  \1			; ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \2			; åŠ ç®—ãƒ‡ãƒ¼ã‚¿
 	ENDM
 
-MC_MEMCMP MACRO
+MC_MEMCMP MACRO		;///< Emits #_MC_MEMCMP: address and comparand.
 	DB	_MC_MEMCMP
-	DW  \1			; ƒAƒhƒŒƒX
-	DB  \2			; ”äŠrƒf[ƒ^
+	DW  \1			; ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \2			; æ¯”è¼ƒãƒ‡ãƒ¼ã‚¿
 	ENDM
 
-MC_MEMCPYN MACRO
+MC_MEMCPYN MACRO		;///< Emits #_MC_MEMCPYN: source, destination and length.
 	DB	_MC_MEMCPYN
-	DW  \2			; ƒAƒhƒŒƒX SRC
-	DW  \1			; ƒAƒhƒŒƒX DST
+	DW  \2			; ã‚¢ãƒ‰ãƒ¬ã‚¹ SRC
+	DW  \1			; ã‚¢ãƒ‰ãƒ¬ã‚¹ DST
 	DB  \3
 	ENDM
 
-MC_MEMCPY2 MACRO
+MC_MEMCPY2 MACRO		;///< Emits #_MC_MEMCPY2: source and destination.
 	DB	_MC_MEMCPY2
-	DW  \2			; ƒAƒhƒŒƒX SRC
-	DW  \1			; ƒAƒhƒŒƒX DST
+	DW  \2			; ã‚¢ãƒ‰ãƒ¬ã‚¹ SRC
+	DW  \1			; ã‚¢ãƒ‰ãƒ¬ã‚¹ DST
 	ENDM
 
 
-MC_MEMPUSH MACRO
+MC_MEMPUSH MACRO		;///< Emits #_MC_MEMPUSH.
 	DB	_MC_MEMPUSH
-	DW  \1			; PUSH•Ï”ƒAƒhƒŒƒX
+	DW  \1			; PUSHå¤‰æ•°ã‚¢ãƒ‰ãƒ¬ã‚¹
 	ENDM
 
-MC_MEMPOP MACRO
+MC_MEMPOP MACRO		;///< Emits #_MC_MEMPOP.
 	DB	_MC_MEMPOP
-	DW  \1			; POP•Ï”ƒAƒhƒŒƒX
+	DW  \1			; POPå¤‰æ•°ã‚¢ãƒ‰ãƒ¬ã‚¹
 	ENDM
 
 
-MC_PGCALL MACRO
+MC_PGCALL MACRO		;///< Emits #_MC_PGCALL and a subroutine address.
 	DB	_MC_PGCALL
-	DB  #high( \1 -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  #low( \1 -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  0			; ƒR[ƒ‹‚ÉYreg ‚ÉƒZƒbƒg‚·‚é’l
-	DB  \2			; ƒR[ƒ‹‚ÉAreg ‚ÉƒZƒbƒg‚·‚é’l
+	DB  #high( \1 -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  #low( \1 -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  0			; ã‚³ãƒ¼ãƒ«æ™‚ã«Yreg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
+	DB  \2			; ã‚³ãƒ¼ãƒ«æ™‚ã«Areg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
 	ENDM
 
-MC_PGCALL2 MACRO
+MC_PGCALL2 MACRO		;///< Emits #_MC_PGCALL2, a bank and a subroutine address.
 	DB	_MC_PGCALL
-	DB  #high( \1 -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  #low( \1 -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  \3			; ƒR[ƒ‹‚ÉYreg ‚ÉƒZƒbƒg‚·‚é’l
-	DB  \2			; ƒR[ƒ‹‚ÉAreg ‚ÉƒZƒbƒg‚·‚é’l
+	DB  #high( \1 -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  #low( \1 -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \3			; ã‚³ãƒ¼ãƒ«æ™‚ã«Yreg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
+	DB  \2			; ã‚³ãƒ¼ãƒ«æ™‚ã«Areg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
 	ENDM
 
-MC_PGCALL_A MACRO
+MC_PGCALL_A MACRO		;///< Emits a program call taking the accumulator as an argument.
 	DB	_MC_PGCALL2
-	DW  \3			; TMP_ADR0‚ÉƒZƒbƒg‚·‚é’l
-	DB  #high( \1 -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  #low( \1 -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  0			; ƒR[ƒ‹‚ÉYreg ‚ÉƒZƒbƒg‚·‚é’l
-	DB  \2			; ƒR[ƒ‹‚ÉAreg ‚ÉƒZƒbƒg‚·‚é’l
+	DW  \3			; TMP_ADR0ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
+	DB  #high( \1 -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  #low( \1 -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  0			; ã‚³ãƒ¼ãƒ«æ™‚ã«Yreg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
+	DB  \2			; ã‚³ãƒ¼ãƒ«æ™‚ã«Areg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
 	ENDM
 
 
 
 
-MC_MEMCLR MACRO
+MC_MEMCLR MACRO		;///< Emits #_MC_MEMCLR: address and length.
 	DB	_MC_MEMCLR
-	DW  \1			; ƒAƒhƒŒƒX
-	DB  \2			; ƒTƒCƒY
-	DB  \3			; ƒNƒŠƒA’l
+	DW  \1			; ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \2			; ã‚µã‚¤ã‚º
+	DB  \3			; ã‚¯ãƒªã‚¢å€¤
 	ENDM
 
-MC_BG_POS_CLR MACRO
+MC_BG_POS_CLR MACRO		;///< Emits a clear of the background enemy position table.
 	DB	_MC_BG_POS_CLR
-	DB  \1			; ‚w
-	DB  \2			; ‚x
+	DB  \1			; ï¼¸
+	DB  \2			; ï¼¹
 	ENDM
 
 
-MC_BG_TAG_SBG MACRO
+MC_BG_TAG_SBG MACRO		;///< Emits a background enemy tag assignment.
 	DB	_MC_BG_TAG_SBG
-	DB  \1			; ƒ^ƒO”Ô†
-	DB  \2			; BG‰»‚·‚é“G‚Ìí—Ş”Ô†
+	DB  \1			; ã‚¿ã‚°ç•ªå·
+	DB  \2			; BGåŒ–ã™ã‚‹æ•µã®ç¨®é¡ç•ªå·
 	ENDM
 
-MC_BG_POS_HS MACRO
+MC_BG_POS_HS MACRO		;///< Emits a background enemy homing-shot position.
 	DB	_MC_BG_POS_HS
-	DB  \1			; ‚w
-	DB  \2			; ‚x
-	DB  \3			; ’eí—Ş
-	DB  \4			; ˆÚ“®ƒpƒ^[ƒ“
+	DB  \1			; ï¼¸
+	DB  \2			; ï¼¹
+	DB  \3			; å¼¾ç¨®é¡
+	DB  \4			; ç§»å‹•ãƒ‘ã‚¿ãƒ¼ãƒ³
 	ENDM
 
 
@@ -303,21 +314,21 @@ MC_BG_POS_HS MACRO
 
 
 
-MC_WAIT MACRO
-	DB  \1			; ƒEƒFƒCƒgƒtƒŒ[ƒ€” 1-200
+MC_WAIT MACRO		;///< Emits a wait: suspends the script for a number of frames via #MISSON_WAIT.
+	DB  \1			; ã‚¦ã‚§ã‚¤ãƒˆãƒ•ãƒ¬ãƒ¼ãƒ æ•° 1-200
 	ENDM
 
 
 
 ;------------------------------------
-; ƒ~ƒbƒVƒ‡ƒ“Šg’£ŠÖ”
-;  \1 ->Šg’£ŠÖ””Ô†
+; ãƒŸãƒƒã‚·ãƒ§ãƒ³æ‹¡å¼µé–¢æ•°
+;  \1 ->æ‹¡å¼µé–¢æ•°ç•ªå·
 ;------------------------------------
-MC_MISSION_FUNC MACRO
+MC_MISSION_FUNC MACRO		;///< Emits a call to one of the mission helper routines.
 	DB	_MC_PGCALL
-	DB  #high( MissionFunc -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  #low( MissionFunc -1)	; ƒR[ƒ‹ƒAƒhƒŒƒX
-	DB  \1			; ƒR[ƒ‹‚ÉAreg ‚ÉƒZƒbƒg‚·‚é’l
+	DB  #high( MissionFunc -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  #low( MissionFunc -1)	; ã‚³ãƒ¼ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹
+	DB  \1			; ã‚³ãƒ¼ãƒ«æ™‚ã«Areg ã«ã‚»ãƒƒãƒˆã™ã‚‹å€¤
 	ENDM
 
 

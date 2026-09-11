@@ -1,8 +1,23 @@
+;/// @file AplGame.asm
+;/// @brief The play state: the per-frame step machine for a stage.
+;/// @ingroup gamerom
+;///
+;/// `APL_GAME` is entry 5 in the `STG_COD` jump table, and `PLY_STG_0` through
+;/// `PLY_STG_4` are the phases it walks -- stage intro, play, and the exits into
+;/// the clear and game-over states.
+;///
+;/// @note Under the cartridge only the innermost part of this runs. `FCP_GAME_MAIN`
+;///       calls `updateMission` and `moveGameObj` directly and never enters this
+;///       state machine, so the intro and exit phases are skipped and the C++ side
+;///       decides when a run has ended.
 
 
 ;=====================================
-;ÉvÉåÉCâÊñ 
+;„Éó„É¨„Ç§ÁîªÈù¢
 ;=====================================
+;/// @brief Entry 5 of the `STG_COD` table: the play state on a real console.
+;/// @ingroup gamerom
+;/// @note Not reached under the cartridge. @see @ref sample_game
 APL_GAME:
 	lda  #0
 	sta  <ENEMY_FLFG
@@ -19,21 +34,25 @@ APL_GAME:
 	cmp  #ST_MAIN
 	beq  .skip
 	lda  <FLG_2000
-	sta	 $2000				; Ç±ÇÃÉ^ÉCÉ~ÉìÉOÇ≈NMIî≠ê∂
+	sta	 $2000				; „Åì„ÅÆ„Çø„Ç§„Éü„É≥„Ç∞„ÅßNMIÁô∫Áîü
 .skip
 	rts
 
 
+;/// @brief Dispatches on #STG_COD_SUB to the current play phase.
+;/// @ingroup gamerom
 PLY_STG_MAIN:
 	LDA	<STG_COD_SUB
 	TBL_JUMP
 	JPTBL	PLY_STG_0	; 0
 	JPTBL	PLY_STG_1	; 1
-	JPTBL	PLY_STG_2	; 2	ÉIÅ[ÉoÅ[ââèo
-	JPTBL	PLY_STG_3	; 3	ÉNÉäÉAÅ[ââèo
+	JPTBL	PLY_STG_2	; 2	„Ç™„Éº„Éê„ÉºÊºîÂá∫
+	JPTBL	PLY_STG_3	; 3	„ÇØ„É™„Ç¢„ÉºÊºîÂá∫
 	JPTBL	PLY_STG_4	; 4	PAUSE
 
 ;****** INIT ************
+;/// @brief Play phase 0: stage initialisation.
+;/// @ingroup gamerom
 PLY_STG_0:
 	DISP_OFF
 ;	INC	<NMI_FLG
@@ -51,7 +70,7 @@ PLY_STG_0:
 
 
 
-	jsr  PLY_LIFE_SET		; ÉâÉCÉtèâä˙âª
+	jsr  PLY_LIFE_SET		; „É©„Ç§„ÉïÂàùÊúüÂåñ
 
 	jsr  initGameDisp
 
@@ -64,7 +83,7 @@ PLY_STG_0:
 	lda  #PLY_AN_WAIT
 	jsr  SET_PLY_ANM
 
-    SET_NMI_CALL PLY_DRAW_S		; NMIï`âÊèàóùìoò^
+    SET_NMI_CALL PLY_DRAW_S		; NMIÊèèÁîªÂá¶ÁêÜÁôªÈå≤
 	
 	inc  <STG_COD_SUB
 	DISP_ON
@@ -73,6 +92,8 @@ PLY_STG_0:
 	RTS
 
 ;****** MAIN ***********
+;/// @brief Play phase 1: the stage proper.
+;/// @ingroup gamerom
 PLY_STG_1:
 
 .plydm_10:
@@ -97,7 +118,7 @@ PLY_STG_1:
 	cmp #$FF
 	bne .plydm_11
 
-	; ÉNÉäÉAÅ[âÊñ Ç÷
+	; „ÇØ„É™„Ç¢„ÉºÁîªÈù¢„Å∏
 ;	lda  #BGM_GAME_CLEAR
 ;	jsr  PLAY_SE
 	jsr  STOP_BGM
@@ -111,6 +132,8 @@ PLY_STG_1:
 
 
 ;****** OVER WAIT ***********
+;/// @brief Play phase 2: waiting out the game-over sequence.
+;/// @ingroup gamerom
 PLY_STG_2:
 	DEC	<GM_WAIT
 	LDA	<GM_WAIT
@@ -136,6 +159,8 @@ PLY_STG_2:
 ;	rts
 
 ;****** CLEAR WAIT ***********
+;/// @brief Play phase 3: waiting out the stage-clear sequence.
+;/// @ingroup gamerom
 PLY_STG_3:
 	DEC	<GM_WAIT
 	LDA	<GM_WAIT
@@ -144,12 +169,14 @@ PLY_STG_3:
 	jsr  PLY_MOVE
 	RTS
 .ps03
-	; éüÇÃÉXÉeÅ[ÉWÇ÷
+	; Ê¨°„ÅÆ„Çπ„ÉÜ„Éº„Ç∏„Å∏
 	lda  #ST_CLEAR
 	jmp  exitAplGame
 
 
 ;****** PAUSE ***********
+;/// @brief Play phase 4: paused.
+;/// @ingroup gamerom
 PLY_STG_4:
 	CHK_BIT <KEY_TRG, #KEY_RUN
         BEQ     .plyst4_00
@@ -162,9 +189,11 @@ PLY_STG_4:
 
 
 ;=====================================
-;ÉQÅ[ÉÄèIóπèàóùÅiÉâÉXÉ^Å[ÉVÉXÉeÉÄÇÃâeãøÇ≈ì¡íËÇÃéËèáÇì•Ç‹Ç»Ç¢Ç∆âÊñ âªÇØÇÈÅj
-;  Areg -> ÉWÉÉÉìÉvêÊSTEPî‘çÜ
+;„Ç≤„Éº„É†ÁµÇ‰∫ÜÂá¶ÁêÜÔºà„É©„Çπ„Çø„Éº„Ç∑„Çπ„ÉÜ„É†„ÅÆÂΩ±Èüø„ÅßÁâπÂÆö„ÅÆÊâãÈ†Ü„ÇíË∏è„Åæ„Å™„ÅÑ„Å®ÁîªÈù¢Âåñ„Åë„ÇãÔºâ
+;  Areg -> „Ç∏„É£„É≥„ÉóÂÖàSTEPÁï™Âè∑
 ;=====================================
+;/// @brief Leaves the play state for the screen named in the accumulator.
+;/// @ingroup gamerom
 exitAplGame:
 	pha
 	jsr  exitAplGameSub
@@ -172,6 +201,8 @@ exitAplGame:
 	pla
     jmp  SET_STG_COD
 
+;/// @brief Exit entry point that skips the setup.
+;/// @ingroup gamerom
 exitAplGame2:
 	pha
 	jsr  exitAplGameSub
@@ -179,6 +210,8 @@ exitAplGame2:
     jmp  SET_STG_COD2
 
 
+;/// @brief Common tail of the play-state exits.
+;/// @ingroup gamerom
 exitAplGameSub:
 	jsr  SET_FADE_OUT_B
 	jsr  WAIT_FADE_END
@@ -188,7 +221,7 @@ exitAplGameSub:
 
 	jsr WAIT_VSYNC
 
-	inc	<NMI_FLG	;ÉnÉìÉOñhé~
+	inc	<NMI_FLG	;„Éè„É≥„Ç∞Èò≤Ê≠¢
 
 
 	jmp  WAIT_VSYNC
@@ -196,8 +229,10 @@ exitAplGameSub:
 
 
 ;=================================
-; ÉÅÉCÉìï`âÊèàóù
+; „É°„Ç§„É≥ÊèèÁîªÂá¶ÁêÜ
 ;=================================
+;/// @brief Console-side draw for the play state.
+;/// @ingroup gamerom
 PLY_DRAW_S:
 	lda  PALFADE_VAL
 	bne  .skip_pal_trans
@@ -218,7 +253,7 @@ PLY_DRAW_S:
 
 .pa_90
 
-	; ÉpÉåÉbÉgÉAÉjÉÅÅ[ÉVÉáÉì
+	; „Éë„É¨„ÉÉ„Éà„Ç¢„Éã„É°„Éº„Ç∑„Éß„É≥
 ;	ldx  #$00
 	ldx  #$0D
 	lda  <SYS_TIMER
@@ -239,7 +274,7 @@ PLY_DRAW_S:
 
 .skip_pal_trans
  
-	;=ÉXÉRÉAï\é¶=====
+	;=„Çπ„Ç≥„Ç¢Ë°®Á§∫=====
 	LDA     SCR_CHG_SW
 	BEQ     .pds00
 	LDA     #0

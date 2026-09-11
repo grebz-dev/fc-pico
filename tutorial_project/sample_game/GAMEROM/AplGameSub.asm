@@ -1,64 +1,89 @@
+;/// @file AplGameSub.asm
+;/// @brief Game-side helpers: scoring, spawning, animation and effects.
+;/// @ingroup gamerom
+;///
+;/// Score is kept as packed BCD and added through the `SCR_ADD` family, one
+;/// routine per decimal place. `setBakuEfc` and its neighbours are the effect
+;/// spawners: they only fill a table slot, leaving the drawing to whichever side
+;/// is rendering.
 
 
 
 
 ;================
-;=ÉXÉRÉAâ¡éZ=====
+;=„Çπ„Ç≥„Ç¢Âä†ÁÆó=====
 ;================
 
+;/// @brief Adds to the score in packed BCD.
+;/// @ingroup gamerom
+;///
+;/// One routine per decimal place, `SCR_ADD` through `SCR_ADD_1000`, so a caller
+;/// picks the magnitude by choosing an entry point.
+;/// @note The displayed score has a zero appended, so the stored value is a tenth
+;///       of what the player sees.
 SCR_ADD:
-	phxy	;xy push ã^éóñΩóﬂ
+	phxy	;xy push Áñë‰ººÂëΩ‰ª§
 	LDX	#GM_SCORE & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ã^éóñΩóﬂ
+	plxy	;xy pop Áñë‰ººÂëΩ‰ª§
 	RTS
 
 
+;/// @brief Adds to the tens digit of the score.
+;/// @ingroup gamerom
 SCR_ADD_10:
-	phxy	;xy push ã^éóñΩóﬂ
+	phxy	;xy push Áñë‰ººÂëΩ‰ª§
 	TAX
 	LDA	TBL_BCDx10,X
 	LDX	#GM_SCORE & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ã^éóñΩóﬂ
+	plxy	;xy pop Áñë‰ººÂëΩ‰ª§
 	RTS
 
+;/// @brief Adds to the hundreds digit.
+;/// @ingroup gamerom
 SCR_ADD_100:
-	phxy	;xy push ã^éóñΩóﬂ
+	phxy	;xy push Áñë‰ººÂëΩ‰ª§
 	LDX	#(GM_SCORE+1) & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ã^éóñΩóﬂ
+	plxy	;xy pop Áñë‰ººÂëΩ‰ª§
 	RTS
 
+;/// @brief Adds to the thousands digit.
+;/// @ingroup gamerom
 SCR_ADD_1000:
-	phxy	;xy push ã^éóñΩóﬂ
+	phxy	;xy push Áñë‰ººÂëΩ‰ª§
 	TAX
 	LDA	TBL_BCDx10,X
 	LDX	#(GM_SCORE+1) & $ff
 	JSR	BCD_ADD
 	LDA    #1
 	STA    SCR_CHG_SW
-	plxy	;xy pop ã^éóñΩóﬂ
+	plxy	;xy pop Áñë‰ººÂëΩ‰ª§
 	RTS
 
 
+;/// @brief Multiplication table used by the BCD score routines.
+;/// @ingroup gamerom
 TBL_BCDx10:
 	DB $00,$10,$20,$30,$40,$50,$60,$70,$80,$90
 
 
 ;----------------------------
-; ÉtÉHÅ[ÉÅÅ[ÉVÉáÉìïœçX
+; „Éï„Ç©„Éº„É°„Éº„Ç∑„Éß„É≥Â§âÊõ¥
 ;----------------------------
+;/// @brief Changes the player's formation.
+;/// @ingroup gamerom
 changeForm:
 	lda  PLY_FORM
 	and  #$03
-	bne  .end		; ÉtÉHÅ[ÉÅÅ[ÉVÉáÉìÉ`ÉFÉìÉWíÜ
+	bne  .end		; „Éï„Ç©„Éº„É°„Éº„Ç∑„Éß„É≥„ÉÅ„Çß„É≥„Ç∏‰∏≠
 	inc  PLY_FORM
 	lda  #SE_PLY_FORM
 	jmp  PLAY_SE
@@ -66,8 +91,10 @@ changeForm:
 	rts
 
 ;----------------------------
-; ÉzÅ[É~ÉìÉOíeî≠éÀ
+; „Éõ„Éº„Éü„É≥„Ç∞ÂºæÁô∫Â∞Ñ
 ;----------------------------
+;/// @brief Fires a homing shot.
+;/// @ingroup gamerom
 shotHorming:
 	sta  <TMP_SVA	; X pos
 	sty  <TMP_SVY
@@ -101,21 +128,21 @@ shotHorming:
 	sta  PSHOT_A_WY,x
 	lda  POS_PLY_Y
 	sta  PSHOT_A_Y,x
-	sta  <PRM_Y_POS		; äÓèÄì_Y
+	sta  <PRM_Y_POS		; Âü∫Ê∫ñÁÇπY
 
 	lda  POS_PLY_X
 	sta PSHOT_A_X,x
-	sta <PRM_X_POS		; äÓèÄì_X
+	sta <PRM_X_POS		; Âü∫Ê∫ñÁÇπX
 
-;	lda  #$F0		; ê^è„
-;	lda  #$00+$30	; ê^è„
+;	lda  #$F0		; Áúü‰∏ä
+;	lda  #$00+$30	; Áúü‰∏ä
 ;	sta PSHOT_DIR,x
 
 	lda  ENEMY_NT_X+1,y
-	sta  <W_AR+0 		; É^Å[ÉQÉbÉgX
+	sta  <W_AR+0 		; „Çø„Éº„Ç≤„ÉÉ„ÉàX
 
 	lda  ENEMY_NT_Y+1,y
-	sta  <W_AR+1 		; É^Å[ÉQÉbÉgY
+	sta  <W_AR+1 		; „Çø„Éº„Ç≤„ÉÉ„ÉàY
 
 	jsr  getAngleENT
 	lda  <TMP_SVA
@@ -129,9 +156,11 @@ shotHorming:
 
 
 ;----------------------------
-; ÉVÉáÉbÉgèàóù
+; „Ç∑„Éß„ÉÉ„ÉàÂá¶ÁêÜ
 ;----------------------------
 
+;/// @brief Fires the player's normal shot.
+;/// @ingroup gamerom
 PLY_SHOT_A:
 	lda  PLY_ANM_NO
 	cmp  #PLY_AN_DEAD
@@ -149,37 +178,43 @@ PLY_SHOT_A:
 
 
 ;----------------------------
-; ÉvÉåÅ[ÉÑÅ[à⁄ìÆèàóù
+; „Éó„É¨„Éº„É§„ÉºÁßªÂãïÂá¶ÁêÜ
 ;----------------------------
+;/// @brief Moves the player from the current direction.
+;/// @ingroup gamerom
 PLY_MOVE:
 
+;/// @brief Player movement entry point that skips the setup.
+;/// @ingroup gamerom
 PLY_MOVE1:
 	jmp  PLY_ANM_PROG
 
 
 
 ;------------------------------------
-; é¿çsíÜÇÃÉAÉjÉÅÇ…ëŒâûÇµÇΩèàóùÇé¿çs
+; ÂÆüË°å‰∏≠„ÅÆ„Ç¢„Éã„É°„Å´ÂØæÂøú„Åó„ÅüÂá¶ÁêÜ„ÇíÂÆüË°å
 ;------------------------------------
+;/// @brief Runs the handler for the animation state in #PLY_ANM_NO.
+;/// @ingroup gamerom
 PLY_ANM_PROG:
 	lda  PLY_ANM_NO
 	TBL_JUMP
-	JPTBL  .WAIT		; 0 ë“ã@
-	JPTBL  .CHARGE		; 1 É`ÉÉÅ[ÉW
-	JPTBL  .SHOTA		; 2 ÉVÉáÉbÉgA
-	JPTBL  .SHOTB		; 3 ÉVÉáÉbÉgB
-	JPTBL  .DEAD		; 4 éÄñSÉAÉjÉÅ
+	JPTBL  .WAIT		; 0 ÂæÖÊ©ü
+	JPTBL  .CHARGE		; 1 „ÉÅ„É£„Éº„Ç∏
+	JPTBL  .SHOTA		; 2 „Ç∑„Éß„ÉÉ„ÉàA
+	JPTBL  .SHOTB		; 3 „Ç∑„Éß„ÉÉ„ÉàB
+	JPTBL  .DEAD		; 4 Ê≠ª‰∫°„Ç¢„Éã„É°
 	
 
-.WAIT		; 0 ë“ã@ -----------------------------
+.WAIT		; 0 ÂæÖÊ©ü -----------------------------
 ;	rts
 
 
-.CHARGE		; 1 É`ÉÉÅ[ÉW -----------------------------
-	; É`ÉÉÅ[ÉWÉAÉbÉv
+.CHARGE		; 1 „ÉÅ„É£„Éº„Ç∏ -----------------------------
+	; „ÉÅ„É£„Éº„Ç∏„Ç¢„ÉÉ„Éó
 ;	rts
 
-.SHOTA		; 2 ÉVÉáÉbÉgA -----------------------------
+.SHOTA		; 2 „Ç∑„Éß„ÉÉ„ÉàA -----------------------------
 	lda  <FLM_TIMER
 	and  #$07
 	bne  .end
@@ -188,17 +223,20 @@ PLY_ANM_PROG:
 	lda  POS_PLY_X
 	jmp  setPlyShotA
 
-.SHOTB		; 3 ÉVÉáÉbÉgB -----------------------------
+.SHOTB		; 3 „Ç∑„Éß„ÉÉ„ÉàB -----------------------------
 	rts
 
 
-.DEAD		; 4 éÄñSÉAÉjÉÅ -----------------------------
+.DEAD		; 4 Ê≠ª‰∫°„Ç¢„Éã„É° -----------------------------
 .end
 	rts
 
 ;------------------------
-; ÉAÉjÉÅÉZÉbÉg
+; „Ç¢„Éã„É°„Çª„ÉÉ„Éà
 ;------------------------
+;/// @brief Sets the player animation state in `PLY_ANM_NO`.
+;/// @ingroup gamerom
+;/// @note `PLY_AN_DEAD` is the value the cartridge watches for to end a run.
 SET_PLY_ANM:
 	cmp  PLY_ANM_NO
 	beq  .end
@@ -211,10 +249,14 @@ SET_PLY_ANM:
 
 
 ;-----------------------------------
-; îöî≠ââèoÉZÉbÉg
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; ÁàÜÁô∫ÊºîÂá∫„Çª„ÉÉ„Éà
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Claims an explosion slot at a position.
+;/// @ingroup gamerom
+;/// @note Fills the table only. Under the cartridge the animation counter is then
+;///       advanced by the C++ side, not here. @see @ref sample_game
 setBakuEfc:
 	cmp  #8
 	bcs   .x00
@@ -243,10 +285,12 @@ setBakuEfc:
 	rts
 
 ;-----------------------------------
-; ÉqÉbÉgââèoÉZÉbÉgÅiÉ_ÉÅÅ[ÉWñ≥ÇµÇÃââèoÅj
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; „Éí„ÉÉ„ÉàÊºîÂá∫„Çª„ÉÉ„ÉàÔºà„ÉÄ„É°„Éº„Ç∏ÁÑ°„Åó„ÅÆÊºîÂá∫Ôºâ
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Spawns a hit effect at the position in Y.
+;/// @ingroup gamerom
 setHitEfc:
 	jsr  setBakuEfc
 	lda #18
@@ -254,10 +298,12 @@ setHitEfc:
 	rts
 
 ;-----------------------------------
-; ÉqÉbÉgââèoÉZÉbÉgÅiÉ_ÉÅÅ[ÉWââèoÅj
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; „Éí„ÉÉ„ÉàÊºîÂá∫„Çª„ÉÉ„ÉàÔºà„ÉÄ„É°„Éº„Ç∏ÊºîÂá∫Ôºâ
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Spawns a damage effect at the position in Y.
+;/// @ingroup gamerom
 setDameEfc:
 	jsr  setBakuEfc
 	lda #13
@@ -266,8 +312,10 @@ setDameEfc:
 
  .if 0
 ;-----------------------------------
-; ìGÉmÅ[É}ÉãíeëSÉNÉäÉAÅ[
+; Êïµ„Éé„Éº„Éû„É´ÂºæÂÖ®„ÇØ„É™„Ç¢„Éº
 ;-----------------------------------
+;/// @brief Empties the whole enemy table.
+;/// @ingroup gamerom
 clearAllEnemyNT:
 	ldy #0
 .loop
@@ -285,10 +333,12 @@ clearAllEnemyNT:
 
 
 ;-----------------------------------
-; SPìGÉZÉbÉg
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; SPÊïµ„Çª„ÉÉ„Éà
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Enemy spawn entry point taking a Y coordinate and extra data.
+;/// @ingroup gamerom
 setEnemyNT3:
 	pha		; X pos
 	tya
@@ -312,10 +362,12 @@ setEnemyNT3:
 	rts
 
 ;-----------------------------------
-; ìGÉmÅ[É}ÉãíeÉZÉbÉg
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; Êïµ„Éé„Éº„Éû„É´Âºæ„Çª„ÉÉ„Éà
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Enemy spawn entry point taking a Y coordinate.
+;/// @ingroup gamerom
 setEnemyNT2:
 	pha		; X pos
 	tya
@@ -334,7 +386,7 @@ setEnemyNT2:
 	cpy  #ENEMY_NT_SIZE*ENEMY_NT_SUU
 	bne .loop
 
-	; ãÛÇ´ÉèÅ[ÉNÇ»Çµ
+	; Á©∫„Åç„ÉØ„Éº„ÇØ„Å™„Åó
 	inc  <ENEMY_NT_FLFG
 .end
 	pla
@@ -344,10 +396,12 @@ setEnemyNT2:
 
 
 ;-----------------------------------
-; ìGÉmÅ[É}ÉãíeÉZÉbÉg
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; Êïµ„Éé„Éº„Éû„É´Âºæ„Çª„ÉÉ„Éà
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Spawns an enemy or enemy shot into the first free table slot.
+;/// @ingroup gamerom
 setEnemyNT:
 	pha		; X pos
 	tya
@@ -366,7 +420,7 @@ setEnemyNT:
 	cpy  #ENEMY_NT_SIZE*ENEMY_NT_SUU
 	bne .loop
 
-	; ãÛÇ´ÉèÅ[ÉNÇ»Çµ
+	; Á©∫„Åç„ÉØ„Éº„ÇØ„Å™„Åó
 	inc  <ENEMY_NT_FLFG
 .end
 	pla
@@ -392,10 +446,12 @@ setEnemyNT_SET
 	rts
 
 ;-----------------------------------
-; é©ã@ÉmÅ[É}ÉãíeÉZÉbÉg
-; a reg = xç¿ïW
-; y reg = yç¿ïW
+; Ëá™Ê©ü„Éé„Éº„Éû„É´Âºæ„Çª„ÉÉ„Éà
+; a reg = xÂ∫ßÊ®ô
+; y reg = yÂ∫ßÊ®ô
 ;-----------------------------------
+;/// @brief Fires a player shot from the current position and direction.
+;/// @ingroup gamerom
 setPlyShotA:
 	sta  <TMP_SVA	; X pos
 	sty  <TMP_SVY
@@ -408,7 +464,7 @@ setPlyShotA:
 	inx
 	dey
 	bne  .loop
-	; ãÛÇ´ÉèÅ[ÉNÇ»Çµ
+	; Á©∫„Åç„ÉØ„Éº„ÇØ„Å™„Åó
 	rts
 
 .set
@@ -417,18 +473,18 @@ setPlyShotA:
 	sta PSHOT_A_WY,x
 	lda <TMP_SVY
 	sta PSHOT_A_Y,x
-	sta  <PRM_Y_POS		; äÓèÄì_Y
+	sta  <PRM_Y_POS		; Âü∫Ê∫ñÁÇπY
 
 	lda <TMP_SVA
 	sta PSHOT_A_X,x
-	sta <PRM_X_POS		; äÓèÄì_X
+	sta <PRM_X_POS		; Âü∫Ê∫ñÁÇπX
 
-;	lda  #$F0		; ê^è„
-	lda  #$80+$30	; ê^è„
+;	lda  #$F0		; Áúü‰∏ä
+	lda  #$80+$30	; Áúü‰∏ä
 	sta PSHOT_DIR,x
 
  .if 0
-	; É^Å[ÉQÉbÉgÉTÅ[É`É`ÉFÉbÉN
+	; „Çø„Éº„Ç≤„ÉÉ„Éà„Çµ„Éº„ÉÅ„ÉÅ„Çß„ÉÉ„ÇØ
 	txa
 	and  #$7*2
 	asl  a
@@ -442,10 +498,10 @@ setPlyShotA:
 
 .set2
 	lda  ENEMY_NT_X+1,y
-	sta  <W_AR+0 		; É^Å[ÉQÉbÉgX
+	sta  <W_AR+0 		; „Çø„Éº„Ç≤„ÉÉ„ÉàX
 
 	lda  ENEMY_NT_Y+1,y
-	sta  <W_AR+1 		; É^Å[ÉQÉbÉgY
+	sta  <W_AR+1 		; „Çø„Éº„Ç≤„ÉÉ„ÉàY
 
 	jsr  getAngleENT
 	lda  <TMP_SVA
@@ -454,7 +510,7 @@ setPlyShotA:
  .endif
 
 .skip
-	; ñ¬ÇÁÇµâﬂÇ¨Ç»ÇÃÇ≈è≠Çµä‘à¯Ç≠
+	; È≥¥„Çâ„ÅóÈÅé„Åé„Å™„ÅÆ„ÅßÂ∞ë„ÅóÈñìÂºï„Åè
 	lda  <FLM_TIMER
 	and  #$07
 	bne  .end
@@ -466,8 +522,10 @@ setPlyShotA:
 
 
 ;----------------------------------
-; ÉvÉåÅ[ÉÑÅ[éÄñSÉZÉbÉg
+; „Éó„É¨„Éº„É§„ÉºÊ≠ª‰∫°„Çª„ÉÉ„Éà
 ;----------------------------------
+;/// @brief Starts the player's death sequence and decrements the life count.
+;/// @ingroup gamerom
 setPlayerDead:
 	ldy  <DEMO_FG
 	bne  .end
@@ -489,7 +547,7 @@ setPlayerDead:
 
 
 	sta  PLY_MUTEKI_TM
-	; éÄñSÉAÉjÉÅÉZÉbÉg
+	; Ê≠ª‰∫°„Ç¢„Éã„É°„Çª„ÉÉ„Éà
 	lda  #PLY_AN_DEAD
 	sta  PLY_ANM_NO
 
@@ -505,8 +563,10 @@ setPlayerDead:
 	jmp  PLAY_SE
 
 ;----------------------------------
-; ÉvÉåÅ[ÉÑÅ[éÄñSÉGÉtÉFÉNÉgÉZÉbÉg
+; „Éó„É¨„Éº„É§„ÉºÊ≠ª‰∫°„Ç®„Éï„Çß„ÇØ„Éà„Çª„ÉÉ„Éà
 ;----------------------------------
+;/// @brief Runs the death animation, one frame per call.
+;/// @ingroup gamerom
 setPlayerDeadEffect:
 	phxy
 	lda  <SYS_TIMER

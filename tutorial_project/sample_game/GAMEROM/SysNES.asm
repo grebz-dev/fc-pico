@@ -1,7 +1,20 @@
+;/// @file SysNES.asm
+;/// @brief Reset vector, the NMI handler and the random-number generator.
+;/// @ingroup gamerom
+;///
+;/// The frame is driven from `NMI`, in the order the PPU demands: sprite DMA
+;/// first, then the queued VRAM writes, then the scroll registers, and only then
+;/// the APU. Everything before the scroll write has to fit inside vertical blank.
+;///
+;/// @note None of this runs under the cartridge. The RP2350 calls the game logic
+;///       directly and does the drawing itself, so the NMI handler, the sprite DMA
+;///       and the VRAM queue are all dead code in that mode.
 
 ;=====================================================
 
 
+;/// @brief Reset vector. Runs only on a real console.
+;/// @ingroup gamerom
 INIT:
 	sei
 	cld
@@ -10,15 +23,17 @@ INIT:
 
 	jsr  SYS_INIT
 	
-	; PPU §Œäƒtƒ‰ƒO 1 ‰Šú‰»
+	; PPU åˆ¶å¾¡ãƒ•ãƒ©ã‚° 1 åˆæœŸåŒ–
 	lda	#FLG_PPU2000
 	sta	<FLG_2000
-	sta	 $2000				; ‚±‚Ìƒ^ƒCƒ~ƒ“ƒO‚ÅNMI”­¶
+	sta	 $2000				; ã“ã®ã‚¿ã‚¤ãƒŸãƒ³ã‚°ã§NMIç™ºç”Ÿ
 
+;/// @brief Clear loop used during reset.
+;/// @ingroup gamerom
 LOPX:
 	jsr WAIT_VSYNC
 
-	; demo timer ˆ—
+	; demo timer å‡¦ç†
 	lda  <DEMO_TIMER
 	beq  .lpx00
 	lda  <SYS_TIMER
@@ -26,10 +41,10 @@ LOPX:
 	beq  .lpx00
 	dec  <DEMO_TIMER
 .lpx00
-	jsr  KEY_RTN		;--- ƒL[“ü—Íƒ`ƒFƒbƒN -----
-	jsr  MAKE_RND	; —”¶¬
+	jsr  KEY_RTN		;--- ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯ -----
+	jsr  MAKE_RND	; ä¹±æ•°ç”Ÿæˆ
 
-	jsr  PLY_MAIN_S	; ƒƒCƒ“ˆ—ŒÄ‚Ño‚µ
+	jsr  PLY_MAIN_S	; ãƒ¡ã‚¤ãƒ³å‡¦ç†å‘¼ã³å‡ºã—
 
 	jsr PAL_FADE_SYSTEM
 
@@ -37,8 +52,12 @@ LOPX:
 
 
 ;*****************************************
-;—”ƒVƒXƒeƒ€
+;ä¹±æ•°ã‚·ã‚¹ãƒ†ãƒ 
 ;*****************************************
+;/// @brief Advances the pseudo-random generator. Called once per frame.
+;/// @ingroup gamerom
+;/// @note Called from `FCP_GAME_MAIN` as well, so the sequence advances at the
+;///       same rate in both modes.
 MAKE_RND:
 	lda  RND_WK0
 	adc  #77
@@ -66,41 +85,49 @@ MAKE_RND:
 ;***************************************
 ;***************************************
 ;***************************************
-; NMIŠ„‚è‚İ
+; NMIå‰²ã‚Šè¾¼ã¿
 ;***************************************
 ;***************************************
 ;***************************************
 ;***************************************
 
+;/// @brief Vertical-blank interrupt: the frame driver on a real console.
+;/// @ingroup gamerom
+;///
+;/// Order is forced by the hardware -- sprite DMA, queued VRAM writes, scroll
+;/// registers, then the APU. Everything up to the scroll write has to complete
+;/// inside vertical blank or the picture breaks.
+;/// @note Dead code under the cartridge, which drives the game from `$E004` and
+;///       does its own drawing. @see @ref sample_game
 NMI:
 	bit	 $2002
 	pha
 	incw  <SYS_TIMER
-	lda  <NMI_FLG	;NMIˆ—’†‚©?
+	lda  <NMI_FLG	;NMIå‡¦ç†ä¸­ã‹?
 	beq  .nmi_ok
 	pla
 	rti
 
 .nmi_ok
-	inc  <NMI_FLG	;NMIˆ—’†ƒtƒ‰ƒOƒIƒ“
+	inc  <NMI_FLG	;NMIå‡¦ç†ä¸­ãƒ•ãƒ©ã‚°ã‚ªãƒ³
     txa
     pha
     tya
     pha
 
-; --- NMI ƒƒCƒ“ˆ— --------------
+; --- NMI ãƒ¡ã‚¤ãƒ³å‡¦ç† --------------
 
 ;****************************
-; ‚o‚o‚t§Œäi¦‚o‚o‚t‚ÍA‚’¼‹AüŠúŠÔ’†‚Éˆ—‚ğI‚í‚ç‚¹‚éj
+; ï¼°ï¼°ï¼µåˆ¶å¾¡ï¼ˆâ€»ï¼°ï¼°ï¼µã¯ã€å‚ç›´å¸°ç·šæœŸé–“ä¸­ã«å‡¦ç†ã‚’çµ‚ã‚ã‚‰ã›ã‚‹ï¼‰
 ;****************************
-;--- ƒXƒvƒ‰ƒCƒgDMA“]‘— ----- i¦512 clockÁ”ïj
+;--- ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆDMAè»¢é€ ----- ï¼ˆâ€»512 clockæ¶ˆè²»ï¼‰
 	lda  #high(OBJ_BUF)
 	sta  $4014
 
 	jsr  transPALLET
 
 
-;--- ƒ†[ƒU[VRAM‘‚«Š·‚¦ˆ— -----
+;--- ãƒ¦ãƒ¼ã‚¶ãƒ¼VRAMæ›¸ãæ›ãˆå‡¦ç† -----
  .if 1
 	lda <NMI_CALL_ADR+1
 	beq  .no_usr_nmi
@@ -116,8 +143,8 @@ NMI:
 	sta	 $2001
 
 
-; ‚h‚q‚pŠ„‚è‚İ’lİ’è=============
-;--- ƒXƒNƒ[ƒ‹ƒŒƒWƒXƒ^İ’è -----
+; ï¼©ï¼²ï¼±å‰²ã‚Šè¾¼ã¿å€¤è¨­å®š=============
+;--- ã‚¹ã‚¯ãƒ­ãƒ¼ãƒ«ãƒ¬ã‚¸ã‚¹ã‚¿è¨­å®š -----
 	lda  <BG_SCR_X
 	sta  $2005
 	lda  <BG_SCR_Y
@@ -129,21 +156,21 @@ NMI:
 
 
 ;****************************
-; ‚`‚o‚t§Œäi¦‚o‚o‚tŒã‚Éˆ—‚·‚éj
+; ï¼¡ï¼°ï¼µåˆ¶å¾¡ï¼ˆâ€»ï¼°ï¼°ï¼µå¾Œã«å‡¦ç†ã™ã‚‹ï¼‰
 ;****************************
 
 	jsr  SOUND_SYSTEM
 
 
 ;****************************
-; ‚m‚l‚h‚ÌÅŒã‚ÌÅŒã
+; ï¼®ï¼­ï¼©ã®æœ€å¾Œã®æœ€å¾Œ
 ;****************************
 	PLA
 	TAY
 	PLA
 	TAX
 
-	LDA	#0		;NMIˆ—’†‚Ìƒtƒ‰ƒOƒIƒt
+	LDA	#0		;NMIå‡¦ç†ä¸­ã®ãƒ•ãƒ©ã‚°ã‚ªãƒ•
 	STA	<NMI_FLG
 
 	pla

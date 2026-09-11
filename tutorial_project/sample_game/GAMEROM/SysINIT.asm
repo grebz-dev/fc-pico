@@ -1,6 +1,19 @@
+;/// @file SysINIT.asm
+;/// @brief Cold-start: RAM clear, PPU warm-up and the WRAM reset gesture.
+;/// @ingroup gamerom
+;///
+;/// Runs only on a real console. Clears memory, waits out the PPU's power-on
+;/// settling time, and blanks the palette so the reset garbage never reaches the
+;/// screen.
+;///
+;/// The stack page is cleared with care: the high score lives there and is meant
+;/// to survive a reset, so the routine steps around it. Holding a key combination
+;/// at boot forces the whole of WRAM to be wiped anyway, which is why the key
+;/// port is read twice here -- the debouncer needs the same keys on two
+;/// consecutive frames before it will report them.
 ;=====================================================
 ;
-;	‹N“®‰Šú‰»ˆ—
+;	èµ·å‹•æ™‚åˆæœŸåŒ–å‡¦ç†
 ;
 ;=====================================================
 
@@ -8,12 +21,19 @@
 
 
 ;---------------------------------------------------
-MAGIC_LEN	EQU	6
+MAGIC_LEN	EQU	6		;///< Length of the #MAGIC signature, in bytes.
 
+;/// @brief The #MAGIC signature, in ROM, compared against the copy in the stack page.
+;/// @ingroup gamerom
 ro_magic:
 	.db	"MAP0DM"
 
 
+;/// @brief Clears memory, waits out the PPU and decides whether to wipe WRAM.
+;/// Steps around the high-score bytes in the stack page so they survive a reset,
+;/// and reads the controller twice so the two-frame debounce can report the
+;/// WRAM-wipe key combination on the very first frame.
+;/// @ingroup gamerom
 SYS_INIT:
 	sei
 	ldx  #0		; =ldx #0
@@ -43,13 +63,13 @@ SYS_INIT:
 
 
 ;=======================
-; ƒƒ‚ƒŠ[ƒNƒŠƒA       *
+; ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¯ãƒªã‚¢       *
 ;=======================
 	txa				; =lda #0
 .CLR_LOP:
 	sta  <$00 ,x
 
-; ‚±‚Ì—Ìˆæ‚É’u‚¢‚½ƒnƒCƒXƒRƒA‚ğƒŠƒZƒbƒg‚É‚à•Û‚³‚¹‚é‚½‚ßA
+; ã“ã®é ˜åŸŸã«ç½®ã„ãŸãƒã‚¤ã‚¹ã‚³ã‚¢ã‚’ãƒªã‚»ãƒƒãƒˆæ™‚ã«ã‚‚ä¿æŒã•ã›ã‚‹ãŸã‚ã€
 ;   sta  $0100,X
 	sta  $0200,X
 	sta  $0300,X
@@ -61,30 +81,30 @@ SYS_INIT:
 	bne  .CLR_LOP
 
 ;===============================
-;	ƒOƒ‰ƒtƒBƒbƒNŠÖ˜A‰Šú‰»
+;	ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯é–¢é€£åˆæœŸåŒ–
 ;===============================
 .v2:
 	bit	 $2002  ;ppu__status
 	bpl	.v2
 
 ;===============================
-;	ƒpƒŒƒbƒgƒNƒŠƒA
+;	ãƒ‘ãƒ¬ãƒƒãƒˆã‚¯ãƒªã‚¢
 ;===============================
-; ‘S‚Ä”’‚É‚µ‚ÄƒŠƒZƒbƒg‚ÌƒSƒ~‚ğ‰B‚·
+; å…¨ã¦ç™½ã«ã—ã¦ãƒªã‚»ãƒƒãƒˆæ™‚ã®ã‚´ãƒŸã‚’éš ã™
 	SET_VRAM_ADD2 #$3F00
 	ldy  #32
-	lda  #$30			; ”’
+	lda  #$30			; ç™½
 	jsr  SYS_VRAM_WLP
 
 	SET_VRAM_ADD2 #$3F00
 	ldy	#1
-	lda	#$1F			; •
+	lda	#$1F			; é»’
 	jsr  SYS_VRAM_WLP
 
 
 
 ;===============================
-;	ƒTƒEƒ“ƒhE—”‰Šú‰»
+;	ã‚µã‚¦ãƒ³ãƒ‰ãƒ»ä¹±æ•°åˆæœŸåŒ–
 ;===============================
 	jsr  INIT_SOUND
 
@@ -92,18 +112,18 @@ SYS_INIT:
 
 
 ;===============================
-; ‰‰ñƒL[“ü—Íƒ`ƒFƒbƒN
+; åˆå›ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯
 ;===============================
-; WRAM ‹­§‰Šú‰»‘€ì‚É•K—v
-; ˜A‘± 2 ƒtƒŒ[ƒ€‚Å“¯‚¶ƒL[‚ª‰Ÿ‚³‚ê‚Ä‚¢‚È‚¢‚Æ
-; u‰Ÿ‚³‚ê‚½v‚Æ”»’è‚³‚ê‚È‚¢‚½‚ßA2 ‰ñ‚Ì“Ç‚İ‚ğs‚í‚¹‚éB
+; WRAM å¼·åˆ¶åˆæœŸåŒ–æ“ä½œã«å¿…è¦
+; é€£ç¶š 2 ãƒ•ãƒ¬ãƒ¼ãƒ ã§åŒã˜ã‚­ãƒ¼ãŒæŠ¼ã•ã‚Œã¦ã„ãªã„ã¨
+; ã€ŒæŠ¼ã•ã‚ŒãŸã€ã¨åˆ¤å®šã•ã‚Œãªã„ãŸã‚ã€2 å›ã®èª­è¾¼ã¿ã‚’è¡Œã‚ã›ã‚‹ã€‚
 	jsr  KEY_RTN
 	jsr  KEY_RTN
 
 ;=======================
-	; ‹N“®‚È‚çƒ}ƒWƒbƒNƒiƒ“ƒo[‘‚İ‚ÆƒnƒCƒXƒRƒAƒNƒŠƒA (2016-06-01 –å^)
-	ldx	#MAGIC_LEN -1		; ƒJƒEƒ“ƒ^
-	clc				; ‰‰ñ‹N“®‚Å‚È‚¢A‚Æ‚µ‚Ä‚¨‚­
+	; èµ·å‹•æ™‚ãªã‚‰ãƒã‚¸ãƒƒã‚¯ãƒŠãƒ³ãƒãƒ¼æ›¸è¾¼ã¿ã¨ãƒã‚¤ã‚¹ã‚³ã‚¢ã‚¯ãƒªã‚¢ (2016-06-01 é–€çœŸ)
+	ldx	#MAGIC_LEN -1		; ã‚«ã‚¦ãƒ³ã‚¿
+	clc				; åˆå›èµ·å‹•ã§ãªã„ã€ã¨ã—ã¦ãŠã
 .magic_loop:
 	lda	 ro_magic, x
 	tay
@@ -111,14 +131,14 @@ SYS_INIT:
 	beq	.magic_match
 	tya
 	sta	 MAGIC, x
-	sec				; ‰‰ñ‹N“®Šm’è
+	sec				; åˆå›èµ·å‹•ç¢ºå®š
 .magic_match:
 	dex
 	bpl	.magic_loop
-	bcc	.magic_e		; ƒŠƒZƒbƒg‚È‚ç‰½‚à‚µ‚È‚¢
+	bcc	.magic_e		; ãƒªã‚»ãƒƒãƒˆæ™‚ãªã‚‰ä½•ã‚‚ã—ãªã„
 
 	lda	#0
-	ldx	#(3+1)*2 -1		; (ƒnƒCƒXƒRƒA,ƒLƒƒƒ‰)*ƒŒƒxƒ‹”-1
+	ldx	#(3+1)*2 -1		; (ãƒã‚¤ã‚¹ã‚³ã‚¢,ã‚­ãƒ£ãƒ©)*ãƒ¬ãƒ™ãƒ«æ•°-1
 .boot_loop:
 	sta	 HISCORES, x
 	dex
@@ -135,7 +155,7 @@ SYS_INIT:
 
 
 ;*****************************************
-;—”ƒVƒXƒeƒ€‰Šú‰»
+;ä¹±æ•°ã‚·ã‚¹ãƒ†ãƒ åˆæœŸåŒ–
 ;*****************************************
 .INIT_RND:
 	LDA	#0

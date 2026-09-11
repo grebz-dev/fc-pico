@@ -1,127 +1,146 @@
+;/// @file SysArduino.asm
+;/// @brief Legacy FC-EXA / ESP32 side channel at `$5000`.
+;/// @ingroup bootrom
+;///
+;/// @warning **Vestigial on FC PICO.** This file talks to an expansion adapter
+;///          that an FC PICO cartridge does not have. It is assembled but
+;///          unreachable except for @ref setWRAM_BANK, which `SysNES.asm` still
+;///          calls. Retained because the boot probe references its status codes.
+;///
+;/// Documented here so that nobody mistakes it for part of the cartridge
+;/// protocol -- that lives in `SysPico.asm`. @see @ref protocol, @ref conventions
 ;----------------------------------------------------------------------
-;			 Arduino’ÊMƒVƒXƒeƒ€
+;			 Arduinoé€šä¿¡ã‚·ã‚¹ãƒ†ãƒ 
 ;
 ;----------------------------------------------------------------------
 
-; ESP32 ƒo[ƒXƒg“]‘——pƒ[ƒN
+; ESP32 ãƒãƒ¼ã‚¹ãƒˆè»¢é€ç”¨ãƒ¯ãƒ¼ã‚¯
 
-BURST_PCNT	   EQU TMP_SV0		; ˆ³kƒJƒEƒ“ƒg
-BURST_DCNT	   EQU TMP_SV1		; ƒf[ƒ^ƒJƒEƒ“ƒg
-BURST_DATA	   EQU TMP_SV2		; ÅI“Ç‚İo‚µƒf[ƒ^
-BURST_IDX	   EQU TMP_SV3		; ƒf[ƒ^ƒCƒ“ƒfƒbƒNƒX
-BURST_FLIP	   EQU TMP_SV4		; “¯Šú§Œä
-BURST_TMOUT	   EQU TMP_SV5		; ƒ^ƒCƒ€ƒAƒEƒg”»’è—p
-BURST_COUNT	   EQU TMP_COUNT	; ƒf[ƒ^ƒTƒCƒYƒJƒEƒ“ƒg—p
+BURST_PCNT	   EQU TMP_SV0   ;///< Burst transfer: page counter. ; åœ§ç¸®ã‚«ã‚¦ãƒ³ãƒˆ
+BURST_DCNT	   EQU TMP_SV1   ;///< Burst transfer: byte counter. ; ãƒ‡ãƒ¼ã‚¿ã‚«ã‚¦ãƒ³ãƒˆ
+BURST_DATA	   EQU TMP_SV2   ;///< Burst transfer: current byte. ; æœ€çµ‚èª­ã¿å‡ºã—ãƒ‡ãƒ¼ã‚¿
+BURST_IDX	   EQU TMP_SV3   ;///< Burst transfer: buffer index. ; ãƒ‡ãƒ¼ã‚¿ã‚¤ãƒ³ãƒ‡ãƒƒã‚¯ã‚¹
+BURST_FLIP	   EQU TMP_SV4   ;///< Burst transfer: toggling acknowledgement flag. ; åŒæœŸåˆ¶å¾¡
+BURST_TMOUT	   EQU TMP_SV5   ;///< Burst transfer: timeout counter. ; ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆåˆ¤å®šç”¨
+BURST_COUNT	   EQU TMP_COUNT   ;///< Burst transfer: remaining blocks. ; ãƒ‡ãƒ¼ã‚¿ã‚µã‚¤ã‚ºã‚«ã‚¦ãƒ³ãƒˆç”¨
 
 ;-------------------------------------------------------------
 
-SYSCOM_INIT   = $F2		; ‰Šú‰»ƒRƒ}ƒ“ƒh
-SYSCOM_ESPCOM = $F3		; ESP32 ƒVƒXƒeƒ€ƒRƒ}ƒ“ƒh
-SYSCOM_MP3_A  = $F4		; MP3 §ŒäƒRƒ}ƒ“ƒhA
-SYSCOM_MP3_B  = $F5		; MP3 §ŒäƒRƒ}ƒ“ƒhB
-SYSCOM_SAVE   = $F6		; ƒ}ƒCƒNƒSD‚ÉƒoƒbƒNƒAƒbƒv
-SYSCOM_WIFI   = $F7		; WIFI’ÊM§Œä
+SYSCOM_INIT   = $F2   ;///< Adapter command: initialise. ; åˆæœŸåŒ–ã‚³ãƒãƒ³ãƒ‰
+SYSCOM_ESPCOM = $F3   ;///< Adapter command: pass through to the ESP32. ; ESP32 ã‚·ã‚¹ãƒ†ãƒ ã‚³ãƒãƒ³ãƒ‰
+SYSCOM_MP3_A  = $F4   ;///< Adapter command: MP3 control, channel A. ; MP3 åˆ¶å¾¡ã‚³ãƒãƒ³ãƒ‰A
+SYSCOM_MP3_B  = $F5   ;///< Adapter command: MP3 control, channel B. ; MP3 åˆ¶å¾¡ã‚³ãƒãƒ³ãƒ‰B
+SYSCOM_SAVE   = $F6   ;///< Adapter command: write save data. ; ãƒã‚¤ã‚¯ãƒ­SDã«ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—
+SYSCOM_WIFI   = $F7   ;///< Adapter command: Wi-Fi operation. ; WIFIé€šä¿¡åˆ¶å¾¡
 
-SYSCOM_RDATA  = $FA		; ƒf[ƒ^“Ç‚İo‚µ
-SYSCOM_RBURST = $FB		; ƒf[ƒ^“Ç‚İo‚µ(ƒo[ƒXƒg“]‘—ƒ‚[ƒh)
+SYSCOM_RDATA  = $FA   ;///< Adapter command: read data. ; ãƒ‡ãƒ¼ã‚¿èª­ã¿å‡ºã—
+SYSCOM_RBURST = $FB   ;///< Adapter command: burst read. ; ãƒ‡ãƒ¼ã‚¿èª­ã¿å‡ºã—(ãƒãƒ¼ã‚¹ãƒˆè»¢é€ãƒ¢ãƒ¼ãƒ‰)
 
-STAT_INIT  = $00		;
-STAT_WAIT  = $40		; ‰Šúó‘Ô
-STAT_WAIT1 = $41		; ƒRƒ}ƒ“ƒhˆ—’†
-STAT_WAIT2 = $42		; ƒRƒ}ƒ“ƒhˆ—’† ƒ_ƒEƒ“ƒ[ƒh’†‚È‚Ç’·ŠÔ‚©‚©‚éƒRƒ}ƒ“ƒh STAT_WAIT‚Æƒgƒ‹ƒO
+STAT_INIT  = $00   ;///< Adapter status: initialising. 
+STAT_WAIT  = $40   ;///< Adapter status: idle. ; åˆæœŸçŠ¶æ…‹
+STAT_WAIT1 = $41   ;///< Adapter status: idle, variant 1. ; ã‚³ãƒãƒ³ãƒ‰å‡¦ç†ä¸­
+STAT_WAIT2 = $42   ;///< Adapter status: idle, variant 2. ; ã‚³ãƒãƒ³ãƒ‰å‡¦ç†ä¸­ ãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰ä¸­ãªã©é•·æ™‚é–“ã‹ã‹ã‚‹ã‚³ãƒãƒ³ãƒ‰æ™‚ STAT_WAITã¨ãƒˆãƒ«ã‚°
 
-STAT_NOEXA  = $50		; Šg’£ƒAƒ_ƒvƒ^[–³‚µ
+STAT_NOEXA  = $50   ;///< Adapter status: no adapter present. @note The value an FC PICO cartridge produces. ; æ‹¡å¼µã‚¢ãƒ€ãƒ—ã‚¿ãƒ¼ç„¡ã—
 
-STAT_BOOT  = $80		; ‹N“®’†
-STAT_SEALED = $81		; ••ˆó’†i••ˆó‰ğœƒRƒ}ƒ“ƒhˆÈŠO‚Í–³‹‚·‚éj
-STAT_OTASD = $82		; SDƒJ[ƒh‚©‚çOTAƒAƒbƒvƒf[ƒg
-STAT_WIFI_CONNECT = $83	; WIFIÚ‘±ŠJn
-STAT_WIFI_CON_OK = $84	; WIFIÚ‘±ŠJn¬Œ÷
-STAT_WIFI_CGI = $85		; CGIÀs
-STAT_WIFI_CGI_OK = $86	; CGIÀsOK
-STAT_UPDATE_CNT = $87	; UPDATEŒp‘±’†
-STAT_UPDATE_OK  = $88	; UPDATEƒ_ƒEƒ“ƒ[ƒhI—¹
-STAT_UPDATE_END = $89	; UPDATEI—¹
+STAT_BOOT  = $80   ;///< Adapter status: booting. ; èµ·å‹•ä¸­
+STAT_SEALED = $81   ;///< Adapter status: sealed. ; å°å°ä¸­ï¼ˆå°å°è§£é™¤ã‚³ãƒãƒ³ãƒ‰ä»¥å¤–ã¯ç„¡è¦–ã™ã‚‹ï¼‰
+STAT_OTASD = $82   ;///< Adapter status: over-the-air update from SD. ; SDã‚«ãƒ¼ãƒ‰ã‹ã‚‰OTAã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ãƒˆ
+STAT_WIFI_CONNECT = $83   ;///< Adapter status: connecting to Wi-Fi. ; WIFIæ¥ç¶šé–‹å§‹
+STAT_WIFI_CON_OK = $84   ;///< Adapter status: Wi-Fi connected. ; WIFIæ¥ç¶šé–‹å§‹æˆåŠŸ
+STAT_WIFI_CGI = $85   ;///< Adapter status: CGI request in flight. ; CGIå®Ÿè¡Œ
+STAT_WIFI_CGI_OK = $86   ;///< Adapter status: CGI request complete. ; CGIå®Ÿè¡ŒOK
+STAT_UPDATE_CNT = $87   ;///< Adapter status: update progress. ; UPDATEç¶™ç¶šä¸­
+STAT_UPDATE_OK  = $88   ;///< Adapter status: update succeeded. ; UPDATEãƒ€ã‚¦ãƒ³ãƒ­ãƒ¼ãƒ‰çµ‚äº†
+STAT_UPDATE_END = $89   ;///< Adapter status: update finished. ; UPDATEçµ‚äº†
 
-STAT_WIFI_VS    = $90	; ‘Îíƒ}ƒbƒ`ƒ“ƒO’†
-STAT_WIFI_VS_OK = $91	; ‘Îíƒ}ƒbƒ`ƒ“ƒO¬—§
-STAT_WIFI_VS_NG = $92	; ‘Îíƒ}ƒbƒ`ƒ“ƒO•s¬—§
-STAT_WIFI_WAIT  = $93	; WIFIƒRƒ}ƒ“ƒhˆ—’†
+STAT_WIFI_VS    = $90   ;///< Adapter status: versus matchmaking. ; å¯¾æˆ¦ãƒãƒƒãƒãƒ³ã‚°ä¸­
+STAT_WIFI_VS_OK = $91   ;///< Adapter status: match found. ; å¯¾æˆ¦ãƒãƒƒãƒãƒ³ã‚°æˆç«‹
+STAT_WIFI_VS_NG = $92   ;///< Adapter status: matchmaking failed. ; å¯¾æˆ¦ãƒãƒƒãƒãƒ³ã‚°ä¸æˆç«‹
+STAT_WIFI_WAIT  = $93   ;///< Adapter status: waiting on the network. ; WIFIã‚³ãƒãƒ³ãƒ‰å‡¦ç†ä¸­
 
-; ƒGƒ‰[ƒR[ƒh
-ERR_CODE_MIN = $C0
-ERR_SD_TALKING = $C1
-ERR_SD_ATTACH = $C2
-ERR_LOAD_INIFILE = $C3
-ERR_WIFI_CONNECT = $C4
-ERR_WIFI_CGI = $C5
+; ã‚¨ãƒ©ãƒ¼ã‚³ãƒ¼ãƒ‰
+ERR_CODE_MIN = $C0   ;///< Lowest adapter error code; values at or above this are failures. 
+ERR_SD_TALKING = $C1   ;///< Adapter error: SD card busy. 
+ERR_SD_ATTACH = $C2   ;///< Adapter error: no SD card. 
+ERR_LOAD_INIFILE = $C3   ;///< Adapter error: configuration file could not be read. 
+ERR_WIFI_CONNECT = $C4   ;///< Adapter error: Wi-Fi connection failed. 
+ERR_WIFI_CGI = $C5   ;///< Adapter error: CGI request failed. 
 
-ERR_WIFI_MATVS = $C6
-ERR_WIFI_DOWNLD = $C7
+ERR_WIFI_MATVS = $C6   ;///< Adapter error: matchmaking failed. 
+ERR_WIFI_DOWNLD = $C7   ;///< Adapter error: download failed. 
 
-; WIFIƒRƒ}ƒ“ƒh
-COM_WIFI_SCORE = $00		; ƒXƒRƒAƒAƒbƒvƒ[ƒh
-COM_WIFI_MANAGER = $F0		; WIFIİ’èƒ}ƒl[ƒWƒƒ[
-COM_WIFI_UPDATE  = $F1		; WIFIƒAƒbƒvƒf[ƒ^[
-COM_WIFI_LSTSSID = $F2		; WIFI SSID LISTæ“¾
-COM_WIFI_TSTSSID = $F3		; WIFI SSID LIST“à”Ô†‚ğw’è‚µ‚ÄÚ‘±ƒeƒXƒg
-COM_WIFI_GETNAME = $F4		; WIFI NICNEAME æ“¾
-COM_WIFI_SETNAME = $F5		; WIFI NICNEAME İ’è
+; WIFIã‚³ãƒãƒ³ãƒ‰
+COM_WIFI_SCORE = $00   ;///< Wi-Fi command: submit a score. ; ã‚¹ã‚³ã‚¢ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰
+COM_WIFI_MANAGER = $F0   ;///< Wi-Fi command: open the manager. ; WIFIè¨­å®šãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼
+COM_WIFI_UPDATE  = $F1   ;///< Wi-Fi command: check for updates. ; WIFIã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿ãƒ¼
+COM_WIFI_LSTSSID = $F2   ;///< Wi-Fi command: list access points. ; WIFI SSID LISTå–å¾—
+COM_WIFI_TSTSSID = $F3   ;///< Wi-Fi command: test an access point. ; WIFI SSID LISTå†…ç•ªå·ã‚’æŒ‡å®šã—ã¦æ¥ç¶šãƒ†ã‚¹ãƒˆ
+COM_WIFI_GETNAME = $F4   ;///< Wi-Fi command: read the player name. ; WIFI NICNEAME å–å¾—
+COM_WIFI_SETNAME = $F5   ;///< Wi-Fi command: set the player name. ; WIFI NICNEAME è¨­å®š
 
 
-COM_WIFI_SYNC    = $FC		; ƒQ[ƒ€ƒf[ƒ^ƒf[ƒ^“¯Šú
-COM_WIFI_MATCHING_VS = $FD	; ‘Îíƒ}ƒbƒ`ƒ“ƒO
-COM_WIFI_CONNECT = $FE		; WIFIÚ‘±
-COM_WIFI_DISCONNECT = $FF	; WIFIØ’f
+COM_WIFI_SYNC    = $FC   ;///< Wi-Fi command: synchronise peers. ; ã‚²ãƒ¼ãƒ ãƒ‡ãƒ¼ã‚¿ãƒ‡ãƒ¼ã‚¿åŒæœŸ
+COM_WIFI_MATCHING_VS = $FD   ;///< Wi-Fi command: find an opponent. ; å¯¾æˆ¦ãƒãƒƒãƒãƒ³ã‚°
+COM_WIFI_CONNECT = $FE   ;///< Wi-Fi command: connect. ; WIFIæ¥ç¶š
+COM_WIFI_DISCONNECT = $FF   ;///< Wi-Fi command: disconnect. ; WIFIåˆ‡æ–­
 
 
 ;----------------------------
-; ƒZ[ƒuEƒ[ƒhˆÃ†‰»ƒL[
+; ã‚»ãƒ¼ãƒ–ãƒ»ãƒ­ãƒ¼ãƒ‰æš—å·åŒ–ã‚­ãƒ¼
 ;----------------------------
-SVDT_KEY0	EQU $3C
-SVDT_KEY1	EQU $A1
-SVDT_KEY2	EQU $BB
-SVDT_KEY3	EQU $7F
+SVDT_KEY0	EQU $3C   ;///< Save-data XOR key, byte 0. 
+SVDT_KEY1	EQU $A1   ;///< Save-data XOR key, byte 1. 
+SVDT_KEY2	EQU $BB   ;///< Save-data XOR key, byte 2. 
+SVDT_KEY3	EQU $7F   ;///< Save-data XOR key, byte 3. 
 
 
 
 
 ;-------------------------------
-; WIFIİ’èƒ}ƒl[ƒWƒƒ[
+; WIFIè¨­å®šãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼
 ;-------------------------------
 ;WIFI_MANAGER:
-;	lda  #COM_WIFI_MANAGER	; WIFIİ’èƒ}ƒl[ƒWƒƒ[
+;	lda  #COM_WIFI_MANAGER	; WIFIè¨­å®šãƒãƒãƒ¼ã‚¸ãƒ£ãƒ¼
 ;	bne  WIFI_COMMAND_82
 
 
 ;-------------------------------
-; WIFI SSID LISTæ“¾
+; WIFI SSID LISTå–å¾—
 ;-------------------------------
+;/// @brief Lists visible SSIDs. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WIFI_LSTSSID:
-	lda  #COM_WIFI_LSTSSID		; WIFI SSID LISTæ“¾
+	lda  #COM_WIFI_LSTSSID		; WIFI SSID LISTå–å¾—
 	bne  WIFI_COMMAND_82
 
 ;-------------------------------
-; WIFIÚ‘±
+; WIFIæ¥ç¶š
 ;-------------------------------
+;/// @brief Connects to an access point. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WIFI_CONNECT:
-	lda  #COM_WIFI_CONNECT	; WIFIÚ‘±
+	lda  #COM_WIFI_CONNECT	; WIFIæ¥ç¶š
 	bne  WIFI_COMMAND_82
 
 ;-------------------------------
-; WIFIØ’f
+; WIFIåˆ‡æ–­
 ;-------------------------------
+;/// @brief Disconnects from the access point. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WIFI_DISCONNECT:
-	lda  #COM_WIFI_DISCONNECT	; WIFIØ’f
+	lda  #COM_WIFI_DISCONNECT	; WIFIåˆ‡æ–­
 ;	bne  WIFI_COMMAND_82
 
 ;-------------------------------
-; WIFIƒRƒ}ƒ“ƒh‹¤’Êˆ—
+; WIFIã‚³ãƒãƒ³ãƒ‰å…±é€šå‡¦ç†
 ;-------------------------------
+;/// @brief Issues expansion command `$82`. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WIFI_COMMAND_82:
 	pha
 	lda  #SYSCOM_WIFI
-	ldy  #$82			; ‘—MŠJn
+	ldy  #$82			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 	pla
 	jsr  WB_Arduino_send
@@ -129,13 +148,15 @@ WIFI_COMMAND_82:
 
 
 ;-------------------------------
-; ƒXƒRƒAƒAƒbƒvƒ[ƒh
+; ã‚¹ã‚³ã‚¢ã‚¢ãƒƒãƒ—ãƒ­ãƒ¼ãƒ‰
 ;-------------------------------
+;/// @brief Uploads a score to the network service. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WIFI_SCORE:
 	lda  #SYSCOM_WIFI
-	ldy  #$85			; ‘—MŠJn
+	ldy  #$85			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
-	lda  #COM_WIFI_SCORE	; ƒXƒRƒA
+	lda  #COM_WIFI_SCORE	; ã‚¹ã‚³ã‚¢
 	jsr  WB_Arduino_send
 	lda  HISCORES+2
 	jsr  WB_Arduino_send
@@ -147,9 +168,11 @@ WIFI_SCORE:
 
 
 ;-------------------------------
-; WRAM‚Ìƒoƒ“ƒNØ‚è‘Ö‚¦
-;  Areg = BANK’li0-3j
+; WRAMã®ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆ
+;  Areg = BANKå€¤ï¼ˆ0-3ï¼‰
 ;-------------------------------
+;/// @brief Selects a cartridge RAM bank, 0-3. @note The only routine in this file still called.
+;/// @ingroup bootrom
 setWRAM_BANK:
 	sta  <TMP_SVA
 	jsr  setESPCOM
@@ -167,10 +190,12 @@ setWRAM_BANK:
 	rts
 
 
+;/// @brief Sends a command to the expansion adapter. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 setESPCOM:
 	pha
 	lda  #SYSCOM_ESPCOM
-	ldy  #$82			; ‘—MŠJn
+	ldy  #$82			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 	pla
 	jsr  WB_Arduino_send
@@ -179,15 +204,17 @@ setESPCOM:
 
 
 ;-------------------------------
-; MPƒvƒŒ[ƒ„[ƒ{ƒŠƒ…[ƒ€İ’è
-;  Areg = VOL’li0-21j 
+; MPãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ãƒœãƒªãƒ¥ãƒ¼ãƒ è¨­å®š
+;  Areg = VOLå€¤ï¼ˆ0-21ï¼‰ 
 ;-------------------------------
+;/// @brief Sets adapter MP3 volume. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 setVol_MP3:
 	pha
 	lda  #SYSCOM_MP3_A
-	ldy  #$83			; ‘—MŠJn
+	ldy  #$83			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
-	lda  #$FE			; ƒ{ƒŠƒ…[ƒ€ƒZƒbƒg
+	lda  #$FE			; ãƒœãƒªãƒ¥ãƒ¼ãƒ ã‚»ãƒƒãƒˆ
 	jsr  WB_Arduino_send
 	pla
 	jsr  WB_Arduino_send
@@ -195,10 +222,12 @@ setVol_MP3:
 
 
 ;-------------------------------
-; MPƒvƒŒ[ƒ„[Ä¶
-;  Areg = Ä¶MP3”Ô†
-;  MP3_BANK = Ä¶ƒoƒ“ƒN”Ô†
+; MPãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å†ç”Ÿ
+;  Areg = å†ç”ŸMP3ç•ªå·
+;  MP3_BANK = å†ç”Ÿãƒãƒ³ã‚¯ç•ªå·
 ;-------------------------------
+;/// @brief Starts adapter MP3 playback. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 play_MP3:
 	pha
 	ldx  #SYSCOM_MP3_A
@@ -207,7 +236,7 @@ play_MP3:
 	ldx  #SYSCOM_MP3_B
 .noloop
 	txa
-	ldy  #$83			; ‘—MŠJn
+	ldy  #$83			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 	lda  MP3_BANK
 	jsr  WB_Arduino_send
@@ -217,27 +246,31 @@ play_MP3:
 	jmp  WB_Arduino_end
 
 
+;/// @brief Stops adapter MP3 playback. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 stop_MP3:
 	lda  #SYSCOM_MP3_A
-	ldy  #$82			; ‘—MŠJn
+	ldy  #$82			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
-	lda  #$FF			; ƒXƒgƒbƒvƒRƒ}ƒ“ƒh
+	lda  #$FF			; ã‚¹ãƒˆãƒƒãƒ—ã‚³ãƒãƒ³ãƒ‰
 	jsr  WB_Arduino_send
 	jmp  WB_Arduino_end
 
 
+;/// @brief Writes save data to the adapter, XOR-obfuscated. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 save_SAVEDATA:
 	lda  #SYSCOM_SAVE
-	ldy  #$88			; ‘—MŠJn
+	ldy  #$88			; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 
-	lda  #$FC			; ƒoƒbƒNƒAƒbƒvƒf[ƒ^ƒwƒbƒ_[
+	lda  #$FC			; ãƒãƒƒã‚¯ã‚¢ãƒƒãƒ—ãƒ‡ãƒ¼ã‚¿ãƒ˜ãƒƒãƒ€ãƒ¼
 	jsr  WB_Arduino_send
 
-	lda  MP3_VOL		; ƒ}ƒXƒ^[ƒ{ƒŠƒ…[ƒ€
+	lda  MP3_VOL		; ãƒã‚¹ã‚¿ãƒ¼ãƒœãƒªãƒ¥ãƒ¼ãƒ 
 	jsr  WB_Arduino_send
 
-	lda  MP3_BANK		; BGMƒoƒ“ƒN
+	lda  MP3_BANK		; BGMãƒãƒ³ã‚¯
 	jsr  WB_Arduino_send
 
 	lda  HISCORES+2
@@ -265,13 +298,17 @@ save_SAVEDATA:
 
 
 ;-------------------------------------
-;	 arduino 1ƒoƒCƒg‘‚«‚İ ¦‰ü‘¢‚·‚é‚Æƒ^ƒCƒ~ƒ“ƒOæ‚ê‚È‚­‚È‚é
+;	 arduino 1ãƒã‚¤ãƒˆæ›¸ãè¾¼ã¿ â€»æ”¹é€ ã™ã‚‹ã¨ã‚¿ã‚¤ãƒŸãƒ³ã‚°å–ã‚Œãªããªã‚‹
 ;-------------------------------------
 
+;/// @brief Writes one byte to the `$5000` port. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WB_Arduino:
-	ldy  #$81		; ‘—MŠJn
+	ldy  #$81		; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 
+;/// @brief Ends a `$5000` transfer. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WB_Arduino_end:
 	ldx  #0
 	stx	 $5000
@@ -280,8 +317,10 @@ WB_Arduino_end:
 
 
 ;-------------------------------------
-;	 arduino ‘—Mƒ\ƒtƒgƒEƒFƒCƒgi—v’²®j
+;	 arduino é€ä¿¡ã‚½ãƒ•ãƒˆã‚¦ã‚§ã‚¤ãƒˆï¼ˆè¦èª¿æ•´ï¼‰
 ;-------------------------------------
+;/// @brief Fixed delay between `$5000` accesses. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WB_Arduino_wait:
 	ldx  #200
 ;	ldx  #50
@@ -292,12 +331,14 @@ WB_Arduino_wait:
 
 
 ;-------------------------------------
-;	arduino •¡”ƒoƒCƒg‘‚«‚İ
+;	arduino è¤‡æ•°ãƒã‚¤ãƒˆæ›¸ãè¾¼ã¿
 ;
-;	Areg = ‘—MƒRƒ}ƒ“ƒh
-;	Yreg = $80+ƒRƒ}ƒ“ƒhƒoƒCƒg”
-;	SRC_ADRF‘—MƒRƒ}ƒ“ƒhƒAƒhƒŒƒX
+;	Areg = é€ä¿¡ã‚³ãƒãƒ³ãƒ‰
+;	Yreg = $80+ã‚³ãƒãƒ³ãƒ‰ãƒã‚¤ãƒˆæ•°
+;	SRC_ADRï¼šé€ä¿¡ã‚³ãƒãƒ³ãƒ‰ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;-------------------------------------
+;/// @brief Writes a multi-byte block from #SRC_ADR. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WB_ArduinoMB:
 	jsr  WB_Arduino_start
 	tya
@@ -315,38 +356,48 @@ WB_ArduinoMB:
 	jmp  WB_Arduino_end
 
 ;-------------------------------------
-;	arduino ƒf[ƒ^‘—MŠJn
+;	arduino ãƒ‡ãƒ¼ã‚¿é€ä¿¡é–‹å§‹
 ;
-;	Areg = ‘—MƒRƒ}ƒ“ƒh
-;	Yreg = $80+ƒRƒ}ƒ“ƒhƒoƒCƒg”
+;	Areg = é€ä¿¡ã‚³ãƒãƒ³ãƒ‰
+;	Yreg = $80+ã‚³ãƒãƒ³ãƒ‰ãƒã‚¤ãƒˆæ•°
 ;-------------------------------------
+;/// @brief Begins a `$5000` transfer, declaring the byte count. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WB_Arduino_start:
 	sty	 $5000
 	jsr  WB_Arduino_wait
 
+;/// @brief Sends one byte and waits for the adapter. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 WB_Arduino_send:
 	sta	 $5000
 	jsr  WB_Arduino_wait
-	lda	 $5000			; ƒRƒ}ƒ“ƒh‘—M
+	lda	 $5000			; ã‚³ãƒãƒ³ãƒ‰é€ä¿¡
 	jmp  WB_Arduino_wait
 
 ;-------------------------------------
-;	ƒŠ[ƒhƒXƒe[ƒ^ƒX
+;	ãƒªãƒ¼ãƒ‰ã‚¹ãƒ†ãƒ¼ã‚¿ã‚¹
 ;-------------------------------------
+;/// @brief Reads adapter status from `$5000`. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 RSTAT_Arduino:
 	lda  $5000
 	rts
 
 
 ;-------------------------------------
-;	ƒo[ƒXƒgƒ‚[ƒhƒoƒbƒtƒ@ƒŠ[ƒh
+;	ãƒãƒ¼ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ãƒãƒƒãƒ•ã‚¡ãƒªãƒ¼ãƒ‰
 ;
-;	SET_DATA_DST xxxxx	“Ç‚İ‚İƒoƒbƒtƒ@ƒAƒhƒŒƒX
+;	SET_DATA_DST xxxxx	èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;
 ;-------------------------------------
 
+;/// @brief Reads a burst block into a buffer. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 ReadBuf_Burst:
 	SET_DATA_DST HTTP_BUF
+;/// @brief Continuation of @ref ReadBuf_Burst. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 ReadBuf_Burst2:
 	jsr  START_Burst
 .loop
@@ -354,19 +405,23 @@ ReadBuf_Burst2:
 	php
 	jsr  setDST_ADR_DATA
 	plp
- 	bcc  .loop			; ÅIƒf[ƒ^‚Ü‚Å“Ç‚İo‚·
+ 	bcc  .loop			; æœ€çµ‚ãƒ‡ãƒ¼ã‚¿ã¾ã§èª­ã¿å‡ºã™
 	rts
 
 ;-------------------------------------
-;	ƒo[ƒXƒgƒ‚[ƒhƒoƒbƒtƒ@ƒŠ[ƒhFƒTƒCƒYƒwƒbƒ_”Å
+;	ãƒãƒ¼ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ãƒãƒƒãƒ•ã‚¡ãƒªãƒ¼ãƒ‰ï¼šã‚µã‚¤ã‚ºãƒ˜ãƒƒãƒ€ç‰ˆ
 ;
-;	SET_DATA_DST xxxxx	“Ç‚İ‚İƒoƒbƒtƒ@ƒAƒhƒŒƒX
+;	SET_DATA_DST xxxxx	èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡ã‚¢ãƒ‰ãƒ¬ã‚¹
 ;
-;	ret  ƒGƒ‰[‚ÍƒLƒƒƒŠ[ƒtƒ‰ƒOƒZƒbƒg
+;	ret  ã‚¨ãƒ©ãƒ¼æ™‚ã¯ã‚­ãƒ£ãƒªãƒ¼ãƒ•ãƒ©ã‚°ã‚»ãƒƒãƒˆ
 ;-------------------------------------
 
+;/// @brief Reads a burst block of a given size. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 ReadBuf_BurstSiz:
 	SET_DATA_DST HTTP_BUF
+;/// @brief Continuation of @ref ReadBuf_BurstSiz. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 ReadBuf_BurstSiz2:
 	jsr  START_Burst
 
@@ -389,18 +444,20 @@ ReadBuf_BurstSiz2:
 	bcc  .loop
 .end
 	lda  #0
-	jsr  setDST_ADR_DATA	;ƒf[ƒ^I’[‚Æ‚µ‚Ä0‚ğo—Í
+	jsr  setDST_ADR_DATA	;ãƒ‡ãƒ¼ã‚¿çµ‚ç«¯ã¨ã—ã¦0ã‚’å‡ºåŠ›
 .error_end
 	rts
 
 
 ;-------------------------------------
-;	ƒo[ƒXƒgƒ‚[ƒhƒŠ[ƒh
+;	ãƒãƒ¼ã‚¹ãƒˆãƒ¢ãƒ¼ãƒ‰ãƒªãƒ¼ãƒ‰
 ;-------------------------------------
+;/// @brief Starts a burst read. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 START_Burst:
 	lda  #SYSCOM_RBURST
-	jsr  WB_Arduino		; ƒo[ƒXƒg“]‘—ƒ‚[ƒhŠJn
-	sta  <BURST_DATA	; ŠJn‚Ì$5000‚Ì“Ç‚İo‚µŒ‹‰Ê‚ğ•Û‘¶
+	jsr  WB_Arduino		; ãƒãƒ¼ã‚¹ãƒˆè»¢é€ãƒ¢ãƒ¼ãƒ‰é–‹å§‹
+	sta  <BURST_DATA	; é–‹å§‹æ™‚ã®$5000ã®èª­ã¿å‡ºã—çµæœã‚’ä¿å­˜
 	lda  #0
 	sta  <BURST_PCNT
 	sta  <BURST_DCNT
@@ -409,13 +466,15 @@ START_Burst:
 	rts
 
 
+;/// @brief Reads one burst byte, handshaking via a toggling flag. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 RB_Burst:
 	lda  <BURST_PCNT
 	bne  .burst_pdt
 	lda  <BURST_DCNT
 	bne  .burst_ddt
 
-	; ƒRƒ}ƒ“ƒhƒoƒCƒgóM
+	; ã‚³ãƒãƒ³ãƒ‰ãƒã‚¤ãƒˆå—ä¿¡
 	jsr  .waitChgR5000
 	bcs  .end
 	tay
@@ -460,7 +519,7 @@ RB_Burst:
 	beq  .waitChgR5000_loop
 	sty  <BURST_DATA
 
-	; óMo—ˆ‚½‚Ì‚Å“¯ŠúM†‰“š
+	; å—ä¿¡å‡ºæ¥ãŸã®ã§åŒæœŸä¿¡å·å¿œç­”
 	lda  <BURST_FLIP
 	eor  #$80
 	sta  <BURST_FLIP
@@ -470,13 +529,17 @@ RB_Burst:
 	rts
 
 ;-------------------------------------
-;	Šg’£ƒVƒXƒeƒ€••ˆó‰ğœ
+;	æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ å°å°è§£é™¤
 ;-------------------------------------
+;/// @brief Four-character game identifier sent to the adapter. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 EXS_GAMEID:
 	db "A000"
 
+;/// @brief Initialises the expansion adapter. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 EXS_INIT:
-	jsr  RSTAT_Arduino			; ƒ_ƒ~[ƒŠ[ƒh
+	jsr  RSTAT_Arduino			; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 	SET_DATA_SRC EXS_GAMEID
 	ldy  #$85
 	lda  #SYSCOM_INIT
@@ -485,13 +548,15 @@ EXS_INIT:
 
 
 ;-------------------------------------
-;	Šg’£ƒVƒXƒeƒ€ƒŠƒZƒbƒg
+;	æ‹¡å¼µã‚·ã‚¹ãƒ†ãƒ ãƒªã‚»ãƒƒãƒˆ
 ;-------------------------------------
+;/// @brief Resets the expansion adapter. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 EXS_RESET:
-	jsr  RSTAT_Arduino			; ƒ_ƒ~[ƒŠ[ƒh
+	jsr  RSTAT_Arduino			; ãƒ€ãƒŸãƒ¼ãƒªãƒ¼ãƒ‰
 
 	lda  #SYSCOM_INIT
-	ldy  #$82		; ‘—MŠJn
+	ldy  #$82		; é€ä¿¡é–‹å§‹
 	jsr  WB_Arduino_start
 
 	lda  #0

@@ -1,0 +1,59 @@
+name: doom-cosim
+
+on:
+  schedule:
+    - cron: "0 3 * * *"
+  workflow_dispatch:
+    inputs:
+      scenarios:
+        description: "Space-separated scenario IDs (S0 S1 S2 S3 S4 S5 S6)"
+        default: "S0 S1 S2 S3 S4 S5"
+
+jobs:
+  mesen2:
+    name: Mesen2 co-simulation
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    env:
+      PICO_SDK_TAG: "2.1.1"
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive     # doom/rp2040-doom and doom/sim/mesen2/Mesen2
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "8.0.x"
+      - name: Packages
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build libsdl2-dev python3-pip
+          python3 -m pip install -r doom/tools/requirements.txt
+      - uses: actions/cache@v4
+        id: sdk-cache
+        with:
+          path: pico-sdk
+          key: pico-sdk-${{ env.PICO_SDK_TAG }}-v1
+      - if: steps.sdk-cache.outputs.cache-hit != 'true'
+        run: |
+          git clone --depth 1 --branch "$PICO_SDK_TAG" https://github.com/raspberrypi/pico-sdk.git
+          git -C pico-sdk submodule update --init --depth 1
+      - name: Cache Mesen2 build
+        id: mesen-cache
+        uses: actions/cache@v4
+        with:
+          path: doom/sim/mesen2/build
+          key: mesen2-${{ hashFiles('doom/sim/mesen2/Mesen2/.git/HEAD', 'doom/sim/mesen2/mapper/**') }}
+      - name: Build Mesen2 with the FC PICO mapper
+        if: steps.mesen-cache.outputs.cache-hit != 'true'
+        run: doom/sim/mesen2/build.sh
+      - name: Build the cartridge model (host)
+        run: |
+          cmake -S doom -B build-host -G Ninja -DPICO_SDK_PATH="$PWD/pico-sdk" -DPICO_PLATFORM=host -DFCPICO_BUILD_COSIM=ON
+          cmake --build build-host --target fcpico_cartmodel
+      - name: Run scenarios
+        run: doom/sim/mesen2/run_scenario.sh ${{ github.event.inputs.scenarios || 'S0 S1 S2 S3 S4 S5' }}
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: cosim-results
+          path: doom/sim/mesen2/results/

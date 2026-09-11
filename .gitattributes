@@ -1,0 +1,14 @@
+# Freeze line endings exactly as they are on disk.
+#
+# The tree is LF-dominant (74 LF vs 6 CRLF at the time of writing), so the
+# `eol=crlf` policy that looks natural for a Windows-only project would rewrite
+# almost every source file on the next checkout.  `-text` disables Git's
+# conversion entirely: whatever bytes are committed are the bytes you get back.
+* -text
+
+# Never diff or merge the build artifacts.
+*.nes binary
+*.bin binary
+*.chr binary
+*.nsf binary
+*.exe binary

@@ -1,105 +1,114 @@
+;/// @file SysEqu.h
+;/// @brief RAM map for the permanent bank.
+;/// @ingroup bootrom
+;///
+;/// Deliberately reduced compared with the erasable bank's version. The original
+;/// header notes that everything except the key-input state may be destroyed once
+;/// boot is complete, because the permanent bank does not run again afterwards.
+;///
+;/// @see @ref boot_reflash
 ;========================================
 ;
-; BOOTROMŒÅ’è—Ìˆæ—pƒ[ƒN
+; BOOTROMå›ºå®šé ˜åŸŸç”¨ãƒ¯ãƒ¼ã‚¯
 ;
-; EƒL[“ü—ÍŠÖ˜AˆÈŠO‚Í‹N“®Œã‚Í”j‰ó‚µ‚Ä‚æ‚¢
+; ãƒ»ã‚­ãƒ¼å…¥åŠ›é–¢é€£ä»¥å¤–ã¯èµ·å‹•å¾Œã¯ç ´å£Šã—ã¦ã‚ˆã„
 ;
-; EBOOTROMŒÅ’è—Ìˆæ“à‚ÌƒL[“ü—Íˆ—‚ğg‚í‚¸‚É
-;   •Ê“rƒL[“ü—Íƒ`ƒFƒbƒNˆ—‚ğ—pˆÓ‚·‚éê‡‚Í‚·‚×‚Ä”j‰ó‚µ‚Ä‚à—Ç‚¢
+; ãƒ»BOOTROMå›ºå®šé ˜åŸŸå†…ã®ã‚­ãƒ¼å…¥åŠ›å‡¦ç†ã‚’ä½¿ã‚ãšã«
+;   åˆ¥é€”ã‚­ãƒ¼å…¥åŠ›ãƒã‚§ãƒƒã‚¯å‡¦ç†ã‚’ç”¨æ„ã™ã‚‹å ´åˆã¯ã™ã¹ã¦ç ´å£Šã—ã¦ã‚‚è‰¯ã„
 ; 
 ;========================================
 
-W_AR		EQU	$00	; 16 bit ŒvZ—p  2 bytes
-W_BR		EQU	$02	; 16 bit ŒvZ—p  2 bytes
+W_AR		EQU	$00   ;///< General 16-bit accumulator for arithmetic, 2 bytes. ; 16 bit è¨ˆç®—ç”¨  2 bytes
+W_BR		EQU	$02   ;///< Second general 16-bit accumulator, 2 bytes. ; 16 bit è¨ˆç®—ç”¨  2 bytes
 
-TMP_SVA		EQU	$04	; ”Ä—p A ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVX		EQU	$05	; ”Ä—p X ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_SVY		EQU	$06	; ”Ä—p Y ƒŒƒWƒXƒ^•Û‘¶—pƒAƒhƒŒƒX
-TMP_LOOP_CNT	EQU	$07	; ”Ä—pƒ‹[ƒvƒJƒEƒ“ƒ^
+TMP_SVA		EQU	$04   ;///< Scratch save slot for the A register. ; æ±ç”¨ A ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVX		EQU	$05   ;///< Scratch save slot for the X register. ; æ±ç”¨ X ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_SVY		EQU	$06   ;///< Scratch save slot for the Y register. ; æ±ç”¨ Y ãƒ¬ã‚¸ã‚¹ã‚¿ä¿å­˜ç”¨ã‚¢ãƒ‰ãƒ¬ã‚¹
+TMP_LOOP_CNT	EQU	$07   ;///< General-purpose loop counter. ; æ±ç”¨ãƒ«ãƒ¼ãƒ—ã‚«ã‚¦ãƒ³ã‚¿
 
-SRC_ADR		EQU	$08	; ”Ä—pƒ\[ƒXƒAƒhƒŒƒX  2 bytes
-DST_ADR		EQU	$0A	; ”Ä—pƒfƒXƒeƒBƒl[ƒVƒ‡ƒ“ƒAƒhƒŒƒX  2 bytes
+SRC_ADR		EQU	$08   ;///< General 16-bit source pointer. ; æ±ç”¨ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
+DST_ADR		EQU	$0A   ;///< General 16-bit destination pointer; also the flash programming cursor. ; æ±ç”¨ãƒ‡ã‚¹ãƒ†ã‚£ãƒãƒ¼ã‚·ãƒ§ãƒ³ã‚¢ãƒ‰ãƒ¬ã‚¹  2 bytes
 
-TMP_SYS		EQU	$0C		;ƒVƒXƒeƒ€‚Åg‚¤TMP
-TMP_SYS2	EQU	$0D		;ƒVƒXƒeƒ€‚Åg‚¤TMP
-
-
-; ‹N“®RAMƒ`ƒFƒbƒN
-RAM_PAGE	EQU  $25
-MEM_DISP	EQU  $26
+TMP_SYS		EQU	$0C   ;///< System scratch byte. ; ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
+TMP_SYS2	EQU	$0D   ;///< Second system scratch byte. ; ã‚·ã‚¹ãƒ†ãƒ ã§ä½¿ã†TMP
 
 
-PICO_MODE	EQU  $51		; PICO‚Ì“®ìƒ‚[ƒh
+; èµ·å‹•æ™‚RAMãƒã‚§ãƒƒã‚¯
+RAM_PAGE	EQU  $25    ;///< Page currently under test by the boot memory check.
+MEM_DISP	EQU  $26    ;///< Five-digit decimal counter shown during the memory test.
 
 
-;----------------
-; ƒL[ŠÖ˜A
-;----------------
-
-KEY_REL		EQU	$82	;
-KEY_TRG		EQU	$83	;
-KEY_OLD		EQU	$84	;
-KEY_NEW		EQU	$85	;
-KEY_CH1		EQU	TMP_SYS
-KEY_CH3		EQU	TMP_SYS2
-
-REP_KEY		EQU	$8A	; ƒŠƒs[ƒg—p‚ÌƒL[
-REP_NEW		EQU	$8B	; ƒŠƒs[ƒg‚É‚æ‚é‰Ÿ‰ºó‘Ô
-REP_CNT		EQU	$8C	; ƒEƒFƒCƒgAƒCƒ“ƒ^[ƒoƒ‹‚ÌƒJƒEƒ“ƒ^
-
-
+PICO_MODE	EQU  $51   ;///< Retry counter for the cartridge version handshake. @see CHK_ROMVER ; PICOã®å‹•ä½œãƒ¢ãƒ¼ãƒ‰
 
 
 ;----------------
-; ƒVƒXƒeƒ€ŠÖ˜A
+; ã‚­ãƒ¼é–¢é€£
 ;----------------
-FLG_2000	EQU	$B0
-FLG_2001	EQU	$B1
+
+KEY_REL		EQU	$82   ;///< Keys released this frame. 
+KEY_TRG		EQU	$83   ;///< Keys pressed this frame. 
+KEY_OLD		EQU	$84   ;///< Previous frame's held keys. 
+KEY_NEW		EQU	$85   ;///< Currently-held keys. @details Checked at boot: holding Start forces a ROM erase. 
+KEY_CH1		EQU	TMP_SYS   ;///< Scratch slot for the first controller sample of the majority vote. 
+KEY_CH3		EQU	TMP_SYS2   ;///< Scratch slot for the third controller sample of the majority vote. 
+
+REP_KEY		EQU	$8A   ;///< Direction currently being auto-repeated. ; ãƒªãƒ”ãƒ¼ãƒˆç”¨ã®ã‚­ãƒ¼
+REP_NEW		EQU	$8B   ;///< Auto-repeat events generated this frame. ; ãƒªãƒ”ãƒ¼ãƒˆã«ã‚ˆã‚‹æŠ¼ä¸‹çŠ¶æ…‹
+REP_CNT		EQU	$8C   ;///< Frames remaining until the next auto-repeat event. ; ã‚¦ã‚§ã‚¤ãƒˆã€ã‚¤ãƒ³ã‚¿ãƒ¼ãƒãƒ«ã®ã‚«ã‚¦ãƒ³ã‚¿
+
+
+
+
+;----------------
+; ã‚·ã‚¹ãƒ†ãƒ é–¢é€£
+;----------------
+FLG_2000	EQU	$B0   ;///< Shadow of PPU register `$2000`. 
+FLG_2001	EQU	$B1   ;///< Shadow of PPU register `$2001`. 
 ;BG_SCR_Y	EQU	$B2
 
-NMI_FLG		EQU	$B3
+NMI_FLG		EQU	$B3   ;///< Re-entrancy guard for the vertical-blank handler. 
 
 
 
-PICO_DATA_BUF  EQU	$400	; PICO ‚Ìƒf[ƒ^“Ç‚İ‚İƒoƒbƒtƒ@
-FLASH_DEBUG_BUF  EQU	$400	; FLASHƒfƒoƒbƒO—pƒoƒbƒtƒ@
-FLASH_SAVE_BUF   EQU	$400	; FLASHƒZ[ƒu—pƒoƒbƒtƒ@
+PICO_DATA_BUF  EQU	$400   ;///< Staging buffer for data received from the cartridge, 256 bytes. ; PICO ã®ãƒ‡ãƒ¼ã‚¿èª­ã¿è¾¼ã¿ãƒãƒƒãƒ•ã‚¡
+FLASH_DEBUG_BUF  EQU	$400   ;///< Scratch buffer for flash diagnostics. ; FLASHãƒ‡ãƒãƒƒã‚°ç”¨ãƒãƒƒãƒ•ã‚¡
+FLASH_SAVE_BUF   EQU	$400   ;///< Copy of the page being programmed, used to verify the write. ; FLASHã‚»ãƒ¼ãƒ–ç”¨ãƒãƒƒãƒ•ã‚¡
 
-FLASH_EXEC_BUF  EQU	$500	; FLASHƒAƒNƒZƒXƒR[ƒhÀsƒoƒbƒtƒ@
+FLASH_EXEC_BUF  EQU	$500   ;///< RAM the flash routines copy themselves into before running. @warning Mandatory: flash cannot be read while it is busy. @see @ref boot_reflash ; FLASHã‚¢ã‚¯ã‚»ã‚¹ã‚³ãƒ¼ãƒ‰å®Ÿè¡Œãƒãƒƒãƒ•ã‚¡
 
 
 
 ;----------------
 ; PPU
 ;----------------
-; MMC3‚ÌIRQ‚ğg‚¤ê‡‚Í BG ‚ğ$0000”Ô’n, Spr ‚ğ$1000”Ô’n‚É”z’u‚µ‚È‚¯‚ê‚Î‚È‚ç‚È‚¢
-FLG_PPU2000	EQU	%100_01_0_00
+; MMC3ã®IRQã‚’ä½¿ã†å ´åˆã¯ BG ã‚’$0000ç•ªåœ°, Spr ã‚’$1000ç•ªåœ°ã«é…ç½®ã—ãªã‘ã‚Œã°ãªã‚‰ãªã„
+FLG_PPU2000	EQU	%100_01_0_00   ;///< Default `$2000`: NMI on, 8x8 sprites, both pattern tables at `$0000`, +1 increment. 
 				; NMI gen,master,SP8x8,BG$0000,SP$0000,+1,v0,h0
 
 
-FLG_PPU2001	EQU	%000_11_11_0
+FLG_PPU2001	EQU	%000_11_11_0   ;///< Default `$2001`: background and sprites enabled, including the leftmost 8 pixels. 
 
 
 ;----------------
 ; KEY BIT CODE
 ;----------------
-KEY_A		EQU	$80
-KEY_B		EQU	$40
-KEY_SEL		EQU	$20
-KEY_RUN		EQU	$10
-KEY_UP		EQU	$08
-KEY_DOWN	EQU	$04
-KEY_LEFT	EQU	$02
-KEY_RIGHT	EQU	$01
+KEY_A		EQU	$80   ;///< A button. 
+KEY_B		EQU	$40   ;///< B button. 
+KEY_SEL		EQU	$20   ;///< Select button. 
+KEY_RUN		EQU	$10   ;///< Start button. @note Held at power-on, forces a ROM erase. @see BR_INIT 
+KEY_UP		EQU	$08   ;///< D-pad up. 
+KEY_DOWN	EQU	$04   ;///< D-pad down. 
+KEY_LEFT	EQU	$02   ;///< D-pad left. 
+KEY_RIGHT	EQU	$01   ;///< D-pad right. 
 
-KEY_AB		EQU	$C0
-KEY_ABRS	EQU	$F0
+KEY_AB		EQU	$C0   ;///< Mask matching either action button. 
+KEY_ABRS	EQU	$F0   ;///< Mask matching A, B, Select or Start. 
 
 
 ;----------------
-; ƒL[ƒŠƒs[ƒgİ’è
+; ã‚­ãƒ¼ãƒªãƒ”ãƒ¼ãƒˆè¨­å®š
 ;----------------
-REP_WAIT	EQU	24	; ƒŠƒs[ƒgŠJn‚Ü‚Å‚ÌŠÔ (ƒtƒŒ[ƒ€”)
-REP_INTERVAL	EQU	 8	; ƒŠƒs[ƒgŠÔŠu (ƒtƒŒ[ƒ€”)
+REP_WAIT	EQU	24   ;///< Frames a direction must be held before auto-repeat begins. ; ãƒªãƒ”ãƒ¼ãƒˆé–‹å§‹ã¾ã§ã®æ™‚é–“ (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
+REP_INTERVAL	EQU	 8   ;///< Frames between auto-repeat events. ; ãƒªãƒ”ãƒ¼ãƒˆé–“éš” (ãƒ•ãƒ¬ãƒ¼ãƒ æ•°)
 
 

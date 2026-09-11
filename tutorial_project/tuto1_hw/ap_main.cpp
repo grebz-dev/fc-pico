@@ -2,6 +2,14 @@
     rp_system.h
  */
 
+/**
+ * @file ap_main.cpp
+ * @brief Implementation of the application scene state machine.
+ * @ingroup app
+ * @see ap_main.h
+ */
+
+
 
 #include "ap_main.h"
 

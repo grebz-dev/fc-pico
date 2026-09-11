@@ -1,19 +1,30 @@
+;/// @file cfgStage.h
+;/// @brief The stage tables: which missions run, and in what order.
+;/// @ingroup gamerom
+;///
+;/// One table per stage, each a list of mission types and sub-types. The sub-type
+;/// byte is overloaded: its top two bits set the enemy attack level, and the
+;/// bottom six index the script table for that mission type.
 ;===============================================================================================
-;	ƒXƒe[ƒW‚Ìƒ~ƒbƒVƒ‡ƒ“’è‹`ƒe[ƒuƒ‹
+;	ã‚¹ãƒ†ãƒ¼ã‚¸ã®ãƒŸãƒƒã‚·ãƒ§ãƒ³å®šç¾©ãƒ†ãƒ¼ãƒ–ãƒ«
 ;
-;  ŠeƒXƒe[ƒW‚Ìƒ~ƒbƒVƒ‡ƒ“‚Ìis‡‚ğ’è‹`‚·‚é
-;  MT_??? ‚Åƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv‚ğw’è‚µ‚ÄA‚»‚ÌŒã‚Ìƒf[ƒ^‚Å‚»‚Ìƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv‚ÌƒTƒuƒ^ƒCƒv‚ğw’è‚·‚é
-;  ƒTƒuƒ^ƒCƒv•”•ª‚Ìw’è‰Â”\”’l‚¨‚æ‚Ñd—l‚ÍŠeƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv‚É‚æ‚èˆÙ‚È‚é
-;  ¦ƒTƒuƒ^ƒCƒv‚ÌÚ×‚Í‚ ‚Æ‚Å‚Ü‚Æ‚ß‚Ü‚·B
+;  å„ã‚¹ãƒ†ãƒ¼ã‚¸ã®ãƒŸãƒƒã‚·ãƒ§ãƒ³ã®é€²è¡Œé †ã‚’å®šç¾©ã™ã‚‹
+;  MT_??? ã§ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—ã‚’æŒ‡å®šã—ã¦ã€ãã®å¾Œã®ãƒ‡ãƒ¼ã‚¿ã§ãã®ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—ã®ã‚µãƒ–ã‚¿ã‚¤ãƒ—ã‚’æŒ‡å®šã™ã‚‹
+;  ã‚µãƒ–ã‚¿ã‚¤ãƒ—éƒ¨åˆ†ã®æŒ‡å®šå¯èƒ½æ•°å€¤ãŠã‚ˆã³ä»•æ§˜ã¯å„ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—ã«ã‚ˆã‚Šç•°ãªã‚‹
+;  â€»ã‚µãƒ–ã‚¿ã‚¤ãƒ—ã®è©³ç´°ã¯ã‚ã¨ã§ã¾ã¨ã‚ã¾ã™ã€‚
 ;===============================================================================================
-MN_BOSS_BGM = $00
+MN_BOSS_BGM = $00		;///< Mission-list marker selecting the boss music.
 
+;/// @brief Mission list for each stage, in play order.
+;/// @ingroup gamerom
 mission_prog_tbl:
 	dw	0
 	dw  stage1
 	dw  stage2
 	dw  stage3
 
+;/// @brief Mission list for the first attract-mode run.
+;/// @ingroup gamerom
 mission_prog_tbl_demo1:
 	dw	0
 	dw  stage1_demo
@@ -21,6 +32,8 @@ mission_prog_tbl_demo1:
 	dw  stage3_demo
 
 
+;/// @brief Mission list for the second attract-mode run.
+;/// @ingroup gamerom
 mission_prog_tbl_demo2:
 	dw	0
 	dw  stage1_boss
@@ -29,196 +42,196 @@ mission_prog_tbl_demo2:
 
 
 ;--------------------------------------------
-; ƒXƒe[ƒW1
+; ã‚¹ãƒ†ãƒ¼ã‚¸1
 ;--------------------------------------------
 stage1
-	db MT_HARA,$00	; ƒXƒe[ƒWŠJn
+	db MT_HARA,$00	; ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹
 
 	db MT_ANM_NO, MTA_OFF
 	db MT_ATK_NO, MTA_OFF
 
-	db MT_HARA,MTSV_0 + $02	; ã‚©‚çUŒ‚@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $02	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 
-;	db MT_END,0		; ƒ~ƒbƒVƒ‡ƒ“I—¹
+;	db MT_END,0		; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†
 
-	db MT_ANM_NO, MTA_ZAKO_F0+0	; ƒUƒR‘OãLV0ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_ANM_NO, MTA_ZAKO_F0+0	; ã‚¶ã‚³å‰å¼±LV0ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_ATK_NO, MAA_1SHOT+0	; ‚P”­UŒ‚ LV0
-	db MT_HARA,MTSV_0 + $02	; ã‚©‚çUŒ‚@NTK_SPZK0
+	db MT_ATK_NO, MAA_1SHOT+0	; ï¼‘ç™ºæ”»æ’ƒ LV0
+	db MT_HARA,MTSV_0 + $02	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_HARA,MTSV_0 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
-	db MT_HARA,MTSV_2 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
+	db MT_HARA,MTSV_2 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
 
-	db MT_ANM_NO, MTA_ASTRO_U+1	; è¦ÎãLV1ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_1 + $05	; 8•bƒEƒFƒCƒg
+	db MT_ANM_NO, MTA_ASTRO_U+1	; éš•çŸ³ä¸ŠLV1ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_1 + $05	; 8ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 stage1_demo
-	db MT_ANM_NO, MTA_ZAKO_F0+0	; ƒUƒR‘OãLV0ƒAƒjƒƒXƒ^[ƒg
-	db MT_ATK_NO, MAA_1SHOT+1	; ‚P”­UŒ‚ LV1
-	db MT_HARA,MTSV_2 + $02	; ã‚©‚çUŒ‚@NTK_SPZK0
-	db MT_HARA,MTSV_3 + $02	; ã‚©‚çUŒ‚@NTK_SPZK0
+	db MT_ANM_NO, MTA_ZAKO_F0+0	; ã‚¶ã‚³å‰å¼±LV0ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_ATK_NO, MAA_1SHOT+1	; ï¼‘ç™ºæ”»æ’ƒ LV1
+	db MT_HARA,MTSV_2 + $02	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
+	db MT_HARA,MTSV_3 + $02	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_HARA,MTSV_0 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
 
-	db MT_ANM_NO, MTA_ZAKO_F1+0	; ƒUƒR‘OdLV0ƒAƒjƒƒXƒ^[ƒg
+	db MT_ANM_NO, MTA_ZAKO_F1+0	; ã‚¶ã‚³å‰ç¡¬LV0ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
 
-	db MT_HARA,MTSV_1 + $05	; 8•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_1 + $05	; 8ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 stage1_boss
-	db MT_HARA,$01	; ƒ{ƒXBGMŠJn
-	db MT_ATK_NO, MAA_1SHOT+2	; ‚P”­UŒ‚ LV2
+	db MT_HARA,$01	; ãƒœã‚¹BGMé–‹å§‹
+	db MT_ATK_NO, MAA_1SHOT+2	; ï¼‘ç™ºæ”»æ’ƒ LV2
 
-	db MT_HARA,MTSV_0 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $10	; ƒ[ƒvƒCƒ“@_^@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $10	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼¼ï¼ã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_1 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK1
-	db MT_HARA,MTSV_0 + $10	; ƒ[ƒvƒCƒ“@_^@NTK_SPZK0
+	db MT_HARA,MTSV_1 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK1
+	db MT_HARA,MTSV_0 + $10	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼¼ï¼ã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_1 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK1
+	db MT_HARA,MTSV_1 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK1
 
 
-	db MT_END,0		; ƒ~ƒbƒVƒ‡ƒ“I—¹
+	db MT_END,0		; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†
 
 
 ;--------------------------------------------
-; ƒXƒe[ƒW2
+; ã‚¹ãƒ†ãƒ¼ã‚¸2
 ;--------------------------------------------
 stage2
-	db MT_HARA,$00	; ƒXƒe[ƒWŠJn
+	db MT_HARA,$00	; ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹
 
 	db MT_ANM_NO, MTA_OFF
 	db MT_ATK_NO, MTA_OFF
 
-	db MT_HARA,MTSV_0 + $02	; ã‚©‚çUŒ‚@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $06	; ‰º‚©‚çUŒ‚@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $02	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $06	; ä¸‹ã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 
-;	db MT_END,0		; ƒ~ƒbƒVƒ‡ƒ“I—¹
+;	db MT_END,0		; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†
 
-	db MT_ANM_NO, MTA_ZAKO_F0+2	; ƒUƒR‘OãLV2ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_ANM_NO, MTA_ZAKO_F0+2	; ã‚¶ã‚³å‰å¼±LV2ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_ATK_NO, MAA_1SHOT+1	; ‚P”­UŒ‚ LV1
-	db MT_HARA,MTSV_0 + $06	; ‰º‚©‚çUŒ‚@NTK_SPZK0
-	db MT_HARA,MTSV_3 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
-	db MT_HARA,MTSV_3 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
+	db MT_ATK_NO, MAA_1SHOT+1	; ï¼‘ç™ºæ”»æ’ƒ LV1
+	db MT_HARA,MTSV_0 + $06	; ä¸‹ã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
+	db MT_HARA,MTSV_3 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
+	db MT_HARA,MTSV_3 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
 
 stage2_demo
-	db MT_ANM_NO, MTA_ASTRO_D+2	; è¦Î‰ºLV2ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_ANM_NO, MTA_ASTRO_D+2	; éš•çŸ³ä¸‹LV2ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 	db MT_ANM_NO, MTA_OFF
-	db MT_HARA,MTSV_0 + $03	; ã‚©‚çUŒ‚@NTK_SPZK1
+	db MT_HARA,MTSV_0 + $03	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK1
 
-	db MT_HARA,MTSV_0 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
-	db MT_HARA,MTSV_2 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
-	db MT_HARA,MTSV_2 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
+	db MT_HARA,MTSV_2 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
+	db MT_HARA,MTSV_2 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
 
-	db MT_ANM_NO, MTA_ZAKO_F1+3	; ƒUƒR‘OdLV3ƒAƒjƒƒXƒ^[ƒg
+	db MT_ANM_NO, MTA_ZAKO_F1+3	; ã‚¶ã‚³å‰ç¡¬LV3ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
 
-	db MT_HARA,MTSV_1 + $05	; 8•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_1 + $05	; 8ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 	
-	db MT_HARA,MTSV_0 + $04	; ã‚©‚çUŒ‚@NTK_SPZK2
-	db MT_HARA,MTSV_3 + $08	; ‰º‚©‚çUŒ‚@NTK_SPZK2
+	db MT_HARA,MTSV_0 + $04	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK2
+	db MT_HARA,MTSV_3 + $08	; ä¸‹ã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK2
 
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 
 stage2_boss
-	db MT_HARA,$01	; ƒ{ƒXBGMŠJn
-	db MT_ATK_NO, MAA_1SHOT+2	; ‚P”­UŒ‚ LV2
-	db MT_ANM_NO, MTA_WARPIN2+3	; ƒ[ƒvIN è¦LV3ƒAƒjƒƒXƒ^[ƒg
+	db MT_HARA,$01	; ãƒœã‚¹BGMé–‹å§‹
+	db MT_ATK_NO, MAA_1SHOT+2	; ï¼‘ç™ºæ”»æ’ƒ LV2
+	db MT_ANM_NO, MTA_WARPIN2+3	; ãƒ¯ãƒ¼ãƒ—IN éš•LV3ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
 
-	db MT_HARA,MTSV_1 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK1
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_1 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK1
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_HARA,MTSV_1 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK1
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_1 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK1
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_HARA,MTSV_1 + $10	; ƒ[ƒvƒCƒ“@_^@NTK_SPZK1
+	db MT_HARA,MTSV_1 + $10	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼¼ï¼ã€€NTK_SPZK1
 
 
-	db MT_END,0		; ƒ~ƒbƒVƒ‡ƒ“I—¹
+	db MT_END,0		; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†
 
 
 
 ;--------------------------------------------
-; ƒXƒe[ƒW3@è¦Î•ã‚©‚çUŒ‚
+; ã‚¹ãƒ†ãƒ¼ã‚¸3ã€€éš•çŸ³ï¼†ä¸Šã‹ã‚‰æ”»æ’ƒ
 ;--------------------------------------------
 stage3
-	db MT_HARA,$00	; ƒXƒe[ƒWŠJn
+	db MT_HARA,$00	; ã‚¹ãƒ†ãƒ¼ã‚¸é–‹å§‹
 
 	db MT_ANM_NO, MTA_OFF
 	db MT_ATK_NO, MTA_OFF
 
-	db MT_ATK_NO, MAA_1SHOT+2	; ‚P”­UŒ‚ LV2
+	db MT_ATK_NO, MAA_1SHOT+2	; ï¼‘ç™ºæ”»æ’ƒ LV2
 
-	db MT_HARA,MTSV_3 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
-	db MT_HARA,MTSV_2 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $0D	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK1
+	db MT_HARA,MTSV_3 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
+	db MT_HARA,MTSV_2 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0D	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK1
 
-;	db MT_END,0		; ƒ~ƒbƒVƒ‡ƒ“I—¹
+;	db MT_END,0		; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†
 	
-	db MT_HARA,MTSV_2 + $03	; ã‚©‚çUŒ‚@NTK_SPZK1
-	db MT_HARA,MTSV_3 + $03	; ã‚©‚çUŒ‚@NTK_SPZK1
+	db MT_HARA,MTSV_2 + $03	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK1
+	db MT_HARA,MTSV_3 + $03	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK1
 
-	db MT_ANM_NO, MTA_ASTRO_U+1	; è¦ÎãLV1ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_1 + $05	; 8•bƒEƒFƒCƒg
+	db MT_ANM_NO, MTA_ASTRO_U+1	; éš•çŸ³ä¸ŠLV1ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_1 + $05	; 8ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_ATK_NO, MAA_3SHOT+1	; 3”­UŒ‚ LV1
-	db MT_HARA,MTSV_0 + $03	; ã‚©‚çUŒ‚@NTK_SPZK1
+	db MT_ATK_NO, MAA_3SHOT+1	; 3ç™ºæ”»æ’ƒ LV1
+	db MT_HARA,MTSV_0 + $03	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK1
 
 
-	db MT_ATK_NO, MAA_3SHOT+2	; 3”­UŒ‚ LV3
-	db MT_ANM_NO, MTA_ZAKO_F0+2	; ƒUƒR‘OãLV2ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_ATK_NO, MAA_3SHOT+2	; 3ç™ºæ”»æ’ƒ LV3
+	db MT_ANM_NO, MTA_ZAKO_F0+2	; ã‚¶ã‚³å‰å¼±LV2ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_HARA,MTSV_0 + $02	; ã‚©‚çUŒ‚@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $02	; ä¸Šã‹ã‚‰æ”»æ’ƒã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
-	db MT_HARA,MTSV_2 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
+	db MT_HARA,MTSV_2 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_0 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
-	db MT_HARA,MTSV_2 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
+	db MT_HARA,MTSV_2 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
 
-	db MT_ANM_NO, MTA_ASTRO_U+1	; è¦ÎãLV1ƒAƒjƒƒXƒ^[ƒg
-	db MT_HARA,MTSV_1 + $05	; 8•bƒEƒFƒCƒg
+	db MT_ANM_NO, MTA_ASTRO_U+1	; éš•çŸ³ä¸ŠLV1ã‚¢ãƒ‹ãƒ¡ã‚¹ã‚¿ãƒ¼ãƒˆ
+	db MT_HARA,MTSV_1 + $05	; 8ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 stage3_demo
 	db MT_ANM_NO, MTA_OFF
-	db MT_ATK_NO, MAA_1SHOT+3	; 1”­UŒ‚ LV3
+	db MT_ATK_NO, MAA_1SHOT+3	; 1ç™ºæ”»æ’ƒ LV3
 
-	db MT_HARA,MTSV_0 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $09	; Î‚ßã¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
-	db MT_HARA,MTSV_0 + $0C	; Î‚ß‰º¶‰E‚©‚çUŒ‚—p@NTK_SPZK0@NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $09	; æ–œã‚ä¸Šå·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
+	db MT_HARA,MTSV_0 + $0C	; æ–œã‚ä¸‹å·¦å³ã‹ã‚‰æ”»æ’ƒç”¨ã€€NTK_SPZK0ã€€NTK_SPZK0
 
-	db MT_HARA,MTSV_0 + $05	; 4•bƒEƒFƒCƒg
+	db MT_HARA,MTSV_0 + $05	; 4ç§’ã‚¦ã‚§ã‚¤ãƒˆ
 
 stage3_boss
-	db MT_HARA,$01	; ƒ{ƒXBGMŠJn
-	db MT_ATK_NO, MAA_1SHOT+1	; 1”­UŒ‚ LV1
+	db MT_HARA,$01	; ãƒœã‚¹BGMé–‹å§‹
+	db MT_ATK_NO, MAA_1SHOT+1	; 1ç™ºæ”»æ’ƒ LV1
 
 
-	db MT_HARA,MTSV_2 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK2
-	db MT_HARA,MTSV_2 + $10	; ƒ[ƒvƒCƒ“@_^@NTK_SPZK2
+	db MT_HARA,MTSV_2 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK2
+	db MT_HARA,MTSV_2 + $10	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼¼ï¼ã€€NTK_SPZK2
 
-	db MT_HARA,MTSV_2 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK2
-	db MT_HARA,MTSV_2 + $10	; ƒ[ƒvƒCƒ“@_^@NTK_SPZK2
+	db MT_HARA,MTSV_2 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK2
+	db MT_HARA,MTSV_2 + $10	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼¼ï¼ã€€NTK_SPZK2
 
-	db MT_HARA,MTSV_2 + $0F	; ƒ[ƒvƒCƒ“@^_@NTK_SPZK2
+	db MT_HARA,MTSV_2 + $0F	; ãƒ¯ãƒ¼ãƒ—ã‚¤ãƒ³ã€€ï¼ï¼¼ã€€NTK_SPZK2
 
-	db MT_END,0		; ƒ~ƒbƒVƒ‡ƒ“I—¹
+	db MT_END,0		; ãƒŸãƒƒã‚·ãƒ§ãƒ³çµ‚äº†
 
 

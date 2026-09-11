@@ -1,15 +1,23 @@
+;/// @file SysData.asm
+;/// @brief Static tables: nametables, string data and the pointer lists.
+;/// @ingroup gamerom
+;///
+;/// Read-only data the rest of the ROM indexes into. Kept in one place so the
+;/// bank budget for data is visible at a glance.
 
 ;***********************************************************************
-;	ƒf[ƒ^“]‘—ŠÖ˜AƒVƒXƒeƒ€
+;	ãƒ‡ãƒ¼ã‚¿è»¢é€é–¢é€£ã‚·ã‚¹ãƒ†ãƒ 
 ;***********************************************************************
 
 ;=======================
-; ROM‚Ìw’èƒoƒ“ƒN‚Ìƒf[ƒ^‚ğRAM‚ÉƒRƒs[‚·‚é
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
-;  IN: DST_ADR “]‘—æƒAƒhƒŒƒX 16bit
-;  IN: Y “]‘—ƒTƒCƒY
-;  ”j‰ó A,Y
+; ROMã®æŒ‡å®šãƒãƒ³ã‚¯ã®ãƒ‡ãƒ¼ã‚¿ã‚’RAMã«ã‚³ãƒ”ãƒ¼ã™ã‚‹
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  IN: DST_ADR è»¢é€å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
+;  IN: Y è»¢é€ã‚µã‚¤ã‚º
+;  ç ´å£Š A,Y
 ;=======================
+;/// @brief Copies #SRC_ADR to #DST_ADR. Destroys A and Y.
+;/// @ingroup gamerom
 memcpy:
 .loop
 	dey
@@ -22,25 +30,37 @@ memcpy:
 
 
 ;=======================
-; ”wŒiƒf[ƒ^ 2C00       *
+; èƒŒæ™¯ãƒ‡ãƒ¼ã‚¿ 2C00       *
 ;=======================
+;/// @brief Clears the nametable at `$2C00`.
+;/// @ingroup gamerom
 CLEAR_BG_2C:
 	PHA
 	SET_VRAM_ADD2 #$2C00
 	PLA
 	jmp CLEAR_BG_00
+;/// @brief Common tail of the background clear routines.
+;/// @ingroup gamerom
 BAK_CLR_RTN:
 	LDA	#$00
+;/// @brief Clears a nametable.
+;/// @ingroup gamerom
 CLEAR_BG:
 	PHA
 	SET_VRAM_ADD2 #$2000
 	PLA
 
+;/// @brief Clears a nametable with tile 0.
+;/// @ingroup gamerom
 CLEAR_BG_00:
 
 	ldx	#3
+;/// @brief Clears nametable 1.
+;/// @ingroup gamerom
 CLEAR_BG_DATA_L1:
 	ldy	#0
+;/// @brief Clears nametable 0.
+;/// @ingroup gamerom
 CLEAR_BG_DATA_L0:
 	sta	$2007
 	dey
@@ -50,6 +70,8 @@ CLEAR_BG_DATA_L0:
 
 	LDY	#$C0
 ;	JSR  CLEAR_VRAM
+;/// @brief Clears nametable 2.
+;/// @ingroup gamerom
 CLEAR_BG_DATA_L2:
 	sta	$2007
 	dey
@@ -59,6 +81,8 @@ CLEAR_BG_DATA_L2:
 	LDA	#$00
 	LDY	#$40
 ;	JSR  CLEAR_VRAM
+;/// @brief Clears nametable 3.
+;/// @ingroup gamerom
 CLEAR_BG_DATA_L3:
 	sta	$2007
 	dey
@@ -68,35 +92,41 @@ CLEAR_BG_DATA_L3:
 
 
 ;=======================
-; ƒpƒŒƒbƒg‰ŠúƒZƒbƒgƒTƒu
-;  IN: SRC_ADR “]‘—Œ³ƒAƒhƒŒƒX 16bit
+; ãƒ‘ãƒ¬ãƒƒãƒˆåˆæœŸã‚»ãƒƒãƒˆã‚µãƒ–
+;  IN: SRC_ADR è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ 16bit
 ;=======================
+;/// @brief Stages a palette from #SRC_ADR into #PAL_WRK.
+;/// @ingroup gamerom
 setPalData:
 	ldy  #32
 	SET_DATA_DST PAL_WRK
+;/// @brief Palette staging entry point that skips the address setup.
+;/// @ingroup gamerom
 setPalData2:
 	PAL_CHG
 	jmp  memcpy
 
 ;------------------------------------------------
-;	BPE ƒfƒR[ƒh
+;	BPE ãƒ‡ã‚³ãƒ¼ãƒ‰
 ;
-;  SRC_ADR =  ƒf[ƒ^Ši”[ƒAƒhƒŒƒX
-;  DST_ADR =  “WŠJæVRAMƒAƒhƒŒƒX
+;  SRC_ADR =  ãƒ‡ãƒ¼ã‚¿æ ¼ç´ã‚¢ãƒ‰ãƒ¬ã‚¹
+;  DST_ADR =  å±•é–‹å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹
 ;------------------------------------------------
-BPE_pass		EQU  TMP_SV7
-BPE_decompsize	EQU  TMP_WRK0		; “WŠJƒTƒCƒY
-BPE_compsize	EQU  TMP_WRK2		; ˆ³kƒTƒCƒY
+BPE_pass		EQU  TMP_SV7		;///< BPE frame header: dictionary entry count.
+BPE_decompsize	EQU  TMP_WRK0		; å±•é–‹ã‚µã‚¤ã‚º		;///< BPE frame header: decompressed size.
+BPE_compsize	EQU  TMP_WRK2		; åœ§ç¸®ã‚µã‚¤ã‚º		;///< BPE frame header: compressed size.
 
-BPE_DIC_H		EQU  TMP_SV0
-BPE_DIC_L		EQU  TMP_SV2
-BPE_DIC_O		EQU  TMP_SV4
-BPE_DT_BUF		EQU  BPE_BUF
-BPE_IX_BUF		EQU  BPE_BUF+$80
+BPE_DIC_H		EQU  TMP_SV0		;///< BPE dictionary: high halves of the replaced pairs.
+BPE_DIC_L		EQU  TMP_SV2		;///< BPE dictionary: low halves.
+BPE_DIC_O		EQU  TMP_SV4		;///< BPE dictionary: the replacement bytes.
+BPE_DT_BUF		EQU  BPE_BUF		;///< BPE decode stack: pending data bytes.
+BPE_IX_BUF		EQU  BPE_BUF+$80		;///< BPE decode stack: pending dictionary indices.
 
 
+;/// @brief Decompresses a BPE stream straight into VRAM.
+;/// @ingroup gamerom
 bpe_dec_vram:
-	; “]‘—æVRAMƒAƒhƒŒƒXƒZƒbƒg
+	; è»¢é€å…ˆVRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
 	lda  <DST_ADR+1
     sta  $2006
 	lda  #$FF
@@ -104,6 +134,8 @@ bpe_dec_vram:
 	lda <DST_ADR+0
 	sta $2006
 
+;/// @brief Decompresses a BPE stream into #BPE_BUF.
+;/// @ingroup gamerom
 bpe_dec:
 
 .loop
@@ -113,31 +145,31 @@ bpe_dec:
 .no_end
 	sta  <BPE_pass
 
-	; “WŠJƒTƒCƒY
+	; å±•é–‹ã‚µã‚¤ã‚º
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_decompsize+0
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_decompsize+1
 
-	; ˆ³kƒTƒCƒY
+	; åœ§ç¸®ã‚µã‚¤ã‚º
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_compsize+0
 	jsr  getSCR_ADR_DATA
 	sta  <BPE_compsize+1
 
-	; «‘ƒAƒhƒŒƒXH
+	; è¾æ›¸ã‚¢ãƒ‰ãƒ¬ã‚¹H
 	LD_W <BPE_DIC_H , <SRC_ADR
 	ldx  #0
 	lda  <BPE_pass
 	jsr  addSCR_ADR
 
-	; «‘ƒAƒhƒŒƒXL
+	; è¾æ›¸ã‚¢ãƒ‰ãƒ¬ã‚¹L
 	LD_W <BPE_DIC_L , <SRC_ADR
 	ldx  #0
 	lda  <BPE_pass
 	jsr  addSCR_ADR
 
-	; «‘ƒAƒhƒŒƒXO
+	; è¾æ›¸ã‚¢ãƒ‰ãƒ¬ã‚¹O
 	LD_W <BPE_DIC_O , <SRC_ADR
 	ldx  #0
 	lda  <BPE_pass
@@ -148,12 +180,18 @@ bpe_dec:
 	jmp .loop
 
 ;------------------------------------------------
-;	BPE 1ƒtƒŒ[ƒ€ƒfƒR[ƒh
+;	BPE 1ãƒ•ãƒ¬ãƒ¼ãƒ ãƒ‡ã‚³ãƒ¼ãƒ‰
 ;------------------------------------------------
+;/// @brief Decodes one BPE frame.
+;/// The 6502 counterpart of `bpe_decode()` in `sys/rp_bpe.cpp`; the two read the
+;/// same wire format. @see @ref sample_game
+;/// @ingroup gamerom
 frame_decode:
 	lda  <DST_ADR+1
 	bpl  frame_decode2_ram
 
+;/// @brief Second-stage BPE frame decode.
+;/// @ingroup gamerom
 frame_decode2:
 	lda  <BPE_compsize+0
 	bne  .fd00
@@ -195,6 +233,8 @@ frame_decode2:
 	rts
 
 
+;/// @brief BPE frame decode with a RAM destination.
+;/// @ingroup gamerom
 frame_decode2_ram:
 	lda  <BPE_compsize+0
 	bne  .fd00

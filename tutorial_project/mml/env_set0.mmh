@@ -1,4 +1,15 @@
-// ENV’è‹`
+/// @file env_set0.mmh
+/// @brief Envelope definitions and drum macros shared by every track.
+/// @ingroup toolchain
+///
+/// Defines voice (`E@`), volume (`Ev`), frequency (`Em`) and note (`En`)
+/// envelopes, plus the noise-channel drum macros `$k`, `$h` and `$s` and the
+/// triangle-channel drum trick `$pn`.
+///
+/// @note The frequency envelope originally used full-width braces; they were
+///       normalised to ASCII when the tree moved to UTF-8, and the rebuilt NSF is
+///       byte-identical. @see @ref conventions
+// ENVå®šç¾©
 /*
         E@voice_envelope
         Evvolume_envelope
@@ -11,33 +22,33 @@
 
 
 //==============================================================================
-//	 Voice(E@)	‰¹FƒGƒ“ƒyƒ[ƒu
+//	 Voice(E@)	éŸ³è‰²ã‚¨ãƒ³ãƒšãƒ­ãƒ¼ãƒ–
 //==============================================================================
 E(1001){ 3 3 L 2 }
 E(1002){ L 1 2 0 }
 
 //==============================================================================
-//	 Volume(Ev)	‰¹—ÊƒGƒ“ƒyƒ[ƒu
+//	 Volume(Ev)	éŸ³é‡ã‚¨ãƒ³ãƒšãƒ­ãƒ¼ãƒ–
 //==============================================================================
 
 
-// ‰¹—Ê„ˆÚƒpƒ^[ƒ“
+// éŸ³é‡æ¨ç§»ãƒ‘ã‚¿ãƒ¼ãƒ³
 E(2000){ 15 D10 14 13 12  L 11 11 10 10 9 9 10 10 R 9 8 7 6 5 L 4 4 3 3 2 2 3 3 }
 
 //==============================================================================
-//	 Frequency(Em)	ü”g”ƒGƒ“ƒyƒ[ƒu
+//	 Frequency(Em)	å‘¨æ³¢æ•°ã‚¨ãƒ³ãƒšãƒ­ãƒ¼ãƒ–
 //==============================================================================
 
-E(3000)o 0 D12 L 1 2 3 2 1 0 -1 -2 -3 -2 -1 0 p
+E(3000){ 0 D12 L 1 2 3 2 1 0 -1 -2 -3 -2 -1 0 }
 
 //==============================================================================
-//	 Note(En)	ƒm[ƒgƒGƒ“ƒyƒ[ƒu
+//	 Note(En)	ãƒãƒ¼ãƒˆã‚¨ãƒ³ãƒšãƒ­ãƒ¼ãƒ–
 //==============================================================================
 Envelop(4000){ L 0 -5 0 }
 
 
 //==============================================================================
-// ƒmƒCƒYƒhƒ‰ƒ€
+// ãƒã‚¤ã‚ºãƒ‰ãƒ©ãƒ 
 //==============================================================================
 //vol
 E(6001) = {7 4 2 1 L 0}
@@ -48,27 +59,49 @@ E(6101) = {11 L 13}
 E(6105) = {-10 4 6 7 8 L 9}
 
 
+/// @brief Kick drum: selects the kick volume and note envelopes.
+/// @ingroup toolchain
 $k{ Ev6000 En6100 }
 
+/// @brief Hi-hat: selects the hi-hat volume and note envelopes.
+/// @ingroup toolchain
 $h{ Ev6001 En6101 }		// hh
+/// @brief Snare: selects the snare volume and note envelopes.
+/// @ingroup toolchain
 $s{ Ev6005 En6105 }
 
 
 //==============================================================================
-// OŠp”gƒhƒ‰ƒ€
+// ä¸‰è§’æ³¢ãƒ‰ãƒ©ãƒ 
 //==============================================================================
 
+/// @brief Triangle-channel percussion click.
+/// @details Pulses `$4011` high then low, which produces a click from the DMC
+///          channel without playing a sample.
+/// @ingroup toolchain
 $pn{  y$4011,$1f y$4011,$00 }
 
-// ƒoƒXƒhƒ‰ƒ€‚n‚m
+// ãƒã‚¹ãƒ‰ãƒ©ãƒ ï¼¯ï¼®
+/// @brief Kick drum: selects the kick volume and note envelopes.
+/// @ingroup toolchain
 $kon{ $pn }
-// ƒXƒlƒAƒhƒ‰ƒ€‚n‚m
+// ã‚¹ãƒã‚¢ãƒ‰ãƒ©ãƒ ï¼¯ï¼®
+/// @brief Snare: selects the snare volume and note envelopes.
+/// @ingroup toolchain
 $son{ $pn }
-// ƒhƒ‰ƒ€‚n‚e‚e
+// ãƒ‰ãƒ©ãƒ ï¼¯ï¼¦ï¼¦
+/// @brief Drum off: clears the note and frequency envelopes.
+/// @ingroup toolchain
 $dof{ En* Em* }
 
+/// @brief Tom, high: octave 5 with the tom frequency envelope.
+/// @ingroup toolchain
 $thon{ En* o5 q6 Em6200  }
+/// @brief Tom, mid: octave 4 with the tom frequency envelope.
+/// @ingroup toolchain
 $tmon{ En* o4 q6 Em6200  }
+/// @brief Tom, low: octave 3 with the tom frequency envelope.
+/// @ingroup toolchain
 $tlon{ En* o3 q6 Em6200  }
 
 

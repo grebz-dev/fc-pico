@@ -1,4 +1,9 @@
+/// @file bgm_stage.mmh
+/// @brief Stage music.
+/// @ingroup toolchain
 
+/// @brief Stage theme.
+/// @ingroup toolchain
 BGM(1) {
 //BGM(3) {
 
@@ -11,7 +16,7 @@ TR3      l16 v15
 TR4      l16 v15
 //TR5      l16 v15
 
-// ƒCƒ“ƒgƒ•”•ª
+// ã‚¤ãƒ³ãƒˆãƒ­éƒ¨åˆ†
 
 TR1 L
 	q2
@@ -23,7 +28,7 @@ TR1 L
 	Em3000
 	Ev2000
 	v7
-	// ‚`ƒƒ
+	// ï¼¡ãƒ¡ãƒ­
 	f+ef+ d^^ ^^^ <a>df+
 	g^^ f+^^ e^^ f+^^
 	agf+ e^^ ^^^ ded
@@ -34,7 +39,7 @@ TR1 L
 	agf+ e^^ ^^^ ded
 	c^^ e^^ g^^ >c^^<
 
-	// ‚aƒƒ
+	// ï¼¢ãƒ¡ãƒ­
 	En4000
 	[
     b^^ ^^^ b^f+ ^b^
@@ -43,7 +48,7 @@ TR1 L
     >c<^g ^e^  c^e ^g^
 	]2
 /*
-	// ‚bƒƒ
+	// ï¼£ãƒ¡ãƒ­
 	o3
 	v10
 	En*
@@ -88,7 +93,7 @@ TR3 L
 	]2
 */
 
-// ƒnƒCƒnƒbƒg•ƒXƒlƒA
+// ãƒã‚¤ãƒãƒƒãƒˆï¼†ã‚¹ãƒã‚¢
 TR4 L
 	$drum_pt0
 

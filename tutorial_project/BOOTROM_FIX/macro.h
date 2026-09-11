@@ -1,6 +1,29 @@
+;/// @file macro.h
+;/// @brief The assembler macro library: arithmetic, VRAM access, strings and flow control.
+;/// @ingroup bootrom
+;///
+;/// nesasm has no inline functions, so anything that would be a small helper is a
+;/// macro here. The important groups are:
+;///
+;/// - **16-bit arithmetic** -- `LD_W`, `ADD_W`, `addw`, `subw`, `incw`, `decw`
+;/// - **VRAM addressing** -- `SET_VRAM_ADD2` and friends, which set `$2006`.
+;///   `SET_VRAM_ADD2 #$0800` is how the cartridge port is opened. @see @ref protocol
+;/// - **Display control** -- `DISP_ON`, `DISP_OFF`, made macros specifically to
+;///   avoid IRQ-line noise when rendering is toggled
+;/// - **Flow control** -- `TBL_JUMP` / `JPTBL` build jump tables by pushing an
+;///   address minus one and executing `RTS`
+;/// - **String drawing** -- `DRAW_STRING2` embeds its text inline and fakes a
+;///   return address so execution resumes past the data
+;///
+;/// @warning This file is **byte-identical** in `BOOTROM/` and `BOOTROM_FIX/`,
+;///          including this header. Edit both or neither. @see @ref conventions
+;/// @note The banking macros (`CHG_BANK_*`, `PUSH_BANK`, `POP_BANK`) and the
+;///       scanline-IRQ macros (`HIRQ_*`) are inert on this NROM cartridge.
 ;******************************************************************************
-;	MOVEŠÖŒW
+;	MOVEé–¢ä¿‚
 ;******************************************************************************
+;/// @brief Loads a 16-bit immediate into a zero-page word.
+;/// @ingroup bootrom
 LD_W MACRO
 	lda  \2
 	sta  \1
@@ -9,9 +32,11 @@ LD_W MACRO
 	ENDM
 
 ;******************************************************************************
-;	ZpŠÖŒW
+;	ç®—è¡“é–¢ä¿‚
 ;******************************************************************************
 
+;/// @brief Adds a 16-bit value to a zero-page word.
+;/// @ingroup bootrom
 ADD_W MACRO
 	clc
 	lda  \1
@@ -23,23 +48,29 @@ ADD_W MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒoƒCƒg‘«‚µ‰‰Z
+;				ãƒã‚¤ãƒˆè¶³ã—æ¼”ç®—
 ;------------------------------------------------------------------------------
+;/// @brief Adds an 8-bit value to a memory location.
+;/// @ingroup bootrom
 add	MACRO
 	clc
 	adc	\1
 	ENDM
 ;------------------------------------------------------------------------------
-;				ƒoƒCƒgˆø‚«‰‰Z
+;				ãƒã‚¤ãƒˆå¼•ãæ¼”ç®—
 ;------------------------------------------------------------------------------
+;/// @brief Subtracts an 8-bit value from a memory location.
+;/// @ingroup bootrom
 sub	MACRO
 	sec
 	sbc	\1
 	ENDM
 ;------------------------------------------------------------------------------
-;				ƒ[ƒh‘«‚µ‰‰Z
+;				ãƒ¯ãƒ¼ãƒ‰è¶³ã—æ¼”ç®—
 ;				xy + \1\2 = xy
 ;------------------------------------------------------------------------------
+;/// @brief Adds a 16-bit value to a zero-page word, with carry.
+;/// @ingroup bootrom
 addw	MACRO
 	pha
 
@@ -58,9 +89,11 @@ addw	MACRO
 	pla
 	ENDM
 ;------------------------------------------------------------------------------
-;				ƒ[ƒhˆø‚«‰‰Z
+;				ãƒ¯ãƒ¼ãƒ‰å¼•ãæ¼”ç®—
 ;				xy - \1\2 = xy
 ;------------------------------------------------------------------------------
+;/// @brief Subtracts a 16-bit value from a zero-page word, with borrow.
+;/// @ingroup bootrom
 subw	MACRO
 	pha
 
@@ -76,9 +109,11 @@ subw	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒ[ƒhƒCƒ“ƒNƒŠƒƒ“ƒg
+;				ãƒ¯ãƒ¼ãƒ‰ã‚¤ãƒ³ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
 ;				\1\2 + 1 = \1\2
 ;------------------------------------------------------------------------------
+;/// @brief Increments a 16-bit zero-page word.
+;/// @ingroup bootrom
 incw	MACRO
 	inc	\1
 	bne	.iend\@
@@ -89,9 +124,11 @@ incw	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒ[ƒhƒfƒNƒŠƒƒ“ƒg
+;				ãƒ¯ãƒ¼ãƒ‰ãƒ‡ã‚¯ãƒªãƒ¡ãƒ³ãƒˆ
 ;				\1\2 - 1 = \1\2
 ;------------------------------------------------------------------------------
+;/// @brief Decrements a 16-bit zero-page word.
+;/// @ingroup bootrom
 decw	MACRO
 	lda	\1
 	bne	.dend\@
@@ -103,8 +140,10 @@ decw	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;		‹[—ƒ[ƒhƒŒƒWƒXƒ^@AR ‚ÉŒÅ’èƒ[ƒhƒZƒbƒg
+;		æ“¬ä¼¼ãƒ¯ãƒ¼ãƒ‰ãƒ¬ã‚¸ã‚¹ã‚¿ã€€AR ã«å›ºå®šãƒ¯ãƒ¼ãƒ‰ã‚»ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
+;/// @brief Loads an immediate into the #W_AR arithmetic register.
+;/// @ingroup bootrom
 SET_AR	MACRO
 	LDA	\1 & $ff
         STA	<W_AR
@@ -113,8 +152,10 @@ SET_AR	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;		‹[—ƒ[ƒhƒŒƒWƒXƒ^@BR ‚ÉŒÅ’èƒ[ƒhƒZƒbƒg
+;		æ“¬ä¼¼ãƒ¯ãƒ¼ãƒ‰ãƒ¬ã‚¸ã‚¹ã‚¿ã€€BR ã«å›ºå®šãƒ¯ãƒ¼ãƒ‰ã‚»ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
+;/// @brief Loads an immediate into the #W_BR arithmetic register.
+;/// @ingroup bootrom
 SET_BR	MACRO
 	LDA	\1 & $ff
         STA	<W_BR
@@ -123,8 +164,10 @@ SET_BR	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;		‹[—ƒ[ƒhƒŒƒWƒXƒ^@AR ‚Éƒƒ‚ƒŠ[ã‚Ìƒ[ƒh’lƒZƒbƒg
+;		æ“¬ä¼¼ãƒ¯ãƒ¼ãƒ‰ãƒ¬ã‚¸ã‚¹ã‚¿ã€€AR ã«ãƒ¡ãƒ¢ãƒªãƒ¼ä¸Šã®ãƒ¯ãƒ¼ãƒ‰å€¤ã‚»ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
+;/// @brief Loads #W_AR from a memory word.
+;/// @ingroup bootrom
 SET_AR_M	MACRO
 	LDA	\1
         STA	<W_AR
@@ -133,8 +176,10 @@ SET_AR_M	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;		‹[—ƒ[ƒhƒŒƒWƒXƒ^@BR ‚Éƒƒ‚ƒŠ[ã‚Ìƒ[ƒh’lƒZƒbƒg
+;		æ“¬ä¼¼ãƒ¯ãƒ¼ãƒ‰ãƒ¬ã‚¸ã‚¹ã‚¿ã€€BR ã«ãƒ¡ãƒ¢ãƒªãƒ¼ä¸Šã®ãƒ¯ãƒ¼ãƒ‰å€¤ã‚»ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
+;/// @brief Loads #W_BR from a memory word.
+;/// @ingroup bootrom
 SET_BR_M	MACRO
 	LDA	\1
         STA	<W_BR
@@ -143,10 +188,12 @@ SET_BR_M	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				‘ÎÛ‚Ìƒƒ‚ƒŠ[‚Ìƒrƒbƒg‚ğƒZƒbƒg‚·‚é
-;				‘ÎÛƒƒ‚ƒŠ[ƒAƒhƒŒƒX = \1
-;				ƒZƒbƒg‚·‚éƒrƒbƒg     = \2
+;				å¯¾è±¡ã®ãƒ¡ãƒ¢ãƒªãƒ¼ã®ãƒ“ãƒƒãƒˆã‚’ã‚»ãƒƒãƒˆã™ã‚‹
+;				å¯¾è±¡ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1
+;				ã‚»ãƒƒãƒˆã™ã‚‹ãƒ“ãƒƒãƒˆ     = \2
 ;------------------------------------------------------------------------------
+;/// @brief Sets the given bits in a memory location.
+;/// @ingroup bootrom
 SET_BIT		MACRO
 	LDA	\1
 	ORA	\2
@@ -154,10 +201,12 @@ SET_BIT		MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				‘ÎÛ‚Ìƒƒ‚ƒŠ[‚Ìƒrƒbƒg‚ğƒNƒŠƒA[‚·‚é
-;				‘ÎÛƒƒ‚ƒŠ[ƒAƒhƒŒƒX = \1
-;				ƒNƒŠƒA[‚·‚éƒrƒbƒg   = \2
+;				å¯¾è±¡ã®ãƒ¡ãƒ¢ãƒªãƒ¼ã®ãƒ“ãƒƒãƒˆã‚’ã‚¯ãƒªã‚¢ãƒ¼ã™ã‚‹
+;				å¯¾è±¡ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1
+;				ã‚¯ãƒªã‚¢ãƒ¼ã™ã‚‹ãƒ“ãƒƒãƒˆ   = \2
 ;------------------------------------------------------------------------------
+;/// @brief Clears the given bits in a memory location.
+;/// @ingroup bootrom
 CLR_BIT		MACRO
 	LDA	\1
 	AND	$ff - \2
@@ -165,10 +214,12 @@ CLR_BIT		MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				‘ÎÛ‚Ìƒƒ‚ƒŠ[‚Ìƒrƒbƒg‚ğƒ`ƒFƒbƒN‚·‚é
-;				‘ÎÛƒƒ‚ƒŠ[ƒAƒhƒŒƒX = \1
-;				ƒ`ƒFƒbƒN‚·‚éƒrƒbƒg   = \2
+;				å¯¾è±¡ã®ãƒ¡ãƒ¢ãƒªãƒ¼ã®ãƒ“ãƒƒãƒˆã‚’ãƒã‚§ãƒƒã‚¯ã™ã‚‹
+;				å¯¾è±¡ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1
+;				ãƒã‚§ãƒƒã‚¯ã™ã‚‹ãƒ“ãƒƒãƒˆ   = \2
 ;------------------------------------------------------------------------------
+;/// @brief Tests the given bits in a memory location, setting Z accordingly.
+;/// @ingroup bootrom
 CHK_BIT		MACRO
 	LDA	\1
 	AND	\2
@@ -176,8 +227,10 @@ CHK_BIT		MACRO
 
 
 ;------------------------------------------------------------------------------
-;				XYƒŒƒWƒXƒ^‚ğƒXƒ^ƒbƒN‚É‘Ş”ğ
+;				XYãƒ¬ã‚¸ã‚¹ã‚¿ã‚’ã‚¹ã‚¿ãƒƒã‚¯ã«é€€é¿
 ;------------------------------------------------------------------------------
+;/// @brief Pushes X and Y.
+;/// @ingroup bootrom
 phxy		MACRO
 	sta  <TMP_SYS
 	txa
@@ -188,8 +241,10 @@ phxy		MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				XYƒŒƒWƒXƒ^‚ğƒXƒ^ƒbƒN‚©‚ç•œ‹A
+;				XYãƒ¬ã‚¸ã‚¹ã‚¿ã‚’ã‚¹ã‚¿ãƒƒã‚¯ã‹ã‚‰å¾©å¸°
 ;------------------------------------------------------------------------------
+;/// @brief Pops Y and X, restoring the order pushed by @c phxy.
+;/// @ingroup bootrom
 plxy		MACRO
 	sta  <TMP_SYS
 	pla
@@ -200,8 +255,10 @@ plxy		MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				SRC_ADR‚ğƒXƒ^ƒbƒN‚É‘Ş”ğ
+;				SRC_ADRã‚’ã‚¹ã‚¿ãƒƒã‚¯ã«é€€é¿
 ;------------------------------------------------------------------------------
+;/// @brief Pushes the 16-bit #SRC_ADR pointer.
+;/// @ingroup bootrom
 phSRC_ADR	MACRO
 	lda  <SRC_ADR+0
 	pha
@@ -210,8 +267,10 @@ phSRC_ADR	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				XYƒŒƒWƒXƒ^‚ğƒXƒ^ƒbƒN‚©‚ç•œ‹A
+;				XYãƒ¬ã‚¸ã‚¹ã‚¿ã‚’ã‚¹ã‚¿ãƒƒã‚¯ã‹ã‚‰å¾©å¸°
 ;------------------------------------------------------------------------------
+;/// @brief Pops the 16-bit #SRC_ADR pointer.
+;/// @ingroup bootrom
 plSRC_ADR	MACRO
 	pla
 	sta  <SRC_ADR+1
@@ -220,37 +279,53 @@ plSRC_ADR	MACRO
 	ENDM
 
 ;******************************************************************************
-;	•\¦ŠÖŒW
+;	è¡¨ç¤ºé–¢ä¿‚
 ;******************************************************************************
-;	‰æ–ÊØ‚è‘Ö‚¦‚É‚h‚q‚pŠ„‚è‚İƒ‰ƒCƒ“‚Å‚ÌƒmƒCƒY‚ğ‘Îˆ‚·‚×‚­A
-;	•\¦onA•\¦off‚ÍAƒ}ƒNƒ‰»‚µ‚Ü‚µ‚½B¨DISP_ON, DISP_OFF
-;	‚»‚ê‚É”º‚¢ANMI_FLG‚Ì‘€ì‚à•¹‚¹‚ÄA‚±‚¿‚ç‚ÉˆÚ“®‚µ‚Ü‚µ‚½B
-;							“n•”
+;	ç”»é¢åˆ‡ã‚Šæ›¿ãˆæ™‚ã«ï¼©ï¼²ï¼±å‰²ã‚Šè¾¼ã¿ãƒ©ã‚¤ãƒ³ã§ã®ãƒã‚¤ã‚ºã‚’å¯¾å‡¦ã™ã¹ãã€
+;	è¡¨ç¤ºonã€è¡¨ç¤ºoffã¯ã€ãƒã‚¯ãƒ­åŒ–ã—ã¾ã—ãŸã€‚â†’DISP_ON, DISP_OFF
+;	ãã‚Œã«ä¼´ã„ã€NMI_FLGã®æ“ä½œã‚‚ä½µã›ã¦ã€ã“ã¡ã‚‰ã«ç§»å‹•ã—ã¾ã—ãŸã€‚
+;							æ¸¡éƒ¨
 ;------------------------------------------------------------------------------
-;				•\¦on
+;				è¡¨ç¤ºon
 ;------------------------------------------------------------------------------
+;/// @brief Enables rendering, waiting for a frame boundary first.
+;/// @note A macro rather than a call so that toggling rendering does not
+;///       disturb the IRQ line and put noise on screen.
+;/// @ingroup bootrom
 DISP_ON		MACRO
 	jsr  _disp_on_sub
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				•\¦on NO SP
+;				è¡¨ç¤ºon NO SP
 ;------------------------------------------------------------------------------
+;/// @brief Enables background rendering but leaves sprites disabled.
+;/// @ingroup bootrom
 DISP_ON_NSP		MACRO
 	jsr  _disp_on_sub2
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				•\¦off
+;				è¡¨ç¤ºoff
 ;------------------------------------------------------------------------------
+;/// @brief Disables rendering, waiting for a frame boundary first.
+;/// @warning Required before bulk transfers: with rendering on there is not
+;///          enough `$2007` bandwidth. @see xPF_COM_DMOD
+;/// @ingroup bootrom
 DISP_OFF	MACRO
 	jsr  _disp_off_sub
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				VRAMƒAƒhƒŒƒXƒZƒbƒg
-;				VRAMƒAƒhƒŒƒX = \1(16bit adr)
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ = \1(16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at a 16-bit address.
+;/// @warning `SET_VRAM_ADD2 #$0800` does **not** address video memory. It opens
+;///          the cartridge port: pattern-table space is decoded by the
+;///          cartridge, so the following `$2007` accesses reach the RP2350.
+;///          @see @ref protocol
+;/// @ingroup bootrom
 SET_VRAM_ADD2	MACRO
 	lda #HIGH (\1)
     sta $2006
@@ -259,10 +334,12 @@ SET_VRAM_ADD2	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				VRAMƒAƒhƒŒƒXƒZƒbƒg
-;				VRAMƒAƒhƒŒƒX = \1(16bit adr)
-;				‰ÁZ’l = \2
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ = \1(16bit adr)
+;				åŠ ç®—å€¤ = \2
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at an address held in memory.
+;/// @ingroup bootrom
 SET_VRAM_ADD3	MACRO
 	clc
 	lda #LOW  (\1)
@@ -276,10 +353,12 @@ SET_VRAM_ADD3	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				VRAMƒAƒhƒŒƒXƒZƒbƒg
-;				VRAMƒAƒhƒŒƒX = \1(16bit adr)
-;				‰ÁZ’l = \2
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ = \1(16bit adr)
+;				åŠ ç®—å€¤ = \2
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at an indexed address.
+;/// @ingroup bootrom
 SET_VRAM_ADD4	MACRO
 	clc
 	lda #LOW  (\1)
@@ -293,9 +372,11 @@ SET_VRAM_ADD4	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				VRAMƒAƒhƒŒƒXƒZƒbƒg
-;				VRAMƒAƒhƒŒƒX = \1(16bit adr)
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ = \1(16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at a nametable cell given as column and row.
+;/// @ingroup bootrom
 SET_VRAM_LOC	MACRO
 	lda #HIGH (\1)
     sta <TMP_ADR0+1
@@ -303,6 +384,8 @@ SET_VRAM_LOC	MACRO
     sta <TMP_ADR0+0
 	ENDM
 
+;/// @brief As @c SET_VRAM_LOC, adding an offset.
+;/// @ingroup bootrom
 SET_VRAM_LOC_ADD	MACRO
     lda <TMP_ADR0+1
     sta $2006
@@ -310,6 +393,8 @@ SET_VRAM_LOC_ADD	MACRO
     sta $2006
 	ENDM
 
+;/// @brief Advances the PPU address by one nametable row.
+;/// @ingroup bootrom
 ADD_VRAM_LOC_CR	MACRO
 	clc
 	lda  <TMP_ADR0+0
@@ -322,9 +407,11 @@ ADD_VRAM_LOC_CR	MACRO
 
 
 ;------------------------------------------------------------------------------
-;				VRAMƒAƒhƒŒƒXƒZƒbƒg
-;				VRAMƒAƒhƒŒƒX = \1(16bit adr)
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				VRAMã‚¢ãƒ‰ãƒ¬ã‚¹ = \1(16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Points the PPU address register at page A, offset zero.
+;/// @ingroup bootrom
 SET_VRAM_ADD_A_00	MACRO
         STA  $2006
         LDA	#$00
@@ -335,9 +422,11 @@ SET_VRAM_ADD_A_00	MACRO
 
 
 ;------------------------------------------------------------------------------
-;				ƒf[ƒ^ƒAƒhƒŒƒXƒZƒbƒg
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \1 (16bit adr)
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Loads #SRC_ADR with an immediate address.
+;/// @ingroup bootrom
 SET_DATA_SRC	MACRO
 	lda	#LOW (\1)
 	sta	<SRC_ADR
@@ -346,9 +435,11 @@ SET_DATA_SRC	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒf[ƒ^ƒAƒhƒŒƒXƒZƒbƒg
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \1 (16bit adr)
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Loads #DST_ADR with an immediate address.
+;/// @ingroup bootrom
 SET_DATA_DST	MACRO
 	lda	#LOW (\1)
 	sta	<DST_ADR
@@ -358,10 +449,12 @@ SET_DATA_DST	MACRO
 
 
 ;------------------------------------------------------------------------------
-;				ƒf[ƒ^ƒAƒhƒŒƒXƒZƒbƒg
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \1 (16bit adr)
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \2 (16bit adr)
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \2 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Loads both #SRC_ADR and #DST_ADR for a copy.
+;/// @ingroup bootrom
 SET_DATA_ADR	MACRO
 	lda	#LOW (\2)
 	sta	\1
@@ -370,9 +463,11 @@ SET_DATA_ADR	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒpƒŒƒbƒg“]‘—
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \1 (ƒAƒhƒŒƒX)
+;				ãƒ‘ãƒ¬ãƒƒãƒˆè»¢é€
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (ã‚¢ãƒ‰ãƒ¬ã‚¹)
 ;------------------------------------------------------------------------------
+;/// @brief Uploads a 32-byte palette through #PAL_WRK. @see transPALLET
+;/// @ingroup bootrom
 TRANS_PAL	MACRO
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -382,9 +477,11 @@ TRANS_PAL	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒl[ƒ€ƒe[ƒuƒ‹•ƒpƒŒƒbƒg“]‘—
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \1 (ƒoƒ“ƒN•tƒAƒhƒŒƒX)
+;				ãƒãƒ¼ãƒ ãƒ†ãƒ¼ãƒ–ãƒ«ï¼†ãƒ‘ãƒ¬ãƒƒãƒˆè»¢é€
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (ãƒãƒ³ã‚¯ä»˜ã‚¢ãƒ‰ãƒ¬ã‚¹)
 ;------------------------------------------------------------------------------
+;/// @brief Copies a block of tile data into a nametable.
+;/// @ingroup bootrom
 DRAW_BG_DATA	MACRO
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -395,9 +492,11 @@ DRAW_BG_DATA	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒl[ƒ€ƒe[ƒuƒ‹“]‘—
-;				ƒf[ƒ^ƒAƒhƒŒƒX = \1 (ƒoƒ“ƒN•tƒAƒhƒŒƒX)
+;				ãƒãƒ¼ãƒ ãƒ†ãƒ¼ãƒ–ãƒ«è»¢é€
+;				ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (ãƒãƒ³ã‚¯ä»˜ã‚¢ãƒ‰ãƒ¬ã‚¹)
 ;------------------------------------------------------------------------------
+;/// @brief As @c DRAW_BG_DATA, without setting the palette.
+;/// @ingroup bootrom
 DRAW_BG_DATA_NP	MACRO
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -405,7 +504,7 @@ DRAW_BG_DATA_NP	MACRO
     sta  <SRC_ADR+1
 	ldx  #BANK (\1) /2
 	lda  <A0_BNK		;
-	pha			;Œ»s‚Ìƒoƒ“ƒN‚ğ•Û‘¶
+	pha			;ç¾è¡Œã®ãƒãƒ³ã‚¯ã‚’ä¿å­˜
 	txa
 	jsr  CHG_A0_BANK
 	jsr  TRANS_NAMETBL_SUB
@@ -416,9 +515,13 @@ DRAW_BG_DATA_NP	MACRO
 
 
 ;------------------------------------------------------------------------------
-;				•¶š—ñ•`‰æ
-;				\1 = •¶š—ñ
+;				æ–‡å­—åˆ—æç”»
+;				\1 = æ–‡å­—åˆ—
 ;------------------------------------------------------------------------------
+;/// @brief Draws a string literal written inline at the call site.
+;/// @details Pushes a fake return address so that execution resumes after the
+;///          embedded text rather than trying to run it.
+;/// @ingroup bootrom
 DRAW_STRING2 MACRO
 	LDA  #HIGH (.end\@ -1)
 	PHA
@@ -434,9 +537,11 @@ DRAW_STRING2 MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				•¶š—ñ•`‰æ
-;				ƒf[ƒ^ƒ\[ƒXƒAƒhƒŒƒX = \1 (16bit adr)
+;				æ–‡å­—åˆ—æç”»
+;				ãƒ‡ãƒ¼ã‚¿ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Draws a NUL-terminated string from a labelled address.
+;/// @ingroup bootrom
 DRAW_STRING	MACRO
 	lda	#\1 & $ff
 	STA	<SRC_ADR
@@ -446,9 +551,11 @@ DRAW_STRING	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				•¶š—ñ•`‰æiƒNƒŠƒA[Ø‚è‘Ö‚¦•t‚«j
-;				ƒf[ƒ^ƒ\[ƒXƒAƒhƒŒƒX = \1 (16bit adr)
+;				æ–‡å­—åˆ—æç”»ï¼ˆã‚¯ãƒªã‚¢ãƒ¼åˆ‡ã‚Šæ›¿ãˆä»˜ãï¼‰
+;				ãƒ‡ãƒ¼ã‚¿ã‚½ãƒ¼ã‚¹ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Draws a string using the system tile set.
+;/// @ingroup bootrom
 DRAW_STRING_S	MACRO
 	lda	#\1 & $ff
 	STA	<SRC_ADR
@@ -458,10 +565,12 @@ DRAW_STRING_S	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				•¶š—ñ•`‰æiƒe[ƒuƒ‹‘I‘ğŒ^j
-;				A reg = ƒe[ƒuƒ‹‘I‘ğ”Ô†
-;				ƒe[ƒuƒ‹ƒf[ƒ^ƒAƒhƒŒƒX = \1 (16bit adr)
+;				æ–‡å­—åˆ—æç”»ï¼ˆãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠå‹ï¼‰
+;				A reg = ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠç•ªå·
+;				ãƒ†ãƒ¼ãƒ–ãƒ«ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Draws the string selected by an index into a table.
+;/// @ingroup bootrom
 DRAW_STRING_TBL_SEL	MACRO
 	ASL	A
 	TAX
@@ -473,33 +582,43 @@ DRAW_STRING_TBL_SEL	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
+;/// @brief Flags the palette shadow dirty so @ref transPALLET uploads it next vertical blank.
+;/// @ingroup bootrom
 PAL_CHG	MACRO
 	inc  <PAL_CHG_FG
 	ENDM
 
 
 ;******************************************************************************
-;	RTSŠÖŒW
+;	RTSé–¢ä¿‚
 ;******************************************************************************
 
+;/// @brief Returns if the zero flag is set.
+;/// @ingroup bootrom
 rts_z	MACRO
 	bne .tbl\@
 	rts
 .tbl\@:
 	ENDM
 
+;/// @brief Returns if the zero flag is clear.
+;/// @ingroup bootrom
 rts_nz	MACRO
 	beq .tbl\@
 	rts
 .tbl\@:
 	ENDM
 
+;/// @brief Returns if the carry flag is set.
+;/// @ingroup bootrom
 rts_c	MACRO
 	bnc .tbl\@
 	rts
 .tbl\@:
 	ENDM
 
+;/// @brief Returns if the carry flag is clear.
+;/// @ingroup bootrom
 rts_nc	MACRO
 	bcs .tbl\@
 	rts
@@ -508,13 +627,17 @@ rts_nc	MACRO
 
 
 ;******************************************************************************
-;	ƒe[ƒuƒ‹ŠÖŒW
+;	ãƒ†ãƒ¼ãƒ–ãƒ«é–¢ä¿‚
 ;******************************************************************************
 
 ;------------------------------------------------------------------------------
-;				ƒe[ƒuƒ‹ƒWƒƒƒ“ƒv
-;				A reg = ƒWƒƒƒ“ƒvæƒe[ƒuƒ‹”Ô†
+;				ãƒ†ãƒ¼ãƒ–ãƒ«ã‚¸ãƒ£ãƒ³ãƒ—
+;				A reg = ã‚¸ãƒ£ãƒ³ãƒ—å…ˆãƒ†ãƒ¼ãƒ–ãƒ«ç•ªå·
 ;------------------------------------------------------------------------------
+;/// @brief Dispatches through the jump table that follows.
+;/// @details Pushes the target address minus one and executes `RTS`, which is
+;///          the standard 6502 idiom for an indexed jump.
+;/// @ingroup bootrom
 TBL_JUMP	MACRO
 	ASL	A
 	stx  <TMP_SYS
@@ -529,16 +652,20 @@ TBL_JUMP	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;  ƒe[ƒuƒ‹ƒWƒƒƒ“ƒvæ@éŒ¾—pƒ}ƒNƒ@ƒXƒ^ƒbƒN‚ğg‚¤ê‡ƒWƒƒƒ“ƒvæ-1 ‚ğƒvƒbƒVƒ…
+;  ãƒ†ãƒ¼ãƒ–ãƒ«ã‚¸ãƒ£ãƒ³ãƒ—å…ˆã€€å®£è¨€ç”¨ãƒã‚¯ãƒ­ã€€ã‚¹ã‚¿ãƒƒã‚¯ã‚’ä½¿ã†å ´åˆã‚¸ãƒ£ãƒ³ãƒ—å…ˆ-1 ã‚’ãƒ—ãƒƒã‚·ãƒ¥
 ;------------------------------------------------------------------------------
+;/// @brief Declares one entry of a @c TBL_JUMP table.
+;/// @ingroup bootrom
 JPTBL	MACRO
 	DW	\1 -1
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒoƒ“ƒN•tƒe[ƒuƒ‹ƒWƒƒƒ“ƒv
-;				A reg = ƒWƒƒƒ“ƒvæƒe[ƒuƒ‹”Ô†
+;				ãƒãƒ³ã‚¯ä»˜ãƒ†ãƒ¼ãƒ–ãƒ«ã‚¸ãƒ£ãƒ³ãƒ—
+;				A reg = ã‚¸ãƒ£ãƒ³ãƒ—å…ˆãƒ†ãƒ¼ãƒ–ãƒ«ç•ªå·
 ;------------------------------------------------------------------------------
+;/// @brief Bank-aware @c TBL_JUMP. @note Degenerates to a plain jump on this NROM cartridge.
+;/// @ingroup bootrom
 BNK_TBL_JUMP	MACRO
 	sta  <TMP_SYS
 	stx  <TMP_SYS2
@@ -547,7 +674,7 @@ BNK_TBL_JUMP	MACRO
 	adc  <TMP_SYS
 	tax
 
-	; Šeƒ~ƒbƒVƒ‡ƒ“ƒ^ƒCƒv‚É‰‚¶‚½‰Šú‰»ˆ—‚ğŒÄ‚Ño‚µ
+	; å„ãƒŸãƒƒã‚·ãƒ§ãƒ³ã‚¿ã‚¤ãƒ—ã«å¿œã˜ãŸåˆæœŸåŒ–å‡¦ç†ã‚’å‘¼ã³å‡ºã—
 	lda  .tbl\@+1,x
 	pha
 	lda  .tbl\@+0,x
@@ -561,8 +688,10 @@ BNK_TBL_JUMP	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;  ƒoƒ“ƒN•tƒWƒƒƒ“ƒvæƒe[ƒuƒ‹
+;  ãƒãƒ³ã‚¯ä»˜ã‚¸ãƒ£ãƒ³ãƒ—å…ˆãƒ†ãƒ¼ãƒ–ãƒ«
 ;------------------------------------------------------------------------------
+;/// @brief Declares one entry of a @c BNK_TBL_JUMP table.
+;/// @ingroup bootrom
 BNK_JPTBL2	MACRO
 	DW	(\1 -1)
 	DB  #BANK ( \1 ) / 2
@@ -571,7 +700,7 @@ BNK_JPTBL2	MACRO
 
 
 ;------------------------------------------------------------------------------
-;  ƒoƒ“ƒN•tƒAƒhƒŒƒXƒe[ƒuƒ‹
+;  ãƒãƒ³ã‚¯ä»˜ã‚¢ãƒ‰ãƒ¬ã‚¹ãƒ†ãƒ¼ãƒ–ãƒ«
 ;------------------------------------------------------------------------------
 ;BNK_ADR	MACRO
 ;	DW	\1
@@ -583,8 +712,8 @@ BNK_JPTBL2	MACRO
 
 
 ;------------------------------------------------------------------------------
-;  ƒoƒ“ƒNŠÔƒR[ƒ‹ ¦A000 ‚É”z’u‚³‚ê‚½‘¼ƒoƒ“ƒN‚ÌƒTƒuƒ‹[ƒ`ƒ“‚ğŒÄ‚Ño‚·
-;				ƒR[ƒ‹æƒAƒhƒŒƒX = \1 (16bit adr + bank)
+;  ãƒãƒ³ã‚¯é–“ã‚³ãƒ¼ãƒ« â€»A000 ã«é…ç½®ã•ã‚ŒãŸä»–ãƒãƒ³ã‚¯ã®ã‚µãƒ–ãƒ«ãƒ¼ãƒãƒ³ã‚’å‘¼ã³å‡ºã™
+;				ã‚³ãƒ¼ãƒ«å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr + bank)
 ;------------------------------------------------------------------------------
 ;BNK_CALL	MACRO
 ;	jsr	BANK_CALL_SUB
@@ -592,14 +721,19 @@ BNK_JPTBL2	MACRO
 ;	DB  #BANK ( \1 ) / 2
 ;	ENDM
 
+;/// @brief Calls a routine in another bank. @note A plain `jsr` here; NROM has no banking.
+;/// @ingroup bootrom
 BNK_CALL	MACRO
 	jsr	\1
 	ENDM
 
 
 ;=================================================================
-; 				ƒWƒƒƒ“ƒvƒxƒNƒ^[ƒ`ƒFƒbƒN•t‚«CALL
+; 				ã‚¸ãƒ£ãƒ³ãƒ—ãƒ™ã‚¯ã‚¿ãƒ¼ãƒã‚§ãƒƒã‚¯ä»˜ãCALL
 ;=================================================================
+;/// @brief Calls through a jump vector, first checking it holds a `JMP` opcode.
+;/// @note Guards against calling into an erased or unprogrammed ROM region.
+;/// @ingroup bootrom
 JVC_CALL MACRO
 	lda  \1
 	cmp  #$4C
@@ -609,8 +743,10 @@ JVC_CALL MACRO
 	ENDM
 
 ;=================================================================
-; 				ƒWƒƒƒ“ƒvƒxƒNƒ^[ƒ`ƒFƒbƒN•t‚«JMP Areg ”j‰ó
+; 				ã‚¸ãƒ£ãƒ³ãƒ—ãƒ™ã‚¯ã‚¿ãƒ¼ãƒã‚§ãƒƒã‚¯ä»˜ãJMP Areg ç ´å£Š
 ;=================================================================
+;/// @brief Jumps through a validated jump vector. @see JVC_CALL
+;/// @ingroup bootrom
 JVC_JMP MACRO
 	lda  \1
 	cmp  #$4C
@@ -621,8 +757,10 @@ JVC_JMP MACRO
 
 
 ;=================================================================
-; 				ƒWƒƒƒ“ƒvƒxƒNƒ^[ƒ`ƒFƒbƒN•t‚«JMP Xreg ”j‰ó
+; 				ã‚¸ãƒ£ãƒ³ãƒ—ãƒ™ã‚¯ã‚¿ãƒ¼ãƒã‚§ãƒƒã‚¯ä»˜ãJMP Xreg ç ´å£Š
 ;=================================================================
+;/// @brief Jumps through a validated jump vector selected by X.
+;/// @ingroup bootrom
 JVC_JMPX MACRO
 	ldx  \1
 	cpx  #$4C
@@ -633,15 +771,19 @@ JVC_JMPX MACRO
 
 
 ;=================================================================
-; 				‹ó‚ÌƒWƒƒƒ“ƒvƒxƒNƒ^[
+; 				ç©ºã®ã‚¸ãƒ£ãƒ³ãƒ—ãƒ™ã‚¯ã‚¿ãƒ¼
 ;=================================================================
+;/// @brief Placeholder jump vector for an entry that is not implemented.
+;/// @ingroup bootrom
 DMY_JVC_JMP MACRO
 	db $FF,$FF,$FF
 	ENDM
 
 ;=================================================================
-; 				NMIƒ†[ƒU[ˆ—“o˜^—pƒ}ƒNƒ
+; 				NMIãƒ¦ãƒ¼ã‚¶ãƒ¼å‡¦ç†ç™»éŒ²ç”¨ãƒã‚¯ãƒ­
 ;=================================================================
+;/// @brief Installs a user vertical-blank hook. @see NMI_CALL_ADR
+;/// @ingroup bootrom
 SET_NMI_CALL	MACRO
 	LDA	#HIGH (\1)
 	STA <NMI_CALL_ADR+1
@@ -653,20 +795,24 @@ SET_NMI_CALL	MACRO
 
 
 ;=================================================================
-; 				NMIƒ†[ƒU[ˆ—‰ğœ—pƒ}ƒNƒ
+; 				NMIãƒ¦ãƒ¼ã‚¶ãƒ¼å‡¦ç†è§£é™¤ç”¨ãƒã‚¯ãƒ­
 ;=================================================================
+;/// @brief Removes the user vertical-blank hook.
+;/// @ingroup bootrom
 CLR_NMI_CALL	MACRO
 	LDA	#0
 	STA <NMI_CALL_ADR+1
 	ENDM
 
 ;=================================================================
-; 				RAM“]‘—ƒVƒXƒeƒ€—p‚Ìƒ}ƒNƒ
+; 				RAMè»¢é€ã‚·ã‚¹ãƒ†ãƒ ç”¨ã®ãƒã‚¯ãƒ­
 ;=================================================================
 
 ;------------------------------------------------------
-; VRAM“]‘—æƒAƒhƒŒƒXw’èƒ}ƒNƒ
+; VRAMè»¢é€å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹æŒ‡å®šãƒã‚¯ãƒ­
 ;------------------------------------------------------
+;/// @brief Sets the address for the VRAM transfer queue. @note Unused in this build.
+;/// @ingroup bootrom
 SET_VRAMT_ADR	MACRO
 	lda   #HIGH (\1)
 	jsr   writeVRAMT_DATA
@@ -676,10 +822,12 @@ SET_VRAMT_ADR	MACRO
 
 
 ;------------------------------------------------------------------------------
-;				ƒe[ƒuƒ‹‘I‘ğ
-;				A reg = ƒe[ƒuƒ‹‘I‘ğ”Ô†
-;				ƒe[ƒuƒ‹ƒAƒhƒŒƒX = \1 (16bit adr)
+;				ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠ
+;				A reg = ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠç•ªå·
+;				ãƒ†ãƒ¼ãƒ–ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Selects a table entry by index.
+;/// @ingroup bootrom
 TBL_SELECT	MACRO
 	ASL	A
 	TAX
@@ -690,10 +838,12 @@ TBL_SELECT	MACRO
 	ENDM
 
 ;------------------------------------------------------------------------------
-;				ƒe[ƒuƒ‹‘I‘ğ
-;				A reg = ƒe[ƒuƒ‹‘I‘ğ”Ô†
-;				ƒe[ƒuƒ‹ƒAƒhƒŒƒX = \1 (16bit adr)
+;				ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠ
+;				A reg = ãƒ†ãƒ¼ãƒ–ãƒ«é¸æŠç•ªå·
+;				ãƒ†ãƒ¼ãƒ–ãƒ«ã‚¢ãƒ‰ãƒ¬ã‚¹ = \1 (16bit adr)
 ;------------------------------------------------------------------------------
+;/// @brief Selects a table entry by index, 16-bit variant.
+;/// @ingroup bootrom
 TBL_SELECT2	MACRO
 	ASL	A
 	TAX
@@ -706,9 +856,11 @@ TBL_SELECT2	MACRO
 
 
 ;-------------------------------------------------------------------------------
-; H-IRQ—pƒ}ƒNƒ
+; H-IRQç”¨ãƒã‚¯ãƒ­
 ;-------------------------------------------------------------------------------
-; H-IRQƒGƒ“ƒgƒŠİ’è
+; H-IRQã‚¨ãƒ³ãƒˆãƒªè¨­å®š
+;/// @brief Installs the scanline IRQ entry point. @note Vestigial; no such hardware here.
+;/// @ingroup bootrom
 HIRQ_ENTRY_SET	macro
 		lda	#LOW(\1)
 		sta	<HIRQ_ENTRY_ADR
@@ -717,7 +869,9 @@ HIRQ_ENTRY_SET	macro
 		endm
 
 
-; H-IRQŠÖ”İ’è
+; H-IRQé–¢æ•°è¨­å®š
+;/// @brief Installs the scanline IRQ handler. @note Vestigial.
+;/// @ingroup bootrom
 HIRQ_FUNC_SET	macro
 		lda	#LOW(\1)
 		sta	<HIRQ_FUNC_ADR
@@ -727,13 +881,15 @@ HIRQ_FUNC_SET	macro
 
 
 ;-------------------------------------------------------------------------------
-; ƒƒ‚ƒŠ[§Œä
+; ãƒ¡ãƒ¢ãƒªãƒ¼åˆ¶å¾¡
 ;-------------------------------------------------------------------------------
 
-;   A reg ƒNƒŠƒA[ƒf[ƒ^
-;   Y reg ƒNƒŠƒA[ƒTƒCƒY ( 0 ‚Í 256ƒoƒCƒg )
-;	\1 = ƒNƒŠƒA[ƒƒ‚ƒŠ[ƒAƒhƒŒƒX (16bit adr)
+;   A reg ã‚¯ãƒªã‚¢ãƒ¼ãƒ‡ãƒ¼ã‚¿
+;   Y reg ã‚¯ãƒªã‚¢ãƒ¼ã‚µã‚¤ã‚º ( 0 ã¯ 256ãƒã‚¤ãƒˆ )
+;	\1 = ã‚¯ãƒªã‚¢ãƒ¼ãƒ¡ãƒ¢ãƒªãƒ¼ã‚¢ãƒ‰ãƒ¬ã‚¹ (16bit adr)
 
+;/// @brief Fills a memory range with zero.
+;/// @ingroup bootrom
 CLEAR_MEM	macro
 
 .loop\@:
@@ -744,6 +900,8 @@ CLEAR_MEM	macro
 		endm
 
 
+;/// @brief Copies a table of bytes into RAM.
+;/// @ingroup bootrom
 COPY_TBL	macro
 	ldx  #0
 .loop\@:
@@ -755,10 +913,12 @@ COPY_TBL	macro
 		endm
 
 
-;	\1 = “]‘—Œ³ƒAƒhƒŒƒX (BNK+16bit adr)
-;	\2 = “]‘—æƒAƒhƒŒƒX (16bit adr)
-;	\3 = “]‘—ƒTƒCƒY (8bit)
+;	\1 = è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ (BNK+16bit adr)
+;	\2 = è»¢é€å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ (16bit adr)
+;	\3 = è»¢é€ã‚µã‚¤ã‚º (8bit)
 
+;/// @brief Copies a block of memory, 8-bit length.
+;/// @ingroup bootrom
 COPY_MEM	macro
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -775,10 +935,12 @@ COPY_MEM	macro
 
 	endm
 
-;	\1 = “]‘—Œ³ƒAƒhƒŒƒX (BNK+16bit adr)
-;	\2 = “]‘—æƒAƒhƒŒƒX (16bit adr)
-;	\3 = “]‘—ƒTƒCƒY (16bit)
+;	\1 = è»¢é€å…ƒã‚¢ãƒ‰ãƒ¬ã‚¹ (BNK+16bit adr)
+;	\2 = è»¢é€å…ˆã‚¢ãƒ‰ãƒ¬ã‚¹ (16bit adr)
+;	\3 = è»¢é€ã‚µã‚¤ã‚º (16bit)
 
+;/// @brief Copies a block of memory, 16-bit length.
+;/// @ingroup bootrom
 COPY_MEM16	macro
 	lda  #LOW (\1)
 	sta  <SRC_ADR
@@ -805,38 +967,43 @@ COPY_MEM16	macro
 ; BEEP
 ;-------------------------------------------------------------------------------
 
+;/// @brief Emits a tone by writing the APU pulse registers directly.
+;/// @note Used for boot progress cues before the sound driver exists.
+;/// @ingroup bootrom
 BEEP	MACRO
 	lda #0
 	sta $4015
 
-;	lda $4015		; ƒTƒEƒ“ƒhƒŒƒWƒXƒ^
-;	ora #%00000001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P‚ğ—LŒø‚É‚·‚é
-	lda #%00000001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P‚ğ—LŒø‚É‚·‚é
+;	lda $4015		; ã‚µã‚¦ãƒ³ãƒ‰ãƒ¬ã‚¸ã‚¹ã‚¿
+;	ora #%00000001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘ã‚’æœ‰åŠ¹ã«ã™ã‚‹
+	lda #%00000001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘ã‚’æœ‰åŠ¹ã«ã™ã‚‹
 	sta $4015
 
-	lda #%10111111	; Duty”äE’·‚³–³ŒøEŒ¸Š–³ŒøEŒ¸Š—¦
-	sta $4000	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P§ŒäƒŒƒWƒXƒ^‚P
+	lda #%10111111	; Dutyæ¯”ãƒ»é•·ã•ç„¡åŠ¹ãƒ»æ¸›è¡°ç„¡åŠ¹ãƒ»æ¸›è¡°ç‡
+	sta $4000	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘åˆ¶å¾¡ãƒ¬ã‚¸ã‚¹ã‚¿ï¼‘
 
-;	lda #%10101011	; ƒXƒC[ƒv—LŒøE•Ï‰»—¦E•ûŒüE•Ï‰»—Ê
-;	lda #%00101011	; ƒXƒC[ƒv—LŒøE•Ï‰»—¦E•ûŒüE•Ï‰»—Ê
-	lda #(\2)	; ƒXƒC[ƒv—LŒøE•Ï‰»—¦E•ûŒüE•Ï‰»—Ê
-	sta $4001	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚P§ŒäƒŒƒWƒXƒ^‚Q
+;	lda #%10101011	; ã‚¹ã‚¤ãƒ¼ãƒ—æœ‰åŠ¹ãƒ»å¤‰åŒ–ç‡ãƒ»æ–¹å‘ãƒ»å¤‰åŒ–é‡
+;	lda #%00101011	; ã‚¹ã‚¤ãƒ¼ãƒ—æœ‰åŠ¹ãƒ»å¤‰åŒ–ç‡ãƒ»æ–¹å‘ãƒ»å¤‰åŒ–é‡
+	lda #(\2)	; ã‚¹ã‚¤ãƒ¼ãƒ—æœ‰åŠ¹ãƒ»å¤‰åŒ–ç‡ãƒ»æ–¹å‘ãƒ»å¤‰åŒ–é‡
+	sta $4001	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘åˆ¶å¾¡ãƒ¬ã‚¸ã‚¹ã‚¿ï¼’
 	
-	lda #LOW(\1)	; ü”g”(‰ºˆÊ8ƒrƒbƒg)
-	sta $4002	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚Pü”g”ƒŒƒWƒXƒ^‚P
-	lda #%11111000 +(HIGH(\1) &7)	; Ä¶ŠÔEü”g”(ãˆÊ3ƒrƒbƒg)
-	sta $4003	; ‹éŒ`”gƒ`ƒƒƒ“ƒlƒ‹‚Pü”g”ƒŒƒWƒXƒ^‚Q
+	lda #LOW(\1)	; å‘¨æ³¢æ•°(ä¸‹ä½8ãƒ“ãƒƒãƒˆ)
+	sta $4002	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘å‘¨æ³¢æ•°ãƒ¬ã‚¸ã‚¹ã‚¿ï¼‘
+	lda #%11111000 +(HIGH(\1) &7)	; å†ç”Ÿæ™‚é–“ãƒ»å‘¨æ³¢æ•°(ä¸Šä½3ãƒ“ãƒƒãƒˆ)
+	sta $4003	; çŸ©å½¢æ³¢ãƒãƒ£ãƒ³ãƒãƒ«ï¼‘å‘¨æ³¢æ•°ãƒ¬ã‚¸ã‚¹ã‚¿ï¼’
 
 	ENDM
 
 
 
 ;-------------------------------
-; Areg = ƒZƒbƒg‚·‚éƒ‰ƒCƒ“”
+; Areg = ã‚»ãƒƒãƒˆã™ã‚‹ãƒ©ã‚¤ãƒ³æ•°
 ;-------------------------------
+;/// @brief Reloads the scanline IRQ counter. @note Vestigial; no such hardware here.
+;/// @ingroup bootrom
 HIRQ_LATCH_RELOAD	MACRO
 	sta  <HIRQ_CNT
-	sta  EXS_HIRQ_REG		; H-IRQƒ‰ƒCƒ“ƒIƒtƒZƒbƒgİ’è
+	sta  EXS_HIRQ_REG		; H-IRQãƒ©ã‚¤ãƒ³ã‚ªãƒ•ã‚»ãƒƒãƒˆè¨­å®š
 ;	lda  <EXA_MODE
 ;	bne  .iend\@
 ;	lda  #1
@@ -845,16 +1012,22 @@ HIRQ_LATCH_RELOAD	MACRO
 	ENDM
 
 
+;/// @brief Acknowledges a scanline IRQ. @note Vestigial.
+;/// @ingroup bootrom
 HIRQ_END	MACRO
 	lda  #$FF
-	sta  EXS_HIRQ_REG		; H-IRQƒ‰ƒCƒ“ƒIƒtƒZƒbƒgİ’è
+	sta  EXS_HIRQ_REG		; H-IRQãƒ©ã‚¤ãƒ³ã‚ªãƒ•ã‚»ãƒƒãƒˆè¨­å®š
 	sta  <HIRQ_CNT
 	ENDM
 
 
 ;-------------------------------
-; ROMƒ~ƒ‰[İ’èƒ}ƒNƒ
+; ROMãƒŸãƒ©ãƒ¼è¨­å®šãƒã‚¯ãƒ­
 ;-------------------------------
+;/// @brief Emits the literal marker `nes_mirror` for a post-processing tool.
+;/// @note The tool (`bin/nes_mirror.exe`) is never invoked by any build script
+;///       in this project. @see @ref conventions
+;/// @ingroup bootrom
 ROM_MIRROR 	macro
 	db "nes_mirror",\1
 	dw \2
@@ -864,20 +1037,26 @@ ROM_MIRROR 	macro
 
 
 ;-------------------------------
-; ƒoƒ“ƒNØ‚è‘Ö‚¦
+; ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆ
 ;-------------------------------
+;/// @brief Selects a PRG bank from A. @note Inert on NROM; the write lands on the board's write-enable latch. @see @ref flashing
+;/// @ingroup bootrom
 CHG_BANK_A 	macro
 	sta  $E000
 	ENDM
 
+;/// @brief Selects a PRG bank from X. @note Inert on NROM.
+;/// @ingroup bootrom
 CHG_BANK_X 	macro
 	jsr  SYS_CHG_BANK_X
 ;	stx  $8000
 	ENDM
 
 ;-------------------------------
-; ƒoƒ“ƒNØ‚è‘Ö‚¦
+; ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆ
 ;-------------------------------
+;/// @brief Selects a PRG bank from a literal. @note Inert on NROM.
+;/// @ingroup bootrom
 CHG_BANK_LB macro
 	lda  #BANK (\1) /2
 	sta  $E000
@@ -886,8 +1065,10 @@ CHG_BANK_LB macro
 
 
 ;-------------------------------
-; Œ»İ‚Ìƒoƒ“ƒN‚ğƒXƒ^ƒbƒN‚ÉPUSH
+; ç¾åœ¨ã®ãƒãƒ³ã‚¯ã‚’ã‚¹ã‚¿ãƒƒã‚¯ã«PUSH
 ;-------------------------------
+;/// @brief Saves the current bank number. @note Inert on NROM.
+;/// @ingroup bootrom
 PUSH_BANK macro
 	lda  ROM_BANK_NO
 	pha
@@ -895,8 +1076,10 @@ PUSH_BANK macro
 
 
 ;-------------------------------
-; Œ»İ‚ÌƒXƒ^ƒbƒN‚©‚çPOP‚µ‚Äƒoƒ“ƒNØ‚è‘Ö‚¦
+; ç¾åœ¨ã®ã‚¹ã‚¿ãƒƒã‚¯ã‹ã‚‰POPã—ã¦ãƒãƒ³ã‚¯åˆ‡ã‚Šæ›¿ãˆ
 ;-------------------------------
+;/// @brief Restores a saved bank number. @note Inert on NROM.
+;/// @ingroup bootrom
 POP_BANK macro
 	pla
 	jsr  SYS_CHG_BANK
@@ -904,8 +1087,10 @@ POP_BANK macro
 
 
 ;-------------------------------
-; ƒTƒEƒ“ƒhƒf[ƒ^ƒe[ƒuƒ‹ƒ}ƒNƒ
+; ã‚µã‚¦ãƒ³ãƒ‰ãƒ‡ãƒ¼ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«ãƒã‚¯ãƒ­
 ;-------------------------------
+;/// @brief Emits a data byte for the model/table description format.
+;/// @ingroup bootrom
 MDR_DT	MACRO
 	DW \1
 	DB \2
@@ -914,8 +1099,12 @@ MDR_DT	MACRO
 
 
 ;-------------------------------
-; ƒTƒEƒ“ƒhƒf[ƒ^ƒe[ƒuƒ‹ƒ}ƒNƒ
+; ã‚µã‚¦ãƒ³ãƒ‰ãƒ‡ãƒ¼ã‚¿ãƒ†ãƒ¼ãƒ–ãƒ«ãƒã‚¯ãƒ­
 ;-------------------------------
+;/// @brief Stops dead with a repeating beep.
+;/// @details Masks interrupts and loops forever. Intended as a visible, audible
+;///          failure rather than a silent hang.
+;/// @ingroup bootrom
 DEBUG_HALT MACRO
 	sei
 	BEEP $104,%11110011
@@ -924,21 +1113,27 @@ DEBUG_HALT MACRO
 	ENDM
 
 ;******************************************************************************
-;	NoNMIŠÖŒW
+;	NoNMIé–¢ä¿‚
 ;******************************************************************************
 
+;/// @brief Polls `$2002` until vertical blank begins. For use with NMI disabled.
+;/// @ingroup bootrom
 WAIT_VBLANK MACRO
 .wait_loop\@
 	bit	 $2002  ;ppu__status
 	bpl	.wait_loop\@
 	ENDM
 
+;/// @brief Polls `$2002` until vertical blank ends.
+;/// @ingroup bootrom
 WAIT_VBLANK_END MACRO
 .wait_loop\@
 	bit	 $2002  ;ppu__status
 	bmi	.wait_loop\@
 	ENDM
 
+;/// @brief Zeroes both scroll registers.
+;/// @ingroup bootrom
 RESET_SCR_XY MACRO
 	lda  #0
 	sta  $2005
@@ -946,26 +1141,32 @@ RESET_SCR_XY MACRO
 	ENDM
 
 ;******************************************************************************
-;	EXAŠÖŒW
+;	EXAé–¢ä¿‚
 ;******************************************************************************
 
+;/// @brief Reads expansion adapter status from `$5000`. @note Vestigial FC-EXA feature.
+;/// @ingroup bootrom
 RSTAT_EXA MACRO
 	lda  $5000
 	ENDM
 
 
 ;******************************************************************************
-;	TIMEOUTŠÖ˜A
+;	TIMEOUTé–¢é€£
 ;******************************************************************************
 ;-------------------------------------------------------------------------------
-; TIMEOU’lƒZƒbƒg
+; TIMEOUå€¤ã‚»ãƒƒãƒˆ
 ;-------------------------------------------------------------------------------
-;	\1 = ƒ^ƒCƒ€ƒAƒEƒg•b” (1-68•b)
+;	\1 = ã‚¿ã‚¤ãƒ ã‚¢ã‚¦ãƒˆç§’æ•° (1-68ç§’)
+;/// @brief Arms #DEMO_TIMER for the given number of seconds.
+;/// @ingroup bootrom
 SET_TIMEOUT macro
 	lda  #( \1 *60/16)
 	sta  <DEMO_TIMER
 	ENDM
 
+;/// @brief Decrements #DEMO_TIMER and branches when it reaches zero.
+;/// @ingroup bootrom
 JOB_TIMEOUT MACRO
 	lda  <DEMO_TIMER
 	beq  .lpx\@
@@ -976,6 +1177,8 @@ JOB_TIMEOUT MACRO
 .lpx\@
 	ENDM
 
+;/// @brief Branches when #DEMO_TIMER has expired.
+;/// @ingroup bootrom
 IS_TIMEOUT macro
 	lda  <DEMO_TIMER
 	ENDM

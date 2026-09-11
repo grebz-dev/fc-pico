@@ -1,0 +1,27 @@
+name: doom-docs
+
+on:
+  push:
+    paths: ['docs/**', 'doom/**/*.md', 'Doxyfile', 'README.md', '.github/workflows/doom-docs.yml']
+  pull_request:
+    paths: ['docs/**', 'doom/**/*.md', 'Doxyfile', 'README.md']
+  workflow_dispatch:
+
+jobs:
+  doxygen:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Doxygen and Graphviz
+        run: sudo apt-get update && sudo apt-get install -y doxygen graphviz python3
+      - name: Build (zero-warning rule, as build_docs.bat)
+        run: |
+          rm -f docs/doxygen-warnings.log
+          doxygen Doxyfile
+          if [ -s docs/doxygen-warnings.log ]; then cat docs/doxygen-warnings.log; exit 1; fi
+      - name: Markdown links in doom/ resolve
+        run: python3 doom/tools/check_md_links.py doom
+      - uses: actions/upload-artifact@v4
+        with:
+          name: docs-html
+          path: docs/html/

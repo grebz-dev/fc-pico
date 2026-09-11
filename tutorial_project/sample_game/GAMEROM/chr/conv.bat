@@ -1,3 +1,9 @@
+::/ @file conv.bat
+::/ @brief Converts the sprite sheet and builds the licence nametables.
+::/ @ingroup toolchain
+::/
+::/ `spchr_cnv` rearranges `OBJ.chr` into the layout the game's sprite code
+::/ expects; the two `bpe_asm` calls produce the compressed licence pages.
 @echo off
 
 ..\bin\spchr_cnv OBJ.chr OBJ_SP.chr

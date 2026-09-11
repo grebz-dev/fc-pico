@@ -1,0 +1,13 @@
+# ignore reference documents
+*.pdf
+
+# generated documentation
+docs/html/
+docs/doxygen-warnings.log
+
+# python bytecode from the Doxygen input filter
+__pycache__/
+*.pyc
+
+# working notes for AI assistants; internal, not part of the project
+CLAUDE.md

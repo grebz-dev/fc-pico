@@ -11,8 +11,8 @@
 #define CANVAS_HEIGHT 240
 #define FRAME_BUF_SIZE (CANVAS_WIDTH * CANVAS_HEIGHT)
 
-#define FLIP_W	1		// ¶‰E”½“]
-#define FLIP_H	2		// ãŒÀ”½“]
+#define FLIP_W	1		// å·¦å³åè»¢
+#define FLIP_H	2		// ä¸Šé™åè»¢
 
 
 class Canvas {
@@ -30,23 +30,23 @@ public:
 		setClip( x, y ,x + w, y+h );
     };
 
-    // ƒXƒvƒ‰ƒCƒgƒLƒƒƒ‰ƒf[ƒ^ƒAƒhƒŒƒXƒZƒbƒg
+    // ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚­ãƒ£ãƒ©ãƒ‡ãƒ¼ã‚¿ã‚¢ãƒ‰ãƒ¬ã‚¹ã‚»ãƒƒãƒˆ
     void setSprData( const uint8_t *pData ) {
 		pSprData = pData;
 	};
 
-   	// ƒXƒvƒ‰ƒCƒg•`‰æƒLƒƒƒ‰”Ô†ƒZƒbƒg
+   	// ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæç”»ã‚­ãƒ£ãƒ©ç•ªå·ã‚»ãƒƒãƒˆ
     void setSprChr( const uint8_t c ) {
 		SprChr = c;
 	};
 
-   	// ƒXƒvƒ‰ƒCƒg•`‰æ”{—¦ƒZƒbƒg
+   	// ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæç”»å€çŽ‡ã‚»ãƒƒãƒˆ
     void setSprZoom( float mgw, float mgh );
 
-   	// w’l‚ÅƒXƒvƒ‰ƒCƒg•`‰æ”{—¦ƒZƒbƒg
+   	// wå€¤ã§ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæç”»å€çŽ‡ã‚»ãƒƒãƒˆ
     void setSprZoomW( float w );
 
-   	// ƒXƒvƒ‰ƒCƒg”½“]•`‰æƒZƒbƒg
+   	// ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆåè»¢æç”»ã‚»ãƒƒãƒˆ
     void setSprFlip( const uint8_t flip ) {
 		SprFlip = flip;
 	};

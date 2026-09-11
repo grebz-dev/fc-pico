@@ -1,77 +1,83 @@
+;/// @file cfgGame.h
+;/// @brief Game-balance constants, gathered for tuning.
+;/// @ingroup gamerom
+;///
+;/// Starting lives, continue limits, speeds and score values. Separated from the
+;/// code so that balancing does not mean editing the logic.
 ;===============================================================================================
-;	ƒQ[ƒ€ƒoƒ‰ƒ“ƒX’²®—p
+;	ã‚²ãƒ¼ãƒ ãƒãƒ©ãƒ³ã‚¹èª¿æ•´ç”¨
 ;===============================================================================================
-EVENT_MODE	EQU  0		; =1 ƒCƒxƒ“ƒgƒ‚[ƒh
+EVENT_MODE	EQU  0		; =1 ã‚¤ãƒ™ãƒ³ãƒˆãƒ¢ãƒ¼ãƒ‰		;///< Set to 1 to build the event-only variant.
 
-PLY_LIFE_INIT  EQU  10	; ©‹@‚Ìc”@‰Šú’l
-;PLY_LIFE_INIT  EQU  1	; ©‹@‚Ìc”@‰Šú’l
-COTI_MAX_LIFE  EQU  25  ; ƒRƒ“ƒeƒBƒjƒ…[‚É‚æ‚éLIFEãŒÀƒAƒbƒv
+PLY_LIFE_INIT  EQU  10	; è‡ªæ©Ÿã®æ®‹æ•°ã€€åˆæœŸå€¤		;///< Lives at the start of a run.
+;PLY_LIFE_INIT  EQU  1	; è‡ªæ©Ÿã®æ®‹æ•°ã€€åˆæœŸå€¤
+COTI_MAX_LIFE  EQU  25  ; ã‚³ãƒ³ãƒ†ã‚£ãƒ‹ãƒ¥ãƒ¼ã«ã‚ˆã‚‹LIFEä¸Šé™ã‚¢ãƒƒãƒ—		;///< Ceiling that continuing can raise the life count to.
 
-DEMO_STAGE_MAX  EQU 3	; ƒfƒ‚ƒXƒe[ƒW‚ÌÅ‘å”
-STAGE_MAX  EQU 3		; ƒXƒe[ƒW‚ÌÅ‘å”
-
-
-
-PLY_HIT_ADD_X	EQU		4		; ƒvƒŒ[ƒ„[“–‚½‚è”»’èˆÊ’u’²®‚w
-PLY_HIT_ADD_Y	EQU		4		; ƒvƒŒ[ƒ„[“–‚½‚è”»’èˆÊ’u’²®‚x
-PLY_HIT_SIZ_W	EQU		8		; ƒvƒŒ[ƒ„[“–‚½‚è”»’èƒTƒCƒY’²®‚v
-PLY_HIT_SIZ_H	EQU		8		; ƒvƒŒ[ƒ„[“–‚½‚è”»’èƒTƒCƒY’²®‚g
+DEMO_STAGE_MAX  EQU 3	; ãƒ‡ãƒ¢ã‚¹ãƒ†ãƒ¼ã‚¸ã®æœ€å¤§æ•°		;///< Number of stages attract mode cycles through.
+STAGE_MAX  EQU 3		; ã‚¹ãƒ†ãƒ¼ã‚¸ã®æœ€å¤§æ•°		;///< Number of stages. The C++ side declares this value again in `ap_game.h`. @see @ref sample_game
 
 
 
-;PLY_LIM_XL		EQU		16			; ƒvƒŒƒCƒ„[‚wÀ•WƒŠƒ~ƒbƒ^[
-;PLY_LIM_XH		EQU		256-16		; ƒvƒŒƒCƒ„[‚wÀ•WƒŠƒ~ƒbƒ^[
-PLY_LIM_XL		EQU		32			; ƒvƒŒƒCƒ„[‚wÀ•WƒŠƒ~ƒbƒ^[
-PLY_LIM_XH		EQU		256-32		; ƒvƒŒƒCƒ„[‚wÀ•WƒŠƒ~ƒbƒ^[
-OPT_LIM_XH		EQU		256-32		; ƒIƒvƒVƒ‡ƒ“‚wÀ•WƒŠƒ~ƒbƒ^[
-
-PLY_LIM_YL		EQU		24			; ƒvƒŒƒCƒ„[‚xÀ•WƒŠƒ~ƒbƒ^[
-PLY_LIM_YH		EQU		208			; ƒvƒŒƒCƒ„[‚xÀ•WƒŠƒ~ƒbƒ^[
-OPT_LIM_YL		EQU		16			; ƒIƒvƒVƒ‡ƒ“‚xÀ•WƒŠƒ~ƒbƒ^[
-OPT_LIM_YH		EQU		200 -2		; ƒIƒvƒVƒ‡ƒ“‚xÀ•WƒŠƒ~ƒbƒ^[
-
-
-;IOSR_2			EQU		707/1000	; ƒ‹[ƒg‚Q•ª‚Ì‚P (0.707)
-IOSR_2			EQU		100/100		; ƒ‹[ƒg‚Q•ª‚Ì‚P (0.707)
-;IOSR_2			EQU		1			; ƒ‹[ƒg‚Q•ª‚Ì‚P (0.707)
-
-MV_PLY_BASE0		EQU 	$200*3/2		; ©‹@‚ÌˆÚ‘—‘¬“xƒx[ƒX
-MV_PLY_BASE0_IR2	EQU 	$16a*3/2		; ©‹@‚ÌˆÚ‘—‘¬“xƒx[ƒX‚Ìƒ‹[ƒg2•ª‚Ì1
-
-;MV_PLY_BASE0		EQU 	$200*6/5		; ©‹@‚ÌˆÚ‘—‘¬“xƒx[ƒX
-;MV_PLY_BASE0_IR2	EQU 	$16a*6/5		; ©‹@‚ÌˆÚ‘—‘¬“xƒx[ƒX‚Ìƒ‹[ƒg2•ª‚Ì1
+PLY_HIT_ADD_X	EQU		4		; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å½“ãŸã‚Šåˆ¤å®šä½ç½®èª¿æ•´ï¼¸		;///< Player hitbox X offset.
+PLY_HIT_ADD_Y	EQU		4		; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å½“ãŸã‚Šåˆ¤å®šä½ç½®èª¿æ•´ï¼¹		;///< Player hitbox Y offset.
+PLY_HIT_SIZ_W	EQU		8		; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å½“ãŸã‚Šåˆ¤å®šã‚µã‚¤ã‚ºèª¿æ•´ï¼·		;///< Player hitbox width.
+PLY_HIT_SIZ_H	EQU		8		; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼å½“ãŸã‚Šåˆ¤å®šã‚µã‚¤ã‚ºèª¿æ•´ï¼¨		;///< Player hitbox height.
 
 
 
-MV_ENT_BASE0	EQU 120		; “G‚Ì’e ƒXƒs[ƒh’²®—p ¦256ƒhƒbƒg‚ğw’èƒtƒŒ[ƒ€‚ÅˆÚ“®‚·‚é
-MV_ENT_BASE1	EQU 100		; “G‚Ì’e ƒXƒs[ƒh’²®—p ¦256ƒhƒbƒg‚ğw’èƒtƒŒ[ƒ€‚ÅˆÚ“®‚·‚é
-MV_ENT_BASE2	EQU  80		; “G‚Ì’e ƒXƒs[ƒh’²®—p ¦256ƒhƒbƒg‚ğw’èƒtƒŒ[ƒ€‚ÅˆÚ“®‚·‚é
-MV_ENT_BASE3	EQU  60		; “G‚Ì’e ƒXƒs[ƒh’²®—p ¦256ƒhƒbƒg‚ğw’èƒtƒŒ[ƒ€‚ÅˆÚ“®‚·‚é
+;PLY_LIM_XL		EQU		16			; ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼¸åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼
+;PLY_LIM_XH		EQU		256-16		; ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼¸åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼
+PLY_LIM_XL		EQU		32			; ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼¸åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Player X limit, left.
+PLY_LIM_XH		EQU		256-32		; ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼¸åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Player X limit, right.
+OPT_LIM_XH		EQU		256-32		; ã‚ªãƒ—ã‚·ãƒ§ãƒ³ï¼¸åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Option satellite X limit, right.
+
+PLY_LIM_YL		EQU		24			; ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼¹åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Player Y limit, top.
+PLY_LIM_YH		EQU		208			; ãƒ—ãƒ¬ã‚¤ãƒ¤ãƒ¼ï¼¹åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Player Y limit, bottom.
+OPT_LIM_YL		EQU		16			; ã‚ªãƒ—ã‚·ãƒ§ãƒ³ï¼¹åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Option satellite Y limit, top.
+OPT_LIM_YH		EQU		200 -2		; ã‚ªãƒ—ã‚·ãƒ§ãƒ³ï¼¹åº§æ¨™ãƒªãƒŸãƒƒã‚¿ãƒ¼		;///< Option satellite Y limit, bottom.
 
 
-POS_PLY_X_INIT	EQU		128			; ƒvƒŒ[ƒ„[‰ŠúˆÊ’u‚w
-POS_PLY_Y_INIT	EQU		192			; ƒvƒŒ[ƒ„[‰ŠúˆÊ’u‚x
+;IOSR_2			EQU		707/1000	; ãƒ«ãƒ¼ãƒˆï¼’åˆ†ã®ï¼‘ (0.707)
+IOSR_2			EQU		100/100		; ãƒ«ãƒ¼ãƒˆï¼’åˆ†ã®ï¼‘ (0.707)		;///< One over root two, 0.707, as a fixed-point byte. Keeps diagonal movement the same speed as orthogonal.
+;IOSR_2			EQU		1			; ãƒ«ãƒ¼ãƒˆï¼’åˆ†ã®ï¼‘ (0.707)
+
+MV_PLY_BASE0		EQU 	$200*3/2		; è‡ªæ©Ÿã®ç§»é€é€Ÿåº¦ãƒ™ãƒ¼ã‚¹		;///< Player movement speed.
+MV_PLY_BASE0_IR2	EQU 	$16a*3/2		; è‡ªæ©Ÿã®ç§»é€é€Ÿåº¦ãƒ™ãƒ¼ã‚¹ã®ãƒ«ãƒ¼ãƒˆ2åˆ†ã®1		;///< Player diagonal speed: #MV_PLY_BASE0 scaled by #IOSR_2.
+
+;MV_PLY_BASE0		EQU 	$200*6/5		; è‡ªæ©Ÿã®ç§»é€é€Ÿåº¦ãƒ™ãƒ¼ã‚¹
+;MV_PLY_BASE0_IR2	EQU 	$16a*6/5		; è‡ªæ©Ÿã®ç§»é€é€Ÿåº¦ãƒ™ãƒ¼ã‚¹ã®ãƒ«ãƒ¼ãƒˆ2åˆ†ã®1
 
 
-PSHOTA_SPD    EQU 8		; ©‹@’Êí’e‘¬“x
+
+MV_ENT_BASE0	EQU 120		; æ•µã®å¼¾ ã‚¹ãƒ”ãƒ¼ãƒ‰èª¿æ•´ç”¨ â€»256ãƒ‰ãƒƒãƒˆã‚’æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã§ç§»å‹•ã™ã‚‹		;///< Enemy shot speed 0, expressed as the frames taken to cross 256 pixels.
+MV_ENT_BASE1	EQU 100		; æ•µã®å¼¾ ã‚¹ãƒ”ãƒ¼ãƒ‰èª¿æ•´ç”¨ â€»256ãƒ‰ãƒƒãƒˆã‚’æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã§ç§»å‹•ã™ã‚‹		;///< Enemy shot speed 1.
+MV_ENT_BASE2	EQU  80		; æ•µã®å¼¾ ã‚¹ãƒ”ãƒ¼ãƒ‰èª¿æ•´ç”¨ â€»256ãƒ‰ãƒƒãƒˆã‚’æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã§ç§»å‹•ã™ã‚‹		;///< Enemy shot speed 2.
+MV_ENT_BASE3	EQU  60		; æ•µã®å¼¾ ã‚¹ãƒ”ãƒ¼ãƒ‰èª¿æ•´ç”¨ â€»256ãƒ‰ãƒƒãƒˆã‚’æŒ‡å®šãƒ•ãƒ¬ãƒ¼ãƒ ã§ç§»å‹•ã™ã‚‹		;///< Enemy shot speed 3.
+
+
+POS_PLY_X_INIT	EQU		128			; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼åˆæœŸä½ç½®ï¼¸		;///< Player starting X.
+POS_PLY_Y_INIT	EQU		192			; ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼åˆæœŸä½ç½®ï¼¹		;///< Player starting Y.
+
+
+PSHOTA_SPD    EQU 8		; è‡ªæ©Ÿé€šå¸¸å¼¾é€Ÿåº¦		;///< Player normal-shot speed.
 
 
 
-ENEMY_LINE_SUU	EQU		240-24		; “GBG•\¦ƒGƒŠƒAƒ‰ƒCƒ“”
+ENEMY_LINE_SUU	EQU		240-24		; æ•µBGè¡¨ç¤ºã‚¨ãƒªã‚¢ãƒ©ã‚¤ãƒ³æ•°		;///< Playfield height in scanlines. Declared again on the C++ side. @see @ref sample_game
 
-BAKU_EFC_CHR equ $01
+BAKU_EFC_CHR equ $01		;///< First CHR tile of the explosion animation.
 
-MUTEKI_TIME		equ 60	;ƒ_ƒ[ƒW‚Ì–³“GŠúŠÔ
-DAM_BG_FLASH_INIT equ 4 ; ƒ_ƒ[ƒWƒtƒ‰ƒbƒVƒ…ƒ^ƒCƒ€
+MUTEKI_TIME		equ 60	;ãƒ€ãƒ¡ãƒ¼ã‚¸æ™‚ã®ç„¡æ•µæœŸé–“		;///< Invulnerability frames granted after a hit.
+DAM_BG_FLASH_INIT equ 4 ; ãƒ€ãƒ¡ãƒ¼ã‚¸ãƒ•ãƒ©ãƒƒã‚·ãƒ¥ã‚¿ã‚¤ãƒ 		;///< Frames the damage flash lasts.
 
-PS_NOMAL_POW		equ -1	;’Êí’e‚Ìƒqƒbƒg‚Ì“Gƒ_ƒ[ƒW	(Ã~–Ú•W‚ÉA‚Q‰ñ“–‚½‚éj
+PS_NOMAL_POW		equ -1	;é€šå¸¸å¼¾ã®ãƒ’ãƒƒãƒˆæ™‚ã®æ•µãƒ€ãƒ¡ãƒ¼ã‚¸	(é™æ­¢ç›®æ¨™ã«ã€ï¼’å›å½“ãŸã‚‹ï¼‰		;///< Damage a normal shot does; a stationary target takes two hits.
 
-; ƒV[ƒNƒŒƒbƒgæ“¾‚Ìƒ‰ƒCƒt‰ñ•œ—Ê
-ADD_SC_LIFE_ST1	EQU 1
-ADD_SC_LIFE_ST2	EQU 2
-ADD_SC_LIFE_ST3	EQU 3
-ADD_SC_LIFE_ST4	EQU 3
-ADD_SC_LIFE_ST5	EQU 3
+; ã‚·ãƒ¼ã‚¯ãƒ¬ãƒƒãƒˆå–å¾—æ™‚ã®ãƒ©ã‚¤ãƒ•å›å¾©é‡
+ADD_SC_LIFE_ST1	EQU 1		;///< Score threshold for the first extra life.
+ADD_SC_LIFE_ST2	EQU 2		;///< Score threshold for the second extra life.
+ADD_SC_LIFE_ST3	EQU 3		;///< Score threshold for the third extra life.
+ADD_SC_LIFE_ST4	EQU 3		;///< Score threshold for the fourth extra life.
+ADD_SC_LIFE_ST5	EQU 3		;///< Score threshold for the fifth extra life.
 
 
 

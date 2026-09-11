@@ -1,41 +1,44 @@
-PAL_BG = $0F
+;/// @file pallet.h
+;/// @brief Palette definitions and the macros that emit them.
+;/// @ingroup gamerom
+PAL_BG = $0F		;///< The backdrop colour every palette set repeats in its first entry.
 
 ;------------------------------------------------------------------------------
-;  ŠeŽí‰æ–Ê‚ÌƒpƒŒƒbƒg‚ðW’†ŠÇ—‚·‚éƒtƒ@ƒCƒ‹
+;  å„ç¨®ç”»é¢ã®ãƒ‘ãƒ¬ãƒƒãƒˆã‚’é›†ä¸­ç®¡ç†ã™ã‚‹ãƒ•ã‚¡ã‚¤ãƒ«
 ;------------------------------------------------------------------------------
-PAL_PLYER		MACRO
+PAL_PLYER		MACRO		;///< Palette: player ship.
 	DB   PAL_BG,$21,$10,$20
 	ENDM
 
-PAL_PLYER2		MACRO
+PAL_PLYER2		MACRO		;///< Palette: player ship, second set.
 	DB   PAL_BG,$1A,$17,$29
 	ENDM
 
 
-PAL_EFFECT		MACRO
+PAL_EFFECT		MACRO		;///< Palette: effects.
 	DB   PAL_BG,$15,$19,$20
 	ENDM
 
-PAL_GAGE_EFC	MACRO
-	DB  PAL_BG,$21,$21,$20			; BG 3  ƒQ[ƒW•”š”­ƒGƒtƒFƒNƒg
+PAL_GAGE_EFC	MACRO		;///< Palette: gauge effect.
+	DB  PAL_BG,$21,$21,$20			; BG 3  ã‚²ãƒ¼ã‚¸ï¼†çˆ†ç™ºã‚¨ãƒ•ã‚§ã‚¯ãƒˆ
 	ENDM
 
-PAL_POWUP	MACRO
+PAL_POWUP	MACRO		;///< Palette: power-up.
 	DB   PAL_BG,$21,$10,$20		; BG 2
 	ENDM
 
 
 ;------------------------------------------------------------------------------
-;  ƒ^ƒCƒgƒ‹‰æ–ÊƒpƒŒƒbƒg
+;  ã‚¿ã‚¤ãƒˆãƒ«ç”»é¢ãƒ‘ãƒ¬ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
-PAL_TITLE	MACRO
+PAL_TITLE	MACRO		;///< Palette: title screen.
 	; PAL_DAT
-	DB	PAL_BG,$20,$20,$20 ;(—Î) 
-	DB	PAL_BG,$2A,$2A,$2A ;(Ô) 
-	DB	PAL_BG,$15,$27,$30 ;(Â) 
+	DB	PAL_BG,$20,$20,$20 ;(ç·‘) 
+	DB	PAL_BG,$2A,$2A,$2A ;(èµ¤) 
+	DB	PAL_BG,$15,$27,$30 ;(é’) 
 	DB	PAL_BG,$1A,$1A,$1A ; 
-	;	ƒXƒvƒ‰ƒCƒg—pƒpƒŒƒbƒg
-	DB  PAL_BG,$0F,$20,$20 ;ƒXƒvƒ‰ƒCƒg0
+	;	ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ãƒ‘ãƒ¬ãƒƒãƒˆ
+	DB  PAL_BG,$0F,$20,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ0
 	PAL_PLYER2
 	PAL_EFFECT
 	PAL_PLYER
@@ -44,33 +47,33 @@ PAL_TITLE	MACRO
 
 
 ;------------------------------------------------------------------------------
-;  ƒNƒŠƒA[‰æ–ÊƒpƒŒƒbƒg
-;  ƒQ[ƒ€ƒI[ƒo[‰æ–ÊƒpƒŒƒbƒg
+;  ã‚¯ãƒªã‚¢ãƒ¼ç”»é¢ãƒ‘ãƒ¬ãƒƒãƒˆ
+;  ã‚²ãƒ¼ãƒ ã‚ªãƒ¼ãƒãƒ¼ç”»é¢ãƒ‘ãƒ¬ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
-PAL_CLEAR	MACRO
+PAL_CLEAR	MACRO		;///< Palette: stage clear.
 	; PAL_DAT
-	DB  PAL_BG,$15,$21,$20	;(•) ƒOƒ‰ƒtƒBƒbƒN
-	DB  PAL_BG,$00,$10,$20	;(Â)
-	DB  PAL_BG,$00,$10,$20	;(—Î)
-	DB  PAL_BG,$0F,$20,$20	;(Ô) •¶Žš
-	;	ƒXƒvƒ‰ƒCƒg—pƒpƒŒƒbƒg
-	DB   PAL_BG,$00,$10,$20 ;ƒXƒvƒ‰ƒCƒg0
+	DB  PAL_BG,$15,$21,$20	;(é»’) ã‚°ãƒ©ãƒ•ã‚£ãƒƒã‚¯
+	DB  PAL_BG,$00,$10,$20	;(é’)
+	DB  PAL_BG,$00,$10,$20	;(ç·‘)
+	DB  PAL_BG,$0F,$20,$20	;(èµ¤) æ–‡å­—
+	;	ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ãƒ‘ãƒ¬ãƒƒãƒˆ
+	DB   PAL_BG,$00,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ0
 	PAL_PLYER2
 	PAL_EFFECT
 	PAL_PLYER
 	ENDM
 
 ;------------------------------------------------------------------------------
-;  ƒIƒvƒVƒ‡ƒ“‰æ–Ê•ƒfƒoƒbƒO‰æ–ÊƒpƒŒƒbƒg
+;  ã‚ªãƒ—ã‚·ãƒ§ãƒ³ç”»é¢ï¼†ãƒ‡ãƒãƒƒã‚°ç”»é¢ãƒ‘ãƒ¬ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
-PAL_OPTION	MACRO
+PAL_OPTION	MACRO		;///< Palette: options menu.
 	; PAL_DAT
-	DB	PAL_BG,$20,$20,$20 ;(”’) 
-	DB  PAL_BG,$07,$17,$28			; BG 1  ƒXƒe[ƒWƒe[ƒ}ƒTƒuF
-	DB	PAL_BG,$0f,$20,$20 ;(—Î) 
-	DB	PAL_BG,$0f,$20,$20 ;(—Î) 
-	; ƒXƒvƒ‰ƒCƒg—pƒpƒŒƒbƒg@ƒfƒoƒbƒO
-	DB	PAL_BG,$00,$21,$20 ;(Â) 
+	DB	PAL_BG,$20,$20,$20 ;(ç™½) 
+	DB  PAL_BG,$07,$17,$28			; BG 1  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžã‚µãƒ–è‰²
+	DB	PAL_BG,$0f,$20,$20 ;(ç·‘) 
+	DB	PAL_BG,$0f,$20,$20 ;(ç·‘) 
+	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ãƒ‘ãƒ¬ãƒƒãƒˆã€€ãƒ‡ãƒãƒƒã‚°
+	DB	PAL_BG,$00,$21,$20 ;(é’) 
 	PAL_PLYER2
 	PAL_EFFECT
 	PAL_PLYER
@@ -78,94 +81,94 @@ PAL_OPTION	MACRO
 
 
 ;------------------------------------------------------------------------------
-;  ƒGƒ“ƒfƒBƒ“ƒO‰æ–ÊƒpƒŒƒbƒg
+;  ã‚¨ãƒ³ãƒ‡ã‚£ãƒ³ã‚°ç”»é¢ãƒ‘ãƒ¬ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
-PAL_ENDING	MACRO
+PAL_ENDING	MACRO		;///< Palette: ending.
 	; PAL_DAT
-	DB  PAL_BG,$20,$20,$20	;(•)
-	DB  PAL_BG,$00,$10,$20	;(Â)
-	DB  PAL_BG,$00,$10,$20	;(—Î)
-	DB  PAL_BG,$0F,$20,$20	;(Ô) •¶Žš
-	;	ƒXƒvƒ‰ƒCƒg—pƒpƒŒƒbƒg
-	DB  PAL_BG,$00,$10,$20 ;ƒXƒvƒ‰ƒCƒg0
-	DB  PAL_BG,$00,$10,$20 ;ƒXƒvƒ‰ƒCƒg1
-	DB  PAL_BG,$20,$10,$20 ;ƒXƒvƒ‰ƒCƒg2@”wŒi ¯ F
-	DB  PAL_BG,$00,$10,$20 ;ƒXƒvƒ‰ƒCƒg3
+	DB  PAL_BG,$20,$20,$20	;(é»’)
+	DB  PAL_BG,$00,$10,$20	;(é’)
+	DB  PAL_BG,$00,$10,$20	;(ç·‘)
+	DB  PAL_BG,$0F,$20,$20	;(èµ¤) æ–‡å­—
+	;	ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ãƒ‘ãƒ¬ãƒƒãƒˆ
+	DB  PAL_BG,$00,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ0
+	DB  PAL_BG,$00,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ1
+	DB  PAL_BG,$20,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ2ã€€èƒŒæ™¯ æ˜Ÿ è‰²
+	DB  PAL_BG,$00,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ3
 	ENDM
 
 
 ;------------------------------------------------------------------------------
-;  ƒXƒ^ƒbƒt‰æ–ÊƒpƒŒƒbƒg
+;  ã‚¹ã‚¿ãƒƒãƒ•ç”»é¢ãƒ‘ãƒ¬ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
-PAL_STAFF	MACRO
+PAL_STAFF	MACRO		;///< Palette: staff roll.
 	; PAL_DAT
-	DB  PAL_BG,$00,$10,$20	;(•)
-	DB	PAL_BG,$20,$05,$15 ;(Â) 
-	DB	PAL_BG,$11,$21,$2C ;(•)
-	DB  PAL_BG,$20,$12,$20	;(Ô) •¶Žš
-	;	ƒXƒvƒ‰ƒCƒg—pƒpƒŒƒbƒg
-	DB  PAL_BG,$00,$10,$20 ;ƒXƒvƒ‰ƒCƒg0
-	DB  PAL_BG,$00,$10,$20 ;ƒXƒvƒ‰ƒCƒg1
+	DB  PAL_BG,$00,$10,$20	;(é»’)
+	DB	PAL_BG,$20,$05,$15 ;(é’) 
+	DB	PAL_BG,$11,$21,$2C ;(é»’)
+	DB  PAL_BG,$20,$12,$20	;(èµ¤) æ–‡å­—
+	;	ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆç”¨ãƒ‘ãƒ¬ãƒƒãƒˆ
+	DB  PAL_BG,$00,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ0
+	DB  PAL_BG,$00,$10,$20 ;ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆ1
 	PAL_EFFECT
 	PAL_PLYER
 	ENDM
 
 
 ;------------------------------------------------------------------------------
-;  ƒXƒe[ƒW—pƒpƒŒƒbƒg
+;  ã‚¹ãƒ†ãƒ¼ã‚¸ç”¨ãƒ‘ãƒ¬ãƒƒãƒˆ
 ;------------------------------------------------------------------------------
 
-; ƒXƒe[ƒW‹¤’ÊƒpƒŒƒbƒg
-PAL_STAGE_COM	MACRO
+; ã‚¹ãƒ†ãƒ¼ã‚¸å…±é€šãƒ‘ãƒ¬ãƒƒãƒˆ
+PAL_STAGE_COM	MACRO		;///< Palette: shared by every stage.
 	PAL_POWUP					; BG2
 	PAL_GAGE_EFC				; BG3
 
-	DB  $0F,$0C,$1C,$2C			; SP 0  è¦Î ƒUƒR“G@—ÎŒn
+	DB  $0F,$0C,$1C,$2C			; SP 0  éš•çŸ³ ã‚¶ã‚³æ•µã€€ç·‘ç³»
 	PAL_PLYER2
-	PAL_EFFECT					; SP 2  “G’e
-	PAL_PLYER					; SP 3  ƒvƒŒ[ƒ„[Œn
+	PAL_EFFECT					; SP 2  æ•µå¼¾
+	PAL_PLYER					; SP 3  ãƒ—ãƒ¬ãƒ¼ãƒ¤ãƒ¼ç³»
 	ENDM
 
 
 
-PAL_STAGE01	MACRO
+PAL_STAGE01	MACRO		;///< Palette: stage 1.
 	; STAGE 1
-	DB  PAL_BG,$06,$16,$26			; BG 0  ƒXƒe[ƒWƒe[ƒ}ƒƒCƒ“F
-	DB  PAL_BG,$2D,$27,$37			; BG 1  ƒXƒe[ƒWƒe[ƒ}ƒTƒuF
+	DB  PAL_BG,$06,$16,$26			; BG 0  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžãƒ¡ã‚¤ãƒ³è‰²
+	DB  PAL_BG,$2D,$27,$37			; BG 1  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžã‚µãƒ–è‰²
 	ENDM
 
 
-PAL_STAGE02	MACRO
+PAL_STAGE02	MACRO		;///< Palette: stage 2.
 	; STAGE 2
-	DB  PAL_BG,$0A,$1A,$2A			; BG 0  ƒXƒe[ƒWƒe[ƒ}ƒƒCƒ“F
-	DB  PAL_BG,$05,$15,$25			; BG 1  ƒXƒe[ƒWƒe[ƒ}ƒTƒuF
+	DB  PAL_BG,$0A,$1A,$2A			; BG 0  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžãƒ¡ã‚¤ãƒ³è‰²
+	DB  PAL_BG,$05,$15,$25			; BG 1  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžã‚µãƒ–è‰²
 	ENDM
 
 
-PAL_STAGE03	MACRO
+PAL_STAGE03	MACRO		;///< Palette: stage 3.
 	; STAGE 3
-	DB  PAL_BG,$04,$14,$24			; BG 0  ƒXƒe[ƒWƒe[ƒ}ƒƒCƒ“F
-	DB  PAL_BG,$07,$17,$28			; BG 1  ƒXƒe[ƒWƒe[ƒ}ƒTƒuF
+	DB  PAL_BG,$04,$14,$24			; BG 0  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžãƒ¡ã‚¤ãƒ³è‰²
+	DB  PAL_BG,$07,$17,$28			; BG 1  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžã‚µãƒ–è‰²
 	ENDM
 
 
-PAL_STAGE04	MACRO
+PAL_STAGE04	MACRO		;///< Palette: stage 4.
 	; STAGE 4
-	DB  PAL_BG,$11,$21,$20			; BG 0  ƒXƒe[ƒWƒe[ƒ}ƒƒCƒ“F
-	DB  PAL_BG,$07,$17,$28			; BG 1  ƒXƒe[ƒWƒe[ƒ}ƒTƒuF
+	DB  PAL_BG,$11,$21,$20			; BG 0  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžãƒ¡ã‚¤ãƒ³è‰²
+	DB  PAL_BG,$07,$17,$28			; BG 1  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžã‚µãƒ–è‰²
 	ENDM
 
 
-PAL_STAGE05	MACRO
+PAL_STAGE05	MACRO		;///< Palette: stage 5.
 	; STAGE 5
-	DB  PAL_BG,$02,$12,$22			; BG 0  ƒXƒe[ƒWƒe[ƒ}ƒƒCƒ“F
-	DB  PAL_BG,$07,$17,$28			; BG 1  ƒXƒe[ƒWƒe[ƒ}ƒTƒuF
+	DB  PAL_BG,$02,$12,$22			; BG 0  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžãƒ¡ã‚¤ãƒ³è‰²
+	DB  PAL_BG,$07,$17,$28			; BG 1  ã‚¹ãƒ†ãƒ¼ã‚¸ãƒ†ãƒ¼ãƒžã‚µãƒ–è‰²
 	ENDM
 
 
-PAL_STAGE06	MACRO
+PAL_STAGE06	MACRO		;///< Palette: stage 6.
 	; STAGE 6
-	DB  PAL_BG,$16,$27,$20			; BG 0  ƒUƒR“G@ƒIƒŒƒ“ƒWŒn
-	DB  PAL_BG,$25,$36,$20			; BG 1  ƒUƒR“G@ƒsƒ“ƒNŒn
+	DB  PAL_BG,$16,$27,$20			; BG 0  ã‚¶ã‚³æ•µã€€ã‚ªãƒ¬ãƒ³ã‚¸ç³»
+	DB  PAL_BG,$25,$36,$20			; BG 1  ã‚¶ã‚³æ•µã€€ãƒ”ãƒ³ã‚¯ç³»
 	ENDM
 

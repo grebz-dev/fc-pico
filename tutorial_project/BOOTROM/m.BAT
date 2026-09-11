@@ -1,3 +1,16 @@
+::/ @file m.BAT
+::/ @brief Assembles the erasable boot ROM bank.
+::/ @ingroup toolchain
+::/
+::/ Regenerates `dbdate.h` with the current timestamp, runs `nesasm -s`, filters
+::/ the log and copies the result to `rom.NES`. The permanent bank must already
+::/ have been built, because `PG_main.asm` includes `bootrom_fixr.bin`.
+::/
+::/ @warning The timestamp is rewritten on **every** run. It ends up at `$EFF0`
+::/          and is compared against the cartridge's copy at boot, so rebuilding
+::/          here without also running `update.bat` and reflashing the firmware
+::/          makes every boot trigger a self-reflash.
+::/          @see @ref build_pipeline, @ref boot_reflash
 @echo off
 
 set yyyy=%date:~0,4%

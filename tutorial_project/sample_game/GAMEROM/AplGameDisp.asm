@@ -1,20 +1,32 @@
+;/// @file AplGameDisp.asm
+;/// @brief Turns the object tables into sprites and BG updates.
+;/// @ingroup gamerom
+;///
+;/// The half of the game that the cartridge replaces wholesale. Here each live
+;/// object becomes OAM entries and nametable writes; under the cartridge the same
+;/// tables are read by `ap_game::conv3DObje()` and become 3D objects instead.
+;/// @see @ref sample_game
 
 
 
 
 ;=====================================
 ;
-;	Šeíƒ[ƒN‚É]‚Á‚ÄƒQ[ƒ€‰æ–Ê‚ğXV‚·‚é
+;	å„ç¨®ãƒ¯ãƒ¼ã‚¯ã«å¾“ã£ã¦ã‚²ãƒ¼ãƒ ç”»é¢ã‚’æ›´æ–°ã™ã‚‹
 ;
 ;
 ;=====================================
 
+;/// @brief Rebuilds the sprite list and background updates from the object tables.
+;/// The routine the cartridge replaces. `ap_game::conv3DObje()` reads the same
+;/// tables and produces 3D objects instead. @see @ref sample_game
+;/// @ingroup gamerom
 updateGameDisp:
 	;--------------------------------
-	; ƒXƒvƒ‰ƒCƒg\’z
-	;    y reg ‚ÉƒXƒvƒ‰ƒCƒgŠJnˆÊ’u‚ğƒZƒbƒg‚µ‚Äg‚Á‚½–‡”x4 y reg ‚ğ‰ÁZ‚·‚é
+	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆæ§‹ç¯‰
+	;    y reg ã«ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆé–‹å§‹ä½ç½®ã‚’ã‚»ãƒƒãƒˆã—ã¦ä½¿ã£ãŸæšæ•°x4 y reg ã‚’åŠ ç®—ã™ã‚‹
 	;--------------------------------
-	ldy  #0*4	; ƒXƒvƒ‰ƒCƒgŠJnˆÊ’u
+	ldy  #0*4	; ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆé–‹å§‹ä½ç½®
 	sty  <TMP_COUNT
 
 	lda  MISSON_TYPE
@@ -23,7 +35,7 @@ updateGameDisp:
 
 	jsr  createPlayerObj
 
-	; “Gƒm[ƒ}ƒ‹’e•\¦
+	; æ•µãƒãƒ¼ãƒãƒ«å¼¾è¡¨ç¤º
 	jsr createEnemyNTObj
 
 
@@ -37,7 +49,7 @@ updateGameDisp:
 	cmp  #64
 	bcs  .end
 
-	; ©‹@’e•\¦
+	; è‡ªæ©Ÿå¼¾è¡¨ç¤º
 	jsr  createPlyShotAObj
 
 	lda  <TMP_COUNT
@@ -45,7 +57,7 @@ updateGameDisp:
 	bcs  .end
 
 
-	; ”š”­‰‰o•\¦
+	; çˆ†ç™ºæ¼”å‡ºè¡¨ç¤º
 	jsr  createBakuEfcObj
 
 	lda  <TMP_COUNT
@@ -53,18 +65,20 @@ updateGameDisp:
 	bcs  .end
 
 .skip_00
-	; BG—¬¯•\¦
+	; BGæµæ˜Ÿè¡¨ç¤º
 	jsr  createBgStarObj
 
-	; —]‚Á‚½ƒXƒvƒ‰ƒCƒg‚ğ”ñ•\¦‚É‚·‚é
+	; ä½™ã£ãŸã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’éè¡¨ç¤ºã«ã™ã‚‹
 	jsr  clearObj
 
 .end
 	rts
 
 ;---------------------------------
-;		LIFE•`‰æ
+;		LIFEæç”»
 ;---------------------------------
+;/// @brief Draws the remaining lives.
+;/// @ingroup gamerom
 drawPlyLife:
 	SET_VRAM_ADD2 #$2000 + 32*28 + 19
 
@@ -74,9 +88,11 @@ drawPlyLife:
 
 
 ;-----------------------------------
-; ©‹@ƒLƒƒƒ‰ƒXƒvƒ‰ƒCƒg‚ğ\’z
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJnˆÊ’u
+; è‡ªæ©Ÿã‚­ãƒ£ãƒ©ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’æ§‹ç¯‰
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Emits the player's sprites, starting at the OAM index in Y.
+;/// @ingroup gamerom
 createPlayerObj:
 	lda  PLY_DISP_FG
 	bne  .end
@@ -123,10 +139,12 @@ createPlayerObj:
 
 
 ;-----------------------------------
-; ”š”­‰‰oƒXƒvƒ‰ƒCƒg‚ğ\’z
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJnˆÊ’u
+; çˆ†ç™ºæ¼”å‡ºã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã‚’æ§‹ç¯‰
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
 
+;/// @brief Emits the explosion sprites.
+;/// @ingroup gamerom
 createBakuEfcObj:
 	ldx #0
 .cb_loop
@@ -147,7 +165,7 @@ createBakuEfcObj:
 	adc #2
 	sta OBJ_BUF +4 +1,y
 
-	lda #$03			;ƒpƒŒƒbƒg
+	lda #$03			;ãƒ‘ãƒ¬ãƒƒãƒˆ
 	sta OBJ_BUF +2,y
 	sta OBJ_BUF +4 +2,y
 
@@ -185,9 +203,11 @@ createBakuEfcObj:
 
 
 ;-----------------------------------
-; “Gƒm[ƒ}ƒ‹’e•\¦
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJnˆÊ’u
+; æ•µãƒãƒ¼ãƒãƒ«å¼¾è¡¨ç¤º
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Emits the enemy and enemy-shot sprites.
+;/// @ingroup gamerom
 createEnemyNTObj:
 	ldx  #0
 	stx  <CACHE_GET_NENMY_NT_FG
@@ -219,7 +239,7 @@ createEnemyNTObj:
 	jsr  getEnemyNTcfg2
 	plp
 	bpl  .nt00
-	; 16x16•\¦
+	; 16x16è¡¨ç¤º
 	jsr  .disp16
 
 	inc  <TMP_COUNT
@@ -312,6 +332,8 @@ createEnemyNTObj:
 	db  $59,%0000	; 4
 	db  $5D,%0000	; 5
 
+;/// @brief Picks the shot tile that matches a direction.
+;/// @ingroup gamerom
 dirbullet:
 	stx  <TMP_SVX
 	clc
@@ -346,9 +368,11 @@ dirbullet:
 
 
 ;-----------------------------------
-; ©‹@‚Ì’Êí’e•\¦
-; y reg = ƒXƒvƒ‰ƒCƒg‚ÌŠJnˆÊ’u
+; è‡ªæ©Ÿã®é€šå¸¸å¼¾è¡¨ç¤º
+; y reg = ã‚¹ãƒ—ãƒ©ã‚¤ãƒˆã®é–‹å§‹ä½ç½®
 ;-----------------------------------
+;/// @brief Emits the player-shot sprites.
+;/// @ingroup gamerom
 createPlyShotAObj:
 
 	lda  <SYS_TIMER
