@@ -13,22 +13,37 @@ submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes
 
 ## Status (kept current; details in `../PROGRESS.md`)
 
+The remaining work is cut into individually assignable pieces in `../issues/README.md`; that
+index, not this table, is the entry point for picking up work. The table below records what
+has actually landed on the branch.
+
 | Task | State | Evidence |
 |------|-------|----------|
-| P0-T1 | not started (CI templates exist in `ci/workflows/`; the host-only CMake configuration is in progress) | -- |
-| P0-T2, P0-T3 | not started; the host multicore shim (`sim/host_shim/`) is in progress | -- |
+| P0-T1 | not started; CI templates exist in `ci/workflows/`, host-only CMake is done (`-DFCPICO_HOST_ONLY=ON`). Device configuration is issue I-08 | -- |
+| P0-T2 | not started (issue I-11) | -- |
+| P0-T3 | host multicore/alarm shim **done** (`sim/host_shim/`, 22 symbols); the engine host build itself is issue I-12 | `ctest` target `test_host_shim` |
 | P0-T4 | **done** | `tools/gen_protocol.py --check`; `pytest tests/protocol` (72) |
-| P0-T5 | core logic in progress as `fcbus/fcbus_core.c` (host-testable); device backend and test-pattern firmware not started | -- |
-| P0-T6 | in progress (`fcbus/fcbus_host.c`) | -- |
-| P0-T7 | in progress (`sim/ppubus/`, `tools/ppu_decode.py`, `tools/fcvideo_ref.py`) | -- |
-| P0-T8 | **done** (fcppu_dir skipped by design) | `pytest sim/pioemu` (13 passed, 1 skipped) |
-| P0-T9, P0-T10 | blocked on hardware (`HARDWARE-REQUESTS.md` HR-1) | -- |
-| P0-T11, P0-T12 | not started | -- |
-| P0-T13 | partial: `LICENSES.md` drafted; enquiry HA-1 pending | -- |
-| P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` drafted; tests in progress | -- |
+| P0-T5 | core logic **done** (`fcbus/fcbus_core.c`, backend-independent); the device backend is issue I-09 and the test-pattern firmware issue I-10 | `ctest` (5 suites incl. `test_mailbox`, `test_rx`, `test_sync`, `test_stream`) |
+| P0-T6 | **done** | `ctest` target `test_host_roundtrip`; ASan-clean |
+| P0-T7 | model and decoder drafted (`sim/ppubus/ppubus.py`, `tools/ppu_decode.py`), **untested and uncalibrated**; tests are issues I-01 and I-02, calibration is gated on I-19 | -- |
+| P0-T8 | **done** (`fcppu_dir` skipped by design: pioemu has no IRQ support) | `pytest sim/pioemu` (13 passed, 1 skipped) |
+| P0-T9, P0-T10 | blocked on hardware (`HARDWARE-REQUESTS.md` HR-1; issue I-19) | -- |
+| P0-T11, P0-T12 | not started; the host half of the CI lane is issue I-06 | -- |
+| P0-T13 | partial: `LICENSES.md` drafted; the enquiry is issue I-18 | -- |
+| P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` **done with tests** | `pytest tests/nes` |
 | P2-T2 (harness part) | **done** for the tutorial ROM: `tests/bootrom/nmi_harness.py`, measurements in 01 | `pytest tests/bootrom` (17) |
-| P4-T3 (partial) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` drafted; tests in progress | -- |
-| everything else | not started | -- |
+| P2-T2 (Doom NMI) | not started (issues I-13, I-14) | -- |
+| P4-T3 (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; the device-side sequencer is issue I-04 and the remaining conversion tooling issue I-05 | `pytest tests/audio` |
+| everything else | not started; see `../issues/README.md` for the assignable subset | -- |
+
+Whole-tree verification, as of the last commit that touched this table:
+
+```
+cmake -S doom -B build -DFCPICO_HOST_ONLY=ON && cmake --build build && ctest --test-dir build
+  -> 5/5 passed
+python3 -m pytest doom/tests doom/sim -q   -> 273 passed, 1 skipped
+python3 doom/tools/gen_protocol.py --check -> clean
+```
 
 ---
 

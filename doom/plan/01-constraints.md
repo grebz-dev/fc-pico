@@ -91,16 +91,33 @@ dummy read plus nine extra reads "to flush the FIFO", writes the pad byte three 
 FC PICO cannot do, because its attribute fetches come from console VRAM.
 
 Counting pattern-space reads in that structure gives 34 x 2 = 68 per line (sprite fetches
-excluded, they hit `$1000`), 241 x 68 = 16,388 per frame, versus the 15,425 that
-`PPU_COUNT_VAL` implies for the picture. The difference is 963 = 241 x 4 - 1: **exactly one
-two-tile pair per line goes uncounted** -- either the two prefetch tiles (dots 321-336) or
-the two off-screen tiles (dots 241-256). Which one, and why, is what the P0-T9 trace must
-show (hypotheses: the board's CS1 decode is gated during that slot; the PIO `jmp PIN`
-samples CS1 before it is valid there; the PPU's `/RD` is not asserted for those fetches on
-this signal). The stream *layout* is unaffected either way: the tutorial firmware works with
-the 34-word stride, so the PPU consumes 34 words per line from the DMA regardless of what
-the counter sees. The model in 09 therefore separates "bytes consumed per line" (34 words,
-fixed) from "reads counted per line" (parameter, default 64).
+excluded -- they hit `$1000`, and `$2000` bit 3 is set precisely to put them there), so
+241 x 68 = 16,388 per frame, against the 15,426 `PPU_COUNT_VAL` implies for the picture.
+
+Two arithmetic observations follow, and **they cannot both be true**, which is the whole
+difficulty:
+
+- `16388 - 15426 = 962 = 241 x 4 - 2`: as if one two-tile pair per line (4 bytes) went
+  uncounted, give or take two bytes -- either the prefetch pair (dots 321-336) or the
+  off-screen pair (dots 241-256).
+- `15426 = 241 x 64 + 2` exactly: as if the counter saw 64 reads per line, that is the 32
+  visible tiles only, plus two bytes somewhere.
+
+The second is the tidier fit, but a stream *laid out* at 68 bytes per line cannot be
+*consumed* at 64 bytes per line without shearing the picture one tile pair further left on
+every line, and the tutorial firmware demonstrably does not shear. So either the
+consumption rate differs from the count rate (the counter misses reads the transmit state
+machine still answers), or the layout's last two words per line are written and never read,
+or the line count is not 241. Nothing available here distinguishes them: **this is what the
+P0-T9 trace is for.** Until it exists the model keeps the two as independent parameters
+("bytes consumed per line" and "reads counted per line", default 64) rather than deriving
+one from the other.
+
+One hypothesis is worth testing first because it is cheap: the board may decode CS1 only
+for `$0000`-`$0FFF` rather than the whole `$0000`-`$1FFF` pattern space, using the
+PA12/PA13 lines `fcppu.pio` leaves commented out. That would exclude every sprite fetch by
+construction, which is consistent with the firmware setting `$2000` bit 3, and the trace
+confirms or kills it directly by comparing CS1 against the read cadence.
 
 **A four-byte prelude from the PIO itself.** `fcppu_r` starts with `mov osr, null`, and
 `pio_sm_restart()` (called in `ppu_dma()` at every re-arm) clears the OSR and its shift
@@ -133,7 +150,7 @@ channel was not written in the previous frame (a new note) or when the period bi
 
 | Resource | Budget | Where it goes |
 |----------|--------|---------------|
-| NMI, NTSC | 2273 cycles, target **<= 1900** used (15% margin) | mailbox read at 7 cycles/byte, attribute write at 7 cycles/byte, palette write, APU replay at 24 cycles/pair (measured), register restore |
+| NMI, NTSC | 2273 cycles, target **<= 1900** for the vblank-critical part | mailbox read at 7 cycles/byte, attribute write at 7 cycles/byte, palette write, register restore; the APU replay (24 cycles/pair measured, 15 pairs max) may legally spill past vblank |
 | Main loop | everything else (~27,500 cycles/frame) | controller read (650), command execution, bulk data mode when requested |
 | Zero page | fully allocated in the tutorial ROM; the Doom ROM reallocates from scratch | 03, 07 |
 | PRG | 32 KB: `$8000`-`$ECFF` free for Doom code + DPCM, `$ED00`-`$EFFF` fixed, `$F000`+ untouchable | 07 |
@@ -149,7 +166,7 @@ channel was not written in the previous frame (a new note) or when the period bi
 | Conversion scratch | 320 B line buffer x 2, 256 x 4 cost table, 4 x 256 x 16 dither LUT = 16 KB (or 4 KB with a 2x2 pattern), 64 B attribute shadow x 2, block cost accumulators 240 x 4 x 2 B | 04 |
 | Core 1 stack | RP2040 Doom sets `PICO_CORE1_STACK_SIZE=0x4f8` (1272 B) and notes it barely fits; raise to 4 KB on RP2350 (scratch X is free) | `src/CMakeLists.txt` |
 | CPU per frame at 150 MHz | 5.0 M cycles per 30 fps frame; the converter is estimated at 0.4-0.6 M | 04 |
-| Flash | 4 MB (inferred): firmware `0x10000000`-`0x1007FFFF` (512 KB cap, includes boot ROM image, music, SFX), WHX at `0x10080000` (1,800,344 B for `doom1.whx`, ends `0x10237E38`), asset archive at `0x10300000`, save slots at the top of flash per RP2040 Doom's `get_end_of_flash()` | 08 |
+| Flash | 4 MB (inferred): firmware `0x10000000`-`0x1007FFFF` (512 KB cap, includes boot ROM image, music, SFX), WHX at `0x10080000` (1,800,344 B for `doom1.whx`, ends `0x10237898`), asset archive at `0x10300000`, save slots at the top of flash per RP2040 Doom's `get_end_of_flash()` | 08 |
 | Flash timing | RP2040 Doom's `rp2` branch programs `QMI_M0_TIMING` clkdiv 3 / rxdelay 2 at 270 MHz; at 150 MHz the SDK default is fine | `i_main.c` |
 
 ## Engine facts that shape the port
