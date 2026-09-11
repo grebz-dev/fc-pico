@@ -13,12 +13,32 @@ discrepancy: the firmware's own qualifying-read counter
 pattern-table fetches implied by the stream's 34-word/scanline layout
 (241 lines x 68 bytes = 16,388), and nobody yet knows which fetches the
 counter misses (P0-T9's hardware trace is the plan to find out). This module
-is the parameterised model plan 01 calls for: ``reads_per_line`` (default
-64 = 32 tiles, i.e. the picture's visible width only, *not* the 34-tile/
-68-byte stream stride) and ``prerender_reads`` (default 61) are free
-parameters whose **only** job, until P0-T10 calibrates them against a real
-trace, is to make :meth:`PpuBus.frame_read_count` add up to the firmware's
-known totals:
+is the parameterised model plan 01 calls for, and it keeps the two rates
+plan 01 insists must stay independent as two separate parameters:
+
+``reads_per_line`` (default 64 = 32 tiles, the picture's visible width)
+    Strobes the PIO counter ``fcppu_rna`` attributes to a line. This is
+    what ``PPU_COUNT_VAL`` is compared against, so it alone determines
+    :meth:`PpuBus.frame_read_count`.
+``bytes_per_line`` (default ``reads_per_line``)
+    Bytes the transmit state machine ``fcppu_r`` actually hands out for a
+    line, which is what advances the DMA through the buffer. This alone
+    determines :meth:`PpuBus.frame_byte_count`, and hence how many times
+    :meth:`PpuBus.run_frame` calls ``cart.ppu_read()``.
+
+They are equal by default, which is the self-consistent reading. Set
+``bytes_per_line=68`` (the 34-word ``convVram()`` stride) to model the other
+reading -- that the counter misses strobes the transmitter still answers --
+and ``frame_read_count()`` does not move while ``frame_byte_count()`` grows
+by 240 x 4 = 960 bytes. Plan 01 observes the firmware's own numbers want
+962 = 241 x 4 - 2 there rather than 960; the two-byte and one-line
+difference is absorbed by ``prerender_reads``, which is exactly the kind of
+fudge the hardware trace is meant to replace. Do not read meaning into
+either default beyond "they reproduce the firmware's totals".
+
+``prerender_reads`` (default 61) is the third free parameter. Together their
+**only** job, until P0-T10 calibrates them against a real trace, is to make
+:meth:`PpuBus.frame_read_count` add up to the firmware's known totals:
 
     osr_prelude_bytes + prerender_reads + 240*reads_per_line + 1 + mailbox_len
         == PPU_COUNT_VAL_V1 (15,490)   for mailbox_len = 64
@@ -85,6 +105,7 @@ class PpuBus:
         mailbox_len: int = protocol.FC_COM_BUF_SIZE_V1,
         osr_prelude_bytes: int = 4,
         cs1_mask: int = 0xE000,
+        bytes_per_line: int | None = None,
     ):
         if mailbox_len not in (protocol.FC_COM_BUF_SIZE_V1, protocol.FC_COM_BUF_SIZE_V2):
             raise ValueError(
@@ -93,7 +114,22 @@ class PpuBus:
             )
         if reads_per_line <= 0 or reads_per_line % 2:
             raise ValueError(f"reads_per_line must be a positive even number, got {reads_per_line}")
+        if bytes_per_line is None:
+            bytes_per_line = reads_per_line
+        if bytes_per_line <= 0 or bytes_per_line % 2:
+            raise ValueError(f"bytes_per_line must be a positive even number, got {bytes_per_line}")
+        if bytes_per_line < reads_per_line:
+            raise ValueError(
+                f"bytes_per_line ({bytes_per_line}) must be at least reads_per_line "
+                f"({reads_per_line}): the transmit state machine cannot answer fewer strobes "
+                "than the counter sees"
+            )
         self.reads_per_line = reads_per_line
+        self.bytes_per_line = bytes_per_line
+        # The visible picture is whatever the counted reads cover; anything the transmit
+        # machine hands out beyond that (the prefetch pair, under the CS1 hypothesis) is
+        # served, walked over, and never displayed.
+        self.visible_bytes_per_line = reads_per_line
         self.prerender_reads = prerender_reads
         self.mailbox_len = mailbox_len
         self.osr_prelude_bytes = osr_prelude_bytes
@@ -101,7 +137,12 @@ class PpuBus:
         self.lines = protocol.VRAM_LINES  # 240; not a constructor parameter, the console geometry is fixed
 
     def frame_read_count(self) -> int:
-        """Total ``cart.ppu_read()`` calls one :meth:`run_frame` makes (no faults injected)."""
+        """Qualifying reads the PIO counter attributes to one frame -- the firmware's ``ppu_count``.
+
+        This is the number the sync decision compares against ``PPU_COUNT_VAL``. It is a
+        function of ``reads_per_line`` and is **independent of** ``bytes_per_line``; see
+        :meth:`frame_byte_count` and the module docstring.
+        """
         return (
             self.osr_prelude_bytes
             + self.prerender_reads
@@ -109,6 +150,27 @@ class PpuBus:
             + 1  # the NMI's mandatory dummy read
             + self.mailbox_len
         )
+
+    def frame_byte_count(self) -> int:
+        """Total ``cart.ppu_read()`` calls one :meth:`run_frame` makes (no faults injected).
+
+        Bytes the transmit state machine hands out, which is what actually advances the DMA
+        through the firmware's buffer. Equal to :meth:`frame_read_count` at the defaults,
+        because ``bytes_per_line`` defaults to ``reads_per_line``; the two diverge exactly to
+        the extent that the counter misses strobes the transmitter still answers, which is
+        the open question plan 01 leaves to the hardware trace.
+        """
+        return (
+            self.osr_prelude_bytes
+            + self.prerender_reads
+            + self.lines * self.bytes_per_line
+            + 1  # the NMI's mandatory dummy read
+            + self.mailbox_len
+        )
+
+    def uncounted_bytes_per_frame(self) -> int:
+        """Bytes served but not counted: ``frame_byte_count() - frame_read_count()``."""
+        return self.frame_byte_count() - self.frame_read_count()
 
     def frame_events(self):
         """Yield this frame's read events in bus order.
@@ -118,7 +180,9 @@ class PpuBus:
         - ``('read', -1, i)`` for ``i`` in ``0..prerender_reads``: the
           pre-render scanline's reads (no picture data; NES scanline -1).
         - ``('read', line, tile)`` for ``line`` in ``0..239``, ``tile`` in
-          ``0..reads_per_line``: one visible scanline's qualifying reads.
+          ``0..bytes_per_line``: one visible scanline's served bytes. The
+          first ``visible_bytes_per_line`` of them carry the displayed
+          picture; any remainder is served and never displayed.
         - ``('nmi_read', 0)``: the mandatory dummy read of the NMI's
           `$2007` read sequence (discarded, never picture or mailbox data).
         - ``('nmi_read', i)`` for ``i`` in ``1..1+mailbox_len``: the mailbox
@@ -129,7 +193,7 @@ class PpuBus:
         for i in range(self.prerender_reads):
             yield ("read", -1, i)
         for line in range(self.lines):
-            for tile in range(self.reads_per_line):
+            for tile in range(self.bytes_per_line):
                 yield ("read", line, tile)
         yield ("nmi_read", 0)
         for i in range(1, 1 + self.mailbox_len):
@@ -191,31 +255,32 @@ class PpuBus:
     def reconstruct(self, bytes_read: bytes):
         """Inverse of a fault-free :meth:`run_frame`: bytes -> ``(pix, mailbox)``.
 
-        ``bytes_read`` must be exactly :meth:`frame_read_count` bytes (what
+        ``bytes_read`` must be exactly :meth:`frame_byte_count` bytes (what
         a fault-free ``run_frame`` returns). Skips the prelude and the
-        pre-render line's reads (no picture data), unpacks
-        ``reads_per_line`` bytes per visible line into
-        ``reads_per_line // 2 * 8`` pixels with
-        ``fcpico.stream.unpack_run`` (so ``reads_per_line == 64`` gives the
-        usual 256-pixel-wide picture), discards the dummy read, and returns
-        the trailing ``mailbox_len`` bytes verbatim as the mailbox.
+        pre-render line's reads (no picture data), then for each visible
+        line unpacks the first ``visible_bytes_per_line`` of its
+        ``bytes_per_line`` served bytes into pixels with
+        ``fcpico.stream.unpack_run`` (so the default 64 gives the usual
+        256-pixel-wide picture) and steps over the rest, discards the dummy
+        read, and returns the trailing ``mailbox_len`` bytes verbatim as the
+        mailbox.
 
         Returns ``(pix, mailbox)``: ``pix`` is a
-        ``(240, reads_per_line * 4)`` ``uint8`` array of 2-bit colours;
-        ``mailbox`` is ``bytes``.
+        ``(240, visible_bytes_per_line * 4)`` ``uint8`` array of 2-bit
+        colours; ``mailbox`` is ``bytes``.
         """
         data = bytes(bytes_read)
-        expected = self.frame_read_count()
+        expected = self.frame_byte_count()
         if len(data) != expected:
             raise ValueError(f"expected exactly {expected} bytes (a fault-free frame), got {len(data)}")
 
         pos = self.osr_prelude_bytes + self.prerender_reads  # skip prelude and the pre-render line
-        words_per_line = self.reads_per_line // 2
+        words_per_line = self.visible_bytes_per_line // 2
         width = words_per_line * 8
         pix = np.zeros((self.lines, width), dtype=np.uint8)
         for line in range(self.lines):
-            line_bytes = data[pos : pos + self.reads_per_line]
-            pos += self.reads_per_line
+            line_bytes = data[pos : pos + self.visible_bytes_per_line]
+            pos += self.bytes_per_line
             for t in range(words_per_line):
                 word = line_bytes[2 * t] | (line_bytes[2 * t + 1] << 8)
                 pix[line, t * 8 : t * 8 + 8] = stream.unpack_run(word)
@@ -230,11 +295,14 @@ class PpuBus:
         Not the same layout as ``fcpico.stream.encode_frame()`` (see the
         module docstring) -- this is what :class:`SimpleCart` should serve
         for :meth:`run_frame` + :meth:`reconstruct` to round-trip ``pix``
-        and ``mailbox`` exactly. ``pix`` is ``(240, reads_per_line * 4)``,
-        values 0..3; ``mailbox`` must be exactly ``mailbox_len`` bytes.
+        and ``mailbox`` exactly. ``pix`` is
+        ``(240, visible_bytes_per_line * 4)``, values 0..3; ``mailbox`` must
+        be exactly ``mailbox_len`` bytes. Each line is followed by
+        ``bytes_per_line - visible_bytes_per_line`` zero bytes, which the
+        model serves and :meth:`reconstruct` steps over.
         """
         pix = np.asarray(pix, dtype=np.uint8) & 0x03
-        words_per_line = self.reads_per_line // 2
+        words_per_line = self.visible_bytes_per_line // 2
         width = words_per_line * 8
         if pix.shape != (self.lines, width):
             raise ValueError(f"pix must have shape ({self.lines}, {width}), got {pix.shape}")
@@ -242,12 +310,14 @@ class PpuBus:
         if len(mailbox) != self.mailbox_len:
             raise ValueError(f"mailbox must be {self.mailbox_len} bytes, got {len(mailbox)}")
 
+        tail = self.bytes_per_line - self.visible_bytes_per_line  # served, never displayed
         out = bytearray(self.prerender_reads)  # pre-render line: no picture data, arbitrary filler
         for line in range(self.lines):
             for t in range(words_per_line):
                 word = stream.pack_run(pix[line, t * 8 : t * 8 + 8].tolist())
                 out.append(word & 0xFF)
                 out.append((word >> 8) & 0xFF)
+            out += bytes(tail)
         out.append(0)  # consumed by the dummy read
         out += mailbox
         return bytes(out)
