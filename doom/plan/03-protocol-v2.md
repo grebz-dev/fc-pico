@@ -40,7 +40,7 @@ executor (`jobPICO`) and APU replay loop can be reused in the new ROM without ch
 | 0 | 1 | `flags` | bit 0 `ATTR_VALID`, bit 1 `PAL_VALID`, bit 2 `APU_VALID`, bit 7 `V2` (always 1 in v2 frames). Byte 0 is "unused but not reserved" in v1; FC_PICO_GB uses bytes 0-1 for its own purpose. This is a *different* firmware, so the collision is only a documentation note. |
 | 1 | 1 | magic `$FC` | as v1 |
 | 2 | 14 | commands | as v1; the Doom firmware uses `PF_COM_DMOD`, `FDIN`, `FDOT` only |
-| 16 | 32 | APU pairs | as v1 layout but **capped at 16 pairs** (`$FF` terminator within the first 33 bytes); offsets 48..63 are always `$FF` |
+| 16 | 32 | APU pairs | as the v1 layout, **capped at 15 pairs**: 15 x 2 bytes plus the `$FF` terminator is 31 of the 32 bytes. A 16th pair would fill the field with no room for a terminator; the 6502 replay loop also stops after `MBX_APU_LEN` bytes, so 16 would be safe on that side, but keeping the terminator always present is what makes a torn mailbox harmless. |
 | 48 | 16 | BG palette | 16 bytes for `$3F00`-`$3F0F`, applied when `PAL_VALID` |
 | 64 | 64 | attribute table | 64 bytes for `$23C0`-`$23FF`, applied when `ATTR_VALID` |
 
@@ -48,7 +48,8 @@ executor (`jobPICO`) and APU replay loop can be reused in the new ROM without ch
 protocol version it detected.
 
 Why fixed length: the read counter is the only sync mechanism, so the number of `$2007` reads
-per frame must be a compile-time constant on both sides. A variable-length mailbox (skip the
+per frame must be a constant both sides agree on. v2 changes that constant once (15490 to
+15554) and then holds it; what it must not do is vary from frame to frame. A variable-length mailbox (skip the
 attribute block when unchanged) is a documented v2.1 option -- the cartridge always knows what
 it sent, so it could adjust the expected count per frame -- but it is not needed to fit the
 NMI budget (see 07) and it complicates the model.

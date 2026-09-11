@@ -84,7 +84,7 @@ choice unless another palette is cheaper by more than `HYST_PCT` (default 12%). 
 choice into the attribute shadow (`fcbus_attr_set(bx, by, p)` -- same packing as
 `rp_system::setAtr()`), and set `ATTR_VALID` in the back mailbox.
 
-Cost: 240 blocks x 256 px x 4 palettes = 245,760 byte loads and adds. Vectorise trivially by
+Cost: 208 blocks x 256 px x 4 palettes = 212,992 byte loads and adds (the Doom frame covers 16 x 13 of the screen's 16 x 15 blocks). Vectorise trivially by
 accumulating four `uint16_t` sums per pixel from a `uint32_t err4[256]` table (one load, four
 byte-lane adds). Estimated 1.5-2.5 ms at 150 MHz.
 
@@ -100,7 +100,7 @@ precomputed as: for Doom colour `idx` under sub-palette `p`, the two palette ent
 and mix ratio `r/16` that best approximate it; the 16 Bayer thresholds turn `r` into a pattern).
 A 4 KB variant with a 2x2 pattern (5 levels) is a compile-time option.
 
-Cost: 61,440 pixel lookups plus packing; estimated 1-2 ms.
+Cost: 51,200 pixel lookups (256 x 200) plus packing; estimated 1-2 ms. Letterbox lines need none.
 
 The letterbox lines and the prefetch words are written once at init (all zeros = backdrop).
 

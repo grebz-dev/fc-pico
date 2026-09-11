@@ -161,7 +161,7 @@ runs the **real boot ROM**; a custom mapper forwards the cartridge's side of the
 | S1 | tutorial boot ROM + Doom model | reflash path reaches `UR_MAIN_SETUP` of the Doom ROM; `FP_COM_HELLO 2` observed; title screen hash |
 | S2 | Doom ROM + Doom model, DEMO1, 3000 frames | every 100th frame screenshot vs golden (perceptual hash distance <= T); NMI `rti` scanline < 261 every frame; `$23C0`-`$23FF` and `$3F00`-`$3F0F` equal the model's mailbox for that frame; zero resync events |
 | S3 | scripted play (`emu.setInput`) | walk, open door, change weapon; assert engine state via the model's log |
-| S4 | audio | `$4000`-`$4017` write log per frame equals the sequencer's log; <= 16 pairs per NMI |
+| S4 | audio | `$4000`-`$4017` write log per frame equals the sequencer's log; <= 15 pairs per NMI |
 | S5 | save/load | save in E1M1, reset, load; `SAVING` video type shows the frozen frame; no DMA under-run |
 | S6 | soak (nightly) | 100,000 frames of demos looping; counters: resyncs, drops, conversion max |
 
@@ -254,6 +254,12 @@ class FcPico : public BaseMapper {
     }
 };
 ```
+
+@warning The method names above (`MapperReadVram`, `EnableCustomVramRead`,
+`InternalReadVram`, `IsRealPpuRead`) come from the base class as documented, not from a
+build. `IsRealPpuRead` in particular is invented shorthand for "tell a rendering or CPU
+read from a debugger peek"; the real predicate must be found in the pinned checkout.
+P0-T11's first job is to compile the mapper and correct this sketch.
 
 `fcpico_cart_ppu_write()` runs the `fcbus` dispatcher; on a heartbeat it performs the
 ISR-equivalent synchronously (count check, buffer swap) before returning, so the next

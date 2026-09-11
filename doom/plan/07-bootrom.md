@@ -89,9 +89,9 @@ and only then anything that can spill past vblank.
 | controller packet: `SET_VRAM_ADD2 #$0800`; `lda #FP_COM_KEY / sta $2007`; pad1; pad2 | | 12 + 21 |
 | `$2000 <- FLG_2000`, `$2001 <- FLG_2001`, `$2005 <- 0`, `$2005 <- 0` | | 28 |
 | **vblank-critical subtotal** | | **1595** |
-| APU replay: up to 16 pairs, `ldy/bmi/inx/lda,x/inx/sta $4000,y/cpx/bne` | loop | 16 x 24 = 384 |
+| APU replay: up to 15 pairs, `ldy/bmi/inx/lda,x/inx/sta $4000,y/cpx/bne` | loop | 15 x 24 = 360 |
 | clear `NMI_FLG`, restore registers, `rti` | | 20 |
-| **total** | | **1999** (NTSC vblank = 2273) |
+| **total** | | **1975** (NTSC vblank = 2273) |
 
 The APU replay after the PPU work may legally spill past the end of vblank (APU registers are
 not rendering-sensitive), so the real constraint is the 1595-cycle critical section, which has
@@ -248,15 +248,23 @@ state is at most one frame old when it is sent.
 
 1. Rendering off; clear nametable 0 (tile 0 everywhere) and attribute table (0); write a
    16-entry black BG palette; scroll 0.
-2. `SET_VRAM_ADD2 #$0800`; write `FP_COM_INI, 0`; wait (`PICO_COM_WAIT`); write
+2. **Park the sprites off screen.** Rendering stays enabled for *both* backgrounds and
+   sprites (step 4), because the read count was calibrated with that PPUMASK and the PPU
+   keeps performing its eight sprite pattern fetches per scanline either way. Doom never
+   writes OAM, and OAM after a cold boot is zeroed, which would put 64 sprites in the
+   top-left corner as visible garbage. So write `$EF` (below the visible area) into every
+   fourth OAM byte exactly once -- `$2003 = 0` then 256 writes to `$2004`, or one `$4014`
+   DMA from a prepared page -- and never touch OAM again. This is the only sprite-related
+   work the console does, and it costs nothing per frame.
+3. `SET_VRAM_ADD2 #$0800`; write `FP_COM_INI, 0`; wait (`PICO_COM_WAIT`); write
    `FP_COM_HELLO, 2`.
-3. `$2000 <- %100_01_0_00` (NMI on, BG at `$0000`, sprites at `$1000`), `$2001 <- %000_11_11_0`
+4. `$2000 <- %100_01_0_00` (NMI on, BG at `$0000`, sprites at `$1000`), `$2001 <- %000_11_11_0`
    (BG **and sprites** enabled -- the fetch pattern the count is calibrated for), `DISP_ON`.
-4. Fall into the main loop. The screen stays black until the cartridge starts streaming; the
+5. Fall into the main loop. The screen stays black until the cartridge starts streaming; the
    firmware shows a "FC PICO DOOM / LOADING" pattern until the engine's first frame.
 
 Optionally (Phase 5) the boot ROM draws its own "loading" text using the fix-bank font before
-step 3, so the console is never blank.
+step 4, so the console is never blank.
 
 ## Data mode
 
