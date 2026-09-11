@@ -21,11 +21,12 @@ exists in `tools/audio/apus.py` and is tested; this is the C side that plays tho
 
 ## Owns (create or modify only these)
 
-`port/apu/fcapu.h`, `port/apu/fcapu.c`, `port/apu/CMakeLists.txt`, `tests/apu/*` (new); `tests/CMakeLists.txt` (add one `add_subdirectory`)
+`port/apu/fcapu.h`, `port/apu/fcapu.c`, `port/apu/CMakeLists.txt`, `tests/apu/*` (new)
 
 ## Must not touch
 
-`tutorial_project/**` (read it, copy from it, never edit it), `plan/**` unless the
+`tests/CMakeLists.txt` -- it discovers suite directories by glob, so a new suite is a
+new directory and nothing else. `tutorial_project/**` (read it, copy from it, never edit it), `plan/**` unless the
 issue says otherwise, `fcbus/fcbus_protocol.h` (regenerate through `tools/gen_protocol.py`),
 and any file another open issue lists under **Owns**.
 
