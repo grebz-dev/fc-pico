@@ -143,8 +143,16 @@ lives in the fix bank.
 
 ## API sketches
 
-The seams between modules, as C prototypes. These are the contracts the tasks in 10 implement;
-names are binding, signatures may grow.
+The seams between modules, as C prototypes. These are the contracts the tasks in 10
+implement; names are binding, signatures may grow.
+
+@note `fcbus` is no longer a sketch: it is implemented and tested (`fcbus/fcbus_core.h`,
+`fcbus/fcbus_host.h`, `tests/fcbus/`), and those headers are authoritative where they
+differ from what follows. Two differences matter: every entry point is prefixed
+`fcbus_core_*` or `fcbus_host_*` rather than `fcbus_*`, and the core takes an explicit
+`fcbus_core_t *` so it can be instantiated more than once (the host backend keeps the
+single global instance this sketch assumed). The sketch is kept for the modules that are
+still unwritten.
 
 ### `fcbus/fcbus.h`
 

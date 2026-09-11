@@ -15,7 +15,7 @@ ships in the mailbox and the boot ROM replays during vblank (`docs/pages/audio.m
 | DPCM | `$4010-$4013` | sampled SFX from the boot ROM bank |
 | Control | `$4015` | channel enables / DPCM start |
 
-Budget: **16 `(reg,value)` pairs per frame** (v2 mailbox), 23 in v1. Latency: writes made
+Budget: **15 `(reg,value)` pairs per frame** (v2 mailbox; `APU_PAIRS_MAX_V2`), 23 in v1. Latency: writes made
 during frame N are replayed in the NMI that follows frame N+1's picture -- about two frames.
 
 ## Decision D5: a register sequencer, not a 6502 emulator
@@ -82,7 +82,7 @@ per second):
 Everything else is synthesised (`dsbarexp` and `dsrlaunc` = noise sweeps, `dsfirsht` = pulse
 sweep, `dspstop`/`dsstnmov` = short noise, monster sights = pulse chirps) or dropped.
 
-### Arbitration per frame (in this order, until 16 pairs)
+### Arbitration per frame (in this order, until 15 pairs)
 
 1. DPCM trigger/stop for this frame (never deferred).
 2. Voice steals: silence writes for a channel changing owner.
@@ -181,8 +181,8 @@ body:   frame := count(u8: 0..15) then count x (reg u8 in 0..0x17, value u8)
         | silence(u8: 0x80 | k, k in 1..127 frames with no writes)
 ```
 
-`count <= 12` is enforced by the tool so that 3-4 pairs per frame remain for effects under the
-v2 cap of 15 pairs (`APU_PAIRS_MAX_V2`). Streams are stored in flash as `const uint8_t[]`
+`count <= 12` is enforced by the tool so that 3 pairs per frame remain for effects under the
+v2 cap of 15 (`APU_PAIRS_MAX_V2`). Streams are stored in flash as `const uint8_t[]`
 via `respack.py`; the sequencer reads them with a byte cursor and no decompression.
 
 ## Tests
