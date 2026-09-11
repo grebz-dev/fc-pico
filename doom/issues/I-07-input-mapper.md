@@ -20,11 +20,12 @@ not integration, so it can be settled now and simply called from the engine late
 
 ## Owns (create or modify only these)
 
-`port/input/fcinput.h`, `port/input/fcinput.c`, `port/input/fcinput_cheats.h`, `port/input/CMakeLists.txt`, `tests/input/*` (new); `tests/CMakeLists.txt` (add one `add_subdirectory`)
+`port/input/fcinput.h`, `port/input/fcinput.c`, `port/input/fcinput_cheats.h`, `port/input/CMakeLists.txt`, `tests/input/*` (new)
 
 ## Must not touch
 
-`tutorial_project/**` (read it, copy from it, never edit it), `plan/**` unless the
+`tests/CMakeLists.txt` -- it discovers suite directories by glob, so a new suite is a
+new directory and nothing else. `tutorial_project/**` (read it, copy from it, never edit it), `plan/**` unless the
 issue says otherwise, `fcbus/fcbus_protocol.h` (regenerate through `tools/gen_protocol.py`),
 and any file another open issue lists under **Owns**.
 
