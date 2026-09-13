@@ -11,6 +11,41 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## P1-T4 / P3-T1 -- host-testable controller mapper
+- Commits: this commit
+- Verified: `cmake -S doom -B build-host -G Ninja -DFCPICO_HOST_ONLY=ON && cmake --build
+  build-host && ctest --test-dir build-host --output-on-failure` -> 6/6 passed.
+- What landed: an allocation-free frame latch and tic poller, caller-owned event ring,
+  configurable engine key codes, direction/action mapping, always-run, B tap-versus-strafe,
+  Select tap-versus-automap, Select+Start pause, sticky presses, and an optional cheat matcher.
+- Left out: engine event adapter and context-specific menu mappings remain integration work in
+  the engine fork; the mapper deliberately has no dependency on Doom headers.
+- Plan changes: none; issue I-07 is complete.
+
+## P0-T12 -- activate the host CI lane
+- Commits: this commit
+- Verified: the host CMake build and 5 C tests passed; the ASan/UBSan build and the same 5
+  tests passed; `python3 -m pytest doom/tests doom/sim/pioemu -q` -> 339 passed, 1 skipped;
+  generated protocol and Markdown link checks passed.
+- What landed: one active, host-only GitHub Actions workflow with pinned Ubuntu, Python and
+  action major versions, pip caching, ordinary C tests, sanitizer C tests, Python and PIO
+  tests, generated-file validation, Markdown link validation, and an exact template diff.
+- Left out: device, boot-ROM, full-chip, co-simulation and documentation workflows remain
+  inactive until the issue named for each lane can produce a green job.
+- Plan changes: none; issue I-06 is complete.
+
+## P1-T2 (reference part) -- reference video pipeline tests
+- Commits: this commit
+- Verified: `python3 -m pytest doom/tests/tools -q` -> 237 passed.
+- Measurements: the deterministic 320x200 greyscale-gradient conversion decodes at 13.02 dB
+  PSNR against its decimated and letterboxed source; the regression floor is 13.0 dB.
+- What landed: stage B decimation and letterboxing tests; stage E exact-colour and midpoint
+  dither tests; stage C palette selection and hysteresis boundary tests; a stage D Bayer-index
+  test; and an end-to-end v2 stream conversion decoded through `ppu_decode.py`.
+- Left out: the device converter remains issue I-17; this issue only establishes the tested
+  reference against which that implementation will be compared.
+- Plan changes: none; issue I-03 is complete.
+
 ## Plan review and issue set -- 2026-09-11
 - Commits: this commit
 - Verified: every derivable figure in `plan/` recomputed from the primary sources (the
