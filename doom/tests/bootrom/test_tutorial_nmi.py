@@ -143,6 +143,38 @@ def test_key_new_written_after_mailbox_reads(harness):
     assert key_new_index > last_2006_index
 
 
+def test_mailbox_is_copied_byte_exactly_to_zero_page(harness):
+    """Verify the simulated CPU RAM contains the cartridge mailbox."""
+    mailbox = bytearray((index * 37 + 11) & 0xFF for index in range(64))
+    mailbox[1] = 0xFC
+    mailbox[2] = 0x00
+    result = harness.run_nmi(bytes(mailbox))
+
+    assert result.memory[0x20:0x60] == bytes(mailbox)
+
+
+def test_valid_mailbox_preserves_command_for_main_loop(harness):
+    """Verify NMI leaves a valid command queued for non-interrupt dispatch."""
+    mailbox = bytearray(build_mailbox())
+    mailbox[2] = 0x03
+
+    result = harness.run_nmi(bytes(mailbox))
+
+    assert result.memory[0x22] == 0x03
+
+
+def test_invalid_mailbox_clears_command_before_main_loop(harness):
+    """Verify a torn mailbox cannot dispatch a stale command."""
+    mailbox = bytearray(build_mailbox())
+    mailbox[1] = 0x00
+    mailbox[2] = 0x03
+
+    result = harness.run_nmi(bytes(mailbox))
+
+    assert result.memory[0x21] == 0x00
+    assert result.memory[0x22] == 0x00
+
+
 # ---------------------------------------------------------------------------
 # Sprite DMA ($4014)
 # ---------------------------------------------------------------------------
