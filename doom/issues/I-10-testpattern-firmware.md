@@ -22,7 +22,8 @@ this firmware.
 
 ## Owns (create or modify only these)
 
-`port/main_testpattern.c`, `port/cli.c`, `port/cli.h`, `port/trace.c`, `port/trace.h`, `port/CMakeLists.txt`
+`port/main_testpattern.c`, `port/cli.c`, `port/cli.h`, `port/trace.c`, `port/trace.h`,
+`port/CMakeLists.txt`, `tools/trace_decode.py`, `tests/tools/test_trace_decode.py`
 
 ## Must not touch
 
