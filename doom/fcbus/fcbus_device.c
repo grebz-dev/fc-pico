@@ -23,6 +23,8 @@ static void __not_in_flash_func(stop_dma)(fcbus_device_t *device) {
 
 static void __not_in_flash_func(start_words)(fcbus_device_t *device,
                                                const void *data, uint32_t bytes) {
+    /* A heartbeat can replace a stream before DMA has exhausted the old one. */
+    dma_channel_abort((uint)device->dma_channel);
     pio_sm_clear_fifos(pio0, SM_TRAN);
     pio_sm_restart(pio0, SM_TRAN);
     dma_channel_set_read_addr((uint)device->dma_channel, data, false);
