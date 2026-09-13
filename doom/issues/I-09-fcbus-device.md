@@ -30,7 +30,9 @@ every decision; this is the PIO, DMA and interrupt plumbing around it.
 
 `tutorial_project/**` (read it, copy from it, never edit it), `plan/**` unless the
 issue says otherwise, `fcbus/fcbus_protocol.h` (regenerate through `tools/gen_protocol.py`),
-and any file another open issue lists under **Owns**. Do not change `fcbus_core.*` behaviour: if the core needs something, add to it without altering what the existing tests assert.
+and any file another open issue lists under **Owns**. Do not modify `fcbus_core.*` in this
+issue. If the device backend requires a core API change, split that work into a separate
+prerequisite issue and complete it before continuing this issue.
 
 ## Steps
 
