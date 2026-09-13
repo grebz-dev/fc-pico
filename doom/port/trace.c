@@ -11,7 +11,7 @@ static uint32_t trace_words[FCPICO_TRACE_WORDS];
 static int trace_dma = -1;
 static uint trace_offset;
 
-/* in pins, 5; a 30-bit autopush packs six samples, least-significant sample first. */
+/* in pins, 5; right shifting leaves each 30-bit payload in DMA bits 31:2. */
 static const uint16_t trace_instructions[] = {0x4005};
 static const struct pio_program trace_program = {
     .instructions = trace_instructions,
@@ -62,7 +62,8 @@ void trace_dump(void) {
     printf("TRACE period_ns=%u samples=%u words=%u\n", FCPICO_TRACE_PERIOD_NS,
            FCPICO_TRACE_WORDS * FCPICO_TRACE_SAMPLES_PER_WORD, FCPICO_TRACE_WORDS);
     for (uint32_t index = 0; index < FCPICO_TRACE_WORDS; ++index) {
-        printf("%08lx%c", (unsigned long)trace_words[index],
+        /* Normalize to the decoder's low-aligned, oldest-sample-first format. */
+        printf("%08lx%c", (unsigned long)(trace_words[index] >> 2),
                (index & 7u) == 7u ? '\n' : ' ');
     }
     if ((FCPICO_TRACE_WORDS & 7u) != 0u) {
