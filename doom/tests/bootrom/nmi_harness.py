@@ -266,6 +266,16 @@ class NmiResult:
     has a matching pop) -- a basic sanity check that the simulated handler
     did not run off into the weeds."""
 
+    memory: bytes
+    """Final 64 KB CPU address-space snapshot.
+
+    This makes protocol effects inspectable instead of limiting the harness
+    to cycle and I/O traces. Callers can assert on zero-page mailbox copies,
+    state flags, stack contents, or any other RAM location touched by the
+    handler. ROM and memory-mapped I/O locations are included as observed by
+    py65; only ordinary RAM locations should be treated as persistent state.
+    """
+
 
 class NmiHarness:
     """Runs one boot ROM's NMI handler under py65 and measures its cost.
@@ -408,6 +418,7 @@ class NmiHarness:
             reads_2007=counters["reads_2007"],
             mailbox=bytes(mailbox),
             final_pc=mpu.pc,
+            memory=bytes(mem[address] for address in range(0x10000)),
         )
 
 

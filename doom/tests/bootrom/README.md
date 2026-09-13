@@ -63,6 +63,28 @@ The result (`NmiResult`) reports, among other things:
 | `apu_writes` | Just the `$4000`-`$4013` writes from `writes`, as `(address, value)` -- the decoded APU register replay. |
 | `reads_2007` | How many `$2007` reads happened (dummy included). |
 | `final_pc` | `mpu.pc` right after `RTI`. Equals `SENTINEL_RETURN` (`$BEEF`) iff the handler's stack use was balanced -- a sanity check that it didn't run off into the weeds. |
+| `memory` | Final 64 KB CPU address-space snapshot. This supports direct assertions on the mailbox copy in zero page, state flags, stack contents, and other RAM effects. |
+
+## What can be verified without cartridge hardware
+
+There is useful additional coverage available before a hardware session, but the evidence
+has to be labelled accurately:
+
+- The py65 harness can execute real 6502 code, inspect the complete final CPU address space,
+  check register-write ordering, and measure instruction cycles. It now checks that all 64
+  mailbox bytes land at `$20`-`$5F`, that valid commands survive for main-loop dispatch, and
+  that a bad magic byte clears the command before it can execute.
+- `sim/ppubus` can feed deterministic firmware streams through the documented fetch model and
+  reconstruct pixels and mailbox bytes. These image hashes are regression tests, not proof of
+  physical timing, because the qualifying-read model remains uncalibrated.
+- A stock NES emulator cannot model this cartridge correctly. FC PICO is not conventional
+  CHR-ROM: reads advance a stream without using the PPU address, and `$2007` writes form the
+  return channel. Expected screenshots therefore require the custom Mesen2 mapper and
+  cartridge model described by issue I-15, not merely loading `rom.NES` in an emulator.
+- Mesen2 co-simulation can eventually execute the complete ROM, inspect CPU and PPU memory,
+  capture screenshots, and test controller/mailbox scenarios in CI without a cartridge. It
+  still cannot settle electrical timing, PIO sampling margins, the CS1 decode hypothesis, or
+  the contradictory physical read counts. Those remain hardware-trace work in issue I-19.
 
 `cycle_table()` runs the harness over `apu_pairs in {0, 8, 16, 24}` x
 `sprite_dma in {on, off}` (driven through `PALFADE_VAL`, which is what the
