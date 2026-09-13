@@ -98,8 +98,10 @@ void fcinput_latch_frame(fcinput_t *input, uint8_t pad1, uint8_t pad2) {
         if (input->select_frames < UINT8_MAX) {
             input->select_frames++;
         }
-        if (input->select_frames == FCINPUT_SELECT_HOLD_FRAMES && !input->select_hold_fired) {
-            input->select_hold_fired = true;
+        if (input->select_frames == FCINPUT_SELECT_HOLD_FRAMES &&
+            !input->select_hold_consumed) {
+            input->select_hold_consumed = true;
+            input->pending_automap = true;
         }
     }
     if (released & FCINPUT_PAD_SELECT) {
@@ -108,11 +110,11 @@ void fcinput_latch_frame(fcinput_t *input, uint8_t pad1, uint8_t pad2) {
             input->swallow_select_release = false;
         } else
 #endif
-        if (!input->select_hold_fired) {
+        if (!input->select_hold_consumed) {
             input->pending_next_weapon = true;
         }
         input->select_frames = 0;
-        input->select_hold_fired = false;
+        input->select_hold_consumed = false;
 #ifdef FCINPUT_ENABLE_CHEATS
         input->cheat_length = 0;
 #endif
@@ -190,9 +192,9 @@ void fcinput_poll(fcinput_t *input, fcinput_event_ring_t *ring) {
         pulse(ring, input->config.code[FCINPUT_KEY_NEXT_WEAPON]);
         input->pending_next_weapon = false;
     }
-    if (input->select_hold_fired) {
+    if (input->pending_automap) {
         pulse(ring, input->config.code[FCINPUT_KEY_AUTOMAP]);
-        input->select_hold_fired = false;
+        input->pending_automap = false;
     }
 
 #ifdef FCINPUT_ENABLE_CHEATS

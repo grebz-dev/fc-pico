@@ -89,6 +89,24 @@ static void test_select_tap_and_hold_are_distinct(void) {
     fcinput_poll(&f.input, &f.ring);
     expect_event(&f, FCINPUT_KEY_AUTOMAP, true);
     expect_event(&f, FCINPUT_KEY_AUTOMAP, false);
+
+    frame(&f, 0);
+    fcinput_poll(&f.input, &f.ring);
+    CHECK_EQ(f.ring.count, 0);
+}
+
+static void test_select_hold_released_before_poll_still_opens_automap(void) {
+    fixture_t f;
+    setup(&f);
+
+    for (int i = 0; i < 20; i++) {
+        frame(&f, FCINPUT_PAD_SELECT);
+    }
+    frame(&f, 0);
+    fcinput_poll(&f.input, &f.ring);
+    expect_event(&f, FCINPUT_KEY_AUTOMAP, true);
+    expect_event(&f, FCINPUT_KEY_AUTOMAP, false);
+    CHECK_EQ(f.ring.count, 0);
 }
 
 static void test_select_start_pauses_without_opening_menu(void) {
@@ -132,6 +150,7 @@ int main(void) {
     test_sticky_press_survives_tic_boundary();
     test_b_tap_uses_and_hold_strafes();
     test_select_tap_and_hold_are_distinct();
+    test_select_hold_released_before_poll_still_opens_automap();
     test_select_start_pauses_without_opening_menu();
     test_cheat_swallow_select_release();
     return ctest_lite_result();

@@ -60,7 +60,8 @@ typedef struct {
     uint8_t b_frames;
     uint8_t select_frames;
     bool b_dpad_used;
-    bool select_hold_fired;
+    bool select_hold_consumed;
+    bool pending_automap;
     bool pending_use;
     bool pending_next_weapon;
     bool pending_pause;
