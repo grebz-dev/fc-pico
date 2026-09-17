@@ -11,11 +11,6 @@
 
 #include "Canvas.h"
 
-//#include "../res/rom.c"
-
-
-
-
 
 rp_system::rp_system(void) {
 }

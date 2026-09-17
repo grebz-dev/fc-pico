@@ -287,6 +287,7 @@ private:
 
 	int m_over_wait;   ///< Frames since the player died; the game-over screen follows after 180.
 	int m_clear_wait;  ///< Frames since the stage was cleared; the clear screen follows after 180.
+	uint8_t m_PlyDamFg;
 
 	uint8_t m_emobj_kind[ ENEMY_NT_SUU ]; ///< Last kind seen in each enemy slot, so models are rebuilt only on a change.
 

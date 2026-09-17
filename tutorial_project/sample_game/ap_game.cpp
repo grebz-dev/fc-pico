@@ -120,14 +120,11 @@ void ap_game::main() {
 	emu.run(0xE000 + 4 * 1, 0, 0x00, 0x00);
 
 	// 自機ダメージBGフラッシュ（BGが赤くなりっぱなしの時があるので封印）
-/*
 	if ( emu.m_RAM[DAM_BG_FLASH] > 0 ) {
-		emu.m_RAM[DAM_BG_FLASH]--;
-		sys.setPal( 0 , 0x06 );
-	} else {
-		sys.setPal( 0 , 0x0f );
+		emu.m_RAM[DAM_BG_FLASH] = 0;
+		m_PlyDamFg = 2;
 	}
-*/
+
 	// ゲームオーバー判定
 	if ( emu.m_RAM[PLY_ANM_NO] == PLY_AN_DEAD ) {
 		m_over_wait++;
@@ -184,7 +181,10 @@ void ap_game::main() {
 
 	glClear(GL_COLOR_BUFFER_BIT);
 
-
+	if ( m_PlyDamFg ) {	// ダメージフラッシュ
+		m_PlyDamFg--;
+		memset(c.bitmap(), 1, FRAME_BUF_SIZE);
+	}
 
 
 	ap.draw();

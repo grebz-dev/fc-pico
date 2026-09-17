@@ -215,7 +215,7 @@ void ap_title::main() {
 	c.drawString( "OPTION", 8*13,  8*22, _font );
 
 	c.drawString( "~IMPACT SOFT", 8*18, 8*24, _font );
-	c.drawString( "2026 V1.05",8*20, 8*26, _font );
+	c.drawString( "2026 V1.06F",8*20, 8*26, _font );
 
 	TRACE(DTR_TITLE)
 
