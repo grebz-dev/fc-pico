@@ -53,6 +53,24 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Left out: hardware acceptance still needs HR-1/I-19; strict S0 remains unresolved.
   I-04 remains the next independent implementation task.
 
+## I-15 -- co-simulation diagnostic histogram fix (2026-09-21)
+- Commits: this commit.
+- What changed: the S0 runner now filters its steady-state histogram to v1 heartbeat rows
+  (65 CPU reads and a nonzero rendering-read count). Mesen logs ordinary CPU writes and
+  startup transitions in the same trace, which previously polluted the histogram with
+  zero and cumulative counter values.
+- Verified:
+
+  ```
+  PATH="$HOME/.dotnet:$HOME/.local/bin:$PATH" DOTNET_ROOT="$HOME/.dotnet" \
+    doom/sim/mesen2/run_scenario.sh S0 --diagnostic --frames 180
+  ```
+
+  -> deterministic diagnostic run; the steady histogram is `[16453]` for the `$F000` CS1
+  decode, while DMA stops remain as expected because the hardware count discrepancy is not
+  resolved. The focused regression test and full suite pass: `353 passed, 1 skipped`.
+- Left out: strict S0 remains gated on HR-1/I-19; no protocol or count constant was changed.
+
 ## I-08 / I-09 / I-10 -- device build acceptance (2026-09-20)
 - Commits: this commit (build fix and records); the implementation landed earlier in
   `201ce2d` and `c9c4e12`.
