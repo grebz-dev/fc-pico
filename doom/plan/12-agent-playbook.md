@@ -1,6 +1,6 @@
 # 12 -- Agent playbook
 
-Operating rules for an AI coding agent (Claude Opus 5 class) executing this plan. A human
+Operating rules for an AI coding agent executing this plan. A human
 following the same rules will not go wrong either.
 
 ## Before the first task
@@ -13,7 +13,8 @@ following the same rules will not go wrong either.
 3. Read `doom/rp2040-doom/README.md` and `FCPICO-PORT.md`, then `src/pico/i_video.c`,
    `src/pico/i_system.c`, `src/pd_render.cpp` (at least `pd_end_frame`, `pd_core1_loop`),
    `src/CMakeLists.txt`.
-4. Set up the environment with `doom/tools/setup_env.sh` (once it exists; until then follow
+4. Check current tools and dependencies; historical sandbox limitations are not permanent.
+   Set up the environment with `doom/tools/setup_env.sh` (once it exists; until then follow
    08 "Toolchain pins"). Confirm `arm-none-eabi-gcc --version` reports 13.2.
 
 ## The loop
@@ -87,19 +88,19 @@ execution shows a document is wrong:
 # builds
 cmake -S doom -B build-rp2350 -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel -DPICO_BOARD=fcpico -DPICO_PLATFORM=rp2350-arm-s
 cmake --build build-rp2350
-cmake -S doom -B build-host -G Ninja -DPICO_PLATFORM=host -DFCPICO_BUILD_TESTS=ON
+cmake -S doom -B build-host -G Ninja -DFCPICO_HOST_ONLY=ON
 cmake --build build-host && ctest --test-dir build-host --output-on-failure
 python3 -m pytest doom/tests doom/sim/pioemu -q
 # layout, generated files
 python3 doom/tools/flash_layout_check.py build-rp2350/port/fcpico_doom.elf
 python3 doom/tools/gen_protocol.py --check
-# boot rom
+# planned boot rom (requires I-13)
 doom/bootrom/build.sh && md5sum doom/bootrom/out/doom.nes
-# host demo run and goldens
+# planned engine host demo run and goldens (requires engine and video integration)
 build-host/rp2040-doom/src/fcpico_doom_host --whx doom/rp2040-doom/doom1.whx --demo 1 --frames 600 --dump-stream /tmp/out
 python3 doom/tools/ppu_decode.py /tmp/out/frame_0100.bin -o /tmp/f100.png
 python3 doom/tests/goldens/check.py /tmp/out
-# co-sim
+# planned co-sim (requires I-15)
 doom/sim/mesen2/run_scenario.sh S2
 ```
 
@@ -118,3 +119,8 @@ A reviewer opening any commit on this branch can see: the task ID, the spec it i
 command that proves it, and its output. A reviewer opening `PROGRESS.md` can see exactly which
 milestone gate is next and what blocks it. A reviewer opening any document in `plan/` finds it
 consistent with the code.
+
+## Changelog
+
+- 2026-09-20: corrected the host-only build command, labelled planned verification commands,
+  and required checking current environment capabilities on resume.

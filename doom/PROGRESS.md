@@ -11,6 +11,44 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## Python development environment -- 2026-09-20
+- Created `doom/.venv` with Python 3.12.11 and installed `tools/requirements.txt`, including
+  pytest 9.1.1. The environment is ignored by Git.
+- Verified: `doom/.venv/bin/python -m pytest doom/tests doom/sim -q` ->
+  348 passed, 1 skipped (the expected PIO IRQ emulation skip).
+- Activate from the repository root with `source doom/.venv/bin/activate`, or invoke
+  `doom/.venv/bin/python` directly. This resolves the missing-pytest limitation below;
+  the ARM toolchain requirement remains 13.2.Rel1.
+
+## Status reconciliation -- 2026-09-20
+- Scope: documentation review and cleanup only; no implementation changes.
+- Reviewed: plans, agent playbook, issue index, engine-side notes, hardware requests/log,
+  current sources and commits through `e9526b9`. Engine submodule remains at `d8a20ca`;
+  its FC PICO platform contains planning notes only.
+- Verified: `cmake -S doom -B /tmp/fcpico-doom-status-host -G Ninja
+  -DFCPICO_HOST_ONLY=ON && cmake --build /tmp/fcpico-doom-status-host &&
+  ctest --test-dir /tmp/fcpico-doom-status-host --output-on-failure` -> 6/6 passed;
+  `python3 doom/tools/gen_protocol.py --check` -> clean;
+  `python3 doom/tools/check_md_links.py doom` -> no broken links.
+- Verification limits: `python3 -m pytest doom/tests doom/sim -q` cannot run because
+  pytest is not installed. The installed ARM compiler is 10.3.1, not the required
+  13.2.Rel1; Wine and .NET are absent from PATH. Earlier test counts below are historical.
+- Previously unlogged implementation: `201ce2d` added device CMake configuration,
+  the RP2350 bus backend, test-pattern firmware, serial CLI, trace capture/decoder and
+  synthetic trace tests (I-08/I-09/I-10). `c9c4e12` corrected DMA rearming and trace word
+  alignment. `e9526b9` exposed boot-ROM emulator memory and added protocol assertions.
+  These commits do not record device build acceptance. The device workflow exists only
+  at `ci/workflows/doom-device.yml`, so I-08/I-09/I-10 remain partial pending validation
+  and review against their acceptance criteria.
+- Milestone: M0 remains incomplete. No hardware session is recorded; HR-1/I-19 still gates
+  bus-model calibration and board facts. Licensing enquiry HA-1/I-18 is also pending.
+- Next: restore Python test dependencies and run the suite; finish device build/CI
+  acceptance for I-08 through I-10. I-04 (APU sequencer) is independent host work;
+  I-11/I-12 begin the engine integration path.
+- Cleanup: removed the superseded resume and September 11 review summaries. Their applied
+  corrections remain in the specifications and the historical progress entry below;
+  unresolved questions remain in `plan/11-risks.md` and the hardware requests.
+
 ## P1-T4 / P3-T1 -- host-testable controller mapper
 - Commits: this commit
 - Verified: `cmake -S doom -B build-host -G Ninja -DFCPICO_HOST_ONLY=ON && cmake --build
@@ -52,7 +90,8 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   tutorial's `rp_system.cpp`, `SysPico.asm`, `fcppu.pio`, the PiPU sources) with a throwaway
   Python script; `python3 tools/check_md_links.py` -> 54 files, 35 links, 0 broken.
 - Result: ten arithmetic and consistency defects found and corrected in 01, 02, 03, 04, 06,
-  07 and 09, plus three design gaps. The audit trail is `../REVIEW-2026-09-11.md`. The
+  07 and 09, plus three design gaps. The separate review summary was retired on 2026-09-20;
+  its original audit trail remains in Git history. The
   largest correction replaces the prior-art counting paragraph in 01 with an honest statement
   that `241 x 68 = 16388` consumed bytes and `15426` counted picture reads cannot both be
   read as bytes-per-line arithmetic, and names the cheapest hypothesis to test (CS1 may

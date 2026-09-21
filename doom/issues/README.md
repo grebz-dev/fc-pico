@@ -12,13 +12,13 @@ commands that decide whether it is done, and the traps that have already bitten 
   split it or wait.
 - **Acceptance is a command, not an opinion.** Paste the command and its output into the
   commit message or `../PROGRESS.md`.
-- **Lanes** say where an issue can be verified. **A** runs entirely on a host with gcc,
-  cmake and Python, which is what the development sandbox has. **B** cannot be verified
-  locally at all -- there is no ARM toolchain, no Wine and no .NET, and the proxy blocks the
-  downloads -- so its deliverable includes the CI job that proves it. **C** needs a person.
+- **Lanes** say what an issue needs for verification. **A** uses host C and Python tools;
+  **B** needs additional device or emulator tooling and a CI acceptance job; **C** needs a
+  person. Recheck the current environment instead of assuming old sandbox limitations
+  still apply; the latest findings are in `../PROGRESS.md`.
 - **Fix the plan as you go.** `plan/` is a specification and it has been wrong before; see
-  `../REVIEW-2026-09-11.md` for ten examples. Correct it in the same commit as the code that
-  revealed the error, and say so in the commit message.
+  the September 11 entry in `../PROGRESS.md`. Correct it in the same commit as the code
+  that revealed the error, and say so in the commit message.
 
 ## Adding a C test suite
 
@@ -46,9 +46,9 @@ again: fix the structure rather than the schedule.
 | [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only, actionable now | L | I-04 (soft) | open |
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
 | [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host only, actionable now | M | none | **done** |
-| [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- verified in CI only | M | I-06 | open |
-| [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- verified in CI only | L | I-08 | open |
-| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- verified in CI only | M | I-09 | open |
+| [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | I-06 | partial: configuration and CI template landed; acceptance pending |
+| [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | partial: backend landed; device validation pending |
+| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | partial: firmware and trace tooling landed; acceptance pending |
 | [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- partly local | M | I-08 (soft) | open |
 | [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | open |
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |
@@ -65,7 +65,8 @@ Lane A first and in parallel. I-01 through I-03, I-06 and I-07 are done. I-04 is
 self-contained C module, and I-05 follows its data format. The active host workflow from I-06
 provides the CI foundation for lane B.
 
-Then I-08 (device configuration), which unblocks I-09 and I-10; I-11 and I-12 (the engine),
+Finish device build/CI acceptance for the implementation already landed in I-08 through
+I-10 (see `../PROGRESS.md`). Then I-11 and I-12 (the engine),
 which unblock I-16 and I-17; I-13 and I-14 (the console); I-15 (co-simulation).
 
 I-18 can happen at any time and should happen soon. I-19 is the gate on everything the bus

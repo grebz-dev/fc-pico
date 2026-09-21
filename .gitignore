@@ -9,5 +9,11 @@ docs/doxygen-warnings.log
 __pycache__/
 *.pyc
 
+# Doom Python development environment
+doom/.venv/
+
 # working notes for AI assistants; internal, not part of the project
 CLAUDE.md
+
+# GNU ARM toolchain
+arm-gnu-toolchain*

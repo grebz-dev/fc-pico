@@ -4,10 +4,16 @@ Doom -- the shareware `DOOM1.WAD`, via [RP2040 Doom](https://github.com/kilograh
 (itself a Chocolate Doom derivative) -- running on the RP2350 inside an
 [FC PICO](../README.md) cartridge, displayed by, and played from, an unmodified Famicom or NES.
 
-**Status: planning.** Nothing under `doom/` compiles yet. This directory holds a development
-plan written so that an AI coding agent (Claude Opus 5 class) or a human engineer can execute it
-task by task, with automated verification at every step and hardware verification at defined
-checkpoints. The plan was produced by reading the FC PICO documentation on the
+**Status: foundations in progress; M0 is not complete.** The host bus library and controller
+mapper build and pass six C tests. The RP2350 device backend and test-pattern firmware are
+implemented, but device build acceptance and hardware calibration remain outstanding.
+The Doom engine platform, v2 boot ROM and playable firmware are still to be implemented.
+
+Start with [issues/README.md](issues/README.md) for remaining work and
+[PROGRESS.md](PROGRESS.md) for verification evidence and current environment limitations.
+The [agent playbook](plan/12-agent-playbook.md) defines the operating rules.
+
+The plan was produced by reading the FC PICO documentation on the
 `docs/utf8-and-doxygen` branch, the `tuto1_hw` firmware and `BOOTROM` sources, and the RP2040
 Doom sources on its `rp2` (RP2350-capable) branch.
 
@@ -29,7 +35,7 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 11 | [plan/11-risks.md](plan/11-risks.md) | Risk register, open questions, decisions that need a human |
 | 12 | [plan/12-agent-playbook.md](plan/12-agent-playbook.md) | Operating rules for an AI agent executing this plan |
 
-## Directory map (planned)
+## Directory map (includes planned components)
 
 | Path | Contents |
 |------|----------|
