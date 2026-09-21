@@ -23,6 +23,22 @@ def digest(path):
     return hashlib.sha256(path.read_bytes()).hexdigest()
 
 
+def steady_heartbeat_rows(writes):
+    """Return post-startup v1 heartbeat rows from the mixed mapper trace.
+
+    The trace includes ordinary CPU writes as well as heartbeat writes.  A
+    steady v1 heartbeat has one mailbox dummy/read sequence (65 CPU reads)
+    and a nonzero rendering-read count; startup transitions can report
+    partial or cumulative values and are excluded from the histogram.
+    """
+    return [
+        row for row in writes
+        if int(row["ppu_frame"]) > 120
+        and int(row["cpu_reads"]) == 65
+        and int(row["render_reads"]) > 10000
+    ]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("scenario", choices=["S0"])
@@ -79,7 +95,12 @@ def main():
         if not writes or not any(int(row["heartbeats"]) > 10 and int(row["init_actions"]) > 0 for row in writes):
             print(f"Cartridge bridge did not receive heartbeats; inspect {run}", file=sys.stderr)
             return 1
-        stable = [row for row in writes if int(row["ppu_frame"]) > 120]
+        # The mapper logs every CPU-side write, including protocol payload bytes and
+        # ordinary controller traffic.  A steady v1 heartbeat consumes exactly the
+        # mailbox plus its buffered-read dummy (65 CPU reads).  Startup transitions
+        # can report partial or cumulative values, so keep those out of the steady
+        # state histogram as well.
+        stable = steady_heartbeat_rows(writes)
         counts = sorted({int(row["last_count"]) for row in stable})
         result.update(counts_after_120=counts, final_argb_sha256=digest(run / "final.argb"),
                       trace_sha256=digest(run / "trace.csv"), mailbox_sha256=digest(run / "mailbox.csv"),
