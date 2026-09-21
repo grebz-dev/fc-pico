@@ -69,6 +69,9 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   -> deterministic diagnostic run; the steady histogram is `[16453]` for the `$F000` CS1
   decode, while DMA stops remain as expected because the hardware count discrepancy is not
   resolved. The focused regression test and full suite pass: `353 passed, 1 skipped`.
+- A second diagnostic with `--cs1-mask 0xe000` reports `[20309]`, with 20,244 rendering
+  reads and the same 65 CPU mailbox reads. Both masks remain deterministic under the
+  per-frame debugger-peek run; neither can produce the firmware's expected 15,490 count.
 - Left out: strict S0 remains gated on HR-1/I-19; no protocol or count constant was changed.
 
 ## I-08 / I-09 / I-10 -- device build acceptance (2026-09-20)
