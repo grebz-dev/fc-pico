@@ -1,13 +1,14 @@
 # CI workflow templates
 
-These are GitHub Actions workflow templates for the Doom port. The host-only lane is active at
-`.github/workflows/doom-host.yml`; its own first job verifies that the active file and this
-template remain identical. The other templates remain inactive until their build targets exist.
+These are GitHub Actions workflow templates for the Doom port. The host and device lanes are
+active at `.github/workflows/doom-host.yml` and `.github/workflows/doom-device.yml`; each
+verifies that its active file and template remain identical. The remaining templates are
+inactive for the reasons listed below.
 
 | File | Runs | Level (plan/09) |
 |------|------|-----------------|
 | `doom-host.yml` | host C tests, sanitizers, Python tests, pioemu, generated-file and link checks | L0, L1, L4 (active) |
-| `doom-device.yml` | RP2350 test-pattern firmware, layout check and build artifacts | L0 (template; acceptance pending) |
+| `doom-device.yml` | RP2350 test-pattern firmware, layout check and build artifacts | L0 (active) |
 | `doom-build.yml` | device firmware, host build + unit tests + goldens, boot ROM | L0, L1, L2, L3 |
 | `doom-sim.yml` | pioemu PIO tests, optional full-chip simulation | L4, L5 |
 | `doom-cosim.yml` | MesenCE co-simulation scenarios (nightly / manual) | L6 (template; strict S0 fails, see I-19) |
@@ -19,8 +20,10 @@ pico-sdk 2.1.1, arm-none-eabi-gcc 13.2.Rel1, picotool 2.1.1, Python 3.11, .NET 1
 ## Lane status
 
 - Host: active in `doom-host.yml` (issue I-06).
-- Device firmware: configuration, backend and test-pattern source landed (I-08 through
-  I-10); `doom-device.yml` remains a template pending build acceptance and activation.
+- Device firmware: active in `doom-device.yml`, which is byte-identical to this template and
+  checks that itself. The same commands were run locally against arm-none-eabi-gcc 13.2.Rel1
+  and pico-sdk 2.1.1: clean build, `fcpico_testpattern.uf2`, 87.6% of the flash budget free
+  (I-08 through I-10). What remains for I-09 and I-10 is hardware, not CI.
 - Boot ROM: waiting for the source tree and Linux build in issue I-13.
 - Full-chip simulation: waiting for a validated test-pattern build and simulation harness.
 - MesenCE co-simulation: the skeleton builds and runs locally (issue I-15). The template is

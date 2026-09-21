@@ -57,5 +57,5 @@ jobs:
           path: |
             build-rp2350/port/fcpico_testpattern.uf2
             build-rp2350/port/fcpico_testpattern.elf
-            build-rp2350/port/fcpico_testpattern.map
+            build-rp2350/fcpico_testpattern.elf.map
             size-report.txt
