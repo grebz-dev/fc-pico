@@ -19,30 +19,35 @@ has actually landed on the branch.
 
 | Task | State | Evidence |
 |------|-------|----------|
-| P0-T1 | not started; CI templates exist in `ci/workflows/`, host-only CMake is done (`-DFCPICO_HOST_ONLY=ON`). Device configuration is issue I-08 | -- |
+| P0-T1 | partial: device configuration and test-pattern target landed; device workflow is a template, build acceptance pending (I-08) | `201ce2d`; `../PROGRESS.md` |
 | P0-T2 | not started (issue I-11) | -- |
-| P0-T3 | host multicore/alarm shim **done** (`sim/host_shim/`, 22 symbols); the engine host build itself is issue I-12 | `ctest` target `test_host_shim` |
+| P0-T3 | host multicore/alarm shim implemented (`sim/host_shim/`, 22 symbols); the engine host build itself is issue I-12 | standalone shim harness; not included in the six host-only C tests |
 | P0-T4 | **done** | `tools/gen_protocol.py --check`; `pytest tests/protocol` (72) |
-| P0-T5 | core logic **done** (`fcbus/fcbus_core.c`, backend-independent); the device backend is issue I-09 and the test-pattern firmware issue I-10 | `ctest` (5 suites incl. `test_mailbox`, `test_rx`, `test_sync`, `test_stream`) |
+| P0-T5 | core logic **done**; device backend and test-pattern firmware landed, device acceptance pending (I-09/I-10) | five bus C tests; `201ce2d`, `c9c4e12` |
 | P0-T6 | **done** | `ctest` target `test_host_roundtrip`; ASan-clean |
-| P0-T7 | model and decoder drafted (`sim/ppubus/ppubus.py`, `tools/ppu_decode.py`), **untested and uncalibrated**; tests are issues I-01 and I-02, calibration is gated on I-19 | -- |
+| P0-T7 | model and decoder tests landed (I-01/I-02 done); hardware calibration still gated on I-19 | `tests/tools/test_ppubus.py`, `tests/tools/test_ppu_decode.py`; historical host CI verification in `../PROGRESS.md` |
 | P0-T8 | **done** (`fcppu_dir` skipped by design: pioemu has no IRQ support) | `pytest sim/pioemu` (13 passed, 1 skipped) |
 | P0-T9, P0-T10 | blocked on hardware (`HARDWARE-REQUESTS.md` HR-1; issue I-19) | -- |
-| P0-T11, P0-T12 | not started; the host half of the CI lane is issue I-06 | -- |
+| P0-T11 | co-simulation not started (I-15) | -- |
+| P0-T12 | host CI lane **done** (I-06); device and other lanes remain templates | `.github/workflows/doom-host.yml` |
 | P0-T13 | partial: `LICENSES.md` drafted; the enquiry is issue I-18 | -- |
 | P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` **done with tests** | `pytest tests/nes` |
-| P2-T2 (harness part) | **done** for the tutorial ROM: `tests/bootrom/nmi_harness.py`, measurements in 01 | `pytest tests/bootrom` (17) |
+| P2-T2 (harness part) | **done** for the tutorial ROM; memory inspection assertions added in `e9526b9` | historical measurements in 01; current Python rerun pending dependencies |
 | P2-T2 (Doom NMI) | not started (issues I-13, I-14) | -- |
 | P4-T3 (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; the device-side sequencer is issue I-04 and the remaining conversion tooling issue I-05 | `pytest tests/audio` |
+| P1-T2 (reference part) | **done** (I-03); device converter remains I-17 | reference pipeline tests; `../PROGRESS.md` |
+| P1-T4 / P3-T1 (mapper part) | **done** (I-07); engine adapter and menu mappings remain | `ctest` target `test_mapper` |
 | everything else | not started; see `../issues/README.md` for the assignable subset | -- |
 
-Whole-tree verification, as of the last commit that touched this table:
+Verification on 2026-09-20 (full evidence and environment limits in `../PROGRESS.md`):
 
 ```
-cmake -S doom -B build -DFCPICO_HOST_ONLY=ON && cmake --build build && ctest --test-dir build
-  -> 5/5 passed
-python3 -m pytest doom/tests doom/sim -q   -> 273 passed, 1 skipped
+cmake -S doom -B /tmp/fcpico-doom-status-host -G Ninja -DFCPICO_HOST_ONLY=ON
+cmake --build /tmp/fcpico-doom-status-host
+ctest --test-dir /tmp/fcpico-doom-status-host --output-on-failure -> 6/6 passed
+doom/.venv/bin/python -m pytest doom/tests doom/sim -q -> 348 passed, 1 skipped
 python3 doom/tools/gen_protocol.py --check -> clean
+python3 doom/tools/check_md_links.py doom -> no broken links
 ```
 
 ---
@@ -317,3 +322,7 @@ python3 doom/tools/gen_protocol.py --check -> clean
 | M3 | P3-T1, T2, T3, T5, T7; S3, S5 green; playtest checklist complete |
 | M4 | P4-T1..T6; S4 green; listening checklist |
 | M5 | P5-T1, T5, T6 (+ optional); soak 1 h; release artifacts |
+
+## Changelog
+
+- 2026-09-20: reconciled landed work and current verification limits with source and progress.

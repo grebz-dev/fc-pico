@@ -1,7 +1,11 @@
 # port -- firmware entry point and board glue
 
 Present now: `flash_layout.h` (the single source of truth for flash addresses; checked by
-`tools/flash_layout_check.py`). Everything else below is planned.
+`tools/flash_layout_check.py`), `main_testpattern.c`, serial `cli.c`, PIO/DMA `trace.c`,
+the device `CMakeLists.txt`, and the host-tested controller mapper in `input/`.
+Device build acceptance remains outstanding; see `../PROGRESS.md`.
+
+The remaining layout below describes planned engine and audio integration.
 
 `main.c` (clock/voltage, `stdio`, launching the engine), `flash_layout.h` (the single source
 of truth for flash addresses), `cli.c` (serial debug CLI: `stats`, `pattern`, `trace`, `dump`),
