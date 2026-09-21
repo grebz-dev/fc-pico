@@ -47,8 +47,17 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   counter constant and the 34-word stream line disagree by precisely the 4 prefetch bytes
   per line: 964 per frame, against an observed 962. This is the September 11 prior-art
   contradiction (`241 x 68 = 16388` consumed bytes versus `15426` counted picture reads)
-  with a number attached, and it now has a sharp question for I-19: does the PIO counter
-  count the two prefetch tile fetches per line, and if not, what gates it?
+  with a number attached.
+- Two of the three candidate explanations in `plan/01` can now be closed off the bench, which
+  is recorded as a sharpened HR-1 rather than as an edit to `plan/01` (I-19 owns that file).
+  The counter's qualifier is not in doubt: the tutorial configures `fcppu_rna` with
+  `sm_config_set_jmp_pin(&cn, PI_CS1_BIT)`, so the count is "CS1-low reads per frame" exactly.
+  And the cheap CS1 hypothesis is dead as an explanation of the count: a narrow `$0000`-`$0FFF`
+  decode is still needed for the 68-byte line layout, and the `$0000`-`$1FFF` column proves the
+  sprite fetches really are at `$1000`, but no address mask reaches 15426. What remains is
+  whether the PIO counter misses the dots 321-336 prefetch strobes, or the frame is not
+  consumed as 241 lines -- and one trace covering dots 241-340 of a single line distinguishes
+  them.
 - Left out, deliberately: no protocol constant was changed and no read was discarded to make
   the count check pass. Consequently the DMA stops on every heartbeat, every selected read
   returns open bus, and S0's screenshot is a white screen -- so no screenshot golden was
