@@ -11,6 +11,86 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-08 / I-09 / I-10 -- resumed acceptance verification (2026-09-21)
+- Commits: this commit; resumed verification and the device-map artifact fix.
+- Acceptance: finish the interrupted host, Python, generated-file, link and workflow checks,
+  and verify the device build produces the map at the workflow's corrected path.
+- Verified from the repository root:
+
+  ```
+  cmake -S doom -B /tmp/bh -G Ninja -DFCPICO_HOST_ONLY=ON -DFCPICO_BUILD_COSIM=ON
+  cmake --build /tmp/bh
+  ctest --test-dir /tmp/bh --output-on-failure
+  # 100% tests passed, 0 tests failed out of 7
+  doom/.venv/bin/python -m pytest doom/tests doom/sim -q
+  # 352 passed, 1 skipped in 3.59s
+  python3 doom/tools/gen_protocol.py --check
+  # exit 0
+  python3 doom/tools/check_md_links.py doom
+  # 50 file(s), 38 link(s) checked, 0 broken
+  diff doom/ci/workflows/doom-device.yml .github/workflows/doom-device.yml
+  # exit 0, identical
+  ```
+
+- Device verification, using the existing local picotool installation to avoid the SDK's
+  network fetch (the first configure attempt failed because GitHub DNS was unavailable):
+
+  ```
+  PATH="$PWD/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi/bin:$PATH" \
+  PICO_SDK_PATH="$HOME/.local/fcpico/pico-sdk" \
+  cmake -S doom -B /tmp/fcpico-doom-device-resume -G Ninja \
+      -DCMAKE_BUILD_TYPE=MinSizeRel -DPICO_BOARD=fcpico -DPICO_PLATFORM=rp2350-arm-s \
+      -Dpicotool_DIR=/tmp/fc-picotool-2.1.1/picotool
+  cmake --build /tmp/fcpico-doom-device-resume --target fcpico_testpattern
+  python3 doom/tools/flash_layout_check.py /tmp/fcpico-doom-device-resume/port/fcpico_testpattern.elf
+  ```
+
+  -> configure and all 125 build steps passed; UF2 and
+  `/tmp/fcpico-doom-device-resume/fcpico_testpattern.elf.map` exist.
+- Measurements: 64880 bytes, 87.6% flash budget free; `text 64880, data 0, bss 301868`,
+  matching the earlier independent builds.
+- Documentation: corrected the CI README introduction to acknowledge both active lanes.
+- Left out: hardware acceptance still needs HR-1/I-19; strict S0 remains unresolved.
+  I-04 remains the next independent implementation task.
+
+## I-08 / I-09 / I-10 -- device build acceptance (2026-09-20)
+- Commits: this commit (build fix and records); the implementation landed earlier in
+  `201ce2d` and `c9c4e12`.
+- Verified, with `arm-gnu-toolchain-13.2.Rel1` from the repository root and pico-sdk 2.1.1:
+
+  ```
+  export PATH="$PWD/arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi/bin:$PATH"
+  cmake -S doom -B build-rp2350 -G Ninja -DCMAKE_BUILD_TYPE=MinSizeRel \
+      -DPICO_SDK_PATH=<pico-sdk 2.1.1> -DPICO_BOARD=fcpico -DPICO_PLATFORM=rp2350-arm-s
+  cmake --build build-rp2350 --target fcpico_testpattern
+  python3 doom/tools/flash_layout_check.py build-rp2350/port/fcpico_testpattern.elf
+  ```
+
+  -> clean configure and build from an empty directory, `-Wall -Wextra -Werror`, and
+  `fcpico_testpattern.elf/.bin/.hex/.uf2` plus `fcpico_testpattern.elf.map` produced.
+  The host lane is unaffected: 7/7 ctests and 352 passed / 1 skipped as before.
+- Measurements: firmware 64880 bytes of the 524288-byte budget below `FLASH_WHX_ADDR`,
+  87.6% free; `text 64880, data 0, bss 301868`. Identical across two independent clean
+  builds.
+- Defect found and fixed: `port/CMakeLists.txt` set `-Wl,-Map` through `LINK_FLAGS`, but
+  `pico_add_extra_outputs()` appends its own `-Map` afterwards and GNU ld honours the last
+  one. The requested `port/fcpico_testpattern.map` was therefore never written, and the
+  device workflow had been uploading an artifact path that could not exist. The redundant
+  flag is gone and both copies of `doom-device.yml` now name the file the SDK actually
+  writes, `build-rp2350/fcpico_testpattern.elf.map`.
+- Correction to the status reconciliation entry below: it records that "the installed ARM
+  compiler is 10.3.1, not the required 13.2.Rel1" and that "the device workflow exists only
+  at `ci/workflows/doom-device.yml`". Both are wrong. `arm-gnu-toolchain-13.2.Rel1` has been
+  in the repository root all along (it is covered by the root `.gitignore`, which is why a
+  tree listing does not show it), `/usr/bin/arm-none-eabi-gcc` 10.3.1 is merely what is on
+  `PATH`, and `.github/workflows/doom-device.yml` is present and byte-identical to its
+  template. **Check the repository root before concluding a tool is missing.**
+- Left out: this is build acceptance only. Nothing here has run on an RP2350 or a Famicom,
+  so I-08, I-09 and I-10 stay short of their hardware-facing claims and HR-1/I-19 still
+  gates the bus model. The device lane was already active in `.github/workflows`.
+- Plan changes: `port/CMakeLists.txt`, both `doom-device.yml` copies, `ci/README.md`,
+  `issues/README.md`.
+
 ## P0-T11 / I-15 -- co-simulation runs, and it contradicts the plan (2026-09-20)
 - Commits: `87862d0` (scope), this commit; fork `grebz-dev/MesenCE-FC-PICO` at `5c2de02e`.
 - Verified: `doom/sim/mesen2/build.sh` -> MesenCE built with the FC PICO mapper, host

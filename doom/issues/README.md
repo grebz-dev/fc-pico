@@ -46,9 +46,9 @@ again: fix the structure rather than the schedule.
 | [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only, actionable now | L | I-04 (soft) | open |
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
 | [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host only, actionable now | M | none | **done** |
-| [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | I-06 | partial: configuration and CI template landed; acceptance pending |
-| [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | partial: backend landed; device validation pending |
-| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | partial: firmware and trace tooling landed; acceptance pending |
+| [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | I-06 | **done**: builds clean on 13.2.Rel1; lane active |
+| [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | partial: builds into the firmware image; on-hardware validation gated on I-19 |
+| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | partial: `fcpico_testpattern.uf2` builds, 87.6% flash free; needs a board |
 | [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- partly local | M | I-08 (soft) | open |
 | [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | open |
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |
@@ -65,8 +65,10 @@ Lane A first and in parallel. I-01 through I-03, I-06 and I-07 are done. I-04 is
 self-contained C module, and I-05 follows its data format. The active host workflow from I-06
 provides the CI foundation for lane B.
 
-Finish device build/CI acceptance for the implementation already landed in I-08 through
-I-10 (see `../PROGRESS.md`). Then I-11 and I-12 (the engine),
+Device build acceptance is finished: the firmware configures, builds clean and passes the
+flash-layout check with the pinned 13.2.Rel1 toolchain, which is in the repository root (the
+root `.gitignore` hides it from a tree listing -- look before concluding it is missing). What
+I-09 and I-10 still owe is a board, not a build. Then I-11 and I-12 (the engine),
 which unblock I-16 and I-17; I-13 and I-14 (the console); I-15 (co-simulation).
 
 I-15's tutorial-ROM/test-pattern S0 runs: the boot ROM, the NES PPU and the host bus model

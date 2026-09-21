@@ -25,5 +25,8 @@ target_compile_options(fcpico_testpattern PRIVATE -Wall -Wextra -Werror)
 pico_enable_stdio_usb(fcpico_testpattern 1)
 pico_enable_stdio_uart(fcpico_testpattern 0)
 pico_set_binary_type(fcpico_testpattern copy_to_ram)
+# pico_add_extra_outputs() also appends its own -Wl,-Map, after anything set
+# here, and GNU ld honours the last one.  So there is exactly one link map and
+# the SDK names and places it: <build root>/fcpico_testpattern.elf.map.  Setting
+# a second one here produced no file and a CI artifact path that never existed.
 pico_add_extra_outputs(fcpico_testpattern)
-set_target_properties(fcpico_testpattern PROPERTIES LINK_FLAGS "-Wl,-Map=${CMAKE_CURRENT_BINARY_DIR}/fcpico_testpattern.map")
