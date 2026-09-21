@@ -132,26 +132,29 @@ byte-order check.
 
 ## L6 -- Mesen2 co-simulation (`sim/mesen2/`)
 
-The pre-hardware gate. A cycle-accurate NES emulator (Mesen2, GPL-3, cross-platform, headless
-test runner: `Mesen --testRunner script.lua rom.nes --timeout=N`, exit code from `emu.exit(n)`)
+The pre-hardware gate. A cycle-accurate NES emulator (the user's MesenCE fork, GPL-3,
+headless test runner: `Mesen --testRunner script.lua rom.nes --timeout=N`, exit code from `emu.stop(n)`)
 runs the **real boot ROM**; a custom mapper forwards the cartridge's side of the PPU bus to the
 **firmware model** (the host build of `fcbus` + `fcvideo` + the engine, as a static library).
+S0 initially links only `fcbus` and a test-pattern adapter; it does not require the Doom
+engine or ARM compiler. The fork is `https://github.com/grebz-dev/MesenCE-FC-PICO`.
 
 ### The mapper
 
-- Source under `sim/mesen2/mapper/` and applied to a pinned Mesen2 checkout by a patch or a
-  fork submodule (`sim/mesen2/Mesen2`). Registered under a private NES 2.0 mapper number
-  (choose one Mesen does not implement, e.g. 4093; the `.nes` header of `doom.nes` is patched
-  by `tools/nes/set_mapper.py` for co-sim only -- the console image stays mapper 0).
-- `EnableCustomVramRead() -> true`; `MapperReadVram(addr, type)`: for `addr & cs1_mask`
-  (default `< 0x2000`; parameter from calibration) and rendering/CPU reads only (not debugger
+- Source in the fork submodule (`sim/mesen2/Mesen2`),
+  `Core/NES/Mappers/Homebrew/FcPico.h`, enabled by the optional `FCPICO` build flag.
+  Registered under private NES 2.0 mapper number 4093; the `.nes` header is patched
+  by `tools/nes/set_mapper.py` for co-sim only -- the console image stays mapper 0.
+- `EnableCustomVramRead() -> true`; `MapperReadVram(addr, type)`: for `(addr & cs1_mask) == 0`
+  (initial hypothesis `< 0x1000`; `0xE000` mask also selectable, neither calibrated) and rendering/CPU reads only (not debugger
   reads), return `fcpico_cart_ppu_read()`; else fall through to the base mapper's CHR RAM.
   `MapperWriteVram(addr, value)`: same predicate -> `fcpico_cart_ppu_write(value)`.
 - The cart model (`sim/cartmodel/`, C API) wraps the `fcbus` host backend: reads pull from the
   current stream buffer and count; writes go through the rx dispatcher; the heartbeat runs the
   ISR-equivalent synchronously on the emulator thread (swap buffers, count check); the engine
   runs on its own thread(s) with the same semaphores as on device. `fcpico_cart_create(mode)`
-  selects `testpattern` or `doom` (the latter needs `--whx`).
+  will select `testpattern` or `doom` (the latter needs `--whx`). The current adapter uses
+  one global `fcbus_host` instance with `fcpico_cart_init(prg, len)`; Doom mode is future work.
 
 ### Lua scenarios (`sim/mesen2/lua/`)
 
@@ -172,14 +175,47 @@ NMI's `rti`), `emu.read(address, memoryType)` with memory types `nesMemory`, `ne
 and their side-effect-free `nesDebug` / `nesPpuDebug` variants (use the debug variants for
 assertions so the model's read counter is not disturbed), `emu.setInput(table, port, subPort)`,
 `emu.getState()` (PPU scanline/cycle), `emu.takeScreenshot()` / `emu.getScreenBuffer()`,
-`emu.log(text)`, and `emu.stop(exitCode)` to end a `--testRunner` run (the command-line help
-text refers to it as `emu.exit`; use whichever the pinned build accepts, and pin the build).
+`emu.log(text)`, and `emu.stop(exitCode)` to end a `--testRunner` run. The selected fork's
+Lua API registers `stop`; its command-line help still calls it `exit`.
+
+### S0 as measured (2026-09-20, uncalibrated)
+
+The first working co-simulation run contradicts #PPU_PICTURE_COUNT, and the contradiction
+is arithmetic rather than marginal. Per frame, in steady state, with the tutorial boot ROM:
+
+| CS1 decode | selected PPU reads per frame | arithmetic | `$2007` reads |
+|------------|------------------------------|------------|---------------|
+| `addr & 0xF000 == 0` (`$0000`-`$0FFF`) | 16388 | 241 x 68 | 65 |
+| `addr & 0xE000 == 0` (`$0000`-`$1FFF`) | 20244 | 241 x 84 | 65 |
+
+68 is the background pattern fetches on one rendering line: 32 visible tiles plus the two
+tiles prefetched for the next line, 2 bytes each. 84 adds the 8 sprite fetches per line, so
+the second row also proves the tutorial's sprite pattern table is `$1000`. 241 is the 240
+visible lines plus the pre-render line. The 65 `$2007` reads are the 64-byte mailbox plus
+the buffered-read dummy, which matches #FC_COM_BUF_SIZE_V1 and the boot-ROM cycle harness.
+
+Neither decode yields #PPU_PICTURE_COUNT = 15426, and no decode can: masking selects fewer
+address lines or more, never a different number of fetches per line. What 15426 does equal,
+exactly, is `241 x 64 + 2` -- the same 241 lines counting only the 32 in-picture tiles, with
+the `+2` inside #PPU_COUNT_WINDOW. So the counter constant and the 34-word stream line
+(#VRAM_LINE_WORDS, 68 bytes) disagree by precisely the 4 prefetch bytes per line, 964 per
+frame, against an observed difference of 962.
+
+That is the September 11 prior-art contradiction, now with a number attached: 16388 consumed
+bytes is confirmed as the real per-frame read count, and 15426 is confirmed to be counting
+something narrower than every CS1 read. Which one the hardware PIO counter actually
+implements is issue I-19 and must not be guessed at here. Until it is answered the count
+check fails on every heartbeat, the DMA stops, every selected read returns open bus, and S0's
+screenshot is a white screen. Strict S0 therefore fails by design; `--diagnostic` checks only
+that the bridge is alive and that the run is reproducible.
 
 ### CI
 
-`ci/workflows/doom-cosim.yml`: nightly and `workflow_dispatch`; builds Mesen2 (Linux, .NET 8,
-`make`) with a cache keyed on the Mesen2 commit and the mapper sources; builds the cart model;
-runs S0-S5; uploads screenshots and logs; fails on any assertion. Run time target < 20 min.
+`ci/workflows/doom-cosim.yml`: builds MesenCE (Linux, .NET 10,
+`make`) with a cache keyed on the Mesen2 sources and the cart model; builds and ctests the
+cart model; runs the S0 diagnostic as a required step and strict S0 as a recorded expected
+failure; uploads screenshots and logs. S0 itself costs about 3.5 s for both determinism
+runs, so the lane's budget is the MesenCE build, not the scenarios.
 
 ## L7 -- hardware
 
@@ -255,11 +291,12 @@ class FcPico : public BaseMapper {
 };
 ```
 
-@warning The method names above (`MapperReadVram`, `EnableCustomVramRead`,
-`InternalReadVram`, `IsRealPpuRead`) come from the base class as documented, not from a
-build. `IsRealPpuRead` in particular is invented shorthand for "tell a rendering or CPU
-read from a debugger peek"; the real predicate must be found in the pinned checkout.
-P0-T11's first job is to compile the mapper and correct this sketch.
+The sketch is illustrative; the fork header above is the implementation. Source inspection
+at `20f497c` confirms `MapperReadVram`, `EnableCustomVramRead`, and `InternalReadVram`.
+`IsRealPpuRead` means `type == MemoryOperationType::PpuRenderingRead ||
+type == MemoryOperationType::Read`. `BaseMapper::DebugReadVram` bypasses the custom hook
+and reads ordinary CHR storage, so debug peeks do not advance the cartridge stream.
+The S0 runner compares actual traces and screenshots with and without repeated debug reads.
 
 `fcpico_cart_ppu_write()` runs the `fcbus` dispatcher; on a heartbeat it performs the
 ISR-equivalent synchronously (count check, buffer swap) before returning, so the next

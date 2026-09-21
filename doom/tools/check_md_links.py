@@ -3,7 +3,9 @@
 """check_md_links.py -- verify that Markdown links under a directory resolve.
 
 Walks every ``*.md`` file under <dir> (skipping any ``rp2040-doom`` and
-``Mesen2`` directories, and ``.git``) and extracts:
+``Mesen2`` directories, ``.git``, and anything Git ignores -- build trees
+carry third-party READMEs that are not this repository's documentation) and
+extracts:
 
   * inline links and images:      [text](target) / ![alt](target)
   * reference-style link targets: [label]: target   (the definition line --
@@ -35,11 +37,32 @@ any are found; exit 0 with a one-line summary otherwise.
 import argparse
 import os
 import re
+import subprocess
 import sys
 import urllib.parse
 from pathlib import Path
 
 SKIP_DIR_NAMES = {"rp2040-doom", "Mesen2", ".git"}
+
+
+def _git_ignored(directory):
+    """True if Git ignores `directory`.
+
+    Build trees are ignored but not empty: the MesenCE co-simulation build
+    unpacks NuGet packages, each with its own README full of links into a
+    source tree that was never fetched.  Those are not this repository's
+    documentation.  Without Git -- an exported tarball, say -- nothing is
+    pruned, which is the safe direction: an ignored tree that is checked
+    anyway reports links, while a tracked tree that is skipped reports
+    nothing.
+    """
+    try:
+        return subprocess.run(
+            ["git", "check-ignore", "-q", "--", str(directory)],
+            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+        ).returncode == 0
+    except (OSError, subprocess.SubprocessError):
+        return False
 
 EXTERNAL_PREFIXES = ("http://", "https://", "mailto:")
 
@@ -177,7 +200,10 @@ def broken_links_in_file(path: Path):
 def find_markdown_files(root: Path):
     found = []
     for dirpath, dirnames, filenames in os.walk(root):
-        dirnames[:] = sorted(d for d in dirnames if d not in SKIP_DIR_NAMES)
+        dirnames[:] = sorted(
+            d for d in dirnames
+            if d not in SKIP_DIR_NAMES and not _git_ignored(Path(dirpath) / d)
+        )
         for name in sorted(filenames):
             if name.endswith(".md"):
                 found.append(Path(dirpath) / name)

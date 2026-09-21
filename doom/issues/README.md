@@ -53,7 +53,7 @@ again: fix the structure rather than the schedule.
 | [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | open |
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | I-13 | open |
-| [I-15](I-15-mesen2-cosim.md) | Mesen2 co-simulation skeleton | B -- verified in CI only | L | I-06, I-12 | open |
+| [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | partial: bridge runs and is deterministic; strict S0 fails on the count contradiction, now gated on I-19 |
 | [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | I-12 | open |
 | [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | B -- depends on I-16 | L | I-03, I-16 | open |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | open |
@@ -68,6 +68,12 @@ provides the CI foundation for lane B.
 Finish device build/CI acceptance for the implementation already landed in I-08 through
 I-10 (see `../PROGRESS.md`). Then I-11 and I-12 (the engine),
 which unblock I-16 and I-17; I-13 and I-14 (the console); I-15 (co-simulation).
+
+I-15's tutorial-ROM/test-pattern S0 runs: the boot ROM, the NES PPU and the host bus model
+are wired together and reproducible. It stops where the plan stops being true -- the measured
+per-frame read count is 16388, not 15426 -- so I-19 is now the gate on I-15 as well, with a
+specific question to answer rather than a general request for a trace. I-15's later Doom
+scenarios still need I-12 and the corresponding engine/video features.
 
 I-18 can happen at any time and should happen soon. I-19 is the gate on everything the bus
 model claims, and it needs I-10 plus a person with a Famicom.

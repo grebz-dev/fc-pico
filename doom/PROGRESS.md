@@ -11,17 +11,64 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
-## P0-T11 / I-15 -- co-simulation work started (2026-09-20)
-- Baseline status/environment cleanup committed as `f07a501`.
-- Current task: MesenCE fork + host test-pattern cartridge model + tutorial-ROM S0.
-  I-12 is deferred until Doom scenarios; no ARM compiler is needed for S0.
-- Parallel work: cartridge C adapter/tests; RP2350 device build validation using the
-  downloaded root compiler; local SDL2/.NET 10 setup. Parent owns integration and status.
-- Acceptance: headless tutorial boot, real PPU accesses routed through `fcbus_host`,
-  deterministic diagnostics, strict S0 screenshot/read-count checks. Hardware calibration
-  remains required, and failures must be recorded without changing the v1 constants.
-- Plan changes: I-15 dependency corrected; MesenCE requires .NET 10. Results and exact
-  resume commands will be recorded at the next checkpoint.
+## P0-T11 / I-15 -- co-simulation runs, and it contradicts the plan (2026-09-20)
+- Commits: `87862d0` (scope), this commit; fork `grebz-dev/MesenCE-FC-PICO` at `5c2de02e`.
+- Verified: `doom/sim/mesen2/build.sh` -> MesenCE built with the FC PICO mapper, host
+  cartmodel 7/7 ctests passed; `doom/sim/mesen2/run_scenario.sh S0 --diagnostic` -> exit 0,
+  `debug_peeks_do_not_change_results: true`; `doom/sim/mesen2/run_scenario.sh S0` -> exit 1
+  with the four strict errors listed below. Re-run a third time from a clean output
+  directory: byte-identical hashes.
+- Measurements (steady state, frames 121-300, one heartbeat per frame, 170 of 179
+  post-startup heartbeats identical):
+
+  | quantity | `$0000`-`$0FFF` decode | `$0000`-`$1FFF` decode |
+  |---|---|---|
+  | selected PPU reads per frame | 16388 = 241 x 68 | 20244 = 241 x 84 |
+  | `$2007` reads per frame | 65 | 65 |
+  | reported count | 16453 | 20309 |
+  | expected `PPU_COUNT_VAL_V1` | 15490 | 15490 |
+  | heartbeats / DMA stops | 2220 / 2220 | 4264 / 4264 |
+
+  Run time: 3.5 s for the pair of determinism runs, against a < 2 min target. The MesenCE
+  build is the whole cost of the lane.
+- What this settles. The bridge is real: the unmodified tutorial PRG boots, `FP_COM_INI` is
+  answered over the tutorial's own `PF_COM_DMOD` -> `DRQ` -> `DLD` bulk transfer, and
+  debugger peeks across `$0000`-`$2FFF` on every frame change nothing, so the mapper's
+  read predicate is correct. The `$2007` side matches the specification exactly: 65 reads =
+  the 64-byte mailbox (`FC_COM_BUF_SIZE_V1`) plus the buffered-read dummy, which is also
+  what the boot-ROM cycle harness measured independently.
+- What this breaks. `PPU_PICTURE_COUNT` = 15426 cannot be the number of CS1-qualified PPU
+  reads in a frame under any decode: widening the mask adds sprite fetches (16 per line,
+  which is how the second column proves the tutorial's sprite pattern table is `$1000`),
+  and narrowing it cannot remove background fetches without removing the picture. 68 is
+  32 visible tiles plus the 2 tiles prefetched for the next line, 2 bytes each; 241 is 240
+  visible lines plus the pre-render line. 15426 is exactly `241 x 64 + 2`, the same 241
+  lines counting only the in-picture tiles, with the `+2` inside `PPU_COUNT_WINDOW`. So the
+  counter constant and the 34-word stream line disagree by precisely the 4 prefetch bytes
+  per line: 964 per frame, against an observed 962. This is the September 11 prior-art
+  contradiction (`241 x 68 = 16388` consumed bytes versus `15426` counted picture reads)
+  with a number attached, and it now has a sharp question for I-19: does the PIO counter
+  count the two prefetch tile fetches per line, and if not, what gates it?
+- Left out, deliberately: no protocol constant was changed and no read was discarded to make
+  the count check pass. Consequently the DMA stops on every heartbeat, every selected read
+  returns open bus, and S0's screenshot is a white screen -- so no screenshot golden was
+  frozen either. Strict S0 stays failing until I-19 answers the counter question.
+  Doom-mode cartridge and scenarios S1-S6 remain future work behind I-12.
+- Local toolchain, no root required (WSL2 Ubuntu 22.04, the sandbox has no sudo):
+  `curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0` installs the
+  SDK into `~/.dotnet`; `apt-get download libsdl2-dev` plus `dpkg -x` into
+  `~/.local/fcpico/sdl2` supplies the headers, after pointing that copy's `sdl2-config`
+  `prefix` at itself, adding `-I.../include` and `-I.../include/x86_64-linux-gnu` to its
+  `--cflags` (the Debian headers indirect through `SDL2/_real_SDL_config.h`) and `-L` to its
+  `--libs`, and repointing `libSDL2.so` at the system runtime `libSDL2-2.0.so.0.18.2`, which
+  was already installed. Then
+  `PATH="$HOME/.dotnet:$HOME/.local/bin:$PATH" DOTNET_ROOT="$HOME/.dotnet"`.
+- Plan changes: `plan/09-testing-ci.md` gains "S0 as measured" and a corrected CI paragraph;
+  `ci/workflows/doom-cosim.yml` is rewritten against the commands that actually work and
+  stays inactive; `ci/README.md`, `issues/I-15`, `issues/README.md` and
+  `plan/10-workplan.md` updated. `plan/01` still carries the uncorrected prior-art
+  paragraph; it is owned by neither this issue nor its author, and the measurement above is
+  the input a future correction needs.
 
 ## Python development environment -- 2026-09-20
 - Created `doom/.venv` with Python 3.12.11 and installed `tools/requirements.txt`, including

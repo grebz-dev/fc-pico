@@ -28,7 +28,7 @@ has actually landed on the branch.
 | P0-T7 | model and decoder tests landed (I-01/I-02 done); hardware calibration still gated on I-19 | `tests/tools/test_ppubus.py`, `tests/tools/test_ppu_decode.py`; historical host CI verification in `../PROGRESS.md` |
 | P0-T8 | **done** (`fcppu_dir` skipped by design: pioemu has no IRQ support) | `pytest sim/pioemu` (13 passed, 1 skipped) |
 | P0-T9, P0-T10 | blocked on hardware (`HARDWARE-REQUESTS.md` HR-1; issue I-19) | -- |
-| P0-T11 | co-simulation not started (I-15) | -- |
+| P0-T11 | bridge built and running; strict S0 blocked on the count contradiction, now measured (I-15, gates on I-19) | `sim/mesen2/build.sh`, `run_scenario.sh S0 --diagnostic`; 09 "S0 as measured" |
 | P0-T12 | host CI lane **done** (I-06); device and other lanes remain templates | `.github/workflows/doom-host.yml` |
 | P0-T13 | partial: `LICENSES.md` drafted; the enquiry is issue I-18 | -- |
 | P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` **done with tests** | `pytest tests/nes` |
@@ -148,10 +148,11 @@ python3 doom/tools/check_md_links.py doom -> no broken links
 
 ### P0-T11 Mesen2 co-simulation skeleton
 - Spec: 09 L6. Size: L. Depends: P0-T6, P0-T7
-- Steps: pin a Mesen2 commit as `sim/mesen2/Mesen2` (submodule) or a patch set; mapper
+- Steps: pin `grebz-dev/MesenCE-FC-PICO` as `sim/mesen2/Mesen2` (submodule); mapper
   `FcPico.h/.cpp` + factory registration; `sim/cartmodel/` C API over the host backend with the
   test-pattern generator; `set_mapper.py`; `sim/mesen2/build.sh`; Lua S0; `run_scenario.sh`.
 - Acceptance: S0 passes headless on Linux; run time < 2 min after the cached build.
+  A diagnostic-only run is a bring-up checkpoint, not satisfaction of S0 or hardware calibration.
 
 ### P0-T12 Activate CI
 - Spec: 09. Size: S. Depends: P0-T1..P0-T8, P0-T11 (soft: cosim can be activated later)
