@@ -1,1 +1,1 @@
-..\picotool load -x tuto1_hw.ino.uf2
+..\bin\picotool load -x tuto1_hw.ino.uf2
