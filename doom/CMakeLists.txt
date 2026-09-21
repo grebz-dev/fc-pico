@@ -8,6 +8,11 @@
 cmake_minimum_required(VERSION 3.20)
 
 option(FCPICO_HOST_ONLY "Host libraries and tests only, no pico-sdk" OFF)
+option(FCPICO_BUILD_COSIM "Build the host cartridge model for MesenCE" OFF)
+
+if(FCPICO_BUILD_COSIM AND NOT FCPICO_HOST_ONLY)
+    message(FATAL_ERROR "FCPICO_BUILD_COSIM requires FCPICO_HOST_ONLY=ON")
+endif()
 
 if(FCPICO_HOST_ONLY)
     project(fcpico_doom C)
@@ -15,10 +20,16 @@ if(FCPICO_HOST_ONLY)
     set(CMAKE_C_STANDARD 11)
     set(CMAKE_C_STANDARD_REQUIRED ON)
     set(CMAKE_C_EXTENSIONS OFF)
+    # Host libraries also link into MesenCore.so for co-simulation.
+    set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
     add_compile_options(-Wall -Wextra -Werror)
 
     add_subdirectory(fcbus)
+
+    if(FCPICO_BUILD_COSIM)
+        add_subdirectory(sim/cartmodel)
+    endif()
 
     enable_testing()
     add_subdirectory(tests)

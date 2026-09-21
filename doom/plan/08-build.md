@@ -73,7 +73,7 @@ Engine-side changes needed for this to work (documented in the fork's `FCPICO-PO
 | Python | 3.11+ with `pytest`, `numpy`, `pillow`, `py65`, `rp2040-pio-emulator` | tools and tests |
 | host gcc | 13.x | host builds, `whd_gen`, `chocolate-doom` (needs SDL2 dev packages) |
 | Wine (32-bit) | distro | `nesasm.exe` |
-| .NET SDK 8 | for Mesen2 | co-simulation only |
+| .NET SDK 10 | for the pinned MesenCE fork | co-simulation only |
 | Node 20 | optional | `rp2040js` full-chip sim (RP2040 build only) |
 
 `ci/workflows/*.yml` install exactly these. Local developers get `doom/tools/setup_env.sh`

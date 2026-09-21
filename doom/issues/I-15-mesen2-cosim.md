@@ -17,24 +17,32 @@ Build locally where dependencies are available and provide a reproducible CI run
 
 ## Current execution (2026-09-20)
 
-- Selected fork: `https://github.com/grebz-dev/MesenCE-FC-PICO`, initially pinned at
-  `20f497c9620a7f4e55b7752e1d22734f9d7492fa` under `sim/mesen2/Mesen2`.
-- The fork requires .NET 10, SDL2 and a C++17 compiler; the old .NET 8 assumption is stale.
-- Parent owns the fork mapper, runner/build scripts, integration, plans and progress.
-  Independent tasks own `sim/cartmodel/` + `tests/cartmodel/`, device build validation,
-  and local emulator tool installation respectively. Agents report verification to parent
-  before commits; shared status documents have one writer.
-- First checkpoint: compile the mapper, boot the unmodified tutorial PRG, record actual
-  selected PPU reads and mailbox traffic. Keep CS1 decode assumptions explicit.
-- Then run strict S0 (stable visible pattern and count). If the documented count/layout
-  contradiction prevents it, retain a failing strict S0 and a separate diagnostic run;
-  do not alter protocol constants or discard reads merely to make S0 green.
-- Resume from `../PROGRESS.md` for commands, commits and the last observed failure.
+- Selected fork: `https://github.com/grebz-dev/MesenCE-FC-PICO`, pinned at
+  `5c2de02e` under `sim/mesen2/Mesen2`; the mapper lives in the fork at
+  `Core/NES/Mappers/Homebrew/FcPico.h` behind the optional `FCPICO_ROOT` makefile flag.
+- Built and run locally. The toolchain is .NET SDK 10, SDL2 and a C++17 compiler; neither
+  .NET nor SDL2 needs root (see `../PROGRESS.md` for the exact no-sudo recipe).
+- **The bridge works.** The unmodified tutorial PRG boots, its `$2007` writes reach the real
+  `fcbus_host` dispatcher, `FP_COM_INI` is answered through the tutorial's own
+  `PF_COM_DMOD` -> `DRQ` -> `DLD` bulk transfer, and in steady state the run is exactly one
+  heartbeat per frame. Two runs, one with per-frame debugger peeks across `$0000`-`$2FFF`
+  and one without, produce byte-identical traces, mailboxes and screenshots: debug reads do
+  not consume cartridge bytes, which was the main thing the mapper had to get right.
+- **Strict S0 fails, and the reason is a plan defect, not a bug in this issue.** The measured
+  per-frame selected read count is 16388 (`241 x 68`) under a `$0000`-`$0FFF` decode and
+  20244 (`241 x 84`) under `$0000`-`$1FFF`, against `PPU_COUNT_VAL_V1`'s 15426 + 64. The
+  arithmetic and what it implies are written up in `plan/09-testing-ci.md`, "S0 as measured".
+  No protocol constant was changed and no read was discarded to make the check pass; the
+  count check fails every heartbeat, the DMA stops, and the screenshot is white.
+- Resolving the contradiction needs the hardware trace, which is issue I-19. Everything this
+  issue can prove without hardware is now proven; what remains here is the Doom-mode adapter
+  and scenarios S1-S6, which still need I-12.
 
 ## Specification
 
-`plan/09-testing-ci.md`, "L6 -- Mesen2 co-simulation", including the mapper sketch
-and its warning that the method names are unverified.
+`plan/09-testing-ci.md`, "L6 -- Mesen2 co-simulation". The mapper sketch there has been
+corrected against the built fork, and "S0 as measured" records what the first working run
+found.
 
 ## Owns (create or modify only these)
 
@@ -64,10 +72,24 @@ and any file another open issue lists under **Owns**.
 Every command must pass from the repository root.
 
 ```
-# then: the doom-cosim workflow runs S0 headless and green
+# toolchain on PATH: .NET SDK 10 and sdl2-config
+doom/sim/mesen2/build.sh
+doom/sim/mesen2/run_scenario.sh S0 --diagnostic   -> exit 0, deterministic
+doom/sim/mesen2/run_scenario.sh S0                -> exit 1 until I-19 is answered
 ```
+
+The diagnostic run is the bring-up checkpoint and is what `ci/workflows/doom-cosim.yml`
+requires. Strict S0 is the real acceptance and is deliberately left failing; the lane is not
+activated on a diagnostic alone.
 
 ## Traps
 
-Verify the Lua API names against the pinned checkout's `LuaDocumentation.json`. The names
-in `plan/09-testing-ci.md` were read from documentation, not from a build.
+The Lua API names are now verified against a build, not just `LuaDocumentation.json`:
+`emu.stop` ends a `--testRunner` run even though the command-line help says `emu.exit`.
+
+Two traps found the hard way and fixed in the code that is here; do not reintroduce them.
+`BaseMapper::DebugReadVram` bypasses `MapperReadVram` entirely, so a debugger peek reads
+ordinary CHR storage -- but only as long as the mapper's predicate also excludes
+`MemoryOperationType` values other than `PpuRenderingRead` and `Read`. And the adapter must
+clear the host action log before every input byte, or a ROM-page or log payload byte that
+happens to look like `FP_COM_INI` is replayed as a second init.
