@@ -2,3 +2,6 @@
 	path = doom/rp2040-doom
 	url = https://github.com/grebz-dev/rp2040-doom.git
 	branch = claude/doom-fc-pico-nes-2bb1bx
+[submodule "doom/sim/mesen2/Mesen2"]
+	path = doom/sim/mesen2/Mesen2
+	url = https://github.com/grebz-dev/MesenCE-FC-PICO.git

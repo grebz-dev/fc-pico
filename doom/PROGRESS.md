@@ -11,6 +11,18 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## P0-T11 / I-15 -- co-simulation work started (2026-09-20)
+- Baseline status/environment cleanup committed as `f07a501`.
+- Current task: MesenCE fork + host test-pattern cartridge model + tutorial-ROM S0.
+  I-12 is deferred until Doom scenarios; no ARM compiler is needed for S0.
+- Parallel work: cartridge C adapter/tests; RP2350 device build validation using the
+  downloaded root compiler; local SDL2/.NET 10 setup. Parent owns integration and status.
+- Acceptance: headless tutorial boot, real PPU accesses routed through `fcbus_host`,
+  deterministic diagnostics, strict S0 screenshot/read-count checks. Hardware calibration
+  remains required, and failures must be recorded without changing the v1 constants.
+- Plan changes: I-15 dependency corrected; MesenCE requires .NET 10. Results and exact
+  resume commands will be recorded at the next checkpoint.
+
 ## Python development environment -- 2026-09-20
 - Created `doom/.venv` with Python 3.12.11 and installed `tools/requirements.txt`, including
   pytest 9.1.1. The environment is ignored by Git.
