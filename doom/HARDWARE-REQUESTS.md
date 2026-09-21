@@ -26,6 +26,25 @@ the result. The human fills in the result section and commits; the agent then co
   4. Run `picotool info -a` on the UF2 and on the connected board; paste both.
 - Record: `doom/tests/fixtures/hw_trace_ntsc/` (dumps + `stats.txt` + `picotool.txt`), and the
   console model/revision in `HARDWARE-LOG.md`.
+- **Sharpened by co-simulation (2026-09-20).** The trace no longer has to explore the whole
+  count discrepancy; two of the three candidate explanations in `plan/01-constraints.md` can
+  be settled or have already been settled off the bench:
+  - The counter's qualifier is not in doubt. `fcppu_rna` counts a read exactly when CS1 is
+    low (`sm_config_set_jmp_pin(&cn, PI_CS1_BIT)` in the tutorial's `rp_system.cpp`), so
+    whatever the count is, it is "CS1-low reads per frame" and nothing else.
+  - The cheap CS1 hypothesis is dead as an explanation of the count. Running the real
+    tutorial ROM against a cycle-accurate PPU gives 16388 selected reads per frame for a
+    `$0000`-`$0FFF` decode and 20244 for `$0000`-`$1FFF`. A narrow decode is still needed to
+    get the 68-bytes-per-line stream layout -- the wider one proves the sprite fetches really
+    do sit at `$1000` -- but narrowing it cannot reach 15426, and no address mask can.
+  - What is left: either the PIO counter misses strobes (most likely the two-tile prefetch
+    at dots 321-336), or the frame is not consumed as 241 lines.
+  So the one measurement that decides it is **the time distribution of CS1 strobes within a
+  single line**: does a counted strobe appear for the dots 321-336 pair, and is its spacing
+  different from the dots 1-256 pairs? Please make sure at least one `trace` dump covers a
+  full scanline including dots 241-340, and note the `stats` `ppu_count` histogram verbatim
+  even when it looks boring -- a histogram centred on 15490 versus 16452 answers this on its
+  own.
 - Result: (pending)
 
 ## Human actions (not hardware)
