@@ -35,8 +35,11 @@ Build locally where dependencies are available and provide a reproducible CI run
   No protocol constant was changed and no read was discarded to make the check pass; the
   count check fails every heartbeat, the DMA stops, and the screenshot is white.
 - Resolving the contradiction needs the hardware trace, which is issue I-19. Everything this
-  issue can prove without hardware is now proven; what remains here is the Doom-mode adapter
-  and scenarios S1-S6, which still need I-12.
+  issue can prove about the bus without hardware is now proven. A focused PPU rendering trace
+  also validates the emulator fetch timeline: 241 lines x 68 background reads for the narrow
+  decode, and 16 additional sprite reads per line for the wide decode. The returned bytes
+  remain open bus, so this does not validate displayed pixels. What remains is strict S0 and
+  the Doom-mode adapter/scenarios S1-S6, which need I-12.
 
 ## Specification
 

@@ -3,9 +3,9 @@
 
 | | |
 |---|---|
-| **Lane** | B -- depends on I-16 |
+| **Lane** | A for host conversion; B for device integration |
 | **Size** | L |
-| **Depends on** | I-03, I-16 |
+| **Depends on** | I-03; I-16 only for engine frames and device integration |
 | **Work plan task** | P1-T2 / P1-T3 / P2-T5 |
 
 ## Goal
@@ -32,11 +32,15 @@ and any file another open issue lists under **Owns**.
 ## Steps
 
 1. Implement stages B to E in C, with the same table layout the reference uses.
-2. Test by differential comparison: for a corpus of frames (synthetic plus dumps from I-16),
+2. Test by differential comparison: start with synthetic frames; add dumps from I-16 when its
+   8-bit composition exists. For a corpus of frames,
    the C output must equal `tools/fcvideo_ref.py`'s output exactly.
 3. Add the palette presets from the plan, including PiPU's measured set as preset C.
 4. Wire `fcvideo_frame_begin/line_sink/frame_end` to `fcbus_core_publish()` and measure the
    conversion time; report it through the CLI from I-10.
+5. Validate the resulting stream through Mesen S2 once strict S0 is calibrated by I-19.
+   Host reference equality is the acceptance gate for the independent first slice; an
+   open-bus S0 screenshot is not pixel evidence.
 
 ## Acceptance
 
