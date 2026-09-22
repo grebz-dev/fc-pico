@@ -11,17 +11,22 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
-## I-17 -- NES presets and PLAYPAL table generation (2026-09-21)
-- Commits: this commit.
+## I-17 -- NES presets, PLAYPAL tables and flash sets (2026-09-21)
+- Commits: `21aa70e`, this commit.
 - What landed: build-selectable default and named A/B/C sub-palette presets, including the
   PiPU set, plus allocation-free C generation of the 1 KB error table, 16 KB dither LUT,
   and 16-byte NES palette from PLAYPAL palette 0. The RGB palette is the same NESDev example
   table used by the Python reference. It is called once at setup, not in the frame/ISR path.
+  All 14 mailbox palette sets match the engine's integer red/yellow/green tint arithmetic;
+  set 0 is the exact preset, and switching sets does not rebuild `err`/`lut`.
 - Verified: `ctest --test-dir /tmp/fcpico-video-host --output-on-failure` -> 9/9 passed;
-  `doom/.venv/bin/python -m pytest doom/tests doom/sim -q` -> 362 passed, 1 skipped.
+  `ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/fcpico-video-asan --output-on-failure`
+  -> 9/9 passed; `doom/.venv/bin/python -m pytest doom/tests doom/sim -q` ->
+  365 passed, 1 skipped.
   New differential cases compare all 3 preset tables to `fcvideo_ref.py` and compare a full
-  converted frame using C-generated tables to the Python stream oracle.
-- Left out: flash palette sets, engine frame input, device publication and timing, and real
+  converted frame using C-generated tables to the Python stream oracle. Further cases cover
+  all 3 presets and 14 flash sets.
+- Left out: engine frame input, device publication and timing, and real
   Mesen pixels remain open. Strict S0 is still gated by I-19's hardware count calibration.
 
 ## I-17 -- host video stream core (2026-09-21)
