@@ -11,6 +11,39 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-15 -- Mesen PPU fetch-order gate and display-first order (2026-09-21)
+- Commits: Mesen fork change and this parent commit.
+- What landed: an optional per-frame PPU rendering fetch trace in the Mesen mapper and a
+  default frame-121 trace in the S0 runner. The runner validates the scanline/cycle pattern,
+  low/high bitplane address pairs and sprite-read count, then checks that debugger peeks do
+  not change the trace. The workplan and issue index now put PPU emulation and host video
+  conversion ahead of the remaining audio assets.
+- Verified from the repository root, using the pinned local .NET/SDL toolchain:
+
+  ```
+  PATH="$HOME/.dotnet:$HOME/.local/bin:$PATH" DOTNET_ROOT="$HOME/.dotnet" doom/sim/mesen2/build.sh
+  # 8/8 C tests pass; MesenCE builds
+  PATH="$HOME/.dotnet:$HOME/.local/bin:$PATH" DOTNET_ROOT="$HOME/.dotnet" \
+    doom/sim/mesen2/run_scenario.sh S0 --diagnostic --frames 180
+  # exit 0; deterministic; 241 x 68 = 16388 background reads
+  PATH="$HOME/.dotnet:$HOME/.local/bin:$PATH" DOTNET_ROOT="$HOME/.dotnet" \
+    doom/sim/mesen2/run_scenario.sh S0 --diagnostic --frames 180 --cs1-mask 0xe000
+  # exit 0; deterministic; 16388 background + 3856 sprite = 20244 reads
+  doom/.venv/bin/python -m pytest doom/tests doom/sim -q
+  # 357 passed, 1 skipped
+  python3 doom/tools/check_md_links.py doom
+  # 50 files, 38 links, 0 broken
+  python3 doom/tools/gen_protocol.py --check
+  # exit 0
+  ```
+
+- Both fetch traces contain `$FF` for every rendering read: the measured heartbeat counts
+  are still 16453 and 20309 against v1's 15490. Strict S0 therefore remains failing, and
+  neither trace is a pixel golden or a hardware calibration. HR-1/I-19 must settle the
+  counter before the display path can make those claims.
+- Next: implement I-17's host converter stages B-E against the Python reference, then feed
+  engine frames through it after I-11/I-12/I-16. Keep co-simulation as the picture gate.
+
 ## I-04 / P4-T1 -- host APU sequencer (2026-09-21)
 - Commits: this commit.
 - What landed: an allocation-free APUS reader with loop points inside silence runs,

@@ -9,6 +9,26 @@ day of focused work), M (1-3 days), L (a week), XL (more). Dependencies are hard
 Conventions: paths are relative to `doom/` unless they start with `rp2040-doom/` (the engine
 submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes on the branch.
 
+## Current execution priority (2026-09-21)
+
+The display and PPU path is the next integration priority. Milestone IDs below still describe
+deliverables, but the actionable order is now:
+
+1. Validate the emulated PPU fetch timeline in I-15, then obtain HR-1/I-19's hardware trace
+   to calibrate the counted-read model. Keep strict S0 failing until its count, mailbox and
+   screenshot gates pass on measured behavior; the emulator trace alone cannot settle the
+   RP2350 PIO counter.
+2. Build I-17's host converter stages B-E from synthetic 320x200 frames and compare every
+   stream byte with `tools/fcvideo_ref.py`. This host slice does not wait for engine stage A.
+3. Complete I-11/I-12/I-16 so the engine produces composed 8-bit frames; feed those through
+   the converter, integrate publication to `fcbus`, and validate displayed frames in Mesen
+   S2. Freeze screenshot goldens only after strict S0 has established the PPU path.
+4. Resume the remaining audio assets and other downstream work after the display path has a
+   passing co-simulation gate. I-04/P4-T1 is already complete and needs no further core work.
+
+HR-1 can run in parallel with host converter and engine work. The count mismatch is a gate on
+claims about displayed pixels, not a reason to stall pure conversion tests.
+
 ---
 
 ## Status (kept current; details in `../PROGRESS.md`)
@@ -34,7 +54,8 @@ has actually landed on the branch.
 | P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` **done with tests** | `pytest tests/nes` |
 | P2-T2 (harness part) | **done** for the tutorial ROM; memory inspection assertions added in `e9526b9` | historical measurements in 01; current Python rerun pending dependencies |
 | P2-T2 (Doom NMI) | not started (issues I-13, I-14) | -- |
-| P4-T3 (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; the device-side sequencer is issue I-04 and the remaining conversion tooling issue I-05 | `pytest tests/audio` |
+| P4-T1 | **done** (I-04, host APU sequencer) | 8/8 host and 8/8 sanitizer C tests; `../PROGRESS.md` |
+| P4-T3 (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; remaining conversion tooling is I-05 | `pytest tests/audio` |
 | P1-T2 (reference part) | **done** (I-03); device converter remains I-17 | reference pipeline tests; `../PROGRESS.md` |
 | P1-T4 / P3-T1 (mapper part) | **done** (I-07); engine adapter and menu mappings remain | `ctest` target `test_mapper` |
 | everything else | not started; see `../issues/README.md` for the assignable subset | -- |

@@ -42,7 +42,7 @@ again: fix the structure rather than the schedule.
 | [I-01](I-01-ppubus-tests.md) | Tests for the PPU-bus model | A -- host only, actionable now | S | none | **done** |
 | [I-02](I-02-ppu-decode-tests.md) | Tests for the stream decoder | A -- host only, actionable now | S | none | **done** |
 | [I-03](I-03-fcvideo-ref-tests.md) | Tests for the reference video pipeline | A -- host only, actionable now | M | I-02 (soft) | **done** |
-| [I-04](I-04-fcapu-core.md) | APU register sequencer | A -- host only, actionable now | L | none | open |
+| [I-04](I-04-fcapu-core.md) | APU register sequencer | A -- host only | L | none | **done** |
 | [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only, actionable now | L | I-04 (soft) | open |
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
 | [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host only, actionable now | M | none | **done** |
@@ -55,15 +55,21 @@ again: fix the structure rather than the schedule.
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | I-13 | open |
 | [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | partial: bridge runs and is deterministic; strict S0 fails on the count contradiction, now gated on I-19 |
 | [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | I-12 | open |
-| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | B -- depends on I-16 | L | I-03, I-16 | open |
+| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host core now, device after I-16 | L | I-03; I-16 for device integration | open |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | open |
 | [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | I-10 | open |
 
 ## Suggested order
 
-Lane A first and in parallel. I-01 through I-03, I-06 and I-07 are done. I-04 is the next
-self-contained C module, and I-05 follows its data format. The active host workflow from I-06
-provides the CI foundation for lane B.
+The current priority is the display path: I-15's Mesen PPU fetch profile, HR-1/I-19's hardware
+trace and strict S0, then I-17's host converter core. The host core can compare against the
+Python reference with synthetic frames while I-11/I-12/I-16 establish the engine's 8-bit
+frame source. Finish I-17's device publication and Mesen S2 once those dependencies land.
+Do not accept a screenshot golden from S0's current open-bus picture. See the execution order
+in `../plan/10-workplan.md`.
+
+I-01 through I-04, I-06 and I-07 are done. I-05's remaining audio conversion work follows
+the display gate. The active host workflow from I-06 provides the CI foundation for lane B.
 
 Device build acceptance is finished: the firmware configures, builds clean and passes the
 flash-layout check with the pinned 13.2.Rel1 toolchain, which is in the repository root (the

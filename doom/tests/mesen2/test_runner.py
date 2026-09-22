@@ -4,10 +4,12 @@
 from pathlib import Path
 import sys
 
+import pytest
+
 HERE = Path(__file__).resolve()
 sys.path.insert(0, str(HERE.parents[2] / "sim" / "mesen2"))
 
-from run_scenario import steady_heartbeat_rows
+from run_scenario import steady_heartbeat_rows, summarize_fetch_trace
 
 
 def _row(frame, cpu_reads, render_reads, last_count):
@@ -28,3 +30,44 @@ def test_histogram_uses_only_steady_heartbeat_rows():
     ]
 
     assert steady_heartbeat_rows(rows) == [rows[-1]]
+
+
+def _fetch_rows(mask="0xf000"):
+    rows = []
+    for line in range(-1, 240):
+        for tile in range(32):
+            for cycle, address in ((tile * 8 + 5, 0), (tile * 8 + 7, 8)):
+                rows.append({"ppu_frame": "121", "scanline": str(line),
+                             "cycle": str(cycle), "address": str(address), "value": "255"})
+        if mask == "0xe000":
+            for tile in range(8):
+                for cycle, address in ((tile * 8 + 261, 4096), (tile * 8 + 263, 4104)):
+                    rows.append({"ppu_frame": "121", "scanline": str(line),
+                                 "cycle": str(cycle), "address": str(address), "value": "255"})
+        for cycle, address in ((325, 0), (327, 8), (333, 0), (335, 8)):
+            rows.append({"ppu_frame": "121", "scanline": str(line),
+                         "cycle": str(cycle), "address": str(address), "value": "255"})
+    return rows
+
+
+@pytest.mark.parametrize("mask,selected,sprites", [
+    ("0xf000", 16388, 0), ("0xe000", 20244, 3856)
+])
+def test_fetch_profile_checks_all_241_lines(mask, selected, sprites):
+    profile = summarize_fetch_trace(_fetch_rows(mask), 121, mask)
+    assert profile["selected_reads"] == selected
+    assert profile["sprite_reads"] == sprites
+
+
+def test_fetch_profile_rejects_wrong_prefetch_cycle():
+    rows = _fetch_rows()
+    rows[66]["cycle"] = "323"
+    with pytest.raises(ValueError, match="background fetch cycles"):
+        summarize_fetch_trace(rows, 121, "0xf000")
+
+
+def test_fetch_profile_rejects_wrong_bitplane_pair():
+    rows = _fetch_rows()
+    rows[1]["address"] = "9"
+    with pytest.raises(ValueError, match="low/high pattern"):
+        summarize_fetch_trace(rows, 121, "0xf000")

@@ -209,6 +209,15 @@ check fails on every heartbeat, the DMA stops, every selected read returns open 
 screenshot is a white screen. Strict S0 therefore fails by design; `--diagnostic` checks only
 that the bridge is alive and that the run is reproducible.
 
+The S0 runner now captures one exact rendering frame from the Mesen mapper (default frame
+121) in both its ordinary and debugger-peek runs. Its fetch-order gate checks all 241 lines:
+32 visible background bitplane pairs at cycles 5/7 through 253/255, then two prefetch pairs
+at 325/327 and 333/335. The `$0000`-`$0FFF` decode selects 16,388 background bytes; the
+`$0000`-`$1FFF` decode also selects 3,856 sprite bytes (16 x 241). Both traces are byte-for-byte
+reproducible with debugger peeks. In the present stopped-DMA state every returned rendering
+byte is `$FF`; this is a PPU timing/address validation, not a picture golden or hardware
+calibration. Keep that distinction when using the trace to guide the converter.
+
 ### CI
 
 `ci/workflows/doom-cosim.yml`: builds MesenCE (Linux, .NET 10,
