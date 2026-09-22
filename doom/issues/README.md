@@ -55,7 +55,7 @@ again: fix the structure rather than the schedule.
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | I-13 | open |
 | [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | partial: bridge runs and is deterministic; strict S0 fails on the count contradiction, now gated on I-19 |
 | [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | I-12 | open |
-| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host core now, device after I-16 | L | I-03; I-16 for device integration | open |
+| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host core now, device after I-16 | L | I-03; I-16 for device integration | partial: host core passes differential tests; tables and device integration remain |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | open |
 | [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | I-10 | open |
 
@@ -64,7 +64,8 @@ again: fix the structure rather than the schedule.
 The current priority is the display path: I-15's Mesen PPU fetch profile, HR-1/I-19's hardware
 trace and strict S0, then I-17's host converter core. The host core can compare against the
 Python reference with synthetic frames while I-11/I-12/I-16 establish the engine's 8-bit
-frame source. Finish I-17's device publication and Mesen S2 once those dependencies land.
+frame source. The host core now passes; finish table generation, device publication and
+Mesen S2 once those dependencies land.
 Do not accept a screenshot golden from S0's current open-bus picture. See the execution order
 in `../plan/10-workplan.md`.
 
@@ -74,8 +75,8 @@ the display gate. The active host workflow from I-06 provides the CI foundation 
 Device build acceptance is finished: the firmware configures, builds clean and passes the
 flash-layout check with the pinned 13.2.Rel1 toolchain, which is in the repository root (the
 root `.gitignore` hides it from a tree listing -- look before concluding it is missing). What
-I-09 and I-10 still owe is a board, not a build. Then I-11 and I-12 (the engine),
-which unblock I-16 and I-17; I-13 and I-14 (the console); I-15 (co-simulation).
+I-09 and I-10 still owe is a board, not a build. I-11 and I-12 (the engine) unblock I-16
+and the device half of I-17; I-13 and I-14 cover the console; I-15 carries co-simulation.
 
 I-15's tutorial-ROM/test-pattern S0 runs: the boot ROM, the NES PPU and the host bus model
 are wired together and reproducible. It stops where the plan stops being true -- the measured
