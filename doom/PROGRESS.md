@@ -11,6 +11,33 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-17 -- host video stream core (2026-09-21)
+- Commits: this commit.
+- What landed: a caller-owned pure-C converter for 320x200 index frames. It decimates to
+  256 columns, letterboxes to 240 lines, chooses 16x16 sub-palettes with 12% hysteresis,
+  dithers through supplied lookup tables, packs the exact 34-word/line stream including
+  next-line prefetch, and writes the v2 palette/attribute mailbox. The tables are supplied
+  by the caller; preset/PLAYPAL table generation remains to be implemented.
+- Verified from the repository root:
+
+  ```
+  cmake --build build-host && ctest --test-dir build-host --output-on-failure
+  # 9/9 passed
+  cmake --build build-asan && ASAN_OPTIONS=detect_leaks=0 \
+    ctest --test-dir build-asan --output-on-failure
+  # 9/9 passed
+  doom/.venv/bin/python -m pytest doom/tests doom/sim -q
+  # 358 passed, 1 skipped
+  ```
+
+- The differential Python test compiles the same C source as a host shared library and
+  compares complete streams and attributes against `fcvideo_ref.py` for gradient,
+  checkerboard and random frames, plus a repeated frame with hysteresis and a palette flash.
+  Its 34-word/line layout matches the independently measured Mesen fetch-order gate below.
+- Left out: device timing/publication, engine frame composition, table generation and
+  Mesen pixel goldens. S0 DMA remains stopped pending HR-1/I-19; no displayed-pixel
+  correctness claim is made from its current open-bus screenshot.
+
 ## I-15 -- Mesen PPU fetch-order gate and display-first order (2026-09-21)
 - Commits: Mesen fork change and this parent commit.
 - What landed: an optional per-frame PPU rendering fetch trace in the Mesen mapper and a

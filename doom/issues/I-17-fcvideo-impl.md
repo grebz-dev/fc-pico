@@ -14,6 +14,16 @@ This is the part that makes Doom look like Doom on four colours a block. It is p
 computation over byte arrays, so it can be finished and proven on the host and only then
 wired to the bus interrupt.
 
+## Current execution (2026-09-21)
+
+The host core under `port/video/` decimates and letterboxes 320x200 frames, chooses
+attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 34-word
+scanline stream and writes the v2 mailbox. A differential test compares the complete C stream
+and attributes against `tools/fcvideo_ref.py` for gradient, checkerboard and random frames.
+Table generation and presets, engine frame input, device publication/timing, and Mesen pixel
+acceptance remain open. Mesen S0 validates the 34-word fetch schedule, but strict S0 still
+needs I-19 before a picture golden is meaningful.
+
 ## Specification
 
 `plan/04-video.md` stages B to E; `tools/fcvideo_ref.py` is the reference this must
@@ -48,7 +58,7 @@ Every command must pass from the repository root.
 
 ```
 cmake --build build-host && ctest --test-dir build-host --output-on-failure
-python3 -m pytest doom/tests/tools -q
+python3 -m pytest doom/tests/tools doom/tests/fcvideo -q
 ```
 
 ## Traps

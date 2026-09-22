@@ -18,8 +18,9 @@ deliverables, but the actionable order is now:
    to calibrate the counted-read model. Keep strict S0 failing until its count, mailbox and
    screenshot gates pass on measured behavior; the emulator trace alone cannot settle the
    RP2350 PIO counter.
-2. Build I-17's host converter stages B-E from synthetic 320x200 frames and compare every
-   stream byte with `tools/fcvideo_ref.py`. This host slice does not wait for engine stage A.
+2. Finish I-17's host converter tables and presets. Its decimation, attribute selection,
+   dither, stream packing and differential tests already pass on synthetic 320x200 frames;
+   this host slice does not wait for engine stage A.
 3. Complete I-11/I-12/I-16 so the engine produces composed 8-bit frames; feed those through
    the converter, integrate publication to `fcbus`, and validate displayed frames in Mesen
    S2. Freeze screenshot goldens only after strict S0 has established the PPU path.
@@ -57,6 +58,7 @@ has actually landed on the branch.
 | P4-T1 | **done** (I-04, host APU sequencer) | 8/8 host and 8/8 sanitizer C tests; `../PROGRESS.md` |
 | P4-T3 (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; remaining conversion tooling is I-05 | `pytest tests/audio` |
 | P1-T2 (reference part) | **done** (I-03); device converter remains I-17 | reference pipeline tests; `../PROGRESS.md` |
+| P1-T2 / P2-T5 (host converter part) | partial: C decimation, attributes, dithering and stream packing match the Python reference; table generation and device integration remain I-17 | 9/9 host and sanitizer C tests; Python differential test; `../PROGRESS.md` |
 | P1-T4 / P3-T1 (mapper part) | **done** (I-07); engine adapter and menu mappings remain | `ctest` target `test_mapper` |
 | everything else | not started; see `../issues/README.md` for the assignable subset | -- |
 
