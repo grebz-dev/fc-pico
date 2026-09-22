@@ -7,11 +7,14 @@
 #include <stdint.h>
 
 #include "fcbus_protocol.h"
+#include "fcvideo_presets.h"
 
 #define FCVIDEO_SRC_WIDTH 320
 #define FCVIDEO_SRC_HEIGHT 200
 #define FCVIDEO_WIDTH (VRAM_TILE_COLS * 8)
 #define FCVIDEO_FRAME_BYTES (VRAM_LINES * FCVIDEO_WIDTH)
+#define FCVIDEO_ERR_BYTES (4 * 256)
+#define FCVIDEO_LUT_BYTES (4 * 256 * 16)
 
 /* err[p][idx] and lut[p][idx][bayer] are generated from PLAYPAL and the
  * selected NES preset by the host reference. They remain immutable for a
@@ -31,6 +34,13 @@ typedef struct {
 
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables);
 size_t fcvideo_sizeof(void);
+/* Build immutable palette-0 tables once, outside the frame/ISR path. RGB is
+ * the first 768 bytes of PLAYPAL; output buffers are caller-owned. */
+void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
+                          const fcvideo_preset_t *preset,
+                          uint8_t err[FCVIDEO_ERR_BYTES],
+                          uint8_t lut[FCVIDEO_LUT_BYTES],
+                          uint8_t palette[MBX_PAL_LEN]);
 void fcvideo_set_palette(fcvideo_t *video, const uint8_t palette[MBX_PAL_LEN]);
 /* Writes a full v2 buffer and returns the selected attribute table in attr.
  * Pass reset_hysteresis=true for the first frame after a palette preset change. */

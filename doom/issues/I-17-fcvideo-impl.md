@@ -20,9 +20,11 @@ The host core under `port/video/` decimates and letterboxes 320x200 frames, choo
 attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 34-word
 scanline stream and writes the v2 mailbox. A differential test compares the complete C stream
 and attributes against `tools/fcvideo_ref.py` for gradient, checkerboard and random frames.
-Table generation and presets, engine frame input, device publication/timing, and Mesen pixel
-acceptance remain open. Mesen S0 validates the 34-word fetch schedule, but strict S0 still
-needs I-19 before a picture golden is meaningful.
+Presets A/B/C and palette-0 `err`/`lut` generation now match that Python oracle byte for byte,
+including a complete stream built from C-generated tables. Engine frame input, the 14 flash
+palette sets, device publication/timing, and Mesen pixel acceptance remain open. Mesen S0
+validates the 34-word fetch schedule, but strict S0 still needs I-19 before a picture golden
+is meaningful.
 
 ## Specification
 

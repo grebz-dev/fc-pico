@@ -28,13 +28,17 @@ class Tables(ctypes.Structure):
     _fields_ = [("err", U8_PTR), ("lut", U8_PTR), ("palette", U8 * protocol.MBX_PAL_LEN)]
 
 
+class Preset(ctypes.Structure):
+    _fields_ = [("backdrop", U8), ("subpalettes", (U8 * 3) * 4)]
+
+
 @pytest.fixture(scope="module")
 def library(tmp_path_factory):
     output = tmp_path_factory.mktemp("fcvideo") / "libfcvideo.so"
     subprocess.run(
         ["cc", "-shared", "-fPIC", "-std=c11", "-O2", "-Wall", "-Wextra", "-Werror",
          "-I", str(ROOT / "doom/port/video"), "-I", str(ROOT / "doom/fcbus"),
-         str(ROOT / "doom/port/video/fcvideo.c"), "-o", str(output)],
+         str(ROOT / "doom/port/video/fcvideo.c"), "-lm", "-o", str(output)],
         check=True,
     )
     lib = ctypes.CDLL(str(output))
@@ -42,7 +46,64 @@ def library(tmp_path_factory):
     lib.fcvideo_init.argtypes = [ctypes.c_void_p, ctypes.POINTER(Tables)]
     lib.fcvideo_convert.argtypes = [ctypes.c_void_p, U8_PTR, U8_PTR, U8_PTR, ctypes.c_bool]
     lib.fcvideo_set_palette.argtypes = [ctypes.c_void_p, U8_PTR]
+    lib.fcvideo_build_tables.argtypes = [U8_PTR, ctypes.POINTER(Preset), U8_PTR,
+                                         U8_PTR, U8_PTR]
     return lib
+
+
+@pytest.mark.parametrize("preset_index,entries", [
+    (0, ((0x00, 0x10, 0x30), (0x07, 0x17, 0x27),
+         (0x06, 0x16, 0x26), (0x09, 0x19, 0x29))),
+    (1, ((0x00, 0x10, 0x30), (0x07, 0x17, 0x30),
+         (0x06, 0x16, 0x30), (0x09, 0x19, 0x30))),
+    (2, ((0x10, 0x09, 0x2D), (0x07, 0x28, 0x18),
+         (0x02, 0x01, 0x11), (0x06, 0x16, 0x3D))),
+])
+def test_c_table_builder_matches_python_reference(library, preset_index, entries):
+    presets = (Preset * 3).in_dll(library, "fcvideo_presets")
+    preset = presets[preset_index]
+    assert preset.backdrop == 0x0F
+    assert tuple(tuple(row) for row in preset.subpalettes) == entries
+
+    rng = np.random.default_rng(23)
+    playpal = rng.integers(0, 256, size=(256, 3), dtype=np.uint8)
+    playpal[0] = (0, 0, 0)
+    expected_err, expected_lut = fcvideo_ref.build_err_and_lut(playpal, entries, 0x0F)
+    err = (U8 * (4 * 256))()
+    lut = (U8 * (4 * 256 * 16))()
+    palette = (U8 * protocol.MBX_PAL_LEN)()
+    library.fcvideo_build_tables(playpal.ctypes.data_as(U8_PTR), ctypes.byref(preset),
+                                  err, lut, palette)
+    assert bytes(err) == expected_err.tobytes()
+    assert bytes(lut) == expected_lut.tobytes()
+    assert bytes(palette) == bytes([x for row in entries for x in (0x0F, *row)])
+
+
+def test_c_built_tables_feed_full_stream(library):
+    presets = (Preset * 3).in_dll(library, "fcvideo_presets")
+    preset = presets[1]
+    grey = np.arange(256, dtype=np.uint8)
+    playpal = np.ascontiguousarray(np.column_stack((grey, grey, grey)))
+    err = (U8 * (4 * 256))()
+    lut = (U8 * (4 * 256 * 16))()
+    palette = (U8 * protocol.MBX_PAL_LEN)()
+    library.fcvideo_build_tables(playpal.ctypes.data_as(U8_PTR), ctypes.byref(preset),
+                                  err, lut, palette)
+    tables = Tables(err, lut, palette)
+    storage = (ctypes.c_uint64 * ((library.fcvideo_sizeof() + 7) // 8))()
+    video = ctypes.cast(storage, ctypes.c_void_p)
+    library.fcvideo_init(video, ctypes.byref(tables))
+
+    x = np.arange(320, dtype=np.uint16)
+    frame = np.tile((x * 255 // 319).astype(np.uint8), (200, 1))
+    expected_err, expected_lut = fcvideo_ref.build_err_and_lut(
+        playpal, tuple(tuple(row) for row in preset.subpalettes), preset.backdrop
+    )
+    expected_stream, expected_attr = _reference(frame, expected_err, expected_lut,
+                                                 bytes(palette))
+    actual_stream, actual_attr = _convert(library, video, frame, True)
+    assert actual_attr == expected_attr
+    assert actual_stream == expected_stream
 
 
 def _reference(frame, err, lut, palette, previous=None):
