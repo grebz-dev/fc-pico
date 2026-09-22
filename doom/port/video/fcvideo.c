@@ -1,7 +1,83 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include "fcvideo.h"
 
+#include <math.h>
 #include <string.h>
+
+const fcvideo_preset_t fcvideo_presets[FCVIDEO_PRESET_COUNT] = {
+    {0x0f, {{0x00, 0x10, 0x30}, {0x07, 0x17, 0x27},
+            {0x06, 0x16, 0x26}, {0x09, 0x19, 0x29}}},
+    {0x0f, {{0x00, 0x10, 0x30}, {0x07, 0x17, 0x30},
+            {0x06, 0x16, 0x30}, {0x09, 0x19, 0x30}}},
+    {0x0f, {{0x10, 0x09, 0x2d}, {0x07, 0x28, 0x18},
+            {0x02, 0x01, 0x11}, {0x06, 0x16, 0x3d}}},
+};
+
+/* Same NESDev example 2C02 RGB palette as tools/fcpico/nes_palette.py. */
+static const uint8_t nes_rgb[64][3] = {
+    {128,128,128}, {0,61,166}, {0,18,176}, {68,0,150},
+    {161,0,94}, {199,0,40}, {186,6,0}, {140,23,0},
+    {92,47,0}, {16,69,0}, {5,74,0}, {0,71,46},
+    {0,65,102}, {0,0,0}, {5,5,5}, {5,5,5},
+    {199,199,199}, {0,119,255}, {33,85,255}, {130,55,250},
+    {235,47,181}, {255,41,80}, {255,34,0}, {214,50,0},
+    {196,98,0}, {53,128,0}, {5,143,0}, {0,138,85},
+    {0,153,204}, {33,33,33}, {9,9,9}, {9,9,9},
+    {255,255,255}, {15,215,255}, {105,162,255}, {212,128,255},
+    {255,69,243}, {255,97,139}, {255,136,51}, {255,156,18},
+    {250,188,32}, {159,227,14}, {43,240,53}, {12,240,164},
+    {5,251,255}, {94,94,94}, {13,13,13}, {13,13,13},
+    {255,255,255}, {166,252,255}, {179,236,255}, {218,171,235},
+    {255,168,249}, {255,171,179}, {255,210,176}, {255,239,166},
+    {255,247,156}, {215,232,149}, {166,237,175}, {162,242,218},
+    {153,255,252}, {221,221,221}, {17,17,17}, {17,17,17},
+};
+
+static const uint8_t bayer[16] = {
+    0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5,
+};
+
+void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
+                          const fcvideo_preset_t *preset,
+                          uint8_t err[FCVIDEO_ERR_BYTES],
+                          uint8_t lut[FCVIDEO_LUT_BYTES],
+                          uint8_t palette[MBX_PAL_LEN]) {
+    for (int p = 0; p < 4; p++) {
+        palette[p * 4] = preset->backdrop;
+        for (int i = 0; i < 3; i++)
+            palette[p * 4 + i + 1] = preset->subpalettes[p][i];
+
+        for (int index = 0; index < 256; index++) {
+            double best_dist2 = INFINITY;
+            int best_a = 0, best_b = 0, best_ratio = 0;
+            /* Loop order is the Python oracle's flattened (a,b,r) order;
+             * a tie therefore keeps its first candidate. */
+            for (int a = 0; a < 4; a++) {
+                for (int b = 0; b < 4; b++) {
+                    for (int ratio = 0; ratio <= 16; ratio++) {
+                        double dist2 = 0;
+                        for (int channel = 0; channel < 3; channel++) {
+                            double mixed = (nes_rgb[palette[p * 4 + a]][channel] * (16 - ratio)
+                                            + nes_rgb[palette[p * 4 + b]][channel] * ratio) / 16.0;
+                            double diff = mixed - playpal_rgb[index * 3 + channel];
+                            dist2 += diff * diff;
+                        }
+                        if (dist2 < best_dist2) {
+                            best_dist2 = dist2;
+                            best_a = a;
+                            best_b = b;
+                            best_ratio = ratio;
+                        }
+                    }
+                }
+            }
+            err[p * 256 + index] = (uint8_t)fmin(255.0, nearbyint(sqrt(best_dist2 / 3.0)));
+            for (int phase = 0; phase < 16; phase++)
+                lut[(p * 256 + index) * 16 + phase] =
+                    (uint8_t)(bayer[phase] < best_ratio ? best_b : best_a);
+        }
+    }
+}
 
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables) {
     memset(video, 0, sizeof(*video));

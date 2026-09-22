@@ -11,6 +11,19 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-17 -- NES presets and PLAYPAL table generation (2026-09-21)
+- Commits: this commit.
+- What landed: build-selectable default and named A/B/C sub-palette presets, including the
+  PiPU set, plus allocation-free C generation of the 1 KB error table, 16 KB dither LUT,
+  and 16-byte NES palette from PLAYPAL palette 0. The RGB palette is the same NESDev example
+  table used by the Python reference. It is called once at setup, not in the frame/ISR path.
+- Verified: `ctest --test-dir /tmp/fcpico-video-host --output-on-failure` -> 9/9 passed;
+  `doom/.venv/bin/python -m pytest doom/tests doom/sim -q` -> 362 passed, 1 skipped.
+  New differential cases compare all 3 preset tables to `fcvideo_ref.py` and compare a full
+  converted frame using C-generated tables to the Python stream oracle.
+- Left out: flash palette sets, engine frame input, device publication and timing, and real
+  Mesen pixels remain open. Strict S0 is still gated by I-19's hardware count calibration.
+
 ## I-17 -- host video stream core (2026-09-21)
 - Commits: this commit.
 - What landed: a caller-owned pure-C converter for 320x200 index frames. It decimates to
