@@ -11,6 +11,33 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-04 / P4-T1 -- host APU sequencer (2026-09-21)
+- Commits: this commit.
+- What landed: an allocation-free APUS reader with loop points inside silence runs,
+  music and three SFX voices, priority-based voice replacement, DPCM triggers, pulse/noise
+  steals and restoration, pause/resume, four-level music volume, the note-retrigger rule,
+  and a 64-entry deferred write queue. A caller-supplied callback owns mailbox writes and
+  its terminator. The sequencer limits itself to `APU_PAIRS_MAX_V2` pairs per heartbeat.
+- Verified from the repository root:
+
+  ```
+  cmake -S doom -B build-host -G Ninja -DFCPICO_HOST_ONLY=ON
+  cmake --build build-host
+  ctest --test-dir build-host --output-on-failure
+  # 8/8 passed, including test_sequencer (179 checks)
+  cmake -S doom -B build-asan -G Ninja -DFCPICO_HOST_ONLY=ON \
+    -DCMAKE_C_FLAGS="-fsanitize=address,undefined -g"
+  cmake --build build-asan
+  ASAN_OPTIONS=detect_leaks=0 ctest --test-dir build-asan --output-on-failure
+  # 8/8 passed
+  ```
+
+- The unmodified sanitizer command ran every test body successfully but LeakSanitizer
+  failed at process exit under this environment's ptrace restriction. Disabling only leak
+  detection gave the clean ASan/UBSan run above; this module performs no allocation.
+- Left out: engine sound/music adapters and asset conversion remain P4-T2/P4-T3. No
+  device or listening claim is made here.
+
 ## I-08 / I-09 / I-10 -- resumed acceptance verification (2026-09-21)
 - Commits: this commit; resumed verification and the device-map artifact fix.
 - Acceptance: finish the interrupted host, Python, generated-file, link and workflow checks,
