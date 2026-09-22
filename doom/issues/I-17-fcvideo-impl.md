@@ -21,8 +21,9 @@ attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs t
 scanline stream and writes the v2 mailbox. A differential test compares the complete C stream
 and attributes against `tools/fcvideo_ref.py` for gradient, checkerboard and random frames.
 Presets A/B/C and palette-0 `err`/`lut` generation now match that Python oracle byte for byte,
-including a complete stream built from C-generated tables. Engine frame input, the 14 flash
-palette sets, device publication/timing, and Mesen pixel acceptance remain open. Mesen S0
+including a complete stream built from C-generated tables. The 14 synthetic flash palette
+sets match the engine's red/yellow/green tint arithmetic. Engine frame input, device
+publication/timing, and Mesen pixel acceptance remain open. Mesen S0
 validates the 34-word fetch schedule, but strict S0 still needs I-19 before a picture golden
 is meaningful.
 

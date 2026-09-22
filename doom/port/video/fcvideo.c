@@ -79,6 +79,48 @@ void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
     }
 }
 
+void fcvideo_build_palette_sets(const fcvideo_preset_t *preset,
+                                uint8_t sets[FCVIDEO_PALETTE_SET_COUNT][MBX_PAL_LEN]) {
+    for (int p = 0; p < 4; p++) {
+        sets[0][p * 4] = preset->backdrop;
+        for (int i = 0; i < 3; i++)
+            sets[0][p * 4 + i + 1] = preset->subpalettes[p][i];
+    }
+    for (int set = 1; set < FCVIDEO_PALETTE_SET_COUNT; set++) {
+        int mul, target[3];
+        if (set < 9) {
+            mul = set * 65536 / 9;
+            target[0] = 255; target[1] = 0; target[2] = 0;
+        } else if (set < 13) {
+            mul = (set - 8) * 65536 / 8;
+            target[0] = 215; target[1] = 186; target[2] = 69;
+        } else {
+            mul = 65536 / 8;
+            target[0] = 0; target[1] = 256; target[2] = 0;
+        }
+        for (int i = 0; i < MBX_PAL_LEN; i++) {
+            const uint8_t *anchor = nes_rgb[sets[0][i]];
+            int tinted[3];
+            for (int c = 0; c < 3; c++)
+                tinted[c] = anchor[c] + (((target[c] - anchor[c]) * mul) >> 16);
+            uint32_t best_dist2 = UINT32_MAX;
+            uint8_t best_index = 0;
+            for (uint8_t candidate = 0; candidate < 64; candidate++) {
+                uint32_t dist2 = 0;
+                for (int c = 0; c < 3; c++) {
+                    int diff = (int)nes_rgb[candidate][c] - tinted[c];
+                    dist2 += (uint32_t)(diff * diff);
+                }
+                if (dist2 < best_dist2) {
+                    best_dist2 = dist2;
+                    best_index = candidate;
+                }
+            }
+            sets[set][i] = best_index;
+        }
+    }
+}
+
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables) {
     memset(video, 0, sizeof(*video));
     video->tables = *tables;

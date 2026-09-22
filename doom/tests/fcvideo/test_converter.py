@@ -10,7 +10,7 @@ import subprocess
 import numpy as np
 import pytest
 
-from fcpico import protocol, stream
+from fcpico import nes_palette, protocol, stream
 import fcvideo_ref
 
 
@@ -48,6 +48,7 @@ def library(tmp_path_factory):
     lib.fcvideo_set_palette.argtypes = [ctypes.c_void_p, U8_PTR]
     lib.fcvideo_build_tables.argtypes = [U8_PTR, ctypes.POINTER(Preset), U8_PTR,
                                          U8_PTR, U8_PTR]
+    lib.fcvideo_build_palette_sets.argtypes = [ctypes.POINTER(Preset), U8_PTR]
     return lib
 
 
@@ -104,6 +105,30 @@ def test_c_built_tables_feed_full_stream(library):
     actual_stream, actual_attr = _convert(library, video, frame, True)
     assert actual_attr == expected_attr
     assert actual_stream == expected_stream
+
+
+@pytest.mark.parametrize("preset_index", range(3))
+def test_synthetic_flash_palette_sets_match_engine_tint(library, preset_index):
+    presets = (Preset * 3).in_dll(library, "fcvideo_presets")
+    preset = presets[preset_index]
+    sets = (U8 * (14 * protocol.MBX_PAL_LEN))()
+    library.fcvideo_build_palette_sets(ctypes.byref(preset), sets)
+    base = [x for row in preset.subpalettes for x in (preset.backdrop, *row)]
+    assert bytes(sets[:16]) == bytes(base)
+    for index in range(1, 14):
+        if index < 9:
+            mul, target = index * 65536 // 9, (255, 0, 0)
+        elif index < 13:
+            mul, target = (index - 8) * 65536 // 8, (215, 186, 69)
+        else:
+            mul, target = 65536 // 8, (0, 256, 0)
+        expected = []
+        for entry in base:
+            anchor = nes_palette.NES_PALETTE_RGB[entry]
+            rgb = [c + ((t - c) * mul // 65536) for c, t in zip(anchor, target)]
+            expected.append(nes_palette.nearest_nes_color(rgb))
+        assert bytes(sets[index * 16:(index + 1) * 16]) == bytes(expected)
+        assert len({sets[index * 16 + offset] for offset in (0, 4, 8, 12)}) == 1
 
 
 def _reference(frame, err, lut, palette, previous=None):

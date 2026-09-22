@@ -15,6 +15,7 @@
 #define FCVIDEO_FRAME_BYTES (VRAM_LINES * FCVIDEO_WIDTH)
 #define FCVIDEO_ERR_BYTES (4 * 256)
 #define FCVIDEO_LUT_BYTES (4 * 256 * 16)
+#define FCVIDEO_PALETTE_SET_COUNT 14
 
 /* err[p][idx] and lut[p][idx][bayer] are generated from PLAYPAL and the
  * selected NES preset by the host reference. They remain immutable for a
@@ -41,6 +42,11 @@ void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
                           uint8_t err[FCVIDEO_ERR_BYTES],
                           uint8_t lut[FCVIDEO_LUT_BYTES],
                           uint8_t palette[MBX_PAL_LEN]);
+/* Generate the engine's synthetic red/yellow/green flash sets by tinting the
+ * preset's NES RGB anchors. Set 0 is the exact untinted preset; callers can
+ * select another set with fcvideo_set_palette without rebuilding err/lut. */
+void fcvideo_build_palette_sets(const fcvideo_preset_t *preset,
+                                uint8_t sets[FCVIDEO_PALETTE_SET_COUNT][MBX_PAL_LEN]);
 void fcvideo_set_palette(fcvideo_t *video, const uint8_t palette[MBX_PAL_LEN]);
 /* Writes a full v2 buffer and returns the selected attribute table in attr.
  * Pass reset_hysteresis=true for the first frame after a palette preset change. */
