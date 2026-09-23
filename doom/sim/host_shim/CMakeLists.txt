@@ -11,11 +11,11 @@
 
 cmake_minimum_required(VERSION 3.20)
 
-include(${CMAKE_CURRENT_SOURCE_DIR}/pico_sdk_import.cmake)
-
-project(host_shim C CXX ASM)
-
-pico_sdk_init()
+if(NOT FCPICO_SUPERBUILD)
+    include(${CMAKE_CURRENT_SOURCE_DIR}/pico_sdk_import.cmake)
+    project(host_shim C CXX ASM)
+    pico_sdk_init()
+endif()
 
 if (NOT PICO_PLATFORM STREQUAL "host")
     message(FATAL_ERROR "doom/sim/host_shim only supports PICO_PLATFORM=host (got '${PICO_PLATFORM}')")
@@ -27,6 +27,7 @@ find_package(Threads REQUIRED)
 add_library(host_shim STATIC
         multicore_host.c
         alarm_host.c
+        runtime_host.c
 )
 
 target_include_directories(host_shim PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
@@ -59,6 +60,7 @@ add_test(NAME host_shim_test COMMAND host_shim_test)
 set_source_files_properties(
         multicore_host.c
         alarm_host.c
+        runtime_host.c
         test_host_shim.c
         PROPERTIES COMPILE_OPTIONS "-Wall;-Wextra;-Werror"
 )

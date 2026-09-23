@@ -26,6 +26,7 @@ the README's summary of them.
 | `semaphore_t` (`pico/sem.h`) | Yes -- common code (`src/common/pico_sync/sem.c`), platform-independent. Builds and links on host with no changes. | -- | Not touched -- but see "hardware_sync's dummy spin lock" below for a caveat about using it across the pthreads this shim creates. |
 | Spin locks / `hardware_sync` | Yes, in the sense that it builds and every function returns something (`src/host/hardware_sync/sync_core0_only.c`). See the caveat below for what that implementation actually does. | -- | Not touched -- flagged as a limitation instead; see below. |
 | `hardware_gpio`, `hardware_irq`, `pico_stdlib`, `pico_time` (aggregation) | Yes, all build cleanly for `PICO_PLATFORM=host` with gcc 13 / pico-sdk 2.1.1; no workarounds were needed. | -- | Not touched. |
+| Hard assertions | The host SDK declares `hard_assertion_failure()` in `pico/assert.h`, but its `pico_runtime` interface target does not compile `src/host/pico_runtime/runtime.c`. | Engine code using `hard_assert()` fails to link. | `runtime_host.c` aborts with a diagnostic on a failed assertion. |
 
 ### Q3: the exact list of SDK host functions missing at link time before this shim
 
@@ -199,8 +200,10 @@ parameter) and would break a target-wide `-Werror`.
 
 | File | Purpose |
 |---|---|
-| `CMakeLists.txt` | Standalone project: imports pico-sdk, builds the `host_shim` static library and the `host_shim_test` executable (registered with `add_test`). |
+| `CMakeLists.txt` | Standalone project or parent-superbuild component: builds `host_shim` and `host_shim_test`. |
 | `pico_sdk_import.cmake` | Unmodified copy of `pico-sdk/external/pico_sdk_import.cmake`. |
 | `multicore_host.c` | `pico/multicore.h` implementation (pthreads) + the `get_core_num()` override. |
 | `alarm_host.c` / `alarm_host.h` | `add_alarm_in_us`, `cancel_alarm`, `add_repeating_timer_us`/`_ms`, `host_cancel_repeating_timer` (background-pthread scheduler). |
+| `runtime_host.c` | Host definition of pico-sdk's declared but unlinked `hard_assertion_failure()`. |
 | `test_host_shim.c` | Launches core 1; a 1000-word-each-way FIFO round trip with checksums; a single-threaded then cross-thread `semaphore_t` exercise; `time_us_64()`/`sleep_ms()`; a repeating-timer fire-count check. Nonzero exit on any failure. |
+| `test_engine_determinism.py` | Parent-superbuild test: two 600-frame DEMO1 indexed-view runs, byte-for-byte comparison and changing-frame check. |
