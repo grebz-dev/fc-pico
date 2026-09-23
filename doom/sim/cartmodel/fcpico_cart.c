@@ -5,6 +5,8 @@
  */
 #include "fcpico_cart.h"
 
+#include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "fcbus_host.h"
@@ -14,6 +16,33 @@ static bool g_initialized;
 static const uint8_t *g_prg;
 static fcpico_cart_metrics_t g_metrics;
 static fcpico_testpattern_t g_pattern_app;
+static uint8_t g_stream[VRAM_BUF_BYTES_V2];
+static bool g_stream_enabled;
+
+static bool load_stream(const char *path) {
+    FILE *input = fopen(path, "rb");
+    if (input == NULL) return false;
+    bool valid = fread(g_stream, 1, sizeof g_stream, input) == sizeof g_stream &&
+                 fgetc(input) == EOF;
+    if (fclose(input) != 0) valid = false;
+    if (!valid) return false;
+    const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V2;
+    return mailbox[MBX_MAGIC] == PF_MAGIC_NO &&
+           (mailbox[MBX_FLAGS] & (MBX_FLAG_V2 | MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID)) ==
+               (MBX_FLAG_V2 | MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID);
+}
+
+static bool publish_stream(bool init) {
+    fcbus_core_t *core = fcbus_host_core();
+    if (!fcbus_core_back_is_free(core)) return false;
+    const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V2;
+    memcpy(fcbus_core_stream_back(core), g_stream, sizeof g_stream);
+    if (init) fcbus_core_request_data_mode(core);
+    fcbus_core_palette(core, mailbox + MBX_PAL);
+    fcbus_core_attr_table(core, mailbox + MBX_ATTR);
+    fcbus_core_publish(core);
+    return true;
+}
 
 static void publish_pattern(uint32_t frame) {
     (void)frame;
@@ -23,7 +52,9 @@ static void publish_pattern(uint32_t frame) {
 }
 
 static void handle_init(uint8_t stage) {
-    if (fcpico_testpattern_console_init(&g_pattern_app, stage, 0)) {
+    if (g_stream_enabled) {
+        (void)publish_stream(true);
+    } else if (fcpico_testpattern_console_init(&g_pattern_app, stage, 0)) {
         g_metrics.pattern_frames++;
     }
     g_metrics.init_actions++;
@@ -36,6 +67,7 @@ static void reset_link(void) {
         .proto_default = FCBUS_PROTO_V1,
     };
     fcbus_host_init(&config);
+    fcbus_host_set_bulk_lead_byte(g_stream_enabled);
     fcpico_testpattern_init(&g_pattern_app, fcbus_host_core());
     memset(&g_metrics, 0, sizeof g_metrics);
 }
@@ -82,6 +114,9 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
         return false;
     }
 
+    const char *stream_path = getenv("FCPICO_STREAM_FILE");
+    g_stream_enabled = stream_path != NULL && stream_path[0] != '\0';
+    if (g_stream_enabled && !load_stream(stream_path)) return false;
     g_prg = prg;
     reset_link();
     g_initialized = true;
@@ -90,6 +125,7 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
 
 void fcpico_cart_shutdown(void) {
     g_initialized = false;
+    g_stream_enabled = false;
     g_prg = NULL;
     memset(&g_metrics, 0, sizeof g_metrics);
 }
@@ -123,7 +159,11 @@ void fcpico_cart_ppu_write(uint8_t value) {
      * fills the now-free back buffer for the next one.  Do the same on this
      * emulator thread; no count, state, or stream layout is adjusted here. */
     if (fcbus_core_stats(fcbus_host_core())->frames != frames_before) {
-        publish_pattern(fcbus_core_stats(fcbus_host_core())->frames);
+        if (g_stream_enabled) {
+            (void)publish_stream(false);
+        } else {
+            publish_pattern(fcbus_core_stats(fcbus_host_core())->frames);
+        }
     }
 }
 

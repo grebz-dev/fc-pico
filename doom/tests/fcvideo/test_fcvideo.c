@@ -44,6 +44,15 @@ static void test_solid_frame_and_linear_stride(void) {
     memcpy(first_stream, stream, sizeof(stream));
     fcvideo_convert(&video, source, stream, attr, false);
     CHECK_MEM(stream, first_stream, sizeof(stream));
+
+    /* Device scanlines must produce the same public NES stream without a
+     * second 320x200 source buffer. */
+    fcvideo_frame_begin(&video);
+    for (int y = 0; y < FCVIDEO_SRC_HEIGHT; y++) {
+        fcvideo_push_line(&video, y, source + y * FCVIDEO_SRC_WIDTH);
+    }
+    fcvideo_convert_staged(&video, stream, attr, false);
+    CHECK_MEM(stream, first_stream, sizeof(stream));
 }
 
 int main(void) {

@@ -16,6 +16,13 @@ wired to the bus interrupt.
 
 ## Current execution (2026-09-21)
 
+Update 2026-09-23: real composed DEMO1 streams match the Python oracle and a
+fixed frame now passes Mesen D0 at the visible-frame and console palette/attribute
+RAM boundary. The RP2350 candidate converts composed scanlines and publishes to
+`fcbus`; its ELF/UF2 passes flash and RAM headroom checks, but hardware boot and
+conversion timing are unmeasured. D0 uses tutorial v1; Doom-ROM S2 and v2 NMI
+timing remain open. See `../sim/mesen2/DOOM-FRAME.md`.
+
 The host core under `port/video/` decimates and letterboxes 320x200 frames, chooses
 attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 32-word
 scanline stream and writes the v2 mailbox. A differential test compares the complete C stream

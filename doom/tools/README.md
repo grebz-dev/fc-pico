@@ -4,6 +4,7 @@
 |------|------|---------|
 | `gen_protocol.py` | P0-T4 | `fcbus/fcbus_protocol.h` -> `bootrom/gen/protocol.inc`, `tools/fcpico/protocol.py`; `--check` |
 | `flash_layout_check.py` | P0-T1 | ELF flash end vs `port/flash_layout.h` |
+| `check_device_ram.py` | P1-T3 | ELF post-zone RP2350 heap-margin gate |
 | `ppu_decode.py` | P0-T7 | stream + mailbox -> PNG (pure-Python PPU reconstruction) |
 | `fcvideo_ref.py` | P1-T2 | reference implementation of decimation, block cost, dither, pack |
 | `trace_decode.py` | P0-T9 | PIO sampler dump -> per-line strobe counts, `/RD` width histogram |
