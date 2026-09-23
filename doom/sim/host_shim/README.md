@@ -206,4 +206,4 @@ parameter) and would break a target-wide `-Werror`.
 | `alarm_host.c` / `alarm_host.h` | `add_alarm_in_us`, `cancel_alarm`, `add_repeating_timer_us`/`_ms`, `host_cancel_repeating_timer` (background-pthread scheduler). |
 | `runtime_host.c` | Host definition of pico-sdk's declared but unlinked `hard_assertion_failure()`. |
 | `test_host_shim.c` | Launches core 1; a 1000-word-each-way FIFO round trip with checksums; a single-threaded then cross-thread `semaphore_t` exercise; `time_us_64()`/`sleep_ms()`; a repeating-timer fire-count check. Nonzero exit on any failure. |
-| `test_engine_determinism.py` | Parent-superbuild test: two 600-frame DEMO1 indexed-view runs, byte-for-byte comparison and changing-frame check. |
+| `test_engine_determinism.py` | Parent-superbuild test: two 600-frame DEMO1 composed-indexed and NES-stream runs, byte-for-byte comparison and changing-frame check. |
