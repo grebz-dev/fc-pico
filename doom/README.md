@@ -7,7 +7,8 @@ Doom -- the shareware `DOOM1.WAD`, via [RP2040 Doom](https://github.com/kilograh
 **Status: foundations in progress; M0 is not complete.** The host bus, controller, APU and
 video stream cores build and pass ten C tests. The RP2350 test-pattern firmware displays
 patterns on an NES-001, and the PPU bus model is calibrated to a complete hardware trace.
-The Doom engine platform, v2 boot ROM and playable firmware are still to be implemented.
+The Doom engine platform skeleton links for RP2350; frame composition, the v2 boot ROM
+and playable firmware are still to be implemented.
 Mesen co-simulation passes strict S0 with a reviewed test-pattern picture golden; Doom
 picture validation awaits the engine frame path.
 

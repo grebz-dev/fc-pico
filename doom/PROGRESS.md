@@ -11,6 +11,22 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-11 / P0-T2 -- RP2350 engine platform skeleton (2026-09-23)
+- Commits: engine submodule `0c27c1ce` and this parent integration commit.
+- What landed: optional parent superbuild integration, isolated `common_fcpico` platform
+  sources, a silent/no-display engine adapter, a USB serial bring-up marker, and a
+  `doom_tiny_fcpico` target producing `fcpico_doom.elf`. The FC PICO build omits VGA/I2S
+  libraries; shared engine changes only guard behavior that assumed Pico networking,
+  ENDOOM or the VGA audio module. The device bus target now compiles its Pico SDK sources
+  once per firmware, which also preserves the test-pattern build.
+- Verified: GCC 13.2.Rel1 `cmake --build /tmp/fcpico-engine-device-13 --target
+  doom_tiny_fcpico -j 4` links; `flash_layout_check.py` passes with 237,896 bytes used
+  and 286,392 free before WHX. The existing RP2350 test-pattern target rebuilds, all
+  10 host C suites pass, and standalone Pico host engine configuration succeeds.
+- Left out: on-console boot to `D_DoomMain` is unverified. The adapters do not yet
+  initialise the cartridge bus, compose 8-bit frames, read controllers or play sound.
+  Native `chocolate-doom` configuration needs SDL2 development packages not installed here.
+
 ## I-19 / P0-T9 / P0-T10 / P0-T11 -- hardware-calibrated PPU path (2026-09-22)
 - Commits: Mesen submodule calibration commit and this commit.
 - Hardware evidence: complete NES-001 trace 6 decodes to 66 selected reads on pre-render
