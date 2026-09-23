@@ -44,13 +44,14 @@ KEY_LEFT = 0x02
 KEY_RIGHT = 0x01
 
 # --- stream: frame stream geometry (empirical, from the tutorial) ---
-PPU_PICTURE_COUNT = 15426  # qualifying PPU reads consumed before the mailbox (empirical)
+PPU_PICTURE_COUNT = 15426  # 66 pre-render + 240*64 visible qualifying reads
+PPU_COUNTER_REPORT_BIAS = 1  # fcppu_rna reports the zero-based index of the last read
 PPU_COUNT_WINDOW = 2  # +/- reads tolerated before the DMA is stopped
 PPU_COUNT_VAL_V1 = 15490  # 15490
-VRAM_LINE_WORDS = 34  # 16-bit words per scanline in the stream buffer
+VRAM_LINE_WORDS = 34  # historical convVram() batch size; not the selected-read stride
 VRAM_HEAD_WORDS = 31  # word index of line 0, tile 0
 VRAM_LINES = 240
-VRAM_TILE_COLS = 32  # visible tiles per line; words 32,33 = next line's first 16 px
+VRAM_TILE_COLS = 32  # selected 16-bit words advanced per visible scanline
 VRAM_BUF_BYTES_V1 = 17344  # 17344, DMA length in bytes
 VRAM_MAILBOX_OFF_V1 = 15426  # 15426: mailbox byte offset in the buffer
 FCBUS_VER_SYNC_W0 = 0x21212121  # "!!!!" pushed before the version stamp
@@ -94,7 +95,7 @@ SECTIONS: dict[str, list[str]] = {
     'mailbox-v1': ['PF_MAGIC_NO', 'PF_COM_NONE', 'PF_COM_DMOD', 'PF_COM_FDIN', 'PF_COM_FDOT', 'PF_COM_SE', 'PF_COM_BGM', 'PF_COM_VRAM', 'PF_DAT_VRAM', 'PF_DAT_RAM', 'PF_DAT_STEP', 'FC_COM_BUF_SIZE16', 'FC_COM_BUF_SIZE_V1', 'PICO_SNDREG', 'PICO_APU_BUF_SIZE', 'APU_PAIRS_MAX_V1', 'APU_PAIRS_MAX_NMI_V1'],
     'opcodes-v1': ['FP_COM_ACK', 'FP_COM_NAK', 'FP_COM_VER', 'FP_COM_ROM', 'FP_COM_LOG', 'FP_COM_DRQ', 'FP_COM_DLD', 'FP_COM_RST', 'FP_COM_INI'],
     'keys': ['KEY_A', 'KEY_B', 'KEY_SEL', 'KEY_RUN', 'KEY_UP', 'KEY_DOWN', 'KEY_LEFT', 'KEY_RIGHT'],
-    'stream': ['PPU_PICTURE_COUNT', 'PPU_COUNT_WINDOW', 'PPU_COUNT_VAL_V1', 'VRAM_LINE_WORDS', 'VRAM_HEAD_WORDS', 'VRAM_LINES', 'VRAM_TILE_COLS', 'VRAM_BUF_BYTES_V1', 'VRAM_MAILBOX_OFF_V1', 'FCBUS_VER_SYNC_W0', 'FCBUS_VER_SYNC_W1', 'FCBUS_ROM_STAMP_OFF', 'FCBUS_ROM_STAMP_LEN', 'FCBUS_ROM_PRG_BYTES', 'FCBUS_ROM_INES_HDR', 'FCBUS_DRQ_MAGIC_BASE'],
+    'stream': ['PPU_PICTURE_COUNT', 'PPU_COUNTER_REPORT_BIAS', 'PPU_COUNT_WINDOW', 'PPU_COUNT_VAL_V1', 'VRAM_LINE_WORDS', 'VRAM_HEAD_WORDS', 'VRAM_LINES', 'VRAM_TILE_COLS', 'VRAM_BUF_BYTES_V1', 'VRAM_MAILBOX_OFF_V1', 'FCBUS_VER_SYNC_W0', 'FCBUS_VER_SYNC_W1', 'FCBUS_ROM_STAMP_OFF', 'FCBUS_ROM_STAMP_LEN', 'FCBUS_ROM_PRG_BYTES', 'FCBUS_ROM_INES_HDR', 'FCBUS_DRQ_MAGIC_BASE'],
     'v2': ['FCBUS_PROTOCOL_V2', 'FP_COM_KEY', 'FP_COM_HELLO', 'FC_COM_BUF_SIZE_V2', 'PPU_COUNT_VAL_V2', 'VRAM_BUF_BYTES_V2', 'VRAM_MAILBOX_OFF_V2', 'MBX_FLAGS', 'MBX_MAGIC', 'MBX_CMD', 'MBX_CMD_LEN', 'MBX_APU', 'MBX_APU_LEN', 'APU_PAIRS_MAX_V2', 'MBX_PAL', 'MBX_PAL_LEN', 'MBX_ATTR', 'MBX_ATTR_LEN', 'MBX_FLAG_ATTR_VALID', 'MBX_FLAG_PAL_VALID', 'MBX_FLAG_APU_VALID', 'MBX_FLAG_V2', 'MBX_ZP_LO', 'MBX_ZP_HI', 'NMI_CRITICAL_CYCLES_MAX', 'NMI_TOTAL_CYCLES_MAX'],
 }
 
@@ -138,6 +139,7 @@ ALL: dict[str, int] = {
     'KEY_LEFT': KEY_LEFT,
     'KEY_RIGHT': KEY_RIGHT,
     'PPU_PICTURE_COUNT': PPU_PICTURE_COUNT,
+    'PPU_COUNTER_REPORT_BIAS': PPU_COUNTER_REPORT_BIAS,
     'PPU_COUNT_WINDOW': PPU_COUNT_WINDOW,
     'PPU_COUNT_VAL_V1': PPU_COUNT_VAL_V1,
     'VRAM_LINE_WORDS': VRAM_LINE_WORDS,

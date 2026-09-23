@@ -47,42 +47,33 @@ again: fix the structure rather than the schedule.
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
 | [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host only, actionable now | M | none | **done** |
 | [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | I-06 | **done**: builds clean on 13.2.Rel1; lane active |
-| [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | partial: builds into the firmware image; on-hardware validation gated on I-19 |
-| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | **done**: replacement firmware displays patterns on an NTSC NES-001; trace calibration continues in I-19 |
+| [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | **done**: test patterns display on NES-001; trace-calibrated count and stream model |
+| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | **done**: replacement firmware displays patterns on an NTSC NES-001 |
 | [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- partly local | M | I-08 (soft) | open |
 | [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | open |
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | I-13 | open |
-| [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | partial: bridge runs and is deterministic; strict S0 fails on the count contradiction, now gated on I-19 |
+| [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | **S0 done**: strict count, mailbox and screenshot golden pass; Doom scenarios await I-12 |
 | [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | I-12 | open |
 | [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host core now, device after I-16 | L | I-03; I-16 for device integration | partial: host core passes differential tests; tables and device integration remain |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | open |
-| [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | I-10 | open |
+| [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | I-10 | **done**: complete trace 6 calibrates 66/64 reads and zero-based count |
 
 ## Suggested order
 
-The current priority is the display path: I-15's Mesen PPU fetch profile, HR-1/I-19's hardware
-trace and strict S0, then I-17's host converter core. The host core can compare against the
-Python reference with synthetic frames while I-11/I-12/I-16 establish the engine's 8-bit
-frame source. The host core now passes; finish table generation, device publication and
-Mesen S2 once those dependencies land.
-Do not accept a screenshot golden from S0's current open-bus picture. See the execution order
-in `../plan/10-workplan.md`.
+The current priority is the display path. Hardware trace calibration, strict S0 and the
+host converter are complete. I-11/I-12/I-16 now establish the engine's 8-bit frame source;
+then finish device publication and validate Doom pictures in Mesen S2. See the execution
+order in `../plan/10-workplan.md`.
 
 I-01 through I-04, I-06 and I-07 are done. I-05's remaining audio conversion work follows
 the display gate. The active host workflow from I-06 provides the CI foundation for lane B.
 
-Device build acceptance is finished: the firmware configures, builds clean and passes the
-flash-layout check with the pinned 13.2.Rel1 toolchain, which is in the repository root (the
-root `.gitignore` hides it from a tree listing -- look before concluding it is missing). What
-I-09 and I-10 still owe is a board, not a build. I-11 and I-12 (the engine) unblock I-16
-and the device half of I-17; I-13 and I-14 cover the console; I-15 carries co-simulation.
+Device build acceptance and test-pattern display on an NES-001 are complete. The pinned
+13.2.Rel1 toolchain is in the repository root (the root `.gitignore` hides it from a tree
+listing). I-11 and I-12 unblock I-16 and the device half of I-17; I-13 and I-14 cover the
+console; I-15 carries the later Doom co-simulation scenarios.
 
-I-15's tutorial-ROM/test-pattern S0 runs: the boot ROM, the NES PPU and the host bus model
-are wired together and reproducible. It stops where the plan stops being true -- the measured
-per-frame read count is 16388, not 15426 -- so I-19 is now the gate on I-15 as well, with a
-specific question to answer rather than a general request for a trace. I-15's later Doom
-scenarios still need I-12 and the corresponding engine/video features.
-
-I-18 can happen at any time and should happen soon. I-19 is the gate on everything the bus
-model claims, and it needs I-10 plus a person with a Famicom.
+I-15's tutorial-ROM/test-pattern S0 now passes with the hardware-calibrated PPU selection,
+valid mailbox, stable count and reviewed picture golden. Later Doom scenarios still need
+I-12 and the corresponding engine/video features. I-18's licensing enquiry remains open.

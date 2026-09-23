@@ -11,11 +11,12 @@ From RP2040 Doom's 320x200 palette-indexed frame to the bytes the PPU pulls off 
 - Sub-palette entry 0 is always the shared backdrop colour (`$3F00`); entries 1-3 are free.
   So at most **13 distinct colours** on screen, chosen from the PPU's 64 (about 54 unique).
 - The pattern data itself is what `fcbus` streams (`docs/pages/graphics.md`,
-  `rp_system::convVram()`): per scanline, 34 16-bit words, low byte = bitplane 0, high byte =
-  bitplane 1, pixel 0 of each 8-pixel run in bit 7. Line 0 starts at word 31. Words 32-33 of a
-  line hold the first 16 pixels of the *next* line (that is what `convVram()` reads there;
-  they are the PPU's next-line prefetch). **Replicate the layout byte for byte; do not
-  rationalise it.** `fcbus` owns the buffer and exposes `fcbus_stream_word(line, tile)`.
+  `rp_system::convVram()`): 32 selected 16-bit words per visible scanline, low byte =
+  bitplane 0, high byte = bitplane 1, pixel 0 of each 8-pixel run in bit 7. The flat
+  row-major picture starts at word 31. The pre-render line consumes words 31-32 as line
+  0's first-two-tile prefetch; each visible line then consumes its remaining 30 words and
+  the next line's first two. `fcbus` owns the buffer and exposes
+  `fcbus_stream_word(line, tile)` for the linear picture positions.
 
 ## Input (what RP2040 Doom produces)
 

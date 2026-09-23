@@ -39,11 +39,11 @@ unchanged.** Protocol v2 (03) changes only what is explicitly listed there.
 | Constant | Value | Meaning |
 |----------|-------|---------|
 | `FC_COM_BUF_SIZE` | 64 | Mailbox bytes appended to the frame stream |
-| `PPU_COUNT_VAL` | 15426 + 64 = **15490** | Qualifying PPU reads per frame including the mailbox |
+| `PPU_COUNT_VAL` | 15426 + 64 = **15490** | `fcppu_rna` zero-based report after 15491 physical reads |
 | Sync window | +/-2 reads | Outside it the DMA is stopped, not restarted |
 | Phase nudge | `out pins, 8` executed manually once or twice when the count is 1 or 2 short | `rp_system::ppu_dma()` |
 | `VRAM_BUF_SIZE` | (36*2*240 + 64)/4 = 4336 words = 17,344 bytes | Per buffer; two buffers |
-| Stream layout | 34 16-bit words per line (bitplane 0 low byte, bitplane 1 high byte), line 0 starting at word 31; mailbox copied to byte offset `PPU_COUNT_VAL - 64` = 15426 | `rp_system::convVram()`, `ppu_dma()` |
+| Stream layout | 32 selected 16-bit words per visible line, linear from word 31 (bitplane 0 low byte, bitplane 1 high byte); mailbox at byte 15426 | NES-001 trace 6, `rp_system::convVram()`, strict S0 |
 | Mailbox v1 | byte 0 unused (taken by FC_PICO_GB), 1 = `$FC` magic, 2..15 commands, 16..63 APU `(reg,value)` pairs terminated by `$FF` | zero page `$20`-`$5F` on the 6502 |
 | Console -> cartridge | one byte per `$2007` write with the PPU address parked at `$0800`; opcodes `$2F $3F $BF $CF $DF $EF $FF`; **any other byte is controller state** and is the frame heartbeat | |
 | Controller bits | A `$80`, B `$40`, Select `$20`, Start `$10`, Up `$08`, Down `$04`, Left `$02`, Right `$01` | `SysEqu.h`, `rp_system.h` |
@@ -53,23 +53,38 @@ unchanged.** Protocol v2 (03) changes only what is explicitly listed there.
 | Fixed 6502 entry points | `$ED00` NMI, `$EE80` IRQ, `$EF00` MAIN_SETUP, `$EF03` MAIN_LOOP, `$EFF0` stamp, `$EFFF` erase flag; fix bank `$F000` INIT, `$F003` TRANS_SYS_FONT, `$F006` KEY_RTN, `$F009`/`$F00C` beeps | |
 | PPUCTRL / PPUMASK defaults | `$2000` = `%100_01_0_00` (NMI on, BG pattern table `$0000`, **sprite pattern table `$1000`**), `$2001` = `%000_11_11_0` | `SysEqu.h` -- note the comment there says "SP$0000"; the bits say `$1000` |
 
-### An unresolved discrepancy the model must settle **(empirical)**
+### Hardware calibration of the read count **(measured 2026-09-22)**
 
-A naive count of pattern-table reads per NTSC scanline is 34 tiles x 2 bitplanes = 68 (32
-tiles during dots 1-256 plus the two-tile prefetch during dots 321-336), which over the
-pre-render line and 240 visible lines gives 16,388 -- but `PPU_COUNT_VAL` implies the picture
-consumes 15,425 reads, which is 241 x 64 + 1. Meanwhile `convVram()` lays the buffer out with a
-34-word (68-byte) stride per line, which only produces an unsheared picture if the PPU consumes
-68 bytes per line. Both cannot be true under the simple model, yet the product works. Possible
-explanations: the on-board CS1 decode excludes some fetches (the sprite fetches at `$1000` are
-certainly excluded, which is why `$2000` bit 3 is set); the PIO counter misses closely spaced
-strobes; or the stream is consumed differently than assumed around the pre-render line.
+NES-001 capture `tests/fixtures/hw_trace_ntsc/trace_6.hex` resolves the former 68-vs-64
+contradiction. It contains one complete pre-render line with **66** CS1-qualified reads and
+14 complete visible lines with **64** each. The PPU still makes 170 total `/RD` accesses per
+rendering line; CS1 selects 31 in-line background pairs plus two prefetch pairs on pre-render,
+then 30 in-line pairs plus two prefetch pairs on visible lines. `/RD` stays low for 160-200 ns,
+so the difference is board selection, not missed sampling edges.
 
-**Nothing in this plan depends on knowing the answer, but the PPU-bus model does.** P0-T9
-captures a real strobe trace with the cartridge's spare PIO block and P0-T10 calibrates the
-model to reproduce 15,490 exactly. Until then the model is parameterised
-(`reads_per_line`, `head_words`, `line_stride_words`) and the defaults reproduce the firmware's
-buffer layout.
+The physical frame arithmetic is therefore:
+
+```
+rendering: 66 + 240*64                    = 15426
+NMI:       1 buffered-read dummy + 64     =    65
+physical qualifying reads                 = 15491
+fcppu_rna report (zero-based last index)  = 15490
+```
+
+`fcppu_rna` executes `mov isr, !x` before `jmp x--`, explaining the one-read report bias.
+The transmitter and counter use the same CS1 and `/RD` conditions, so there is no separate
+68-byte consumption rate.
+
+The stream-layout mistake was interpretive: `convVram()` runs an outer loop of 34 words, but
+its source index never resets per loop. Its useful prefix is one flat row-major 256x240 image,
+32 words per physical visible line. During pre-render, words 31-32 prefetch line 0's first
+16 pixels; each visible line then consumes 30 remaining words plus two words prefetched for
+the next line. The mailbox begins four bytes after the last picture word.
+
+There is likewise no four-zero-byte prefix on a normal frame re-arm. Strict Mesen alignment
+only produces valid mailboxes and the measured picture when buffer byte zero is served first;
+the PIO program's cold-start `mov osr, null` is not a per-frame prefix. Manual phase nudges
+consume one or two real buffer bytes before normal reads resume.
 
 ### Prior-art evidence (read from the sources, no hardware)
 
@@ -82,53 +97,16 @@ PPUScanline = tiles[32] (NT, AT, low, high each) + sprites[8] + nexttiles[2] + 2
 PPUFrame    = ScanLines[241] + OtherData[32]                                                   = 41002 bytes
 ```
 
-and `FitFrame()` places a line's first two tiles into the *previous* scanline's
-`nexttiles` and tiles 2..31 into `tiles[0..29]`, i.e. the stream is the linear sequence
-tile 0, 1, 2, ..., 33 per line (tiles 32 and 33 are fetched but never displayed). That is
-exactly `convVram()`'s 34-word stride. PiPU's NES program reads its 32-byte block with one
-dummy read plus nine extra reads "to flush the FIFO", writes the pad byte three times to
-`$21C0`, and sets a palette per 8x1 slice through the *attribute byte in the stream* -- which
-FC PICO cannot do, because its attribute fetches come from console VRAM.
+`FitFrame()` places a line's first two tiles into the previous scanline's prefetch and
+tiles 2..31 into its main region. FC PICO reaches the same linear tile order with a
+different board-selection window: 30 in-line pairs plus two prefetch pairs per visible
+line. PiPU's full-bus 68-byte count is therefore useful PPU timing evidence, but it is not
+the FC PICO cartridge's selected-read count.
 
-Counting pattern-space reads in that structure gives 34 x 2 = 68 per line (sprite fetches
-excluded -- they hit `$1000`, and `$2000` bit 3 is set precisely to put them there), so
-241 x 68 = 16,388 per frame, against the 15,426 `PPU_COUNT_VAL` implies for the picture.
-
-Two arithmetic observations follow, and **they cannot both be true**, which is the whole
-difficulty:
-
-- `16388 - 15426 = 962 = 241 x 4 - 2`: as if one two-tile pair per line (4 bytes) went
-  uncounted, give or take two bytes -- either the prefetch pair (dots 321-336) or the
-  off-screen pair (dots 241-256).
-- `15426 = 241 x 64 + 2` exactly: as if the counter saw 64 reads per line, that is the 32
-  visible tiles only, plus two bytes somewhere.
-
-The second is the tidier fit, but a stream *laid out* at 68 bytes per line cannot be
-*consumed* at 64 bytes per line without shearing the picture one tile pair further left on
-every line, and the tutorial firmware demonstrably does not shear. So either the
-consumption rate differs from the count rate (the counter misses reads the transmit state
-machine still answers), or the layout's last two words per line are written and never read,
-or the line count is not 241. Nothing available here distinguishes them: **this is what the
-P0-T9 trace is for.** Until it exists the model keeps the two as independent parameters
-("bytes consumed per line" and "reads counted per line", default 64) rather than deriving
-one from the other.
-
-One hypothesis is worth testing first because it is cheap: the board may decode CS1 only
-for `$0000`-`$0FFF` rather than the whole `$0000`-`$1FFF` pattern space, using the
-PA12/PA13 lines `fcppu.pio` leaves commented out. That would exclude every sprite fetch by
-construction, which is consistent with the firmware setting `$2000` bit 3, and the trace
-confirms or kills it directly by comparing CS1 against the read cadence.
-
-**A four-byte prelude from the PIO itself.** `fcppu_r` starts with `mov osr, null`, and
-`pio_sm_restart()` (called in `ppu_dma()` at every re-arm) clears the OSR and its shift
-counter. In both cases the OSR is "full" of zeros, so the first four `out pins, 8` after a
-re-arm emit `0x00` from the OSR before the first autopull takes a word from the DMA buffer --
-pioemu reproduces this (`sim/pioemu/test_fcppu_r.py`, the cold-start test) and the RP2040
-datasheet's description of `SM_RESTART` and `MOV OSR` implies it. The two manual
-`out pins, 8` nudges in `ppu_dma()` consume from this prelude. Consequence for the model:
-the stream the PPU sees is `[4 x 0x00] + buffer`, which is a two-word offset relative to the
-buffer indices and part of why line 0 sits at word 31 rather than a round number. The
-`ppubus` model carries this as `osr_prelude_bytes` (default 4) alongside the per-line count.
+PiPU's NES program reads its 32-byte block with one dummy read plus nine extra reads "to
+flush the FIFO", writes the pad byte three times to `$21C0`, and sets a palette per 8x1
+slice through the attribute byte in the stream. FC PICO instead gets attribute fetches
+from console VRAM and uses the 65-read NMI sequence measured above.
 
 **Sync alternative.** PiPU's FX2 does not count at all: it measures the time since `/RD`
 last fell and, when the gap exceeds a threshold (`countUp > 50` iterations), treats it as

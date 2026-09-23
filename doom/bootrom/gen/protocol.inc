@@ -43,13 +43,14 @@ KEY_LEFT	EQU	$02
 KEY_RIGHT	EQU	$01
 ;
 ; --- stream: frame stream geometry (empirical, from the tutorial) ---
-PPU_PICTURE_COUNT	EQU	15426	; qualifying PPU reads consumed before the mailbox (empirical)
+PPU_PICTURE_COUNT	EQU	15426	; 66 pre-render + 240*64 visible qualifying reads
+PPU_COUNTER_REPORT_BIAS	EQU	1	; fcppu_rna reports the zero-based index of the last read
 PPU_COUNT_WINDOW	EQU	2	; +/- reads tolerated before the DMA is stopped
 PPU_COUNT_VAL_V1	EQU	15490	; 15490
-VRAM_LINE_WORDS	EQU	34	; 16-bit words per scanline in the stream buffer
+VRAM_LINE_WORDS	EQU	34	; historical convVram() batch size; not the selected-read stride
 VRAM_HEAD_WORDS	EQU	31	; word index of line 0, tile 0
 VRAM_LINES	EQU	240
-VRAM_TILE_COLS	EQU	32	; visible tiles per line; words 32,33 = next line's first 16 px
+VRAM_TILE_COLS	EQU	32	; selected 16-bit words advanced per visible scanline
 VRAM_BUF_BYTES_V1	EQU	17344	; 17344, DMA length in bytes
 VRAM_MAILBOX_OFF_V1	EQU	15426	; 15426: mailbox byte offset in the buffer
 FCBUS_VER_SYNC_W0	EQU	555819297	; "!!!!" pushed before the version stamp

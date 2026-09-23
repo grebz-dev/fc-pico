@@ -74,17 +74,16 @@ has to be labelled accurately:
   check register-write ordering, and measure instruction cycles. It now checks that all 64
   mailbox bytes land at `$20`-`$5F`, that valid commands survive for main-loop dispatch, and
   that a bad magic byte clears the command before it can execute.
-- `sim/ppubus` can feed deterministic firmware streams through the documented fetch model and
-  reconstruct pixels and mailbox bytes. These image hashes are regression tests, not proof of
-  physical timing, because the qualifying-read model remains uncalibrated.
+- `sim/ppubus` can feed deterministic firmware streams through the trace-calibrated fetch
+  model and reconstruct pixels and mailbox bytes. Its image hashes are regression tests;
+  trace 6 supplies the physical selected-read timing evidence.
 - A stock NES emulator cannot model this cartridge correctly. FC PICO is not conventional
   CHR-ROM: reads advance a stream without using the PPU address, and `$2007` writes form the
   return channel. Expected screenshots therefore require the custom Mesen2 mapper and
   cartridge model described by issue I-15, not merely loading `rom.NES` in an emulator.
-- Mesen2 co-simulation can eventually execute the complete ROM, inspect CPU and PPU memory,
-  capture screenshots, and test controller/mailbox scenarios in CI without a cartridge. It
-  still cannot settle electrical timing, PIO sampling margins, the CS1 decode hypothesis, or
-  the contradictory physical read counts. Those remain hardware-trace work in issue I-19.
+- Mesen2 co-simulation executes the tutorial ROM against a hardware-calibrated mapper and
+  checks a test-pattern screenshot in strict S0. It cannot settle electrical timing or PIO
+  sampling margins; trace 6 provides the selected-read count and pulse-width evidence.
 
 `cycle_table()` runs the harness over `apu_pairs in {0, 8, 16, 24}` x
 `sprite_dma in {on, off}` (driven through `PALFADE_VAL`, which is what the

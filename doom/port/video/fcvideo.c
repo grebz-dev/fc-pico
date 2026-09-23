@@ -187,7 +187,7 @@ void fcvideo_convert(fcvideo_t *video,
 
     memset(stream, 0, VRAM_BUF_BYTES_V2);
     for (int y = 0; y < VRAM_LINES; y++) {
-        for (int tile = 0; tile < VRAM_LINE_WORDS; tile++) {
+        for (int tile = 0; tile < VRAM_TILE_COLS; tile++) {
             uint8_t lo = 0, hi = 0;
             for (int bit = 0; bit < 8; bit++) {
                 int flat = y * FCVIDEO_WIDTH + tile * 8 + bit;
@@ -201,7 +201,7 @@ void fcvideo_convert(fcvideo_t *video,
                 lo |= (pixel & 1u) << (7 - bit);
                 hi |= (pixel >> 1) << (7 - bit);
             }
-            size_t offset = (size_t)(VRAM_HEAD_WORDS + y * VRAM_LINE_WORDS + tile) * 2;
+            size_t offset = (size_t)(VRAM_HEAD_WORDS + y * VRAM_TILE_COLS + tile) * 2;
             stream[offset] = lo;
             stream[offset + 1] = hi;
         }

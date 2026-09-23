@@ -14,10 +14,8 @@ submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes
 The display and PPU path is the next integration priority. Milestone IDs below still describe
 deliverables, but the actionable order is now:
 
-1. Validate the emulated PPU fetch timeline in I-15, then obtain HR-1/I-19's hardware trace
-   to calibrate the counted-read model. Keep strict S0 failing until its count, mailbox and
-   screenshot gates pass on measured behavior; the emulator trace alone cannot settle the
-   RP2350 PIO counter.
+1. Keep the now-calibrated strict S0 count, mailbox, fetch and screenshot gates green while
+   integrating the display path. HR-1/I-19 measured the RP2350/board behavior on NES-001.
 2. Complete I-11/I-12/I-16 so the engine produces composed 8-bit frames. I-17's host
    converter tables, presets and synthetic flash palettes are now implemented and tested;
    feed engine frames through that converter next.
@@ -45,10 +43,10 @@ has actually landed on the branch.
 | P0-T4 | **done** | `tools/gen_protocol.py --check`; `pytest tests/protocol` (72) |
 | P0-T5 | core logic **done**; device backend and test-pattern firmware landed, device acceptance pending (I-09/I-10) | five bus C tests; `201ce2d`, `c9c4e12` |
 | P0-T6 | **done** | `ctest` target `test_host_roundtrip`; ASan-clean |
-| P0-T7 | model and decoder tests landed (I-01/I-02 done); hardware calibration still gated on I-19 | `tests/tools/test_ppubus.py`, `tests/tools/test_ppu_decode.py`; historical host CI verification in `../PROGRESS.md` |
+| P0-T7 | **done**, calibrated model and decoder | `tests/tools/test_ppubus.py`, `tests/tools/test_trace_decode.py`, hardware trace 6 |
 | P0-T8 | **done** (`fcppu_dir` skipped by design: pioemu has no IRQ support) | `pytest sim/pioemu` (13 passed, 1 skipped) |
-| P0-T9, P0-T10 | blocked on hardware (`HARDWARE-REQUESTS.md` HR-1; issue I-19) | -- |
-| P0-T11 | bridge built and running; strict S0 blocked on the count contradiction, now measured (I-15, gates on I-19) | `sim/mesen2/build.sh`, `run_scenario.sh S0 --diagnostic`; 09 "S0 as measured" |
+| P0-T9, P0-T10 | **done** (HR-1/I-19) | `tests/fixtures/hw_trace_ntsc/trace_6.*`; strict S0 |
+| P0-T11 | **done**; strict calibrated S0 passes | `sim/mesen2/build.sh`, `run_scenario.sh S0`; reviewed ARGB golden |
 | P0-T12 | host CI lane **done** (I-06); device and other lanes remain templates | `.github/workflows/doom-host.yml` |
 | P0-T13 | partial: `LICENSES.md` drafted; the enquiry is issue I-18 | -- |
 | P2-T1 (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` **done with tests** | `pytest tests/nes` |
@@ -162,9 +160,9 @@ python3 doom/tools/check_md_links.py doom -> no broken links
   "(inferred)" to measured.
 
 ### P0-T10 Model calibration
-- Spec: 01 "unresolved discrepancy", 09 L3. Size: S. Depends: P0-T9
+- Spec: 01 hardware calibration, 09 L3. Size: S. Depends: P0-T9
 - Steps: fit `reads_per_line`, `prerender_reads`, `cs1_mask` to the trace; record the
-  explanation in 01; remove the `UNCALIBRATED` flag.
+  explanation in 01 and make the trace-backed values the model defaults.
 - Acceptance: model reproduces the fixture's per-line counts and 15490 total; L2/L3 goldens
   regenerated if the layout assumptions changed.
 

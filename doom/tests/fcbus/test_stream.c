@@ -5,9 +5,9 @@
  *
  * The word layout is not a design choice we are free to make: it is whatever
  * rp_system::convVram() writes, because the PPU consumes the buffer linearly and the
- * tutorial firmware is known to produce an unsheared picture. convVram() walks
- * `vidx` from 31 and emits 34 words per scanline, so word index = 31 + 34*y + x with
- * x in 0..33 (32 visible tiles plus the two the PPU prefetches for the next line).
+ * hardware trace measures 32 selected words per visible scanline. convVram()'s
+ * source index is flat and continuous, so its 34-iteration outer-loop batches do
+ * not define physical scanline boundaries. Word index = 31 + 32*y + x.
  * doom/plan/01-constraints.md, "The bus contract".
  */
 #include "fcbus_core.h"
@@ -18,22 +18,22 @@ static void test_word_offsets(void) {
 
     CHECK_EQ(fcbus_stream_word(buf, 0, 0) - buf, VRAM_HEAD_WORDS);
     CHECK_EQ(fcbus_stream_word(buf, 0, 0) - buf, 31);
-    CHECK_EQ(fcbus_stream_word(buf, 1, 0) - buf, 65);
-    CHECK_EQ(fcbus_stream_word(buf, 0, 33) - buf, 31 + 33);
-    /* Last word the converter writes: line 239, prefetch column 33. */
-    CHECK_EQ(fcbus_stream_word(buf, 239, 33) - buf, 31 + 34 * 239 + 33);
-    CHECK_EQ(fcbus_stream_word(buf, 239, 33) - buf, 8190);
+    CHECK_EQ(fcbus_stream_word(buf, 1, 0) - buf, 63);
+    CHECK_EQ(fcbus_stream_word(buf, 0, 31) - buf, 31 + 31);
+    /* Last visible word; four bytes of alignment follow before the mailbox. */
+    CHECK_EQ(fcbus_stream_word(buf, 239, 31) - buf, 31 + 32 * 239 + 31);
+    CHECK_EQ(fcbus_stream_word(buf, 239, 31) - buf, 7710);
 
     /* Every line starts one full stride after the previous one. */
     for (int y = 1; y < VRAM_LINES; y++) {
         CHECK_EQ(fcbus_stream_word(buf, y, 0) - fcbus_stream_word(buf, y - 1, 0),
-                 VRAM_LINE_WORDS);
+                 VRAM_TILE_COLS);
     }
 }
 
 static void test_converter_writes_stay_inside_the_buffer(void) {
     /* The whole picture, mailbox included, must fit in both protocols' buffers. */
-    size_t last_picture_byte = (size_t)(31 + 34 * 239 + 33) * sizeof(uint16_t) + 1;
+    size_t last_picture_byte = (size_t)(31 + 32 * 239 + 31) * sizeof(uint16_t) + 1;
     CHECK(last_picture_byte < VRAM_BUF_BYTES_V1);
     CHECK(last_picture_byte < VRAM_BUF_BYTES_V2);
 
@@ -42,7 +42,7 @@ static void test_converter_writes_stay_inside_the_buffer(void) {
     CHECK_EQ(VRAM_BUF_BYTES_V2 - VRAM_BUF_BYTES_V1,
              FC_COM_BUF_SIZE_V2 - FC_COM_BUF_SIZE_V1);
 
-    /* Both mailboxes sit at the same tail position; only their length differs. */
+    /* Both mailboxes sit after the picture at the same position. */
     CHECK_EQ(VRAM_MAILBOX_OFF_V1, VRAM_MAILBOX_OFF_V2);
     CHECK_EQ(VRAM_MAILBOX_OFF_V1 + FC_COM_BUF_SIZE_V1, PPU_COUNT_VAL_V1);
     CHECK_EQ(VRAM_MAILBOX_OFF_V2 + FC_COM_BUF_SIZE_V2, PPU_COUNT_VAL_V2);
@@ -67,12 +67,12 @@ static void test_back_and_front_are_distinct_and_stable(void) {
 
     /* Writing through the back pointer must not touch the front buffer. */
     *fcbus_stream_word(back, 120, 16) = 0xBEEF;
-    CHECK_EQ(front[VRAM_HEAD_WORDS + 120 * VRAM_LINE_WORDS + 16], 0);
+    CHECK_EQ(front[VRAM_HEAD_WORDS + 120 * VRAM_TILE_COLS + 16], 0);
 
     fcbus_core_publish(&c);
     (void)fcbus_core_heartbeat(&c, PPU_COUNT_VAL_V1);
     CHECK(fcbus_core_stream_front(&c) == back); /* the published buffer is now the front */
-    CHECK_EQ(fcbus_core_stream_front(&c)[VRAM_HEAD_WORDS + 120 * VRAM_LINE_WORDS + 16], 0xBEEF);
+    CHECK_EQ(fcbus_core_stream_front(&c)[VRAM_HEAD_WORDS + 120 * VRAM_TILE_COLS + 16], 0xBEEF);
 }
 
 int main(void) {

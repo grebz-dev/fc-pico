@@ -11,7 +11,7 @@ static uint8_t attr[MBX_ATTR_LEN];
 static uint8_t err[4 * 256];
 static uint8_t lut[4 * 256 * 16];
 
-static void test_solid_frame_and_prefetch(void) {
+static void test_solid_frame_and_linear_stride(void) {
     memset(source, 42, sizeof(source));
     memset(err, 100, sizeof(err));
     for (int p = 0; p < 4; p++) {
@@ -29,12 +29,11 @@ static void test_solid_frame_and_prefetch(void) {
 
     CHECK_EQ(attr[0] & 3, 0);              /* Top letterbox block. */
     CHECK_EQ((attr[0] >> 4) & 3, 2);       /* First Doom line. */
-    size_t first = (VRAM_HEAD_WORDS + 16 * VRAM_LINE_WORDS) * 2;
+    size_t first = (VRAM_HEAD_WORDS + 16 * VRAM_TILE_COLS) * 2;
     CHECK_EQ(stream[first], 0x00);
     CHECK_EQ(stream[first + 1], 0xff);
-    size_t prefetch = (VRAM_HEAD_WORDS + 15 * VRAM_LINE_WORDS + 32) * 2;
-    CHECK_EQ(stream[prefetch], 0x00);
-    CHECK_EQ(stream[prefetch + 1], 0xff);
+    size_t prior_last = (VRAM_HEAD_WORDS + 15 * VRAM_TILE_COLS + 31) * 2;
+    CHECK_EQ(first, prior_last + 2);
     uint8_t *mailbox = stream + VRAM_MAILBOX_OFF_V2;
     CHECK_EQ(mailbox[MBX_MAGIC], PF_MAGIC_NO);
     CHECK_EQ(mailbox[MBX_FLAGS], MBX_FLAG_V2 | MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID);
@@ -48,6 +47,6 @@ static void test_solid_frame_and_prefetch(void) {
 }
 
 int main(void) {
-    test_solid_frame_and_prefetch();
+    test_solid_frame_and_linear_stride();
     return ctest_lite_result();
 }

@@ -11,7 +11,7 @@ inactive for the reasons listed below.
 | `doom-device.yml` | RP2350 test-pattern firmware, layout check and build artifacts | L0 (active) |
 | `doom-build.yml` | device firmware, host build + unit tests + goldens, boot ROM | L0, L1, L2, L3 |
 | `doom-sim.yml` | pioemu PIO tests, optional full-chip simulation | L4, L5 |
-| `doom-cosim.yml` | MesenCE co-simulation scenarios (nightly / manual) | L6 (template; strict S0 fails, see I-19) |
+| `doom-cosim.yml` | MesenCE co-simulation scenarios (nightly / manual) | L6 (template; strict S0 passes locally) |
 | `doom-docs.yml` | Doxygen with the repository's zero-warning rule | docs |
 
 Pinned versions (bump deliberately, in one commit, with a note in `plan/08-build.md`):
@@ -26,10 +26,8 @@ pico-sdk 2.1.1, arm-none-eabi-gcc 13.2.Rel1, picotool 2.1.1, Python 3.11, .NET 1
   (I-08 through I-10). What remains for I-09 and I-10 is hardware, not CI.
 - Boot ROM: waiting for the source tree and Linux build in issue I-13.
 - Full-chip simulation: waiting for a validated test-pattern build and simulation harness.
-- MesenCE co-simulation: the skeleton builds and runs locally (issue I-15). The template is
-  written against the commands that work, but stays inactive: strict S0 cannot pass while the
-  measured per-frame read count contradicts `PPU_PICTURE_COUNT` (see `plan/09-testing-ci.md`,
-  "S0 as measured", and issue I-19). Activating it would mean activating a lane whose only
-  green step is a bring-up diagnostic.
+- MesenCE co-simulation: the skeleton builds and strict S0 passes locally against the
+  hardware-calibrated mapper and reviewed picture golden. The template remains inactive
+  until the workflow is enabled and exercised in CI.
 - Documentation: remains a template until it can be activated without also activating the
   unfinished jobs that previously shared `doom-build.yml`.

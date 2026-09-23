@@ -17,7 +17,7 @@ real console.
 ## Specification
 
 `plan/02-architecture.md` ("Core assignment and interrupt priorities"),
-`plan/01-constraints.md` ("The bus contract", "A four-byte prelude"), and
+`plan/01-constraints.md` ("The bus contract", "Hardware calibration"), and
 `tutorial_project/tuto1_hw/sys/rp_system.cpp` -- `init()`, `ppu_dma()`, `jobRcvCom()`,
 `rom_dma()`, `ver_dma()`, `drq_ret()` -- plus `rp_dma.cpp`. `fcbus_core` already implements
 every decision; this is the PIO, DMA and interrupt plumbing around it.
@@ -61,7 +61,6 @@ ctest --test-dir build-host --output-on-failure
 
 ## Traps
 
-The prelude is not optional bookkeeping: `pio_sm_restart()` clears the OSR, so the first
-four bytes after every re-arm come from the state machine, not the buffer. The host backend
-models this (`FCBUS_OSR_PRELUDE_BYTES`); the device must agree with it or the two diverge
-silently.
+Hardware calibration supersedes the earlier four-byte-prelude hypothesis: normal frame
+re-arm begins at buffer byte zero. Manual nudge instructions consume one or two real buffer
+bytes. Keep the host backend aligned with strict S0 and the NES-001 trace arithmetic.

@@ -21,7 +21,7 @@ static uint8_t pattern_pixel(uint32_t pattern, uint32_t frame, int x, int y) {
 
 static void build_pattern(uint16_t *stream, uint32_t pattern, uint32_t frame) {
     for (int y = 0; y < VRAM_LINES; ++y) {
-        for (int tile = 0; tile < VRAM_LINE_WORDS; ++tile) {
+        for (int tile = 0; tile < VRAM_TILE_COLS; ++tile) {
             uint16_t word = 0;
             for (int pixel = 0; pixel < 8; ++pixel) {
                 uint8_t colour = pattern_pixel(pattern, frame, tile * 8 + pixel, y);

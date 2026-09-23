@@ -23,7 +23,7 @@ static void read_n(size_t count) {
 }
 
 static void beat_in_phase(void) {
-    read_n(PPU_COUNT_VAL_V1);
+    read_n(PPU_COUNT_VAL_V1 + PPU_COUNTER_REPORT_BIAS);
     fcpico_cart_ppu_write(0);
 }
 
@@ -118,7 +118,7 @@ static void test_pattern_and_stats_come_from_the_host_backend(void) {
 
     /* fcbus_host contributes the four OSR bytes; the first selected stripe
      * follows at line 0, tile 5 (x = 40), as in main_testpattern.c. */
-    read_n(FCBUS_OSR_PRELUDE_BYTES + VRAM_HEAD_WORDS * sizeof(uint16_t) + 5 * sizeof(uint16_t));
+    read_n(VRAM_HEAD_WORDS * sizeof(uint16_t) + 5 * sizeof(uint16_t));
     CHECK_EQ(fcpico_cart_ppu_read(), 0xff);
     CHECK_EQ(fcpico_cart_ppu_read(), 0x00);
     CHECK_EQ(fcpico_cart_stats()->last_count, PPU_COUNT_VAL_V1);

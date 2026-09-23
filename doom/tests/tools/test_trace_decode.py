@@ -1,8 +1,13 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 
 from trace_decode import decode_dump, pack_samples, parse_dump
+
+
+FIXTURES = Path(__file__).parents[1] / "fixtures" / "hw_trace_ntsc"
 
 
 def synthetic_dump() -> str:
@@ -33,6 +38,14 @@ def test_synthetic_round_trip() -> None:
     assert report.rd_low_width_histogram == {2: 8}
     assert report.vblank_gap_samples == 16
     assert report.write_bursts == [3]
+
+
+def test_hardware_trace_reports_complete_visible_scanlines() -> None:
+    report = decode_dump((FIXTURES / "trace_6.hex").read_text(encoding="ascii"))
+
+    assert report.prerender_reads == 66
+    assert len(report.line_counts) >= 12
+    assert set(report.line_counts) == {64}
 
 
 def test_parser_round_trip_preserves_samples() -> None:

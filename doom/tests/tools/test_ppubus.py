@@ -1,10 +1,8 @@
 # SPDX-License-Identifier: BSD-3-Clause
 """Tests for the L3 PPU-bus model (doom/sim/ppubus/ppubus.py).
 
-Issue I-01. The model is the only thing standing between the plan's bus arithmetic
-and a hardware session, so these tests exist to pin its behaviour down: a later
-calibration against a real strobe trace should change numbers in one place and have
-these tests say precisely what moved.
+Issue I-01/I-19. These tests pin the model to the NES-001 hardware trace and
+keep the PIO counter's zero-based report distinct from physical read strobes.
 
 Two things these tests deliberately do NOT do:
 
@@ -12,11 +10,8 @@ Two things these tests deliberately do NOT do:
   generated from `doom/fcbus/fcbus_protocol.h` by `doom/tools/gen_protocol.py`. A test
   that hardcodes 15490 would keep passing after someone changed the header, which is the
   opposite of useful.
-- They do not assert that the model is *right*. It is explicitly UNCALIBRATED, and plan
-  01 documents an unresolved contradiction in the underlying arithmetic. What is asserted
-  is self-consistency (encode/decode round trips, counts that add up, faults that change
-  exactly one thing) and that the contradiction stays visible as two independent
-  parameters rather than being quietly averaged away. See `test_the_open_contradiction`.
+- The hardware fixture is the independent oracle for pre-render and visible-line counts;
+  encode/decode round trips then check the calibrated model's internal consistency.
 
 conftest.py puts doom/tools on sys.path; doom/sim is added here because the model lives
 outside both the tools tree and the tests tree, and `tests/conftest.py` is shared with
@@ -37,10 +32,12 @@ if str(_SIM_DIR) not in sys.path:
 
 from fcpico import protocol, stream  # noqa: E402
 from ppubus import PpuBus, SimpleCart  # noqa: E402
+from trace_decode import decode_dump  # noqa: E402
 
 
 V1 = protocol.FC_COM_BUF_SIZE_V1  # 64
 V2 = protocol.FC_COM_BUF_SIZE_V2  # 128
+HW_TRACE = Path(__file__).parents[1] / "fixtures" / "hw_trace_ntsc" / "trace_6.hex"
 
 
 # ---------------------------------------------------------------------------
@@ -50,6 +47,18 @@ V2 = protocol.FC_COM_BUF_SIZE_V2  # 128
 
 def test_default_frame_read_count_is_the_firmware_v1_total():
     assert PpuBus().frame_read_count() == protocol.PPU_COUNT_VAL_V1
+
+
+def test_defaults_are_calibrated_to_the_ntsc_hardware_trace():
+    report = decode_dump(HW_TRACE.read_text(encoding="ascii"))
+    bus = PpuBus()
+
+    assert report.prerender_reads == bus.prerender_reads == 66
+    assert set(report.line_counts) == {bus.reads_per_line} == {64}
+    assert bus.frame_qualifying_read_count() == protocol.PPU_COUNT_VAL_V1 + 1
+    assert bus.counter_report_bias == 1
+    assert bus.frame_read_count() == bus.frame_qualifying_read_count() - bus.counter_report_bias
+    assert bus.frame_byte_count() == bus.frame_qualifying_read_count()
 
 
 def test_v2_mailbox_gives_the_firmware_v2_total():
@@ -66,11 +75,11 @@ def test_frame_read_count_is_the_sum_of_its_documented_parts():
     """Restates the module docstring's arithmetic so a changed default is caught here."""
     bus = PpuBus()
     assert bus.frame_read_count() == (
-        bus.osr_prelude_bytes
-        + bus.prerender_reads
+        bus.prerender_reads
         + bus.lines * bus.reads_per_line
         + 1  # the NMI's mandatory dummy read
         + bus.mailbox_len
+        - bus.counter_report_bias
     )
     assert bus.lines == protocol.VRAM_LINES
 
@@ -89,48 +98,27 @@ def test_reads_per_line_must_be_positive_and_even(bad):
 
 
 # ---------------------------------------------------------------------------
-# The open contradiction (issue I-01 step 3, plan 01 "An unresolved discrepancy")
+# The hardware-resolved count/consumption relationship
 # ---------------------------------------------------------------------------
 
 
-def test_the_open_contradiction_stays_visible_as_two_parameters():
-    """Plan 01: the model must keep "bytes consumed per line" and "reads counted per
-    line" as independent parameters rather than deriving one from the other.
-
-    The contradiction in one line: the firmware's counted picture reads factor as
-    241 x 64 + 2, while `convVram()` lays the buffer out with a 34-word (68-byte)
-    stride, and a stream laid out at 68 bytes per line cannot be consumed at 64
-    without shearing the picture. The tutorial demonstrably does not shear. So the
-    model gets to express either reading, and neither default may silently decide it.
-    """
+def test_picture_count_is_the_measured_prerender_plus_visible_lines():
     bus = PpuBus()
-    assert bus.reads_per_line * (protocol.VRAM_LINES + 1) + 2 == protocol.PPU_PICTURE_COUNT
-    # The other half of the contradiction, from the buffer layout rather than the counter.
-    assert protocol.VRAM_LINE_WORDS * 2 == 68
-    naive = (protocol.VRAM_LINES + 1) * protocol.VRAM_LINE_WORDS * 2
-    assert naive == 16388
-    assert naive - protocol.PPU_PICTURE_COUNT == 962 == (protocol.VRAM_LINES + 1) * 4 - 2
-
-    # Independence: changing the consumption rate must not move the counted total.
-    counted = bus.frame_read_count()
-    stride = PpuBus(bytes_per_line=protocol.VRAM_LINE_WORDS * 2)
-    assert stride.frame_read_count() == counted == protocol.PPU_COUNT_VAL_V1
-    assert stride.frame_byte_count() > stride.frame_read_count()
-    assert stride.uncounted_bytes_per_frame() == protocol.VRAM_LINES * 4 == 960
+    assert bus.prerender_reads + bus.lines * bus.reads_per_line == protocol.PPU_PICTURE_COUNT
 
 
-def test_the_two_rates_are_equal_at_the_defaults():
-    """The self-consistent reading is the default: every byte served is a byte counted."""
+def test_transmitter_answers_every_qualifying_read():
     bus = PpuBus()
     assert bus.bytes_per_line == bus.reads_per_line
-    assert bus.frame_byte_count() == bus.frame_read_count()
-    assert bus.uncounted_bytes_per_frame() == 0
+    assert bus.frame_byte_count() == bus.frame_qualifying_read_count()
+    assert bus.uncounted_bytes_per_frame() == bus.counter_report_bias == 1
 
 
-def test_bytes_per_line_may_not_be_smaller_than_reads_per_line():
-    """The transmit machine cannot answer fewer strobes than the counter saw."""
+@pytest.mark.parametrize("bytes_per_line", [62, 68])
+def test_bytes_per_line_must_equal_reads_per_line(bytes_per_line):
+    """Both PIO state machines use the same CS1-qualified /RD edge."""
     with pytest.raises(ValueError, match="bytes_per_line"):
-        PpuBus(reads_per_line=64, bytes_per_line=62)
+        PpuBus(reads_per_line=64, bytes_per_line=bytes_per_line)
 
 
 @pytest.mark.parametrize("bad", [0, -4, 67])
@@ -150,16 +138,14 @@ def test_frame_events_order_and_quantities(mailbox_len):
     events = list(bus.frame_events())
     assert len(events) == bus.frame_byte_count()
 
-    prelude = [e for e in events if e[0] == "prelude"]
     reads = [e for e in events if e[0] == "read"]
     nmi = [e for e in events if e[0] == "nmi_read"]
-    assert len(prelude) + len(reads) + len(nmi) == len(events)
+    assert len(reads) + len(nmi) == len(events)
 
-    # Order: the whole prelude, then every picture read, then the whole NMI sequence.
+    # OSR zeros are values emitted by the first reads, not extra read events.
     kinds = [e[0] for e in events]
-    assert kinds == ["prelude"] * len(prelude) + ["read"] * len(reads) + ["nmi_read"] * len(nmi)
+    assert kinds == ["read"] * len(reads) + ["nmi_read"] * len(nmi)
 
-    assert [e[1] for e in prelude] == list(range(bus.osr_prelude_bytes))
     assert len(nmi) == 1 + mailbox_len
     assert [e[1] for e in nmi] == list(range(1 + mailbox_len))
 
@@ -174,41 +160,27 @@ def test_frame_events_order_and_quantities(mailbox_len):
     assert [e[2] for e in visible[: bus.bytes_per_line]] == list(range(bus.bytes_per_line))
 
 
-def test_frame_events_lengthens_with_bytes_per_line_but_the_count_does_not():
-    tight = PpuBus()
-    loose = PpuBus(bytes_per_line=68)
-    assert len(list(loose.frame_events())) - len(list(tight.frame_events())) == 960
-    assert loose.frame_read_count() == tight.frame_read_count()
-
-
 # ---------------------------------------------------------------------------
-# The prelude is zeros, and it is counted
+# Frame re-arm starts at the DMA buffer
 # ---------------------------------------------------------------------------
 
 
-def test_the_prelude_is_four_zero_bytes_and_they_count():
-    """Plan 01, "A four-byte prelude from the PIO itself": `fcppu_r` starts with
-    `mov osr, null` and `pio_sm_restart()` refills the OSR with zeros, so the first
-    four `out pins, 8` after every re-arm emit 0x00 before the first autopull. Those
-    bytes go out on the bus, so `fcppu_rna` counts them like any other read."""
+def test_frame_rearm_has_no_extra_zero_byte_prelude():
     bus = PpuBus()
-    assert bus.osr_prelude_bytes == 4
+    assert bus.osr_prelude_bytes == 0
     cart = SimpleCart(bytes(range(1, 256)) * 80)
     got = bus.run_frame(cart)
-    assert got[: bus.osr_prelude_bytes] == b"\x00" * bus.osr_prelude_bytes
-    assert got[bus.osr_prelude_bytes] != 0  # the first real buffer byte follows immediately
-    # Counted: the total includes them, and dropping them would break the total.
+    assert got[0] == 1
     assert bus.frame_read_count() == protocol.PPU_COUNT_VAL_V1
-    assert PpuBus(osr_prelude_bytes=0).frame_read_count() == protocol.PPU_COUNT_VAL_V1 - 4
 
 
-def test_a_write_restarts_the_prelude():
-    """`pio_sm_restart()` runs on every DMA re-arm, so every frame begins with zeros."""
+def test_a_write_restarts_the_stream():
+    """Every DMA re-arm resumes from buffer byte zero."""
     bus = PpuBus()
     cart = SimpleCart(bytes(range(1, 256)) * 80)
     first = bus.run_frame(cart)
     second = bus.run_frame(cart)
-    assert second[:4] == b"\x00\x00\x00\x00"
+    assert second[0] == 1
     assert second == first  # the same buffer, re-served from the top
 
 
@@ -240,20 +212,6 @@ def test_round_trip_recovers_pixels_and_mailbox(mailbox_len):
     assert out_mailbox == mailbox
 
 
-def test_round_trip_survives_a_wider_consumption_rate():
-    """With bytes_per_line > reads_per_line the model steps over the served-but-unseen
-    bytes, so the picture must come back unsheared -- which is the whole point of
-    keeping the two rates separate."""
-    bus = PpuBus(bytes_per_line=68)
-    pix = _demo_pix(bus)
-    mailbox = _demo_mailbox(bus)
-    cart = SimpleCart(bus.reference_buffer(pix, mailbox))
-    out_pix, out_mailbox = bus.reconstruct(bus.run_frame(cart))
-    assert out_pix.shape == (protocol.VRAM_LINES, 256)
-    assert np.array_equal(out_pix, pix)
-    assert out_mailbox == mailbox
-
-
 def test_reconstruct_uses_the_same_bit_convention_as_the_firmware():
     """Pixel 0 is bit 7; the low byte is bitplane 0 and the high byte bitplane 1.
     Asserted against `fcpico.stream`, which is tested separately against `convVram()`."""
@@ -264,7 +222,7 @@ def test_reconstruct_uses_the_same_bit_convention_as_the_firmware():
     pix[0, 2] = 3  # both
     cart = SimpleCart(bus.reference_buffer(pix, _demo_mailbox(bus)))
     got = bus.run_frame(cart)
-    first = bus.osr_prelude_bytes + bus.prerender_reads
+    first = bus.prerender_reads
     lo, hi = got[first], got[first + 1]
     assert lo == 0b1010_0000  # pixels 0 and 2 set in plane 0
     assert hi == 0b0110_0000  # pixels 1 and 2 set in plane 1
