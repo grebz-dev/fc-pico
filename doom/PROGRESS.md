@@ -25,9 +25,10 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Verified: focused red-to-green checks produced `1332` fcbus checks, `7` test-pattern
   checks and `149` cartmodel checks; all 10 host C suites pass. The RP2350 UF2 builds and
   `flash_layout_check.py` reports 68,564 bytes used with 455,724 bytes free.
-- Left out: the replacement UF2 still needs an NES reflash to confirm a visible pattern and
-  collect three decoder-valid traces. Strict Mesen S0 remains intentionally uncalibrated
-  until the real trace determines which strobes the PIO counter omits.
+- Hardware follow-up: the replacement UF2 displays its test patterns successfully on the
+  same NES-001, confirming the init-event diagnosis and completing I-10. Three decoder-valid
+  traces remain I-19's last hardware input. Strict Mesen S0 remains intentionally
+  uncalibrated until those traces determine which strobes the PIO counter omits.
 - Plan changes: HR-1, I-10, the hardware log, and the new hardware fixture directory record
   the session and exact artifact.
 

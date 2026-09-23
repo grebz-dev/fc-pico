@@ -70,4 +70,6 @@ divergence in co-simulation.
 
 The replacement implementation keeps a monotonic init event/stage in `fcbus_stats_t` and
 routes both device firmware and the Mesen adapter through the same host-tested test-pattern
-controller. The replacement UF2 is built and awaits real-console validation.
+controller. The replacement UF2 displays the test patterns successfully on the same NES-001.
+I-10's hardware display requirement is complete; the short trace captures and model
+calibration remain I-19.

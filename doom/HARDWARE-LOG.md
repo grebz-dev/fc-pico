@@ -11,6 +11,16 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-09-22 -- I-10 replacement firmware validation
+- Console: NES-001, NTSC
+- Cartridge firmware: `fcpico_testpattern.uf2` from parent commit `73a6df2`, SHA-256
+  `be283708ba21e4ffa75ad4dec665461cd52db9220888d86888096f8051389cbf`
+- Console ROM: tutorial boot ROM
+- Results: success; the test patterns appear after the replacement firmware added the
+  post-`FP_COM_INI` data-mode handoff. This confirms the previous blank screen was the
+  physical adapter's lost init event, not bad pattern, palette, or attribute data.
+- Attachments: `tests/fixtures/hw_trace_ntsc/`; replacement short traces pending
+
 ## 2026-09-22 -- HR-1 initial count and display run
 - Console: NES-001, NTSC
 - Cartridge firmware: `fcpico_testpattern.uf2`, pre-init-handoff fix
