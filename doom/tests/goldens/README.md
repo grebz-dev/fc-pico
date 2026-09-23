@@ -19,9 +19,13 @@ ctest --test-dir /tmp/fcpico-engine-host --output-on-failure
   --whx doom/rp2040-doom/doom1.whx --demo 1 --frames 600 --lockstep \
   --dump-8bit /tmp/fcpico-demo1-frames
 python3 doom/tests/goldens/check.py /tmp/fcpico-demo1-frames
+python3 doom/tests/fcvideo/check_engine_stream.py \
+  /tmp/fcpico-engine-host/rp2040-doom/src/fcpico_doom_host doom/rp2040-doom/doom1.whx
 ```
 
 The PNGs use PLAYPAL palette 0 for inspection. The title, menu, status bar and melt-wipe
 samples have been visually inspected across the DEMO1 and title/menu captures. These are engine-composition
 goldens, not an independent pixel match against Chocolate Doom or the NES PPU. Such a
-comparison, and conversion into NES stream bytes, remain separate gates.
+comparison remains a separate gate. NES conversion is checked on real frames by
+`doom/tests/fcvideo/check_engine_stream.py` and its 600-frame determinism test; this is
+not yet an emulated-console picture comparison.

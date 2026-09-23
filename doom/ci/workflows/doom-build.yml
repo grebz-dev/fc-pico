@@ -102,8 +102,9 @@ jobs:
       - name: Demo golden run (L2/L3)
         run: |
           mkdir -p out
-          build-host/rp2040-doom/src/fcpico_doom_host --whx doom/rp2040-doom/doom1.whx --demo 1 --frames 600 --lockstep --dump-stream out
+          build-host/rp2040-doom/src/fcpico_doom_host --whx doom/rp2040-doom/doom1.whx --demo 1 --frames 600 --lockstep --dump-8bit out --dump-stream out
           python3 doom/tests/goldens/check.py out
+          python3 doom/tests/fcvideo/check_engine_stream.py build-host/rp2040-doom/src/fcpico_doom_host doom/rp2040-doom/doom1.whx
       - uses: actions/upload-artifact@v4
         if: always()
         with:

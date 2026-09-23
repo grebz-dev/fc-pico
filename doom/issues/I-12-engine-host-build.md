@@ -60,12 +60,12 @@ threads, say so in the shim README rather than papering over it.
 
 ## Status (2026-09-23)
 
-Partial. `PICO_PLATFORM=host` now builds the whole SDL-free engine and links the host shim.
-The host runner loads `doom1.whx` by path, plays an embedded demo in single-tic lockstep,
-exits after a requested frame count and dumps the renderer's indexed 320x168 view as raw
-frames. `engine_host_determinism` runs two 600-frame DEMO1 captures and compares every frame;
-it also requires changing output. Device and test-pattern builds still link.
+Partial. `PICO_PLATFORM=host` builds the SDL-free engine and host shim. The runner loads
+`doom1.whx` by path, plays DEMO1 in single-tic lockstep, and dumps composed 320x200
+indexed frames and 17,408-byte v2 NES streams. `engine_host_determinism` compares every
+indexed and stream frame across two 600-frame runs. Real Doom stream frames 0, 100 and
+101 also match the independent Python converter byte-for-byte. Device and test-pattern
+builds still link.
 
-This is not yet the full acceptance command: `--dump-stream` and `--pads` deliberately fail
-with an unsupported-option diagnostic. Full 320x200 composition and stream publication
-follow I-16 and I-17. The raw view is not a complete screenshot or NES stream.
+`--pads` remains unsupported, so the full command-line contract is not complete.
+The stream dumps are converter output, not yet an S2 Mesen run or hardware display.

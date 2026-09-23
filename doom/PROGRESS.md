@@ -11,6 +11,21 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-12 / I-17 -- host Doom-to-NES stream output (2026-09-23)
+- What landed: the SDL-free host runner's `--dump-stream DIR` converts each composed
+  320x200 indexed frame to a 17,408-byte v2 cartridge stream using the default
+  shared-white preset, the actual WHX PLAYPAL, attribute hysteresis and the current
+  engine palette-flash set. Dumps are named `frame000000.bin`, etc.
+- Verified: two 600-frame DEMO1 runs produce identical indexed frames and identical
+  streams (CTest `engine_host_determinism`). The independent Python oracle matches
+  C output byte-for-byte on real frames 0, 100 and 101, preserving the previous
+  attribute table across all intervening frames. A v2-mailbox NES PPU-model decode
+  of frame 100 shows the game view and status bar at 256x240; preview:
+  `/tmp/fcpico-doom-nes-frame100.png`.
+- Left out: device bus publication, measured conversion time, controller pad input,
+  and Mesen S2. The current Mesen runner supports tutorial-ROM S0 only, so the
+  preview is not yet an emulated-console acceptance result.
+
 ## I-16 / P1-T1 -- indexed full-frame composition (2026-09-23)
 - What landed: the FC PICO adapter now composes all 320x200 scanlines from the renderer's
   view buffers and packed overlay list, including title/menu/HUD/status patches and the
