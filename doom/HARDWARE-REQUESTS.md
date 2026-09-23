@@ -58,6 +58,21 @@ the result. The human fills in the result section and commits; the agent then co
   is complete and measures 66 pre-render reads and 64 reads on every complete visible line.
   The calibrated strict Mesen S0 subsequently passes at `ppu_count=15490`.
 
+## Open requests
+
+### HR-2 Corrected stream geometry visual check (task I-17)
+- Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2`, built from `42fa091`;
+  SHA-256 `a1f129761e70c0c3f6aa65b02e7e69cfe9e93cd244da08ddcb1bc66d25d7b2e9`.
+- Console ROM expected: tutorial (unchanged).
+- Steps: 1. Flash the UF2 and start the NES-001 with the cartridge inserted. Confirm the
+  default moving bars appear. 2. At the 115200-baud CLI, run `pattern 1` and confirm the
+  checkerboard appears; then try `pattern 0` to return to bars. 3. Run `stats` after about
+  60 seconds and copy the complete line.
+- Record: console model, whether each pattern appears and fills the expected picture area,
+  any tearing or horizontal shift, and the `stats` line in `HARDWARE-LOG.md`. A photo is
+  useful if alignment looks wrong.
+- Result: pending.
+
 ## Human actions (not hardware)
 
 ### HA-1 Licensing enquiry (task P0-T13)
