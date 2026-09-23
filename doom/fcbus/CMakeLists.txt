@@ -14,7 +14,7 @@ add_library(fcbus_host STATIC
 target_link_libraries(fcbus_host PUBLIC fcbus_core)
 target_include_directories(fcbus_host PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
-if(NOT FCPICO_HOST_ONLY)
+if(PICO_ON_DEVICE)
     # Pico SDK libraries add source files to their consumer. Keeping this backend
     # as an interface target compiles those SDK sources exactly once per firmware.
     add_library(fcbus_device INTERFACE)

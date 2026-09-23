@@ -50,7 +50,7 @@ again: fix the structure rather than the schedule.
 | [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | **done**: test patterns display on NES-001; trace-calibrated count and stream model |
 | [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | **done**: replacement firmware displays patterns on an NTSC NES-001 |
 | [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- partly local | M | I-08 (soft) | partial: GCC 13.2 device ELF links and fits; hardware boot check remains |
-| [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | open |
+| [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | partial: SDL-free engine runs 600 deterministic indexed view frames; stream/pads await adapters |
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | I-13 | open |
 | [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | **S0 done**: strict count, mailbox and screenshot golden pass; Doom scenarios await I-12 |

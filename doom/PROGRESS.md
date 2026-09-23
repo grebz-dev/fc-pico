@@ -11,6 +11,20 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-12 / P0-T3 -- SDL-free host engine runner (2026-09-23)
+- What landed: `PICO_PLATFORM=host` now builds the whole FC PICO engine and pthread shim
+  without SDL. The runner reads the checked-in WHX by path, starts DEMO1, captures indexed
+  320x168 view frames and stops at `--frames`. The host render barrier and wipe progression
+  are lockstep; no scanline thread is required for this intermediate view capture.
+- Verified: default host `cmake --build /tmp/fcpico-engine-host-12 -j 4` passes;
+  `ctest --test-dir /tmp/fcpico-engine-host-12 --output-on-failure` -> 2/2, including
+  two byte-identical, changing 600-frame DEMO1 captures. GCC 13.2 RP2350 engine ELF and
+  test-pattern targets still link. Raw output from manual runs is under
+  `/tmp/fcpico-host-frames-a/` and `-b/` (600 files each, 53,760 bytes per view).
+- Left out: the raw view omits status/menu/wipe composition. `--dump-stream` and `--pads`
+  report unsupported until I-16/I-17 and the input adapter land; I-12 acceptance remains
+  partial. This is not yet a co-simulation-ready Doom video stream.
+
 ## I-11 / P0-T2 -- RP2350 engine platform skeleton (2026-09-23)
 - Commits: engine submodule `0c27c1ce` and this parent integration commit.
 - What landed: optional parent superbuild integration, isolated `common_fcpico` platform
