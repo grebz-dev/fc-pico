@@ -11,6 +11,28 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-17 / P1-T3 -- Doom picture in Mesen, device publication candidate (2026-09-23)
+- What landed: D0 replays an actual DEMO1 frame through the tutorial-ROM Mesen PPU.
+  The screenshot agrees with the independent PPU reconstruction, and console
+  palette/attribute RAM equals the stream mailbox byte-for-byte. A v1 32-byte
+  bulk palette upload now mirrors its second half so the NES palette aliases do
+  not overwrite the backdrop; Mesen's attribute bulk response accounts for the
+  tutorial ROM's extra dummy read. The RP2350 adapter stages scanlines directly
+  into `fcvideo`, publishes converted frames to `fcbus`, and embeds the tutorial
+  ROM. The UF2 is a candidate, not yet hardware-approved.
+- Verified: D0 frame 100 visible correlation 0.9942 and 16/16 palette plus
+  64/64 attribute bytes equal; screenshot under `/tmp/fcpico-d0-final/run/`.
+  Strict S0 is green with a newly reviewed black-backdrop golden, 30/30 valid
+  post-startup mailboxes, count 15490 and no post-startup DMA stops. The staged
+  converter matches the bulk API's stream exactly. Host 128 KB zone replay:
+  3/3 CTests including two 600-frame runs. RP2350 ELF/UF2 links; flash uses
+  282,500 bytes, leaving 241,788 before WHX; static RAM leaves 36,368 bytes
+  after the configured 128 KB Doom zone (24 KB minimum gate).
+- Left out: hardware boot/display and measured conversion timing; `doom1.whx`
+  is not in the UF2 and still needs loading at `0x10080000`. D0 replays a fixed
+  stream through tutorial v1, not the Doom v2 ROM. S1 reflash, full S2 sequence,
+  palette/attribute updates per dynamic frame and v2 NMI timing remain open.
+
 ## I-12 / I-17 -- host Doom-to-NES stream output (2026-09-23)
 - What landed: the SDL-free host runner's `--dump-stream DIR` converts each composed
   320x200 indexed frame to a 17,408-byte v2 cartridge stream using the default

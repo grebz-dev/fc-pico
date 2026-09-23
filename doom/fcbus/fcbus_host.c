@@ -26,6 +26,8 @@ static host_serve_t g_mode;
 static const uint8_t *g_resp_data;
 static uint16_t g_resp_len;
 static uint16_t g_resp_pos;
+static bool g_resp_lead_byte;
+static bool g_bulk_lead_byte_enabled;
 static uint32_t g_stream_pos;
 
 static fcbus_host_log_entry_t g_log[FCBUS_HOST_LOG_CAP];
@@ -70,6 +72,13 @@ static void drain_actions(void) {
             g_resp_data = act.data;
             g_resp_len = act.len;
             g_resp_pos = 0;
+            /* The tutorial ROM takes an extra $2007 dummy read for attribute
+             * uploads. The hardware PIO restart presents one stale byte first;
+             * Mesen's byte-stream backend must reproduce that for $23C0 only.
+             * Palette reads are unbuffered and need no extra lead byte. */
+            g_resp_lead_byte = g_bulk_lead_byte_enabled &&
+                act.data == g_core.data_payload &&
+                g_core.drq_header[2] == 0xC0 && g_core.drq_header[3] == 0x23;
             g_mode = (g_resp_len > 0) ? HOST_SERVE_RESPONSE : HOST_SERVE_FF;
             break;
         case FCBUS_ACT_HEARTBEAT:
@@ -98,8 +107,14 @@ void fcbus_host_init(const fcbus_config_t *cfg) {
     g_resp_data = NULL;
     g_resp_len = 0;
     g_resp_pos = 0;
+    g_resp_lead_byte = false;
+    g_bulk_lead_byte_enabled = false;
     g_stream_pos = 0;
     g_log_len = 0;
+}
+
+void fcbus_host_set_bulk_lead_byte(bool enabled) {
+    g_bulk_lead_byte_enabled = enabled;
 }
 
 int fcbus_host_ppu_read(void) {
@@ -115,6 +130,11 @@ int fcbus_host_ppu_read(void) {
         return -1;
 
     case HOST_SERVE_RESPONSE: {
+        if (g_resp_lead_byte) {
+            g_resp_lead_byte = false;
+            g_read_count++;
+            return 0;
+        }
         uint8_t byte = g_resp_data[g_resp_pos++];
         g_read_count++;
         if (g_resp_pos >= g_resp_len) {

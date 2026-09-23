@@ -300,6 +300,10 @@ static void service_drq(fcbus_core_t *c) {
         c->dm_pal_pending = false;
         memset(c->data_payload, 0, sizeof c->data_payload);
         memcpy(c->data_payload, c->pal_want, sizeof c->pal_want);
+        /* The tutorial ROM requests and copies 32 palette bytes. The NES
+         * mirrors $3F10/$3F14/$3F18/$3F1C over the backdrop entries, so
+         * zeros in the second half would erase all four backdrop colours. */
+        memcpy(c->data_payload + MBX_PAL_LEN, c->pal_want, MBX_PAL_LEN);
         /* A bulk upload delivers the whole table, so the console now holds what we want
          * and the per-frame diff has nothing left to trickle. */
         memcpy(c->pal_sent, c->pal_want, sizeof c->pal_sent);

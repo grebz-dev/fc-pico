@@ -170,16 +170,20 @@ static void choose_attributes(fcvideo_t *video, uint8_t attr[MBX_ATTR_LEN]) {
     }
 }
 
-void fcvideo_convert(fcvideo_t *video,
-                     const uint8_t source[FCVIDEO_SRC_HEIGHT * FCVIDEO_SRC_WIDTH],
-                     uint8_t stream[VRAM_BUF_BYTES_V2],
-                     uint8_t attr[MBX_ATTR_LEN], bool reset_hysteresis) {
+void fcvideo_frame_begin(fcvideo_t *video) {
     memset(video->frame, 0, sizeof(video->frame));
-    for (int y = 0; y < FCVIDEO_SRC_HEIGHT; y++) {
-        uint8_t *dst = video->frame + (y + 16) * FCVIDEO_WIDTH;
-        const uint8_t *src = source + y * FCVIDEO_SRC_WIDTH;
-        for (int x = 0; x < FCVIDEO_WIDTH; x++) dst[x] = src[(x / 4) * 5 + (x & 3)];
-    }
+}
+
+void fcvideo_push_line(fcvideo_t *video, int y,
+                       const uint8_t line[FCVIDEO_SRC_WIDTH]) {
+    if (y < 0 || y >= FCVIDEO_SRC_HEIGHT) return;
+    uint8_t *dst = video->frame + (y + 16) * FCVIDEO_WIDTH;
+    for (int x = 0; x < FCVIDEO_WIDTH; x++) dst[x] = line[(x / 4) * 5 + (x & 3)];
+}
+
+void fcvideo_convert_staged(fcvideo_t *video,
+                            uint8_t stream[VRAM_BUF_BYTES_V2],
+                            uint8_t attr[MBX_ATTR_LEN], bool reset_hysteresis) {
     if (reset_hysteresis) video->have_previous = false;
     choose_attributes(video, attr);
     memcpy(video->previous_attr, attr, MBX_ATTR_LEN);
@@ -212,4 +216,15 @@ void fcvideo_convert(fcvideo_t *video,
     mailbox[MBX_MAGIC] = PF_MAGIC_NO;
     memcpy(mailbox + MBX_PAL, video->tables.palette, MBX_PAL_LEN);
     memcpy(mailbox + MBX_ATTR, attr, MBX_ATTR_LEN);
+}
+
+void fcvideo_convert(fcvideo_t *video,
+                     const uint8_t source[FCVIDEO_SRC_HEIGHT * FCVIDEO_SRC_WIDTH],
+                     uint8_t stream[VRAM_BUF_BYTES_V2],
+                     uint8_t attr[MBX_ATTR_LEN], bool reset_hysteresis) {
+    fcvideo_frame_begin(video);
+    for (int y = 0; y < FCVIDEO_SRC_HEIGHT; y++) {
+        fcvideo_push_line(video, y, source + y * FCVIDEO_SRC_WIDTH);
+    }
+    fcvideo_convert_staged(video, stream, attr, reset_hysteresis);
 }

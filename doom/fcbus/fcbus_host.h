@@ -39,6 +39,10 @@ typedef struct {
 /** Resets the host backend and the core it wraps. Mirrors rp_system::init(). */
 void fcbus_host_init(const fcbus_config_t *cfg);
 
+/** Enable the one stale PIO read before each bulk DLD payload when driving
+ * the NES $2007 read path in Mesen. Direct host-byte tests leave this off. */
+void fcbus_host_set_bulk_lead_byte(bool enabled);
+
 /**
  * @brief Returns the next byte the PPU would receive, or -1 while the DMA is stopped.
  *

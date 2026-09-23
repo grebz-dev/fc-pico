@@ -91,7 +91,9 @@ static void test_init_uses_the_tutorial_bulk_upload_protocol(void) {
         CHECK_EQ(fcpico_cart_ppu_read(), palette[i]);
     }
     for (size_t i = MBX_PAL_LEN; i < 32; ++i) {
-        CHECK_EQ(fcpico_cart_ppu_read(), 0);
+        /* The second half is uploaded too. It must mirror the first half,
+         * since $3F10/$14/$18/$1C alias the universal BG entries. */
+        CHECK_EQ(fcpico_cart_ppu_read(), palette[i - MBX_PAL_LEN]);
     }
 
     fcpico_cart_ppu_write(FP_COM_DRQ);
