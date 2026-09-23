@@ -5,7 +5,9 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-#define FCPICO_TRACE_WORDS 65536u
+/* About 2 ms / 31 NTSC scanlines.  This is long enough to contain complete lines
+ * while keeping the USB serial dump below common 256 KiB terminal limits. */
+#define FCPICO_TRACE_WORDS 8192u
 #define FCPICO_TRACE_SAMPLES_PER_WORD 6u
 #define FCPICO_TRACE_PERIOD_NS 40u
 

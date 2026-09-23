@@ -8,74 +8,22 @@
 #include <string.h>
 
 #include "fcbus_host.h"
+#include "testpattern.h"
 
 static bool g_initialized;
 static const uint8_t *g_prg;
 static fcpico_cart_metrics_t g_metrics;
-
-static uint8_t pattern_pixel(uint32_t frame, int x, int y) {
-    (void)frame;
-    (void)y;
-    /* Pattern 0 from port/main_testpattern.c.  S0 intentionally keeps it
-     * stationary so its screenshot remains a deterministic integration check. */
-    return (uint8_t)((x / 34) & 3);
-}
-
-static void build_pattern(uint16_t *stream, uint32_t frame) {
-    for (int y = 0; y < VRAM_LINES; ++y) {
-        for (int tile = 0; tile < VRAM_LINE_WORDS; ++tile) {
-            uint16_t word = 0;
-            for (int pixel = 0; pixel < 8; ++pixel) {
-                uint8_t colour = pattern_pixel(frame, tile * 8 + pixel, y);
-                word = (uint16_t)((word << 1) | (colour & 1u) |
-                                  ((colour & 2u) << 7));
-            }
-            *fcbus_stream_word(stream, y, tile) = word;
-        }
-    }
-}
-
-static void fill_tables(fcbus_core_t *core, uint32_t frame) {
-    static const uint8_t palette[MBX_PAL_LEN] = {
-        0x0f, 0x00, 0x10, 0x20, 0x0f, 0x06, 0x16, 0x26,
-        0x0f, 0x09, 0x19, 0x29, 0x0f, 0x01, 0x21, 0x31,
-    };
-    uint8_t attributes[MBX_ATTR_LEN];
-
-    for (size_t index = 0; index < sizeof attributes; ++index) {
-        attributes[index] = (uint8_t)(((index + frame / 30u) & 1u) ? 0x1b : 0xe4);
-    }
-    fcbus_core_palette(core, palette);
-    fcbus_core_attr_table(core, attributes);
-}
+static fcpico_testpattern_t g_pattern_app;
 
 static void publish_pattern(uint32_t frame) {
-    fcbus_core_t *core = fcbus_host_core();
-    if (!fcbus_core_back_is_free(core)) {
-        return;
+    (void)frame;
+    if (fcpico_testpattern_poll(&g_pattern_app, 0)) {
+        g_metrics.pattern_frames++;
     }
-
-    build_pattern(fcbus_core_stream_back(core), frame);
-    fill_tables(core, frame);
-    fcbus_core_publish(core);
-    g_metrics.pattern_frames++;
 }
 
 static void handle_init(uint8_t stage) {
-    fcbus_core_t *core = fcbus_host_core();
-
-    /* AplGame sends FP_COM_INI + PICO_STAGE, then NMI reads the following
-     * mailbox.  The tutorial's per-frame PF_COM_VRAM path is compiled out, so
-     * the first palette and attribute tables must travel through its actual
-     * PF_COM_DMOD -> DRQ -> DLD transfer before the display is meaningful. */
-    if (fcbus_core_back_is_free(core)) {
-        build_pattern(fcbus_core_stream_back(core), 0);
-        /* Queue DMOD before the tables.  On v1 table diffs can consume the
-         * 14-byte mailbox command area, while DMOD must be present in the
-         * first post-init mailbox to reach the tutorial's bulk-transfer code. */
-        fcbus_core_request_data_mode(core);
-        fill_tables(core, 0);
-        fcbus_core_publish(core);
+    if (fcpico_testpattern_console_init(&g_pattern_app, stage, 0)) {
         g_metrics.pattern_frames++;
     }
     g_metrics.init_actions++;
@@ -88,6 +36,7 @@ static void reset_link(void) {
         .proto_default = FCBUS_PROTO_V1,
     };
     fcbus_host_init(&config);
+    fcpico_testpattern_init(&g_pattern_app, fcbus_host_core());
     memset(&g_metrics, 0, sizeof g_metrics);
 }
 

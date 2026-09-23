@@ -70,4 +70,5 @@ void trace_dump(void) {
         putchar('\n');
     }
     puts("END TRACE");
+    fflush(stdout);
 }

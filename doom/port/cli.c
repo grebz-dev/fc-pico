@@ -30,9 +30,11 @@ static void print_stats(cli_t *cli) {
     for (unsigned index = 0; index < 9; ++index) {
         printf("%s%u", index ? "," : "", stats->count_hist[index]);
     }
-    printf(" resyncs=%lu timeouts=%lu dma_stops=%lu apu_drops=0 free_zone=0\n",
+    printf(" resyncs=%lu timeouts=%lu dma_stops=%lu inits=%lu init_stage=%u"
+           " apu_drops=0 free_zone=0\n",
            (unsigned long)stats->resyncs, (unsigned long)stats->hb_timeouts,
-           (unsigned long)stats->dma_stops);
+           (unsigned long)stats->dma_stops, (unsigned long)stats->init_events,
+           stats->last_init_stage);
 }
 
 static void run_command(cli_t *cli, char *line) {

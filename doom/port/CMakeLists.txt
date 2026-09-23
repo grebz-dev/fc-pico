@@ -19,7 +19,7 @@ add_executable(fcpico_testpattern
     ${BOOTROM_C})
 target_include_directories(fcpico_testpattern PRIVATE ${CMAKE_CURRENT_LIST_DIR})
 target_link_libraries(fcpico_testpattern PRIVATE
-    fcbus_device hardware_clocks hardware_dma hardware_flash hardware_pio
+    fcbus_device fcpico_testpattern_app hardware_clocks hardware_dma hardware_flash hardware_pio
     hardware_watchdog pico_bootrom pico_stdlib pico_unique_id)
 target_compile_options(fcpico_testpattern PRIVATE -Wall -Wextra -Werror)
 pico_enable_stdio_usb(fcpico_testpattern 1)

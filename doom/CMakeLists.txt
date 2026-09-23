@@ -26,6 +26,7 @@ if(FCPICO_HOST_ONLY)
     add_compile_options(-Wall -Wextra -Werror)
 
     add_subdirectory(fcbus)
+    add_subdirectory(testpattern)
 
     if(FCPICO_BUILD_COSIM)
         add_subdirectory(sim/cartmodel)
@@ -55,5 +56,6 @@ else()
 
     set(FCPICO_SUPERBUILD 1)
     add_subdirectory(fcbus)
+    add_subdirectory(testpattern)
     add_subdirectory(port)
 endif()

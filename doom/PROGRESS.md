@@ -11,6 +11,26 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-10 / I-19 -- first NTSC measurement and test-pattern init repair (2026-09-22)
+- Commits: this commit.
+- What landed: the first NES-001 run validates the existing v1 hardware count at 15490
+  (5495/5507 exact frames; 12 low outliers). The blank screen exposed a separate adapter
+  divergence: Mesen reacted to `FP_COM_INI` with `PF_COM_DMOD`, while the physical main loop
+  could not observe the init after the IRQ backend drained it. A shared backend-neutral
+  test-pattern controller now owns pattern/table publication and init-time data mode for
+  both adapters. Init count/stage are retained in stats and printed by the CLI.
+- Capture changes: the initial three 65,536-word traces were incomplete over USB/terminal
+  capture. The sampler now emits 8,192 words, about 2.0 ms or 31 NTSC scanlines, retaining
+  the required within-line prefetch evidence while reducing text output below 256 KiB.
+- Verified: focused red-to-green checks produced `1332` fcbus checks, `7` test-pattern
+  checks and `149` cartmodel checks; all 10 host C suites pass. The RP2350 UF2 builds and
+  `flash_layout_check.py` reports 68,564 bytes used with 455,724 bytes free.
+- Left out: the replacement UF2 still needs an NES reflash to confirm a visible pattern and
+  collect three decoder-valid traces. Strict Mesen S0 remains intentionally uncalibrated
+  until the real trace determines which strobes the PIO counter omits.
+- Plan changes: HR-1, I-10, the hardware log, and the new hardware fixture directory record
+  the session and exact artifact.
+
 ## I-17 -- NES presets, PLAYPAL tables and flash sets (2026-09-21)
 - Commits: `21aa70e`, this commit.
 - What landed: build-selectable default and named A/B/C sub-palette presets, including the

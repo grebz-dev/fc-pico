@@ -404,6 +404,8 @@ void fcbus_core_rx_byte(fcbus_core_t *c, uint8_t b) {
         c->proto = FCBUS_PROTO_UNKNOWN;
         c->state = FCBUS_ST_INIT;
         c->rxwait = FCBUS_RXW_NONE;
+        c->stats.init_events++;
+        c->stats.last_init_stage = b;
         push_action(c, FCBUS_ACT_INIT, b, NULL, 0);
         return;
     case FCBUS_RXW_HELLO_VER:
