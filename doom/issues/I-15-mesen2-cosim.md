@@ -15,6 +15,15 @@ Start S0 with the tutorial ROM and a test pattern; the engine host build is not 
 This checks protocol integration, not ARM instruction execution or physical PIO/DMA timing.
 Build locally where dependencies are available and provide a reproducible CI runner.
 
+## Hardware-calibrated S0 result (2026-09-22)
+
+Trace 6 resolves the earlier failed count gate. The mapper selects 66 pre-render and 64
+visible-line reads; the host reports the same zero-based `ppu_count=15490` as the device.
+Strict S0 now passes with 30/30 valid post-startup mailboxes, no post-startup DMA stops,
+deterministic debugger-peek output and a reviewed test-pattern picture golden. The section
+below records the earlier diagnostic state and the failed 68-read hypothesis. Doom-mode
+scenarios still depend on the engine and v2 ROM work.
+
 ## Current execution (2026-09-20)
 
 - Selected fork: `https://github.com/grebz-dev/MesenCE-FC-PICO`, pinned at

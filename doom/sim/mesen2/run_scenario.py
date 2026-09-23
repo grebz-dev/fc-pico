@@ -14,9 +14,9 @@ import sys
 
 HERE = Path(__file__).resolve().parent
 REPO = HERE.parents[2]
+STARTUP_FRAMES = 150
 sys.path.insert(0, str(REPO / "doom/tools"))
 from fcpico.protocol import PPU_COUNT_VAL_V1  # noqa: E402
-from fcpico.protocol import VRAM_LINE_WORDS  # noqa: E402
 from nes.set_mapper import set_mapper  # noqa: E402
 
 
@@ -34,21 +34,15 @@ def steady_heartbeat_rows(writes):
     """
     return [
         row for row in writes
-        if int(row["ppu_frame"]) > 120
+        if int(row["ppu_frame"]) > STARTUP_FRAMES
         and int(row["cpu_reads"]) == 65
         and int(row["render_reads"]) > 10000
     ]
 
 
 def summarize_fetch_trace(rows, frame, cs1_mask):
-    """Check Mesen's selected PPU fetch order against the stream's 34-word line.
-
-    This is an emulator timing check only. The cartridge's hardware read
-    counter remains uncalibrated, and the current S0 picture is open bus.
-    """
+    """Check Mesen's selected fetch order against the calibrated hardware cadence."""
     expected_lines = range(-1, 240)
-    expected_bg_cycles = [cycle for tile in range(32) for cycle in (8 * tile + 5, 8 * tile + 7)]
-    expected_bg_cycles += [325, 327, 333, 335]
     by_line = {line: [] for line in expected_lines}
     for row in rows:
         if int(row["ppu_frame"]) != frame:
@@ -62,10 +56,15 @@ def summarize_fetch_trace(rows, frame, cs1_mask):
     open_bus = 0
     sprite_reads = 0
     for line, fetches in by_line.items():
+        selected_tiles = 31 if line == -1 else 30
+        expected_bg_cycles = [
+            cycle for tile in range(selected_tiles)
+            for cycle in (8 * tile + 5, 8 * tile + 7)
+        ] + [325, 327, 333, 335]
         bg = [r for r in fetches if int(r["cycle"]) <= 255 or int(r["cycle"]) >= 321]
         cycles = [int(r["cycle"]) for r in bg]
         if cycles != expected_bg_cycles:
-            raise ValueError(f"scanline {line}: background fetch cycles differ from 32 tiles plus two prefetch tiles")
+            raise ValueError(f"scanline {line}: background fetch cycles differ from hardware")
         for low, high in zip(bg[::2], bg[1::2]):
             if int(high["address"]) != int(low["address"]) + 8:
                 raise ValueError(f"scanline {line}: low/high pattern fetch address pair differs")
@@ -73,13 +72,13 @@ def summarize_fetch_trace(rows, frame, cs1_mask):
         expected_sprites = 0 if cs1_mask == "0xf000" else 16
         if len(sprites) != expected_sprites:
             raise ValueError(f"scanline {line}: expected {expected_sprites} sprite fetches, got {len(sprites)}")
-        if len(fetches) != VRAM_LINE_WORDS * 2 + expected_sprites:
+        if len(fetches) != selected_tiles * 2 + 4 + expected_sprites:
             raise ValueError(f"scanline {line}: wrong number of selected reads")
         sprite_reads += len(sprites)
         total += len(fetches)
         open_bus += sum(int(r["value"]) == 0xff for r in fetches)
     return {"frame": frame, "scanlines": len(by_line), "selected_reads": total,
-            "background_reads": len(by_line) * VRAM_LINE_WORDS * 2,
+            "background_reads": 66 + 240 * 64,
             "sprite_reads": sprite_reads, "ff_values": open_bus}
 
 
@@ -91,12 +90,13 @@ def main():
     parser.add_argument("--cs1-mask", choices=["0xf000", "0xe000"], default="0xf000")
     parser.add_argument("--mesen", type=Path, default=HERE / "Mesen2/bin/linux-x64/Release/linux-x64/publish/Mesen")
     parser.add_argument("--output", type=Path, default=HERE / "results/S0")
-    parser.add_argument("--golden", type=Path, help="reviewed final ARGB SHA-256 text file (required for strict S0)")
-    parser.add_argument("--fetch-frame", type=int, default=121,
-                        help="capture one Mesen PPU rendering frame (default: 121)")
+    parser.add_argument("--golden", type=Path, default=HERE / "goldens/S0.argb.sha256",
+                        help="reviewed final ARGB SHA-256 text file")
+    parser.add_argument("--fetch-frame", type=int, default=160,
+                        help="capture one post-startup Mesen PPU rendering frame (default: 160)")
     args = parser.parse_args()
-    if args.frames <= 120:
-        parser.error("--frames must exceed the 120-frame startup window")
+    if args.frames <= STARTUP_FRAMES:
+        parser.error(f"--frames must exceed the {STARTUP_FRAMES}-frame startup window")
     if not (0 <= args.fetch_frame <= args.frames):
         parser.error("--fetch-frame must be within the run")
     binary = args.mesen.resolve()
@@ -128,6 +128,7 @@ def main():
             (run / filename).unlink(missing_ok=True)
         env = dict(os.environ, FCPICO_RESULTS=str(run), FCPICO_TRACE=str(run / "trace.csv"),
                    FCPICO_FRAMES=str(args.frames), FCPICO_CS1_MASK=args.cs1_mask,
+                   FCPICO_STARTUP_FRAMES=str(STARTUP_FRAMES),
                    FCPICO_FETCH_TRACE=str(run / "fetch.csv"), FCPICO_FETCH_FRAME=str(args.fetch_frame),
                    FCPICO_DEBUG_PEEKS=str(number), SDL_AUDIODRIVER="dummy")
         with (run / "console.log").open("w") as log:
@@ -158,26 +159,26 @@ def main():
         # state histogram as well.
         stable = steady_heartbeat_rows(writes)
         counts = sorted({int(row["last_count"]) for row in stable})
-        result.update(counts_after_120=counts, final_argb_sha256=digest(run / "final.argb"),
+        result.update(counts_after_startup=counts, final_argb_sha256=digest(run / "final.argb"),
                       trace_sha256=digest(run / "trace.csv"), mailbox_sha256=digest(run / "mailbox.csv"),
                       fetch_sha256=digest(run / "fetch.csv"), fetch_profile=fetch_profile,
-                      stops_after_120=(int(stable[-1]["dma_stops"]) - int(stable[0]["dma_stops"])) if stable else -1,
+                      stops_after_startup=(int(stable[-1]["dma_stops"]) - int(stable[0]["dma_stops"])) if stable else -1,
                       final_stats=writes[-1])
         runs.append(result)
     deterministic = all(runs[0][key] == runs[1][key] for key in
                         ("trace_sha256", "mailbox_sha256", "final_argb_sha256", "fetch_sha256"))
     strict_errors = []
-    if runs[0]["counts_after_120"] != [PPU_COUNT_VAL_V1]:
-        strict_errors.append(f"observed counts {runs[0]['counts_after_120']}, expected {PPU_COUNT_VAL_V1}")
-    if runs[0]["valid_mailboxes_after_120"] != args.frames - 120:
+    if runs[0]["counts_after_startup"] != [PPU_COUNT_VAL_V1]:
+        strict_errors.append(f"observed counts {runs[0]['counts_after_startup']}, expected {PPU_COUNT_VAL_V1}")
+    if runs[0]["valid_mailboxes_after_startup"] != args.frames - STARTUP_FRAMES:
         strict_errors.append("mailbox magic is not valid on every post-startup frame")
-    if runs[0]["stops_after_120"] != 0:
+    if runs[0]["stops_after_startup"] != 0:
         strict_errors.append("DMA stops during post-startup frames")
-    if not args.golden:
+    if not args.golden.is_file():
         strict_errors.append("no reviewed screenshot golden supplied")
     elif args.golden.read_text().strip() != runs[0]["final_argb_sha256"]:
         strict_errors.append("screenshot does not match the reviewed golden")
-    report = dict(scenario="S0", calibrated=False, cs1_mask=args.cs1_mask,
+    report = dict(scenario="S0", calibrated=True, cs1_mask=args.cs1_mask,
                   debug_peeks_do_not_change_results=deterministic, runs=runs,
                   strict_s0_pass=deterministic and not strict_errors, strict_errors=strict_errors)
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")

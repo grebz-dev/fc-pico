@@ -14,7 +14,7 @@ typedef enum {
     HOST_SERVE_STOPPED, /* DMA stopped: reads return -1, uncounted. */
     HOST_SERVE_RESPONSE, /* Streaming a queued FCBUS_ACT_STREAM_RESPONSE buffer. */
     HOST_SERVE_FF,       /* Response exhausted; filler until the next heartbeat. */
-    HOST_SERVE_STREAM,   /* OSR prelude zeros, then the front stream buffer. */
+    HOST_SERVE_STREAM,   /* Front stream buffer, advanced by any phase nudge. */
 } host_serve_t;
 
 #define FCBUS_HOST_LOG_CAP 32
@@ -26,7 +26,6 @@ static host_serve_t g_mode;
 static const uint8_t *g_resp_data;
 static uint16_t g_resp_len;
 static uint16_t g_resp_pos;
-static uint32_t g_prelude_left;
 static uint32_t g_stream_pos;
 
 static fcbus_host_log_entry_t g_log[FCBUS_HOST_LOG_CAP];
@@ -58,8 +57,8 @@ static void begin_stream(fcbus_sync_t decision) {
     } else if (decision == FCBUS_ARM_NUDGE2) {
         nudges = 2;
     }
-    g_prelude_left = FCBUS_OSR_PRELUDE_BYTES - nudges;
-    g_stream_pos = 0;
+    /* A manual OUT consumes one buffer byte before normal PPU reads resume. */
+    g_stream_pos = nudges;
     g_mode = HOST_SERVE_STREAM;
 }
 
@@ -99,7 +98,6 @@ void fcbus_host_init(const fcbus_config_t *cfg) {
     g_resp_data = NULL;
     g_resp_len = 0;
     g_resp_pos = 0;
-    g_prelude_left = 0;
     g_stream_pos = 0;
     g_log_len = 0;
 }
@@ -131,10 +129,6 @@ int fcbus_host_ppu_read(void) {
 
     case HOST_SERVE_STREAM: {
         g_read_count++;
-        if (g_prelude_left > 0) {
-            g_prelude_left--;
-            return 0x00;
-        }
         const uint8_t *front = (const uint8_t *)fcbus_core_stream_front(&g_core);
         uint8_t byte = (g_stream_pos < VRAM_BUF_BYTES_V2) ? front[g_stream_pos] : 0xFF;
         g_stream_pos++;
@@ -145,7 +139,11 @@ int fcbus_host_ppu_read(void) {
 }
 
 void fcbus_host_ppu_write(uint8_t b) {
-    fcbus_core_set_read_count(&g_core, g_read_count);
+    /* fcppu_rna copies !X into ISR before decrementing X. After N physical
+     * qualifying reads, the pushed value is therefore N-1 (or zero before
+     * the first read), not N. */
+    uint32_t reported = g_read_count > 0 ? g_read_count - PPU_COUNTER_REPORT_BIAS : 0;
+    fcbus_core_set_read_count(&g_core, reported);
     fcbus_core_rx_byte(&g_core, b);
     drain_actions();
 }

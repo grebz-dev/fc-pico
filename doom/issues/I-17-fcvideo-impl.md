@@ -17,15 +17,14 @@ wired to the bus interrupt.
 ## Current execution (2026-09-21)
 
 The host core under `port/video/` decimates and letterboxes 320x200 frames, chooses
-attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 34-word
+attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 32-word
 scanline stream and writes the v2 mailbox. A differential test compares the complete C stream
 and attributes against `tools/fcvideo_ref.py` for gradient, checkerboard and random frames.
 Presets A/B/C and palette-0 `err`/`lut` generation now match that Python oracle byte for byte,
 including a complete stream built from C-generated tables. The 14 synthetic flash palette
 sets match the engine's red/yellow/green tint arithmetic. Engine frame input, device
-publication/timing, and Mesen pixel acceptance remain open. Mesen S0
-validates the 34-word fetch schedule, but strict S0 still needs I-19 before a picture golden
-is meaningful.
+publication/timing, and Doom picture acceptance remain open. Strict Mesen S0 now validates
+the 32-word selected-read schedule and a test-pattern picture golden against trace 6.
 
 ## Specification
 
@@ -51,7 +50,7 @@ and any file another open issue lists under **Owns**.
 3. Add the palette presets from the plan, including PiPU's measured set as preset C.
 4. Wire `fcvideo_frame_begin/line_sink/frame_end` to `fcbus_core_publish()` and measure the
    conversion time; report it through the CLI from I-10.
-5. Validate the resulting stream through Mesen S2 once strict S0 is calibrated by I-19.
+5. Validate the resulting Doom stream through Mesen S2 once engine frames are available.
    Host reference equality is the acceptance gate for the independent first slice; an
    open-bus S0 screenshot is not pixel evidence.
 

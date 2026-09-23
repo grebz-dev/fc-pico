@@ -12,6 +12,7 @@ from dataclasses import asdict, dataclass
 from pathlib import Path
 
 HEADER_RE = re.compile(r"^TRACE period_ns=(\d+) samples=(\d+) words=(\d+)$")
+NTSC_SCANLINE_NS = 63_556
 
 
 @dataclass(frozen=True)
@@ -26,6 +27,9 @@ class TraceReport:
         Number of read falling edges with active-low CS1 asserted.
     line_counts
         Qualifying reads in each inferred visible scanline.
+    prerender_reads
+        Qualifying reads in the complete pre-render line, when the capture is
+        frame-anchored; otherwise ``None``.
     rd_low_width_histogram
         Mapping from pulse width in samples to occurrence count.
     vblank_gap_samples
@@ -37,6 +41,7 @@ class TraceReport:
     period_ns: int
     qualifying_reads: int
     line_counts: list[int]
+    prerender_reads: int | None
     rd_low_width_histogram: dict[int, int]
     vblank_gap_samples: int
     write_bursts: list[int]
@@ -107,24 +112,41 @@ def _falling_edges(samples: list[int], bit: int) -> list[int]:
             if samples[index - 1] & bit and not samples[index] & bit]
 
 
-def decode_samples(samples: list[int], period_ns: int) -> TraceReport:
-    """Decode strobe measurements from 5-bit samples.
+def _visible_line_counts(
+    samples: list[int], period_ns: int, rd_edges: list[int], qualifying: list[int]
+) -> tuple[int, list[int]] | None:
+    """Count reads in complete visible lines of a vblank-anchored NTSC capture.
 
-    GP17 through GP21 map to bits 0 through 4. CS1, RD, and WR are all
-    active low. Scanline boundaries are inferred from intervals larger than
-    twice the median qualifying-read interval, while the largest such interval
-    is reported as the vblank gap.
+    The firmware begins a trace immediately after its frame heartbeat, so a
+    hardware capture starts in vblank. The first /RD activity is the pre-render
+    line; equal-duration windows after it are visible scanlines. Returning
+    ``None`` leaves short synthetic and non-frame-anchored captures to the
+    interval-based fallback.
     """
-    rd_edges = _falling_edges(samples, 1 << 3)
-    qualifying = [index for index in rd_edges if not samples[index] & 1]
+    if not rd_edges:
+        return None
 
-    widths = []
-    for edge in rd_edges:
-        end = edge
-        while end < len(samples) and not samples[end] & (1 << 3):
-            end += 1
-        widths.append(end - edge)
+    anchor_ns = rd_edges[0] * period_ns
+    capture_ns = len(samples) * period_ns
+    if anchor_ns < NTSC_SCANLINE_NS * 2:
+        return None
 
+    complete_lines = (capture_ns - anchor_ns) // NTSC_SCANLINE_NS
+    if complete_lines < 2:
+        return None
+
+    counts = [0] * complete_lines
+    for edge in qualifying:
+        line = (edge * period_ns - anchor_ns) // NTSC_SCANLINE_NS
+        if 0 <= line < complete_lines:
+            counts[line] += 1
+
+    # Line zero is the pre-render line, not part of the visible result.
+    return counts[0], counts[1:]
+
+
+def _interval_line_counts(qualifying: list[int]) -> list[int]:
+    """Infer read groups from gaps for compact synthetic captures."""
     intervals = [right - left for left, right in zip(qualifying, qualifying[1:])]
     nonzero = sorted(interval for interval in intervals if interval > 0)
     median = nonzero[len(nonzero) // 2] if nonzero else 0
@@ -139,6 +161,35 @@ def decode_samples(samples: list[int], period_ns: int) -> TraceReport:
             else:
                 count += 1
         line_counts.append(count)
+    return line_counts
+
+
+def decode_samples(samples: list[int], period_ns: int) -> TraceReport:
+    """Decode strobe measurements from 5-bit samples.
+
+    GP17 through GP21 map to bits 0 through 4. CS1, RD, and WR are all
+    active low. Frame-anchored NTSC hardware captures use the known scanline
+    duration and omit the pre-render and incomplete tail lines. Short synthetic
+    captures fall back to gap-based grouping. The largest interval between
+    qualifying reads is reported as the vblank gap.
+    """
+    rd_edges = _falling_edges(samples, 1 << 3)
+    qualifying = [index for index in rd_edges if not samples[index] & 1]
+
+    widths = []
+    for edge in rd_edges:
+        end = edge
+        while end < len(samples) and not samples[end] & (1 << 3):
+            end += 1
+        widths.append(end - edge)
+
+    intervals = [right - left for left, right in zip(qualifying, qualifying[1:])]
+    frame_counts = _visible_line_counts(samples, period_ns, rd_edges, qualifying)
+    if frame_counts is None:
+        prerender_reads = None
+        line_counts = _interval_line_counts(qualifying)
+    else:
+        prerender_reads, line_counts = frame_counts
 
     wr_edges = _falling_edges(samples, 1 << 4)
     write_bursts = []
@@ -161,6 +212,7 @@ def decode_samples(samples: list[int], period_ns: int) -> TraceReport:
         period_ns=period_ns,
         qualifying_reads=len(qualifying),
         line_counts=line_counts,
+        prerender_reads=prerender_reads,
         rd_low_width_histogram=dict(sorted(Counter(widths).items())),
         vblank_gap_samples=max(intervals, default=0),
         write_bursts=write_bursts,
@@ -185,6 +237,8 @@ def main() -> int:
     else:
         print(f"sample period: {report.period_ns} ns")
         print(f"qualifying reads: {report.qualifying_reads}")
+        if report.prerender_reads is not None:
+            print(f"pre-render reads: {report.prerender_reads}")
         print("per-line reads: " + " ".join(map(str, report.line_counts)))
         print("/RD low widths: " + " ".join(
             f"{width}:{count}" for width, count in report.rd_low_width_histogram.items()))

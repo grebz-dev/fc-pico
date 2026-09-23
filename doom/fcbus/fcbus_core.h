@@ -37,30 +37,18 @@ extern "C" {
 #endif
 
 /* ------------------------------------------------------------------------ */
-/* The four-byte OSR prelude (doom/plan/01-constraints.md, "A four-byte prelude   */
-/* from the PIO itself")                                                          */
+/* Frame re-arm stream alignment                                                   */
 /* ------------------------------------------------------------------------ */
 
 /**
- * @brief Zero bytes the real `fcppu_r` state machine emits after every DMA re-arm,
- *        before the first word autopulled from the buffer reaches the pins.
+ * @brief Extra zero bytes emitted before buffer byte zero after a frame re-arm.
  *
- * `fcppu_r` starts with `mov osr, null`, and `pio_sm_restart()` (called by
- * `rp_system::ppu_dma()` at every re-arm) clears the OSR and its shift counter again, so
- * the OSR is "full of zeros" at the moment the state machine resumes. The first four
- * `out pins, 8` instructions after a re-arm therefore emit `0x00` from that cleared OSR,
- * not from the DMA buffer -- the buffer's first byte is only reached on the fifth `out`.
- * `rp_system::ppu_dma()`'s two manual `out pins, 8` nudges (issued when the read count is
- * one or two short of #PPU_COUNT_VAL_V1 / #PPU_COUNT_VAL_V2) consume from this same
- * prelude rather than from the buffer, which is why an ARM_NUDGE1/ARM_NUDGE2 heartbeat
- * only needs 3 or 2 further zero bytes, not a fresh 4, before the buffer proper begins.
- *
- * The host backend (fcbus_host.c) models this explicitly: after an ARM it emits
- * `FCBUS_OSR_PRELUDE_BYTES` zero bytes, after ARM_NUDGE1 it emits
- * `FCBUS_OSR_PRELUDE_BYTES - 1`, after ARM_NUDGE2 `FCBUS_OSR_PRELUDE_BYTES - 2`, then the
- * front stream buffer from byte 0.
+ * Hardware trace arithmetic plus strict Mesen mailbox/pixel alignment establish that
+ * this is zero. The program's cold-start `mov osr, null` is not an extra per-frame
+ * stream prefix. ARM_NUDGE1/2 execute manual OUT instructions and therefore consume one
+ * or two real buffer bytes before normal reads resume.
  */
-#define FCBUS_OSR_PRELUDE_BYTES 4
+#define FCBUS_OSR_PRELUDE_BYTES 0
 
 /** Depth of the pending-command ring `fcbus_core_pop_action()` drains. */
 #define FCBUS_ACTION_RING_SIZE 8
@@ -286,7 +274,7 @@ const uint16_t *fcbus_core_stream_front(const fcbus_core_t *c);
 uint8_t *fcbus_core_mailbox_next(fcbus_core_t *c);
 
 static inline uint16_t *fcbus_stream_word(uint16_t *buf, int line, int tile) {
-    return buf + VRAM_HEAD_WORDS + line * VRAM_LINE_WORDS + tile;
+    return buf + VRAM_HEAD_WORDS + line * VRAM_TILE_COLS + tile;
 }
 
 /** False while a publish is pending (the back buffer is not free to reuse). */

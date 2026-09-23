@@ -86,11 +86,10 @@ video output:
 - Fault injection: drop or duplicate N reads in frame K, hold the heartbeat for M frames, send
   a v1 raw byte in v2 mode -- to test the resync logic and the state machine.
 
-**Calibration** (P0-T10): the parameters must reproduce `PPU_COUNT_VAL` = 15,490 for v1 and the
-measured per-line strobe timeline from the hardware trace (`tests/fixtures/hw_trace_ntsc.json`).
-Until calibrated, the defaults reproduce the firmware's buffer layout and the model is marked
-`UNCALIBRATED` in its output; golden hashes produced by an uncalibrated model are still valid as
-regression hashes but not as correctness evidence.
+**Calibration** (P0-T10): the defaults reproduce trace 6 in
+`tests/fixtures/hw_trace_ntsc/`: 66 pre-render reads and 64 selected reads per visible line.
+The NMI contributes one dummy and 64 mailbox reads, making 15,491 physical reads. The
+`fcppu_rna` report is the zero-based last-read index, 15,490, matching `PPU_COUNT_VAL_V1`.
 
 `tools/ppu_decode.py` is the same reconstruction in pure Python, used by L2 and for humans.
 
@@ -102,7 +101,7 @@ Adafruit's `pioasm`), one state machine at a time:
 | Program | Test | Emulator caveat |
 |---------|------|-----------------|
 | `fcppu_w` | drive `/WR` and `CS1` waveforms; assert one word pushed per `/WR` rising edge only when `CS1` was low at the falling edge; low byte equals the data pins | -- |
-| `fcppu_rna` | N qualifying reads and M non-qualifying -> ISR value after `push` equals N (accounting for the `~x` encoding) | -- |
+| `fcppu_rna` | N qualifying reads and M non-qualifying -> ISR value after `push` equals N-1 (the zero-based last-read index) | -- |
 | `fcppu_r` | with autopull, bytes appear on pins in order only during qualifying `/RD`-low windows | the `irq set` instruction is **not supported by pioemu**: assemble a variant with it replaced by `nop`; the bus-direction handshake is covered at L5/L6/L7 |
 | `fcppu_dir` | not testable in pioemu (needs `irq`/`wait irq`) | document; L5 covers it |
 
@@ -178,52 +177,25 @@ assertions so the model's read counter is not disturbed), `emu.setInput(table, p
 `emu.log(text)`, and `emu.stop(exitCode)` to end a `--testRunner` run. The selected fork's
 Lua API registers `stop`; its command-line help still calls it `exit`.
 
-### S0 as measured (2026-09-20, uncalibrated)
+### S0 calibrated to hardware (2026-09-22)
 
-The first working co-simulation run contradicts #PPU_PICTURE_COUNT, and the contradiction
-is arithmetic rather than marginal. Per frame, in steady state, with the tutorial boot ROM:
+The NES-001 trace fixes the mapper's board-selection window: 66 background bytes on
+pre-render and 64 on each visible line, plus 65 CPU `$2007` reads. The host backend models
+`fcppu_rna`'s zero-based report, so 15,491 physical reads produce `ppu_count=15490`.
 
-| CS1 decode | selected PPU reads per frame | arithmetic | `$2007` reads |
-|------------|------------------------------|------------|---------------|
-| `addr & 0xF000 == 0` (`$0000`-`$0FFF`) | 16388 | 241 x 68 | 65 |
-| `addr & 0xE000 == 0` (`$0000`-`$1FFF`) | 20244 | 241 x 84 | 65 |
-
-68 is the background pattern fetches on one rendering line: 32 visible tiles plus the two
-tiles prefetched for the next line, 2 bytes each. 84 adds the 8 sprite fetches per line, so
-the second row also proves the tutorial's sprite pattern table is `$1000`. 241 is the 240
-visible lines plus the pre-render line. The 65 `$2007` reads are the 64-byte mailbox plus
-the buffered-read dummy, which matches #FC_COM_BUF_SIZE_V1 and the boot-ROM cycle harness.
-
-Neither decode yields #PPU_PICTURE_COUNT = 15426, and no decode can: masking selects fewer
-address lines or more, never a different number of fetches per line. What 15426 does equal,
-exactly, is `241 x 64 + 2` -- the same 241 lines counting only the 32 in-picture tiles, with
-the `+2` inside #PPU_COUNT_WINDOW. So the counter constant and the 34-word stream line
-(#VRAM_LINE_WORDS, 68 bytes) disagree by precisely the 4 prefetch bytes per line, 964 per
-frame, against an observed difference of 962.
-
-That is the September 11 prior-art contradiction, now with a number attached: 16388 consumed
-bytes is confirmed as the real per-frame read count, and 15426 is confirmed to be counting
-something narrower than every CS1 read. Which one the hardware PIO counter actually
-implements is issue I-19 and must not be guessed at here. Until it is answered the count
-check fails on every heartbeat, the DMA stops, every selected read returns open bus, and S0's
-screenshot is a white screen. Strict S0 therefore fails by design; `--diagnostic` checks only
-that the bridge is alive and that the run is reproducible.
-
-The S0 runner now captures one exact rendering frame from the Mesen mapper (default frame
-121) in both its ordinary and debugger-peek runs. Its fetch-order gate checks all 241 lines:
-32 visible background bitplane pairs at cycles 5/7 through 253/255, then two prefetch pairs
-at 325/327 and 333/335. The `$0000`-`$0FFF` decode selects 16,388 background bytes; the
-`$0000`-`$1FFF` decode also selects 3,856 sprite bytes (16 x 241). Both traces are byte-for-byte
-reproducible with debugger peeks. In the present stopped-DMA state every returned rendering
-byte is `$FF`; this is a PPU timing/address validation, not a picture golden or hardware
-calibration. Keep that distinction when using the trace to guide the converter.
+Strict S0 runs twice, once with repeated side-effect-free debugger peeks. At frame 160 it
+requires all 241 rendering lines to match the measured cadence, every post-startup mailbox
+to contain `$FC`, no post-startup DMA stops, the same byte-for-byte traces between runs, and
+the final ARGB frame to match `sim/mesen2/goldens/S0.argb.sha256`. The reviewed image is the
+test pattern's vertical bars. The strict 180-frame run completes in about three seconds
+after the emulator build.
 
 ### CI
 
 `ci/workflows/doom-cosim.yml`: builds MesenCE (Linux, .NET 10,
 `make`) with a cache keyed on the Mesen2 sources and the cart model; builds and ctests the
-cart model; runs the S0 diagnostic as a required step and strict S0 as a recorded expected
-failure; uploads screenshots and logs. S0 itself costs about 3.5 s for both determinism
+cart model; runs strict S0 as a required step and uploads screenshots and logs. S0 itself
+costs about 3.5 s for both determinism
 runs, so the lane's budget is the MesenCE build, not the scenarios.
 
 ## L7 -- hardware

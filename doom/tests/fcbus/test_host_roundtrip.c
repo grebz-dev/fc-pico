@@ -8,31 +8,10 @@
  * converter would fill, and checks that a frame comes out of the wire the way
  * rp_system::ppu_dma() arranges it.
  *
- * ON THE READ ARITHMETIC, WHICH IS AN OPEN QUESTION
- * -------------------------------------------------
- * Two facts are established and are modelled here:
- *
- *   1. PPU_COUNT_VAL_V1 = 15490 qualifying reads per frame is what the shipped firmware
- *      compares against, and 15490 = VRAM_MAILBOX_OFF_V1 (15426) + FC_COM_BUF_SIZE_V1 (64),
- *      i.e. the count is "picture plus mailbox".
- *   2. After every DMA re-arm the real fcppu_r state machine emits FCBUS_OSR_PRELUDE_BYTES
- *      zero bytes from its cleared OSR before the first buffer byte reaches the pins
- *      (doom/plan/01-constraints.md, "A four-byte prelude from the PIO itself"), and those
- *      reads are counted like any other.
- *
- * Those two cannot both hold with the mailbox exactly at the end of a frame's reads: a
- * console that takes exactly 15490 counted reads consumes only buffer bytes 0..15485 and
- * so stops four bytes short of the mailbox's end, while a console that reads the whole
- * mailbox takes 15494. Which of the two the hardware does -- and therefore whether the
- * prelude is absorbed somewhere this model does not yet represent -- is exactly what the
- * P0-T9 trace and P0-T10 calibration settle (doom/plan/01-constraints.md, "An unresolved
- * discrepancy"; doom/plan/11-risks.md, R1/Q12).
- *
- * So this test asserts the two things that are certain and keeps them separate: the sync
- * contract (a frame of `expected` counted reads re-arms) and the placement contract (the
- * mailbox is at VRAM_MAILBOX_OFF of the buffer being streamed, and comes off the wire
- * there). It deliberately does NOT assert that one frame's reads both equal `expected`
- * and reach the mailbox's last byte, because on this model they cannot.
+ * The hardware trace resolves the arithmetic: 66 pre-render reads, 240*64 visible reads,
+ * and 65 NMI reads are 15491 physical strobes. fcppu_rna reports N-1 because it copies
+ * !X before decrementing X, so firmware observes PPU_COUNT_VAL_V1 = 15490. A frame re-arm
+ * starts at buffer byte zero; manual phase nudges consume one or two bytes before reads resume.
  */
 #include "fcbus_host.h"
 #include "ctest_lite.h"
@@ -71,6 +50,10 @@ static uint32_t expected_count(fcbus_proto_t proto) {
     return (proto == FCBUS_PROTO_V2) ? PPU_COUNT_VAL_V2 : PPU_COUNT_VAL_V1;
 }
 
+static uint32_t expected_physical_reads(fcbus_proto_t proto) {
+    return expected_count(proto) + PPU_COUNTER_REPORT_BIAS;
+}
+
 /** Writes the frame heartbeat the way a console of protocol `proto` would. */
 static void write_heartbeat(fcbus_proto_t proto, uint8_t pad1, uint8_t pad2) {
     if (proto == FCBUS_PROTO_V2) {
@@ -95,7 +78,7 @@ static void beat_at(fcbus_proto_t proto, int total_reads, uint8_t pad1, uint8_t 
 
 /** Pads the frame to exactly `expected` reads, then beats: an in-phase frame. */
 static void finish_frame(fcbus_proto_t proto, uint8_t pad1, uint8_t pad2) {
-    beat_at(proto, (int)expected_count(proto), pad1, pad2);
+    beat_at(proto, (int)expected_physical_reads(proto), pad1, pad2);
 }
 
 /** An in-phase frame that reads nothing interesting. */
@@ -117,26 +100,23 @@ static void test_cold_start_then_resync(void) {
     CHECK_EQ(fcbus_core_stats(fcbus_host_core())->resyncs, 0);
 
     /* A full frame's worth of (dataless) reads puts the count back in phase. */
-    CHECK_EQ(skipn((int)PPU_COUNT_VAL_V1), 0); /* every read returned -1 */
+    CHECK_EQ(skipn((int)PPU_COUNT_VAL_V1 + PPU_COUNTER_REPORT_BIAS), 0);
     write_heartbeat(FCBUS_PROTO_V1, 0, 0);
     CHECK_EQ(fcbus_core_stats(fcbus_host_core())->resyncs, 1);
     CHECK_EQ(fcbus_core_stats(fcbus_host_core())->dma_stops, 1);
 
-    /* Now the bus carries data again, starting with the OSR prelude. */
-    for (int i = 0; i < FCBUS_OSR_PRELUDE_BYTES; i++) {
-        CHECK_EQ(rd(), 0x00);
-    }
+    /* Now the bus carries data again from buffer byte zero. */
     CHECK(rd() >= 0);
 }
 
-static void test_prelude_length_follows_the_nudges(void) {
+static void test_nudges_advance_the_buffer(void) {
     struct {
         int count_delta;
-        int prelude;
+        int first_byte;
     } cases[] = {
-        {0, FCBUS_OSR_PRELUDE_BYTES},      /* ARM: nothing consumed the prelude */
-        {-1, FCBUS_OSR_PRELUDE_BYTES - 1}, /* ARM_NUDGE1: one manual out pins, 8 */
-        {-2, FCBUS_OSR_PRELUDE_BYTES - 2}, /* ARM_NUDGE2: two of them */
+        {0, 0xA5},  /* ARM: starts at buffer byte zero. */
+        {-1, 0xB6}, /* ARM_NUDGE1 consumes one byte with manual OUT. */
+        {-2, 0xC7}, /* ARM_NUDGE2 consumes two bytes. */
     };
 
     for (size_t i = 0; i < sizeof cases / sizeof cases[0]; i++) {
@@ -144,15 +124,14 @@ static void test_prelude_length_follows_the_nudges(void) {
         /* Mark the buffer that will be streamed so its first byte is recognisable. */
         uint8_t *back = (uint8_t *)fcbus_core_stream_back(fcbus_host_core());
         back[0] = 0xA5;
+        back[1] = 0xB6;
+        back[2] = 0xC7;
         fcbus_core_publish(fcbus_host_core());
 
-        skipn((int)PPU_COUNT_VAL_V1 + cases[i].count_delta);
+        skipn((int)PPU_COUNT_VAL_V1 + PPU_COUNTER_REPORT_BIAS + cases[i].count_delta);
         write_heartbeat(FCBUS_PROTO_V1, 0, 0);
 
-        for (int j = 0; j < cases[i].prelude; j++) {
-            CHECK_EQ(rd(), 0x00);
-        }
-        CHECK_EQ(rd(), 0xA5); /* buffer byte 0, straight after the prelude */
+        CHECK_EQ(rd(), cases[i].first_byte);
     }
 }
 
@@ -175,8 +154,7 @@ static void test_mailbox_placement_on_the_wire(void) {
         CHECK(fcbus_core_apu_write(core, 0x04, 0x7F));
         plain_frame(proto); /* the heartbeat copies it onto the streamed buffer */
 
-        /* Skip the prelude and the picture, then read the mailbox off the bus. */
-        skipn(FCBUS_OSR_PRELUDE_BYTES);
+        /* Skip the picture, then read the mailbox off the bus. */
         skipn((int)mbx_off);
         uint8_t wire[FC_COM_BUF_SIZE_V2];
         for (size_t i = 0; i < mbx_len; i++) {
@@ -215,7 +193,6 @@ static void test_published_frame_reaches_the_wire(void) {
     plain_frame(FCBUS_PROTO_V1);
     CHECK(fcbus_core_back_is_free(core));
 
-    skipn(FCBUS_OSR_PRELUDE_BYTES);
     skipn(VRAM_HEAD_WORDS * 2); /* words 0..30 precede line 0, tile 0 */
     CHECK_EQ(rd(), 0x34);       /* little-endian: bitplane 0 first */
     CHECK_EQ(rd(), 0x12);
@@ -234,19 +211,22 @@ static void test_out_of_phase_frame_stops_the_dma(void) {
     plain_frame(FCBUS_PROTO_V1);
     CHECK(rd() >= 0); /* streaming; this read counts towards the next frame */
 
-    beat_at(FCBUS_PROTO_V1, (int)PPU_COUNT_VAL_V1 - 3, 0, 0);
+    beat_at(FCBUS_PROTO_V1,
+            (int)PPU_COUNT_VAL_V1 + PPU_COUNTER_REPORT_BIAS - 3, 0, 0);
     CHECK_EQ(fcbus_core_stats(fcbus_host_core())->dma_stops, 1);
     CHECK_EQ(rd(), -1);
 
     /* One good frame recovers. */
-    beat_at(FCBUS_PROTO_V1, (int)PPU_COUNT_VAL_V1, 0, 0);
+    beat_at(FCBUS_PROTO_V1,
+            (int)PPU_COUNT_VAL_V1 + PPU_COUNTER_REPORT_BIAS, 0, 0);
     CHECK_EQ(fcbus_core_stats(fcbus_host_core())->resyncs, 1);
-    CHECK_EQ(rd(), 0x00); /* prelude again */
+    CHECK_EQ(rd(), 0x00); /* first buffer byte after re-arm */
 
     /* Three reads long: also outside the window. */
     init_host(FCBUS_PROTO_V1);
     plain_frame(FCBUS_PROTO_V1);
-    beat_at(FCBUS_PROTO_V1, (int)PPU_COUNT_VAL_V1 + 3, 0, 0);
+    beat_at(FCBUS_PROTO_V1,
+            (int)PPU_COUNT_VAL_V1 + PPU_COUNTER_REPORT_BIAS + 3, 0, 0);
     CHECK_EQ(fcbus_core_stats(fcbus_host_core())->dma_stops, 1);
     CHECK_EQ(rd(), -1);
 }
@@ -431,7 +411,7 @@ static void test_heartbeat_timeout_stops_the_bus(void) {
 
 int main(void) {
     test_cold_start_then_resync();
-    test_prelude_length_follows_the_nudges();
+    test_nudges_advance_the_buffer();
     test_mailbox_placement_on_the_wire();
     test_published_frame_reaches_the_wire();
     test_out_of_phase_frame_stops_the_dma();

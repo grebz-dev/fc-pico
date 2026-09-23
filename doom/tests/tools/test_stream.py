@@ -21,18 +21,19 @@ from fcpico import protocol, stream
 
 
 def test_word_index_known_values():
-    # Explicitly called out in plan 04/01: line 0 starts at word 31 (VRAM_HEAD_WORDS),
-    # and each line is VRAM_LINE_WORDS (34) words wide.
+    # Hardware selects 32 words per visible line. The original 34-iteration
+    # converter loop advances one flat source index and does not define a
+    # 32-word physical stride.
     assert stream.word_index(0, 0) == 31
-    assert stream.word_index(1, 0) == 65
-    assert stream.word_index(0, 33) == 31 + 33
-    assert stream.word_index(239, 33) == 31 + 34 * 239 + 33
+    assert stream.word_index(1, 0) == 63
+    assert stream.word_index(0, 31) == 31 + 31
+    assert stream.word_index(239, 31) == 31 + 32 * 239 + 31
 
 
 def test_word_index_matches_protocol_constants():
     for y in (0, 1, 100, 239):
-        for x in (0, 17, 33):
-            expected = protocol.VRAM_HEAD_WORDS + protocol.VRAM_LINE_WORDS * y + x
+        for x in (0, 17, 31):
+            expected = protocol.VRAM_HEAD_WORDS + protocol.VRAM_TILE_COLS * y + x
             assert stream.word_index(y, x) == expected
 
 
@@ -42,7 +43,7 @@ def test_word_index_rejects_out_of_range():
     with pytest.raises(ValueError):
         stream.word_index(240, 0)
     with pytest.raises(ValueError):
-        stream.word_index(0, 34)
+        stream.word_index(0, 32)
 
 
 # ---------------------------------------------------------------------------
@@ -94,12 +95,8 @@ def test_pack_run_requires_eight_pixels():
 def _mailbox_affected_pixels(mailbox_len: int) -> np.ndarray:
     """Boolean (240, 256) mask: pixels whose *visible* tile word overlaps the mailbox.
 
-    See stream.py's module docstring: ppu_dma() splices the mailbox onto the
-    tail of the same buffer convVram() just filled, at a fixed byte offset
-    that happens to fall inside the picture's own word range for the last
-    few lines. Real content there is always backdrop (bottom letterbox);
-    this helper finds exactly which pixels a synthetic/random test frame
-    must exclude from a round-trip comparison.
+    The measured 32-word stride leaves picture data entirely before the
+    mailbox. This helper remains as an explicit overlap check.
     """
     buf_bytes, mailbox_off = stream._buf_layout(mailbox_len)
     mailbox_end = mailbox_off + mailbox_len
@@ -129,17 +126,13 @@ def test_encode_decode_round_trip_random_frame(mailbox_len):
     assert decoded.shape == (stream.VRAM_LINES, stream.VRAM_WIDTH)
 
     mask = _mailbox_affected_pixels(mailbox_len)
-    # Everywhere the mailbox does not overlap picture words, the round trip is exact.
+    assert not mask.any()
     assert np.array_equal(decoded[~mask], pix[~mask])
     # The mailbox itself always round-trips exactly, regardless of picture content.
     assert bytes(buf[stream.VRAM_MAILBOX_OFF : stream.VRAM_MAILBOX_OFF + mailbox_len]) == mailbox
 
 
 def test_encode_decode_round_trip_full_when_bottom_letterboxed():
-    # In the real pipeline (plan 04) console lines 216..239 are always backdrop,
-    # which is exactly where the v1 mailbox overlap lands (see stream.py's
-    # docstring) -- so a frame shaped like real output round-trips with no
-    # exceptions needed at all.
     rng = np.random.default_rng(7)
     pix = np.zeros((stream.VRAM_LINES, stream.VRAM_WIDTH), dtype=np.uint8)
     pix[16:216] = rng.integers(0, 4, size=(200, stream.VRAM_WIDTH), dtype=np.uint8)
@@ -183,35 +176,16 @@ def test_decode_frame_rejects_short_buffer():
         stream.decode_frame(bytes(100))
 
 
-def test_prefetch_words_equal_next_lines_first_16px():
-    # Pick lines nowhere near the mailbox overlap region (see stream.py's
-    # docstring) so this is a clean check of the prefetch semantics alone.
-    rng = np.random.default_rng(1)
-    pix = rng.integers(0, 4, size=(stream.VRAM_LINES, stream.VRAM_WIDTH), dtype=np.uint8)
+def test_picture_is_linear_and_leaves_four_bytes_before_mailbox():
+    pix = np.zeros((stream.VRAM_LINES, stream.VRAM_WIDTH), dtype=np.uint8)
+    pix[1, 0:8] = 3
     buf = stream.encode_frame(pix, bytes(protocol.FC_COM_BUF_SIZE_V1))
     words = np.frombuffer(bytes(buf), dtype="<u2")
 
-    for y in (0, 1, 50, 100, 200):
-        w32 = words[stream.word_index(y, 32)]
-        w33 = words[stream.word_index(y, 33)]
-        prefetch = stream.unpack_run(int(w32)) + stream.unpack_run(int(w33))
-        assert prefetch == pix[y + 1, 0:16].tolist()
-
-
-def test_prefetch_of_last_line_is_zero():
-    # Line 239 has no line 240 to prefetch from -- treated as zeros.
-    rng = np.random.default_rng(2)
-    pix = rng.integers(0, 4, size=(stream.VRAM_LINES, stream.VRAM_WIDTH), dtype=np.uint8)
-    # Keep this test's line 239 clear of the mailbox-tail interaction by using a
-    # v2 mailbox does not reach line 239 either (it stops around line 227); a
-    # v1 mailbox stops around line 226. Either way line 239's own prefetch
-    # words (indices word_index(239,32/33)) are far past the mailbox range.
-    buf = stream.encode_frame(pix, bytes(protocol.FC_COM_BUF_SIZE_V1))
-    words = np.frombuffer(bytes(buf), dtype="<u2")
-    w32 = words[stream.word_index(239, 32)]
-    w33 = words[stream.word_index(239, 33)]
-    assert stream.unpack_run(int(w32)) == [0] * 8
-    assert stream.unpack_run(int(w33)) == [0] * 8
+    assert words[stream.word_index(1, 0)] == 0xFFFF
+    picture_end = (stream.word_index(239, 31) + 1) * 2
+    assert picture_end == 15422
+    assert bytes(buf[picture_end:stream.VRAM_MAILBOX_OFF]) == b"\x00" * 4
 
 
 # ---------------------------------------------------------------------------

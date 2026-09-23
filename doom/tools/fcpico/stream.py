@@ -4,9 +4,10 @@
 Reproduces, byte for byte, the layout ``rp_system::convVram()`` and
 ``rp_system::ppu_dma()`` build in ``tutorial_project/tuto1_hw/sys/rp_system.cpp``
 and that ``fcbus_stream_word(line, tile)`` exposes on the cartridge: a flat
-buffer of 16-bit little-endian words, 34 words per scanline (two bitplanes of
-an 8-pixel tile run each), with a command/attribute/palette mailbox spliced
-into its tail. See ``doom/plan/04-video.md`` ("Output format") and
+buffer of 16-bit little-endian words, 32 selected words per visible scanline
+(two bitplanes of an 8-pixel tile run each), with a
+command/attribute/palette mailbox spliced into its tail. See
+``doom/plan/04-video.md`` ("Output format") and
 ``doom/plan/01-constraints.md`` ("The bus contract") for the numbers this
 module is built from; ``doom/fcbus/fcbus_protocol.h`` is the single source of
 truth for the constants themselves (imported below, never re-typed as
@@ -14,25 +15,12 @@ literals).
 
 Word addressing
 ----------------
-``word_index(y, x)`` for scanline ``y`` (0..239) and tile column ``x``
-(0..33) is ``VRAM_HEAD_WORDS + VRAM_LINE_WORDS * y + x`` -- the same
-arithmetic as ``convVram()``'s ``vidx`` counter, which starts at
-``VRAM_HEAD_WORDS`` (31) and increments once per tile. Tiles 0..31 are the
-32 visible 8-pixel columns (256 px); tiles 32 and 33 are the two-tile
-prefetch the PPU fetches during the next scanline's HBlank, holding that
-next line's first 16 pixels (zero for line 239's prefetch, since there is no
-line 240 to read from).
-
-A note on a real quirk this module deliberately does *not* reproduce: the
-firmware's own ``convVram()`` uses a single index into the 256x240 canvas
-that runs continuously across the whole frame (never reset per scanline),
-so each encoded line actually consumes 34*8 = 272 source pixels against a
-256-wide canvas -- a 16-pixel drift that accumulates over 240 lines. This
-module instead implements the clean per-line model described above and in
-plan 04 (each line's own 256 px, prefetch = the *next* line's first 16 px),
-which matches the firmware exactly for the word/bit-level layout below (word
-indices, bit packing, mailbox offset) and for line 0, and is what
-``ppu_decode.py`` and ``fcvideo_ref.py`` are built against.
+``word_index(y, x)`` for scanline ``y`` (0..239) and visible tile column
+``x`` (0..31) is ``VRAM_HEAD_WORDS + VRAM_TILE_COLS * y + x``. The NES-001
+trace shows 64 selected bytes (32 words) on every visible line. The original
+``convVram()`` loops in batches of 34 words but advances one flat source
+index throughout, so those batches are not physical scanline strides. Its
+first 7,680 converted words are simply the row-major 256x240 canvas.
 
 Bit packing
 -----------
@@ -49,16 +37,9 @@ Mailbox
 ``PPU_COUNT_VAL - FC_COM_BUF_SIZE`` = 15426 (``VRAM_MAILBOX_OFF_V1`` /
 ``VRAM_MAILBOX_OFF_V2``, both 15426 -- the mailbox tail sits at the same
 byte position regardless of protocol version, only its length changes) of
-the *same* buffer ``convVram()`` just filled, so those bytes are always the
-mailbox's, never picture data, no matter what ``encode_frame()`` computed
-for the words that happen to fall there. Because word 31 + 34*225 + 32 is
-byte 15426 exactly, a 64-byte (v1) mailbox overwrites line 225's prefetch
-and most of line 226's visible tiles; a 128-byte (v2) mailbox reaches into
-line 227. In the real video pipeline (plan 04, stage B) those lines fall in
-the bottom letterbox band (console lines 216..239), which is always
-backdrop colour, so the overlap is invisible -- ``decode_frame()`` below
-does not special-case it, so decoding a buffer with picture data actually
-placed in that band will show mailbox bytes misread as pixels there.
+the same buffer. The visible picture ends at byte 15,422, leaving four DMA
+bytes before the mailbox at 15,426; the mailbox does not overwrite picture
+data.
 
 Attribute table
 ----------------
@@ -91,30 +72,29 @@ __all__ = [
 # Re-exported for readability below; fcbus/fcbus_protocol.h remains the
 # single source of truth (see tools/gen_protocol.py).
 VRAM_HEAD_WORDS = protocol.VRAM_HEAD_WORDS  # 31
-VRAM_LINE_WORDS = protocol.VRAM_LINE_WORDS  # 34
+VRAM_LINE_WORDS = protocol.VRAM_LINE_WORDS  # 34-word converter batch, not a bus stride
 VRAM_LINES = protocol.VRAM_LINES  # 240
 VRAM_TILE_COLS = protocol.VRAM_TILE_COLS  # 32 visible tiles/line
 VRAM_WIDTH = VRAM_TILE_COLS * 8  # 256 visible pixels/line
 VRAM_MAILBOX_OFF = protocol.VRAM_MAILBOX_OFF_V1  # 15426; == VRAM_MAILBOX_OFF_V2
 
 _CONV_TBL = (0x0000, 0x0001, 0x0100, 0x0101)  # convVram()'s conv_tbl, indexed by 2-bit colour
-_PREFETCH_PIXELS = (VRAM_LINE_WORDS - VRAM_TILE_COLS) * 8  # 16: next line's prefetch, in pixels
 
 _ATTR_MASK_TBL = (0b11111100, 0b11110011, 0b11001111, 0b00111111)
 _ATTR_SET_TBL = (0b00000001, 0b00000100, 0b00010000, 0b01000000)
 
 
 def word_index(y: int, x: int) -> int:
-    """Word index of scanline ``y`` (0..239), tile column ``x`` (0..33).
+    """Word index of scanline ``y`` (0..239), tile column ``x`` (0..31).
 
-    ``31 + 34*y + x`` -- ``convVram()``'s ``vidx`` counter, also
+    ``31 + 32*y + x`` -- the measured selected-read stream, also
     ``fcbus_stream_word(line, tile)`` on the cartridge.
     """
     if not (0 <= y < VRAM_LINES):
         raise ValueError(f"y must be 0..{VRAM_LINES - 1}, got {y}")
-    if not (0 <= x < VRAM_LINE_WORDS):
-        raise ValueError(f"x must be 0..{VRAM_LINE_WORDS - 1}, got {x}")
-    return VRAM_HEAD_WORDS + VRAM_LINE_WORDS * y + x
+    if not (0 <= x < VRAM_TILE_COLS):
+        raise ValueError(f"x must be 0..{VRAM_TILE_COLS - 1}, got {x}")
+    return VRAM_HEAD_WORDS + VRAM_TILE_COLS * y + x
 
 
 def pack_run(pixels8) -> int:
@@ -160,8 +140,7 @@ def encode_frame(pix256x240, mailbox: bytes) -> bytearray:
     buffer length (17,344 or 17,408 bytes) is picked from ``len(mailbox)``
     (64 or 128); the mailbox is spliced in at byte
     :data:`VRAM_MAILBOX_OFF` (15426), verbatim, after the picture words are
-    written -- see the module docstring for why that clobbers a little
-    picture data near the bottom of the frame, matching real firmware.
+    written.
     """
     pix = np.asarray(pix256x240, dtype=np.uint8) & 0x03
     if pix.shape != (VRAM_LINES, VRAM_WIDTH):
@@ -169,21 +148,19 @@ def encode_frame(pix256x240, mailbox: bytes) -> bytearray:
     mailbox = bytes(mailbox)
     buf_bytes, mailbox_off = _buf_layout(len(mailbox))
 
-    # One flat canvas, row-major, padded so that the last line's prefetch
-    # (which would read line 240) reads zeros instead of running off the end.
+    # One flat canvas, row-major: hardware consumes exactly 32 words per line.
     flat = pix.reshape(-1)
-    padded = np.concatenate([flat, np.zeros(_PREFETCH_PIXELS, dtype=np.uint8)])
 
     starts = (
         np.arange(VRAM_LINES, dtype=np.int64)[:, None] * VRAM_WIDTH
-        + np.arange(VRAM_LINE_WORDS, dtype=np.int64)[None, :] * 8
-    )  # (240, 34): flat-canvas index of each tile run's first pixel
-    runs = padded[starts[:, :, None] + np.arange(8)]  # (240, 34, 8), values 0..3
+        + np.arange(VRAM_TILE_COLS, dtype=np.int64)[None, :] * 8
+    )  # (240, 32): flat-canvas index of each tile run's first pixel
+    runs = flat[starts[:, :, None] + np.arange(8)]  # (240, 32, 8), values 0..3
 
     shifts = np.arange(7, -1, -1, dtype=np.uint32)  # bit 7 (leftmost pixel) .. bit 0
     plane0 = ((runs.astype(np.uint32) & 1) << shifts).sum(axis=-1)
     plane1 = (((runs.astype(np.uint32) >> 1) & 1) << shifts).sum(axis=-1)
-    words = (plane0 | (plane1 << 8)).astype("<u2")  # (240, 34)
+    words = (plane0 | (plane1 << 8)).astype("<u2")  # (240, 32)
 
     n_words = buf_bytes // 2
     word_arr = np.zeros(n_words, dtype="<u2")
@@ -198,20 +175,18 @@ def encode_frame(pix256x240, mailbox: bytes) -> bytearray:
 def decode_frame(buf) -> np.ndarray:
     """Decode an fcbus stream buffer back to a 256x240 array of 2-bit colours.
 
-    Only the 32 visible tile columns of each line are read (the prefetch
-    columns are not part of the picture); works for either buffer length as
-    long as it is at least long enough to hold all picture words.
+    Works for either buffer length as long as it is at least long enough to
+    hold all picture words.
     """
     buf = bytes(buf)
-    n_words_needed = word_index(VRAM_LINES - 1, VRAM_LINE_WORDS - 1) + 1
+    n_words_needed = word_index(VRAM_LINES - 1, VRAM_TILE_COLS - 1) + 1
     min_bytes = n_words_needed * 2
     if len(buf) < min_bytes:
         raise ValueError(f"buffer too short: need at least {min_bytes} bytes, got {len(buf)}")
 
     word_arr = np.frombuffer(buf, dtype="<u2", count=n_words_needed)
     first = word_index(0, 0)
-    lines = word_arr[first:].reshape(VRAM_LINES, VRAM_LINE_WORDS)
-    visible = lines[:, :VRAM_TILE_COLS].astype(np.uint32)  # (240, 32)
+    visible = word_arr[first:].reshape(VRAM_LINES, VRAM_TILE_COLS).astype(np.uint32)
 
     lo = visible & 0xFF
     hi = (visible >> 8) & 0xFF

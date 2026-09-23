@@ -2,6 +2,7 @@
 -- Real tutorial ROM execution. Debug inspections must never consume cart bytes.
 local output = assert(os.getenv("FCPICO_RESULTS"))
 local limit = tonumber(os.getenv("FCPICO_FRAMES")) or 300
+local startup = tonumber(os.getenv("FCPICO_STARTUP_FRAMES")) or 150
 local inspect = os.getenv("FCPICO_DEBUG_PEEKS") ~= "0"
 local frames = 0
 local valid = 0
@@ -23,17 +24,17 @@ emu.addEventCallback(function()
     frames = frames + 1
     local magic = emu.read(0x21, emu.memType.nesDebug)
     samples:write(string.format("%d,%d\n", frames, magic))
-    if frames > 120 and magic == 0xfc then valid = valid + 1 end
+    if frames > startup and magic == 0xfc then valid = valid + 1 end
     if inspect then
         -- Both pattern tables and nametables, deliberately on every frame.
         for address = 0, 0x2fff, 17 do emu.read(address, emu.memType.nesPpuDebug) end
     end
-    if frames == 120 then save_screen("frame_0120") end
+    if frames == startup then save_screen("startup") end
     if frames == limit then
         save_screen("final")
         samples:close()
         local result = assert(io.open(output .. "/lua_result.json", "w"))
-        result:write(string.format('{"frames":%d,"valid_mailboxes_after_120":%d}\n', frames, valid))
+        result:write(string.format('{"frames":%d,"valid_mailboxes_after_startup":%d}\n', frames, valid))
         result:close()
         emu.stop(0)
     end

@@ -15,7 +15,7 @@ the result. The human fills in the result section and commits; the agent then co
 - Result: (human fills in) date, console model, outcome, attachments
 ```
 
-## Open requests
+## Completed requests
 
 ### HR-1 Phase 0 trace capture and board facts (task P0-T9)
 - Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2` from the current
@@ -53,9 +53,10 @@ the result. The human fills in the result section and commits; the agent then co
   mismatch, not a candidate hardware constant.  The first three 65,536-word trace dumps
   were truncated by the serial capture path, so the firmware now emits an 8,192-word,
   approximately 2 ms window that still spans about 31 scanlines.
-- Result: count and display portions complete on 2026-09-22. The replacement firmware from
-  `73a6df2` displays its test patterns successfully on the NES-001. Three decoder-valid
-  8,192-word traces are still pending; the earlier 65,536-word captures are incomplete.
+- Result: complete on 2026-09-22. The replacement firmware from `73a6df2` displays its test
+  patterns successfully on the NES-001. Traces 4 and 5 lost 28 and 21 packed words; trace 6
+  is complete and measures 66 pre-render reads and 64 reads on every complete visible line.
+  The calibrated strict Mesen S0 subsequently passes at `ppu_count=15490`.
 
 ## Human actions (not hardware)
 

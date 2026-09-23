@@ -45,11 +45,10 @@ void fcbus_host_init(const fcbus_config_t *cfg);
  * While a FCBUS_ACT_STREAM_RESPONSE is pending, serves its bytes in order, then 0xFF
  * ("late" reads with no answer queued -- there is no flow control on real hardware
  * either) until the next heartbeat re-arms streaming. After a heartbeat resolves to one
- * of the ARM variants, serves `FCBUS_OSR_PRELUDE_BYTES` zero bytes for a plain ARM, one
- * fewer for ARM_NUDGE1, two fewer for ARM_NUDGE2 (see fcbus_core.h), then the front
- * stream buffer from byte 0, sequentially.
+ * of the ARM variants, serves the front stream buffer from byte 0. ARM_NUDGE1/2 consume
+ * one or two buffer bytes first (see fcbus_core.h).
  *
- * Every served byte -- prelude and response bytes included -- increments the
+ * Every served byte -- response bytes included -- increments the
  * qualifying-read counter that becomes `count` at the next heartbeat, exactly as the
  * real PIO counter (`fcppu_rna`) counts every CS1-qualified read regardless of which PIO
  * program is actually driving the bus at that moment. Reads taken while the DMA is

@@ -6,7 +6,7 @@ on:
   workflow_dispatch:
     inputs:
       cs1_mask:
-        description: "CS1 decode hypothesis (uncalibrated; see issue I-19)"
+        description: "CS1 decode mask (hardware-calibrated default: 0xf000)"
         default: "0xf000"
 
 jobs:
@@ -40,20 +40,12 @@ jobs:
       - name: Build MesenCE with the FC PICO mapper
         # build.sh also configures, builds and ctests the host cartridge model.
         run: JOBS=4 doom/sim/mesen2/build.sh
-      - name: S0 bring-up diagnostic (bridge liveness and determinism)
-        # Green here means the cartridge bridge is alive and the run is
-        # reproducible with and without debugger peeks.  It does NOT mean S0
-        # passes, and it says nothing about hardware calibration.
+      - name: S0 bridge diagnostic
+        # Check that debugger peeks leave the cartridge stream unchanged.
         run: |
           doom/sim/mesen2/run_scenario.sh S0 --diagnostic \
             --cs1-mask "${{ github.event.inputs.cs1_mask || '0xf000' }}"
-      - name: S0 strict (expected to fail until the count contradiction is resolved)
-        # Tracked by issue I-19: the measured per-frame count does not match
-        # PPU_PICTURE_COUNT.  Recorded, not suppressed, and not worked around by
-        # editing protocol constants.
-        continue-on-error: true
-        # No --golden yet: the screenshot is a white screen produced by a
-        # stopped DMA, so there is nothing worth freezing as a reviewed golden.
+      - name: S0 strict hardware-calibrated picture
         run: doom/sim/mesen2/run_scenario.sh S0
       - uses: actions/upload-artifact@v4
         if: always()

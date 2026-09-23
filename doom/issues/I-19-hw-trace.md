@@ -8,19 +8,16 @@
 | **Depends on** | I-10 |
 | **Work plan task** | P0-T9 / P0-T10 |
 
-## Goal
+## Goal — complete 2026-09-22
 
-The project's largest open question. `plan/01-constraints.md` now states two readings of the
-frame read count that cannot both be true, and no amount of reasoning settles it: 15490
-counted reads per frame is incompatible with a 68-byte line stride, and the alternative
-(64 counted reads per line) is incompatible with the picture not shearing. Everything that
-claims to model the bus is provisional until a real console is measured.
+Resolve the former read-count contradiction with a real NES-001 trace and calibrate the
+model and co-simulation to it. Trace 6 measures 66 pre-render and 64 visible-line reads;
+the strict S0 count, mailbox, fetch and screenshot gates now pass.
 
 ## Specification
 
 `HARDWARE-REQUESTS.md` HR-1; `plan/09-testing-ci.md` "The trace sampler,
-concretely"; `plan/01-constraints.md` "An unresolved discrepancy" and the two irreconcilable
-identities recorded there.
+concretely"; `plan/01-constraints.md` "Hardware calibration of the read count".
 
 ## Owns (create or modify only these)
 

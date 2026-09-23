@@ -5,11 +5,11 @@ Doom -- the shareware `DOOM1.WAD`, via [RP2040 Doom](https://github.com/kilograh
 [FC PICO](../README.md) cartridge, displayed by, and played from, an unmodified Famicom or NES.
 
 **Status: foundations in progress; M0 is not complete.** The host bus, controller, APU and
-video stream cores build and pass nine C tests. The RP2350 device backend and test-pattern
-firmware build, but on-hardware validation and bus calibration remain outstanding.
+video stream cores build and pass ten C tests. The RP2350 test-pattern firmware displays
+patterns on an NES-001, and the PPU bus model is calibrated to a complete hardware trace.
 The Doom engine platform, v2 boot ROM and playable firmware are still to be implemented.
-Mesen co-simulation verifies the PPU fetch schedule but cannot yet verify picture pixels:
-the hardware read-count mismatch stops the stream until HR-1/I-19 is measured.
+Mesen co-simulation passes strict S0 with a reviewed test-pattern picture golden; Doom
+picture validation awaits the engine frame path.
 
 Start with [issues/README.md](issues/README.md) for remaining work and
 [PROGRESS.md](PROGRESS.md) for verification evidence and current environment limitations.

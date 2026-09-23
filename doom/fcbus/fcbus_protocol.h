@@ -72,13 +72,14 @@
 /* ------------------------------------------------------------------------ */
 /* @section stream        frame stream geometry (empirical, from the tutorial) */
 /* ------------------------------------------------------------------------ */
-#define PPU_PICTURE_COUNT    15426  // qualifying PPU reads consumed before the mailbox (empirical)
+#define PPU_PICTURE_COUNT    15426  // 66 pre-render + 240*64 visible qualifying reads
+#define PPU_COUNTER_REPORT_BIAS 1   // fcppu_rna reports the zero-based index of the last read
 #define PPU_COUNT_WINDOW     2      // +/- reads tolerated before the DMA is stopped
 #define PPU_COUNT_VAL_V1     (PPU_PICTURE_COUNT + FC_COM_BUF_SIZE_V1)   // 15490
-#define VRAM_LINE_WORDS      34     // 16-bit words per scanline in the stream buffer
+#define VRAM_LINE_WORDS      34     // historical convVram() batch size; not the selected-read stride
 #define VRAM_HEAD_WORDS      31     // word index of line 0, tile 0
 #define VRAM_LINES           240
-#define VRAM_TILE_COLS       32     // visible tiles per line; words 32,33 = next line's first 16 px
+#define VRAM_TILE_COLS       32     // selected 16-bit words advanced per visible scanline
 #define VRAM_BUF_BYTES_V1    (36 * 2 * 240 + FC_COM_BUF_SIZE_V1)        // 17344, DMA length in bytes
 #define VRAM_MAILBOX_OFF_V1  (PPU_COUNT_VAL_V1 - FC_COM_BUF_SIZE_V1)    // 15426: mailbox byte offset in the buffer
 #define FCBUS_VER_SYNC_W0    0x21212121   // "!!!!" pushed before the version stamp

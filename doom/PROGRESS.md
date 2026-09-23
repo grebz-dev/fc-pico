@@ -11,6 +11,31 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-19 / P0-T9 / P0-T10 / P0-T11 -- hardware-calibrated PPU path (2026-09-22)
+- Commits: Mesen submodule calibration commit and this commit.
+- Hardware evidence: complete NES-001 trace 6 decodes to 66 selected reads on pre-render
+  and 64 on each of 14 complete visible lines. `/RD` low widths are 160-200 ns for 2,705
+  of 2,706 pulses. Traces 4 and 5 are incomplete by 28 and 21 packed words and are retained
+  only as diagnostics.
+- Explanation: `66 + 240*64 + 65 NMI reads = 15491` physical reads; `fcppu_rna` captures
+  `!X` before decrementing X and therefore reports the zero-based index 15490. The original
+  `convVram()` source index is flat, so its 34-iteration batches are not 34-word physical
+  line strides; hardware advances 32 words per visible line. A normal re-arm has no extra
+  four-zero-byte stream prefix.
+- What landed: trace-aware decoder segmentation and fixture regression, calibrated L3 model,
+  linear 32-word C/Python/test-pattern stream conversion, zero-based host counter emulation,
+  hardware-timed Mesen selection, reviewed S0 ARGB golden, and the missing Mesen static-link
+  dependency on the shared test-pattern controller.
+- Verified: `doom/.venv/bin/python -m pytest doom/tests doom/sim -q` -> 365 passed,
+  1 skipped; host C 10/10; generated protocol check and 51-document link check pass.
+  `run_scenario.sh S0 --frames 180` passes strict S0 twice with
+  `counts_after_startup=[15490]`, 30/30 valid mailboxes, zero post-startup DMA stops,
+  15,426 selected rendering reads and identical debugger-peek traces/screenshots. The
+  RP2350 test-pattern UF2 builds and passes the flash-layout check (68,564 bytes used,
+  455,724 free); SHA-256 `a1f129761e70c0c3f6aa65b02e7e69cfe9e93cd244da08ddcb1bc66d25d7b2e9`.
+- Left out: the corrected stream geometry needs the replacement hardware UF2 visual check;
+  engine frame composition/publication remains I-11/I-12/I-16/I-17.
+
 ## I-10 / I-19 -- first NTSC measurement and test-pattern init repair (2026-09-22)
 - Commits: this commit.
 - What landed: the first NES-001 run validates the existing v1 hardware count at 15490

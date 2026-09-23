@@ -26,7 +26,7 @@ def test_histogram_uses_only_steady_heartbeat_rows():
         _row(119, 65, 16388, 16453),  # startup boundary
         _row(123, 0, 1901828, 0),  # ordinary protocol write
         _row(125, 90, 1934604, 1934694),  # transition/cumulative count
-        _row(126, 65, 16388, 16453),  # real heartbeat
+        _row(156, 65, 15426, 15490),  # real calibrated heartbeat
     ]
 
     assert steady_heartbeat_rows(rows) == [rows[-1]]
@@ -35,7 +35,8 @@ def test_histogram_uses_only_steady_heartbeat_rows():
 def _fetch_rows(mask="0xf000"):
     rows = []
     for line in range(-1, 240):
-        for tile in range(32):
+        selected_tiles = 31 if line == -1 else 30
+        for tile in range(selected_tiles):
             for cycle, address in ((tile * 8 + 5, 0), (tile * 8 + 7, 8)):
                 rows.append({"ppu_frame": "121", "scanline": str(line),
                              "cycle": str(cycle), "address": str(address), "value": "255"})
@@ -51,7 +52,7 @@ def _fetch_rows(mask="0xf000"):
 
 
 @pytest.mark.parametrize("mask,selected,sprites", [
-    ("0xf000", 16388, 0), ("0xe000", 20244, 3856)
+    ("0xf000", 15426, 0), ("0xe000", 19282, 3856)
 ])
 def test_fetch_profile_checks_all_241_lines(mask, selected, sprites):
     profile = summarize_fetch_trace(_fetch_rows(mask), 121, mask)
@@ -61,7 +62,7 @@ def test_fetch_profile_checks_all_241_lines(mask, selected, sprites):
 
 def test_fetch_profile_rejects_wrong_prefetch_cycle():
     rows = _fetch_rows()
-    rows[66]["cycle"] = "323"
+    rows[62]["cycle"] = "323"
     with pytest.raises(ValueError, match="background fetch cycles"):
         summarize_fetch_trace(rows, 121, "0xf000")
 

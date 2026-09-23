@@ -49,9 +49,12 @@ For each task in 10:
 - **No allocation on core 1 after init**, no `printf` from the bus ISR, nothing reachable from
   the ISR or the SAVING-time converter may live in flash. The engine's `hard_assert` and the
   `__not_in_flash_func` audit in P1-T3 enforce this; do not weaken them.
-- **Do not "fix" `PPU_COUNT_VAL`, the 34-word stride, the 31-word head, the two `out pins, 8`
-  nudges, or the attribute-table dummy read** because they look wrong. They are measured
-  behaviour. Change them only with a hardware trace that says so, and update 01.
+- **Preserve the measured PPU accounting.** The console selects 66 pre-render reads and
+  64 reads per visible line; `fcppu_rna` reports the final read's zero-based index.
+  `VRAM_LINE_WORDS=34` describes the original converter's batch size, while the selected
+  stream advances 32 words per visible line from the 31-word head. The one- and two-byte
+  `out pins, 8` nudges consume buffer bytes. Change these facts only with new hardware
+  evidence and update 01.
 - **Engine changes go in the fork**, under `src/fcpico/` or behind `#if FCPICO` in shared files,
   with the smallest diff that works. Do not reformat engine files. Commit to the engine branch
   first, then advance the submodule pin in `fc-pico` in a separate commit that says which
