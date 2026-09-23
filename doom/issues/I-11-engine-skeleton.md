@@ -13,6 +13,16 @@
 The engine is a submodule with a documented plan and no code. Until it can be configured
 from the superbuild, neither the host runs nor any video work can start.
 
+## Current execution (2026-09-23)
+
+The parent now configures the engine with `FCPICO_BUILD_ENGINE=ON`, and the RP2350
+`doom_tiny_fcpico` target links to `fcpico_doom.elf` with GCC 13.2.Rel1. The platform
+adapters are silent/no-display stubs, and the flash-layout check passes at 237,896 bytes
+used. The existing test-pattern target and all 10 host C suites still pass. Standalone
+Pico host configuration succeeds; native `chocolate-doom` configuration cannot be
+checked locally because SDL2 development packages are absent. Hardware boot to the
+serial marker and `D_DoomMain` remains unverified, so P0-T2 is partial.
+
 ## Specification
 
 `rp2040-doom/FCPICO-PORT.md` (already written, in the submodule) and

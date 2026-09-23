@@ -9,7 +9,7 @@ day of focused work), M (1-3 days), L (a week), XL (more). Dependencies are hard
 Conventions: paths are relative to `doom/` unless they start with `rp2040-doom/` (the engine
 submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes on the branch.
 
-## Current execution priority (2026-09-21)
+## Current execution priority (2026-09-23)
 
 The display and PPU path is the next integration priority. Milestone IDs below still describe
 deliverables, but the actionable order is now:
@@ -24,8 +24,8 @@ deliverables, but the actionable order is now:
 4. Resume the remaining audio assets and other downstream work after the display path has a
    passing co-simulation gate. I-04/P4-T1 is already complete and needs no further core work.
 
-HR-1 can run in parallel with host converter and engine work. The count mismatch is a gate on
-claims about displayed pixels, not a reason to stall pure conversion tests.
+The remaining hardware visual check for the corrected stream is HR-2. The next software
+gate is an engine frame source for Mesen S2.
 
 ---
 
@@ -38,7 +38,7 @@ has actually landed on the branch.
 | Task | State | Evidence |
 |------|-------|----------|
 | P0-T1 | partial: device configuration and test-pattern target landed; device workflow is a template, build acceptance pending (I-08) | `201ce2d`; `../PROGRESS.md` |
-| P0-T2 | not started (issue I-11) | -- |
+| P0-T2 | partial: RP2350 engine skeleton links; hardware boot remains (I-11) | GCC 13.2.Rel1 `fcpico_doom.elf` and flash-layout check |
 | P0-T3 | host multicore/alarm shim implemented (`sim/host_shim/`, 22 symbols); the engine host build itself is issue I-12 | standalone shim harness; not included in the six host-only C tests |
 | P0-T4 | **done** | `tools/gen_protocol.py --check`; `pytest tests/protocol` (72) |
 | P0-T5 | core logic **done**; device backend and test-pattern firmware landed, device acceptance pending (I-09/I-10) | five bus C tests; `201ce2d`, `c9c4e12` |
