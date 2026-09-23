@@ -48,7 +48,7 @@ again: fix the structure rather than the schedule.
 | [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host only, actionable now | M | none | **done** |
 | [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | I-06 | **done**: builds clean on 13.2.Rel1; lane active |
 | [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | I-08 | partial: builds into the firmware image; on-hardware validation gated on I-19 |
-| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | partial: `fcpico_testpattern.uf2` builds, 87.6% flash free; needs a board |
+| [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | I-09 | **done**: replacement firmware displays patterns on an NTSC NES-001; trace calibration continues in I-19 |
 | [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- partly local | M | I-08 (soft) | open |
 | [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | I-11 | open |
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |

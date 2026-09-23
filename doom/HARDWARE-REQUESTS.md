@@ -53,7 +53,9 @@ the result. The human fills in the result section and commits; the agent then co
   mismatch, not a candidate hardware constant.  The first three 65,536-word trace dumps
   were truncated by the serial capture path, so the firmware now emits an 8,192-word,
   approximately 2 ms window that still spans about 31 scanlines.
-- Result: (pending)
+- Result: count and display portions complete on 2026-09-22. The replacement firmware from
+  `73a6df2` displays its test patterns successfully on the NES-001. Three decoder-valid
+  8,192-word traces are still pending; the earlier 65,536-word captures are incomplete.
 
 ## Human actions (not hardware)
 
