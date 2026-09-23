@@ -77,11 +77,18 @@ else()
             add_subdirectory(rp2040-doom EXCLUDE_FROM_ALL)
         else()
             add_subdirectory(rp2040-doom)
+            find_package(PNG REQUIRED)
+            target_link_libraries(doom_tiny_fcpico PRIVATE PNG::PNG)
             find_package(Python3 REQUIRED COMPONENTS Interpreter)
             enable_testing()
             add_test(NAME engine_host_determinism
                 COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_LIST_DIR}/sim/host_shim/test_engine_determinism.py
+                    $<TARGET_FILE:doom_tiny_fcpico>
+                    ${CMAKE_CURRENT_LIST_DIR}/rp2040-doom/doom1.whx)
+            add_test(NAME engine_title_menu_golden
+                COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_LIST_DIR}/tests/goldens/test_title_menu.py
                     $<TARGET_FILE:doom_tiny_fcpico>
                     ${CMAKE_CURRENT_LIST_DIR}/rp2040-doom/doom1.whx)
         endif()

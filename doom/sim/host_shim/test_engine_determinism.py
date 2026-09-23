@@ -22,6 +22,9 @@ def main() -> int:
             )
             if "host frames=600" not in result.stdout:
                 raise AssertionError(result.stdout + result.stderr)
+            checker = pathlib.Path(__file__).resolve().parents[2] / "tests/goldens/check.py"
+            subprocess.run([sys.executable, str(checker), str(output)],
+                           check=True, capture_output=True, text=True, timeout=30)
             runs.append([path.read_bytes() for path in sorted(output.glob("*.raw"))])
         if len(runs[0]) != 600 or runs[0] != runs[1]:
             raise AssertionError("600-frame indexed output differs between runs")

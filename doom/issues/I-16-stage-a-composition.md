@@ -55,3 +55,12 @@ python3 doom/tests/goldens/check.py /tmp/f
 Keep everything reachable during `VIDEO_TYPE_SAVING` out of flash: the original marks
 those functions `__no_inline_not_in_flash_func` because they run while flash is being
 programmed. Losing that attribute produces a crash only on hardware, only when saving.
+
+## Status (2026-09-23)
+
+Partial. The adapter composes 320x200 indexed lines from the renderer's view buffers and
+packed overlays, including status/menu/title and the wipe, without a device-sized full-frame
+buffer. The host sink writes raw frames and PNG previews; a 600-frame DEMO1 capture has
+golden hashes every tenth frame, and title/menu cases have separate goldens. The device
+sink still discards the lines until I-17 stream conversion and publication are integrated.
+An independent Chocolate Doom screenshot comparison and hardware picture check remain open.
