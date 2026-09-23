@@ -277,6 +277,8 @@ static void test_init_and_reset(void) {
     CHECK(fcbus_core_pop_action(&g_c, &act));
     CHECK_EQ(act.kind, FCBUS_ACT_INIT);
     CHECK_EQ(act.arg, 7);
+    CHECK_EQ(fcbus_core_stats(&g_c)->init_events, 1);
+    CHECK_EQ(fcbus_core_stats(&g_c)->last_init_stage, 7);
     CHECK_EQ(g_c.state, FCBUS_ST_INIT);
     CHECK_EQ(g_c.proto, FCBUS_PROTO_UNKNOWN); /* re-identified from the next packet */
     CHECK_EQ(fcbus_core_pads(&g_c), 0);

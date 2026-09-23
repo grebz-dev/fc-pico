@@ -18,14 +18,16 @@ the result. The human fills in the result section and commits; the agent then co
 ## Open requests
 
 ### HR-1 Phase 0 trace capture and board facts (task P0-T9)
-- Flash: `fcpico_testpattern.uf2` from the P0-T5/P0-T9 build (not yet available).
+- Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2` from the current
+  P0-T5/P0-T9 build (SHA-256 `be283708ba21e4ffa75ad4dec665461cd52db9220888d86888096f8051389cbf`).
 - Console ROM expected: tutorial (unchanged).
 - Steps: 1. Insert the cartridge, power on, confirm the test pattern is visible.
   2. Connect USB-C, open the serial console at 115200, run `stats` for 60 s and paste the
-     output. 3. Run `trace` three times; save each dump as `trace_<n>.hex`.
+     output. 3. Run `trace` three times; save each complete dump as `trace_<n>.hex` and
+     validate each with `python3 doom/tools/trace_decode.py <dump> --json`.
   4. Run `picotool info -a` on the UF2 and on the connected board; paste both.
-- Record: `doom/tests/fixtures/hw_trace_ntsc/` (dumps + `stats.txt` + `picotool.txt`), and the
-  console model/revision in `HARDWARE-LOG.md`.
+- Record: `doom/tests/fixtures/hw_trace_ntsc/` (see its `README.md`; dumps + `stats.txt` +
+  `picotool.txt`), and the console model/revision in `HARDWARE-LOG.md`.
 - **Sharpened by co-simulation (2026-09-20).** The trace no longer has to explore the whole
   count discrepancy; two of the three candidate explanations in `plan/01-constraints.md` can
   be settled or have already been settled off the bench:
@@ -45,6 +47,12 @@ the result. The human fills in the result section and commits; the agent then co
   full scanline including dots 241-340, and note the `stats` `ppu_count` histogram verbatim
   even when it looks boring -- a histogram centred on 15490 versus 16452 answers this on its
   own.
+- **First hardware result (2026-09-22).** An NTSC NES-001 reports 15490 on 5495 of 5507
+  measured frames; the other 12 land in the low outlier bucket and trigger DMA stops.
+  This validates `PPU_COUNT_VAL_V1=15490` and turns the Mesen 16453 result into a model
+  mismatch, not a candidate hardware constant.  The first three 65,536-word trace dumps
+  were truncated by the serial capture path, so the firmware now emits an 8,192-word,
+  approximately 2 ms window that still spans about 31 scanlines.
 - Result: (pending)
 
 ## Human actions (not hardware)

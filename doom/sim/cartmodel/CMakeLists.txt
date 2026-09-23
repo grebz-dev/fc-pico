@@ -16,8 +16,12 @@ endif()
 if(NOT TARGET fcbus_host)
     add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../fcbus" "${CMAKE_CURRENT_BINARY_DIR}/fcbus")
 endif()
+if(NOT TARGET fcpico_testpattern_app)
+    add_subdirectory("${CMAKE_CURRENT_LIST_DIR}/../../testpattern"
+                     "${CMAKE_CURRENT_BINARY_DIR}/testpattern")
+endif()
 
 add_library(fcpico_cartmodel STATIC fcpico_cart.c)
 target_include_directories(fcpico_cartmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(fcpico_cartmodel PUBLIC fcbus_host)
+target_link_libraries(fcpico_cartmodel PUBLIC fcbus_host fcpico_testpattern_app)
 target_compile_options(fcpico_cartmodel PRIVATE -Wall -Wextra -Werror)

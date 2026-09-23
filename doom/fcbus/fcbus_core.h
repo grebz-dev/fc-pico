@@ -114,6 +114,8 @@ typedef struct {
     uint32_t isr_max_us; /**< Device-backend only; this core has no clock, always 0 here. */
     uint32_t proto_errors; /**< v2 addition beyond the plan's original sketch: see
                              *   fcbus_core_rx_byte()'s FCBUS_ACT_PROTO_ERROR cases. */
+    uint32_t init_events; /**< Completed FP_COM_INI packets, retained after actions drain. */
+    uint8_t last_init_stage; /**< Stage byte from the most recent FP_COM_INI packet. */
 } fcbus_stats_t;
 
 /* ------------------------------------------------------------------------ */

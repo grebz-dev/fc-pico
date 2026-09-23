@@ -37,8 +37,10 @@ and any file another open issue lists under **Owns**.
    alternating block palettes, a frame counter) and nothing else.
 2. The serial CLI from the plan: `stats` (fps, conversion time, the `ppu_count` histogram,
    resyncs, timeouts), `pattern N`, `dump attr|pal|mailbox`, `reboot`, `bootsel`.
-3. `trace`: the PIO1 sampler plus DMA described in the plan, dumping one frame of CS1, /RD
-   and /WR samples as hex.
+3. `trace`: the PIO1 sampler plus DMA described in the plan, dumping a multi-scanline window
+   of CS1, /RD and /WR samples as hex. The original 15.7 ms text dump exceeded the hardware
+   session's terminal capture limits; the current 2.0 ms window still spans about 31 NTSC
+   scanlines and contains the within-line evidence HR-1 needs.
 4. `tools/trace_decode.py` to turn that dump into per-line qualifying-read counts, a /RD low
    width histogram and the vblank gap -- with a synthetic round-trip test, since no real
    dump exists yet.
@@ -56,3 +58,16 @@ python3 -m pytest doom/tests/tools -q   # covers trace_decode against synthetic 
 
 Write `trace_decode.py` and its test before the hardware session, not after. A session
 that produces a dump nobody can parse wastes the scarcest resource in the project.
+
+## Hardware finding (2026-09-22)
+
+An NTSC NES-001 measured `ppu_count=15490` on 5495/5507 frames. This validates the v1
+constant; the Mesen read-count excess is a model mismatch. The first UF2 reached
+`MEMORY 2048B OK` and maintained heartbeats but remained blank because the physical main
+loop lost the `FP_COM_INI` application event after the IRQ backend consumed it. The host
+cart adapter already performed the required `PF_COM_DMOD` initialization, hiding the
+divergence in co-simulation.
+
+The replacement implementation keeps a monotonic init event/stage in `fcbus_stats_t` and
+routes both device firmware and the Mesen adapter through the same host-tested test-pattern
+controller. The replacement UF2 is built and awaits real-console validation.
