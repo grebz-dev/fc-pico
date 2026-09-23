@@ -54,7 +54,7 @@ again: fix the structure rather than the schedule.
 | [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | I-06 | open |
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | I-13 | open |
 | [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | I-06; I-12 for Doom scenarios only | **S0 done**: strict count, mailbox and screenshot golden pass; Doom scenarios await I-12 |
-| [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | I-12 | open |
+| [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | I-12 | partial: 320x200 host goldens pass; device sink and independent picture check remain |
 | [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host core now, device after I-16 | L | I-03; I-16 for device integration | partial: host core passes differential tests; tables and device integration remain |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | open |
 | [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | I-10 | **done**: complete trace 6 calibrates 66/64 reads and zero-based count |

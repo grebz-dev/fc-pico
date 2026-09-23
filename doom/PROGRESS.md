@@ -11,6 +11,24 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## I-16 / P1-T1 -- indexed full-frame composition (2026-09-23)
+- What landed: the FC PICO adapter now composes all 320x200 scanlines from the renderer's
+  view buffers and packed overlay list, including title/menu/HUD/status patches and the
+  melt-wipe state. It sends lines through `fcvideo_line_sink`; the host sink writes full
+  raw frames and PLAYPAL-indexed PNG previews every 100th frame. The device build also
+  executes composition and launches the renderer's core-1 worker, but its sink remains a
+  no-op until stream conversion/publication is integrated.
+- Verified: SDL-free host CTest 3/3, including two identical 600-frame captures, 60 golden
+  hashes, six PNG previews, and separate title/menu goldens. Visual samples show the title,
+  menu, E1M1 status bar and wipe. Python suite: 365 passed, 1 skipped. GCC 13.2 RP2350
+  engine ELF links at 242,612 flash bytes, leaving 281,676 before the WHX partition.
+  A 600-frame AddressSanitizer replay passes after correcting the host runner's one-byte
+  `singletics` type and the renderer's visplane-row lookahead. UBSan still reports 133
+  warnings in existing engine arithmetic/indexing paths; none are in the new compositor.
+- Left out: independent Chocolate Doom pixel comparison, hardware display, and NES stream
+  output. Preview captures are under `/tmp/fcpico-fullframe-b/`, title under
+  `/tmp/fcpico-title-frames-current/`, and menu under `/tmp/fcpico-menu-frames/`.
+
 ## I-12 / P0-T3 -- SDL-free host engine runner (2026-09-23)
 - What landed: `PICO_PLATFORM=host` now builds the whole FC PICO engine and pthread shim
   without SDL. The runner reads the checked-in WHX by path, starts DEMO1, captures indexed
