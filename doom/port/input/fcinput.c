@@ -184,10 +184,11 @@ void fcinput_poll(fcinput_t *input, fcinput_event_ring_t *ring) {
     } else if (input->sticky_pressed & FCINPUT_PAD_START) {
         pulse(ring, input->config.code[FCINPUT_KEY_MENU]);
     }
-    if (input->pending_use) {
-        pulse(ring, input->config.code[FCINPUT_KEY_USE]);
-        input->pending_use = false;
-    }
+    /* Doom samples key state after all events for this tic are processed.
+     * Keep a B tap down until the following tic instead of posting both
+     * edges in one poll. */
+    set_key(input, ring, FCINPUT_KEY_USE, input->pending_use);
+    input->pending_use = false;
     if (input->pending_next_weapon) {
         pulse(ring, input->config.code[FCINPUT_KEY_NEXT_WEAPON]);
         input->pending_next_weapon = false;

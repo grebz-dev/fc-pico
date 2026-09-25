@@ -36,8 +36,8 @@ and any file another open issue lists under **Owns**.
 
 1. Stage B: `decimate_320_to_256` keeps exactly the columns where `x % 5 != 4`, in order,
    and returns 256 of them.
-2. `place_letterbox` puts the Doom frame at console lines 16..215 and leaves the rest at the
-   backdrop.
+2. `place_letterbox` scales 200 source lines to console lines 8..231 and leaves eight
+   blank lines on each side.
 3. `build_err_and_lut`: a Doom colour that equals a sub-palette entry gets `err == 0` and a
    LUT row that is constant at that entry for all 16 Bayer thresholds; a colour halfway
    between two entries alternates between them.

@@ -60,6 +60,56 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Open requests
 
+### HR-6 Shadow detail and pending B/video checks (task P2-T6)
+- Flash: `/tmp/fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
+  `3d298001d93f028dd6a3e9f37287e8d77762704b0c1295485c8fd22275f88dbc`.
+  This supersedes the HR-5 candidate and includes its B-use and 224-line
+  changes. With the NES off, send `bootsel` on the current firmware's USB
+  serial port, then copy the UF2 to the RP2350 drive. The Doom ROM stamp is
+  still `20DOOM-02-0002`, so no console ROM update is expected.
+- Steps: 1. Power on the NES and confirm E1M1 appears. 2. Check the HR-5
+  items: short B taps open a door, B+Left/Right strafes, B leaves a menu, and
+  the image fills NES lines 8..231 without clipping or tearing. 3. Compare
+  a dim room and a brighter room with the [host preview](assets/palette_eval.png):
+  are walls, doors and enemies easier to distinguish, and are HUD digits and
+  menu text still readable? Note any cyan cast, conspicuous dither grid, or
+  flicker. 4. Photograph the full TV and a close view of a dim room. Capture
+  serial conversion average/max and frame counters after play.
+- Record: console model/region, B and layout results, visual judgment versus
+  the prior [hardware photo](FCPICO_DOOM_HW_PHOTO.jpg), photographs, and serial
+  lines in [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
+- Result (2026-09-25): user reports “works great,” much better contrast and a
+  working B button. USB serial and Doom playback work with startup diagnostics
+  enabled. Through `hb=1829`, `count=15554`, `stops=1`, `resyncs=1`, and zero
+  timeouts/errors remain stable; drops settle at 691. At 480 converted frames,
+  conversion average/max are 38208/38251 us. See [the hardware log](HARDWARE-LOG.md).
+- Remaining: detailed 224-line clipping/tearing checks, individual B chord/menu
+  checks, scene-specific HUD/color/flicker review, photographs and longer stability.
+  The successful report does not establish every item in the original checklist.
+
+### HR-5 B use and taller video (task P1-T4 and video follow-up)
+- Superseded by HR-6 before flashing; its checks are incorporated there.
+- Flash: `/tmp/fcpico_doom_buse_scale224_whx.uf2`, SHA-256
+  `14160dd8f6301f4c41b12f6f39979a71f5a1f554799ac83284e598b1842d67b4`.
+  This merges the rebuilt firmware and the same `doom1.whx` at `0x10080000`.
+  Send `bootsel` followed by Enter on the current Doom firmware's USB serial port,
+  then copy the UF2 to the RP2350 drive with the NES off. The embedded Doom ROM
+  stamp remains `20DOOM-02-0002`; a console ROM erase/update is not expected.
+- Steps: 1. After the firmware restarts, power on the NES and confirm Doom appears.
+  2. In E1M1, face a door and tap B without a D-pad direction. Confirm the door
+  opens; try several short taps. 3. Hold B with Left/Right and confirm strafing
+  still works; open a menu and confirm B still backs out. 4. Photograph the full
+  TV picture straight on and compare its top and bottom margins to the earlier
+  Doom photograph. The new stream places the image at NES lines 8..231, with
+  eight blank lines above and below. Note any crop, distortion, tearing or
+  palette artefact at those boundaries. 5. Capture a few serial status lines
+  after play, including frame count and conversion average/max.
+- Record: console model and region, action results, a new picture, and serial
+  lines in [`HARDWARE-LOG.md`](HARDWARE-LOG.md). State whether the menu and
+  movement behavior remained usable.
+- Result: pending physical verification. Host Doom emitted `BT_USE` for a scripted
+  B tap; three real converted frames matched the Python reference byte for byte.
+
 ### HR-4 Controller input on Doom (task P1-T4)
 - Flash: `/tmp/fcpico-hw-doom/fcpico_doom_input_whx.uf2`, SHA-256
   `82405a0823193a0d7ea7c6b8f5c053450e7d049399fa23d1d7f21973caf5fbd8`.

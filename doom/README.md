@@ -4,16 +4,22 @@ Doom -- the shareware `DOOM1.WAD`, via [RP2040 Doom](https://github.com/kilograh
 (itself a Chocolate Doom derivative) -- running on the RP2350 inside an
 [FC PICO](../README.md) cartridge, displayed by, and played from, an unmodified Famicom or NES.
 
-**Status (2026-09-24): Doom video and basic controller input work on an NES-001.**
+**Status (2026-09-25): Doom video and basic controller input work on an NES-001.**
 The v2 boot ROM runs on the console, the RP2350 converts and streams engine frames, and
 the console displays Doom. The reflash path passes S1 co-simulation; a ROM UPDATE was
 observed in an earlier hardware session, while the final `0002` stamp was not separately
-transcribed. Movement, strafing and menus work with a physical pad. A short B
-press still fails to activate **use** in gameplay; the input diagnosis is in
-[PROGRESS.md](PROGRESS.md). Conversion takes about 35.6 ms per frame on the tested
-firmware, above the [8 ms target](plan/04-video.md#acceptance-criteria-used-by-10-workplan).
-The current 200-line image leaves 16 blank NES lines above and 24 below, as specified in
-[the video plan](plan/04-video.md#stage-b----horizontal-decimation-320---256).
+transcribed. Movement, strafing and menus work with a physical pad. The B-use
+fix and shadow-detail contrast improvement are now confirmed on hardware in
+[HR-6](HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6).
+The 224-line firmware runs successfully; precise geometry and extended visual checks
+remain open. Serial is stable through 1,829 heartbeats, with no new DMA stops or
+resyncs after startup. Conversion averages 38.208 ms (maximum 38.251 ms), above the
+[8 ms target](plan/04-video.md#acceptance-criteria-used-by-10-workplan).
+
+Rebuild this milestone with `doom/tools/build_shadow_detail.sh --bootstrap-tools`.
+The script preserves the working startup diagnostics and uses picotool to generate
+the firmware UF2, then merges the WHX. Prerequisites, output paths and the tested
+artifact hash are in [the build guide](plan/08-build.md#hardware-milestone-build).
 
 Host tests, strict test-pattern S0, fixed Doom-frame D0/D1 and reflash S1 co-simulation
 pass. Dynamic Doom-frame S2, full controller behavior, performance, saves and audio still

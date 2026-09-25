@@ -14,13 +14,16 @@ This is the part that makes Doom look like Doom on four colours a block. It is p
 computation over byte arrays, so it can be finished and proven on the host and only then
 wired to the bus interrupt.
 
-## Status (2026-09-24)
+## Status (2026-09-25)
 
 **partial**. The host converter matches the Python oracle on synthetic and real engine
 frames. The RP2350 converter publishes frames through `fcbus`, and the NES-001 displays
-Doom. Mesen D0/D1 fixed-frame checks pass. Hardware conversion averages about 35.6 ms,
-above the 8 ms target; dynamic S2 and a performance pass remain. The current 200-line
-image at NES lines 16..215 is the specified letterbox, not a stream-size limit. See
+Doom. Mesen D0/D1 fixed-frame checks pass. Hardware conversion averages 38.208 ms (38.251 ms maximum),
+above the 8 ms target; dynamic S2 and a performance pass remain. The 224-line
+image at NES lines 8..231 matches the host reference; its console picture check is
+[HR-6](../HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6).
+The new shadow-detail default has a [host comparison](../assets/palette_eval.md)
+and the user confirms much better contrast on hardware. Precise geometry checks remain. See
 [`../PROGRESS.md`](../PROGRESS.md) and [`../HARDWARE-LOG.md`](../HARDWARE-LOG.md).
 
 ## Specification
