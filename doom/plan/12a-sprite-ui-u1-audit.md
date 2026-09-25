@@ -12,6 +12,7 @@ UI build, emulator probe or NES-001 test has been run for this audit.
 | Main repository | `1a395b5c245d50d9f837061c26b95f1e96c9102b` plus uncommitted planning changes |
 | Doom engine submodule | `3c8af2bbdc4aa6ed424689d514b72c27db02ac5f`; clean at audit time |
 | Mesen2 submodule | `9688726c982c57cfbcb81bc6d519decfe82eff91` |
+| Local shareware WHX | `rp2040-doom/doom1.whx`, SHA-256 `87ea79020578fa2e72fc204f67ff2ce45bd73a266a369670da7a019028b0d893`; metadata only used below, asset not copied into this plan |
 | Existing evidence | D1 reports 1614 critical / 2021 total NMI cycles in [PROGRESS](../PROGRESS.md); these are v2 measurements, not UI results |
 
 The active `doom_tiny_fcpico` target sets `DOOM_TINY=1`, `USE_WHD=1`,
@@ -36,6 +37,27 @@ The inventory is intentionally source based. It does not yet claim that every
 visible patch on every screen is classified. Title art, help screens, wipe and
 intermission backgrounds remain candidates for the streamed background.
 
+The active WHX's `P_START` vpatch lookup and `whddata.h` list give these original
+patch dimensions. These are source dimensions, **not** proposed native art sizes:
+
+| Patch | Original pixels | 8×8 sprite grid if copied without redesign |
+|-------|-----------------|--------------------------------------------|
+| `STBAR` | 320×32 | Wider than the native screen; cannot be a sprite rectangle |
+| `STFST00` / `STFGOD0` | 24×29 | 3×4 = 12 entries; 3 per line |
+| `STFDEAD0` | 24×31 | 3×4 = 12 entries; 3 per line |
+| `STTNUM0` / `STTPRCNT` | 14×16 | 2×2 = 4 entries each |
+| `STYSNUM0` / `STKEYS0` | 4×6 / 7×5 | 1 entry each |
+| `M_JKILL` | 246×15 | 31×2 = 62 entries; 31 per line, impossible under the eight-sprite limit |
+| `M_MESSG` / `M_OPTION` | 118×15 / 92×15 | 15 / 12 sprites per line, respectively |
+| `M_SKULL1` | 20×19 | 3×3 = 9 entries; 3 per line |
+| `M_LSCNTR` | 8×14 | 2 entries per border segment |
+
+The WHX has 1264 lumps and a 384-entry vpatch lookup. Dimensions were read
+from the encoded vpatch headers, using the archive offset table described by
+`rp2040-doom/src/whd_gen/wad.cpp` and the width encoding in
+`rp2040-doom/src/v_patch.h`. These figures prove direct patch-to-sprite
+conversion will overflow; they do not estimate the size of redesigned assets.
+
 ## Capacity facts and immediate consequences
 
 | Limit or measurement | Calculation | Consequence |
@@ -52,6 +74,58 @@ the native display is 256×240 and the current converted world occupies native
 lines 8..231. A proposed native status region at y=208..239 therefore requires
 revisiting world/status composition, not just mapping x coordinates. No native
 positions are approved yet.
+
+`python3 doom/tools/check_sprite_layout.py proposed-layout.json` now checks
+native-pixel rectangle groups against 64 OAM entries, eight sprites on each
+scanline and 256×240 bounds. The tool assumes every intersecting 8×8 tile is
+present, so it is a conservative capacity gate for future layout drafts; it
+does not yet test art transparency, palette fit or actual PPU fetch behavior.
+Pass `--lines` to print occupancy on every used scanline. Each JSON screen has
+`name` and `groups`; each group has `name`, `x`, `y`, `width` and `height` in
+native pixels. Proposed layouts, when ready, will be checked with this tool.
+
+The first [compact status draft](sprite-ui-status-draft.json) places foreground
+items in native lines 192..231, leaving eight bottom lines clear. It accounts
+for ready ammo, health and armor values, three key slots, six weapon ownership
+marks, a 16×16 face and all four current/maximum ammo pairs. The checker reports
+**38/64 OAM entries and 8/8 sprites on peak scanlines**: lines 192..199 use
+six slots; lines 200..231 use all eight. This is a capacity illustration, not
+a legibility-approved design. It assumes three-pixel-wide packed digits for
+each seven-character current/max pair inside 24 pixels, 8×8 symbols in place
+of original static labels, and a face reduced from 24×29/31 to 16×16. There
+are no sprite slots left on its lower four rows for more labels. It does not
+yet cover deathmatch frags, optional FPS or simultaneous long HUD messages.
+Its 38 entries leave 26 for a message; even at three pixels per character,
+80 visible characters require at least 30 entries (240 horizontal pixels).
+Thus the longest message cannot coexist with this status draft in one OAM
+generation. It would also require the streamed world to stop by native line
+191 instead of 231, or another independently validated composition geometry.
+TV overscan and actual icon/face readability remain untested.
+
+## Early transport bounds (not a protocol selection)
+
+`PG_main.asm`'s unrolled `READ8` uses seven CPU cycles per byte (`lda $2007`,
+`sta <zp`). These are lower-bound comparisons if new bytes use the same NMI
+receive path; they omit versioning, generation, decoder and sprite-palette
+address setup. The count follows the established zero-based convention.
+
+| Comparison case | Fixed mailbox bytes at minimum | Expected report | Added NMI receive / OAM work |
+|-----------------|--------------------------------|-----------------|-------------------------------|
+| Current v2 | 128 | 15554 | Baseline measured 1614 critical / 2021 total cycles |
+| Append 16 UI bytes | 144 | 15570 | At least 112 receive cycles; a 513/514-cycle OAM DMA would exceed the measured worst-case limits even before decode |
+| Append full OAM and 16 sprite palette bytes | 400 | 15826 | At least 1904 receive cycles plus 513/514 DMA cycles; infeasible as a single v2-style NMI |
+
+Even a compact update must separate receiving/staging from an OAM commit. A
+commit NMI may need to defer BG attribute or palette writes and hold the prior
+complete presentation; the actual schedule must be measured across both DMA
+parities, all flags and maximum audio before U3 chooses a format. The fixed
+mailbox lengths above exclude any new header and are comparison cases only.
+
+The fixed bank's `SysBootRom.asm` writes `$0200-$02FF` in its reset RAM-clear
+loop. The read-only search of authored fixed-bank and Doom ROM assembly found
+no other direct `$02xx` reference. This supports `$0200` as a candidate OAM
+shadow after reset, but indirect writes and all boot/reflash paths still need
+a full audit before assigning it.
 
 ## Candidate design work still required to close U1
 
