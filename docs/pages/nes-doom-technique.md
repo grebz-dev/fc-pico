@@ -49,13 +49,13 @@ only on the read strobes that qualify -- the pattern fetches it is actually resp
 answering. Nametable, attribute and sprite traffic are excluded. Two different
 measurements of the same frame.
 
-The insight is that **only the order matters, not the addresses**. Whether the screen
-is scrolling or static changes which addresses the PPU emits, but the *sequence* of
-fetch types is invariant. So a cartridge that ignores the address lines entirely and
-simply presents the right byte at the right position in the sequence produces a
-coherent picture. The nametable and attribute bytes exist only to influence which
-address the PPU will emit next; if the address lines are unused, those bytes can be
-anything at all.
+Within the cartridge's selected address range, the **order** determines which stream
+byte is returned. The board's chip select still matters: the tutorial fills the main
+nametable with tile `$80` (pattern address `$0800`) and the adjacent nametable with tile
+`$00`. An address-based model selecting `$0800-$0FFF` reproduces the measured fetch
+counts; filling the main nametable with zero instead reproduces the Doom bring-up's
+mailbox-only black screen. Nametable bytes therefore cannot be arbitrary even though
+the RP2350 itself advances the stream without inspecting individual address lines.
 
 This is exactly what FC PICO does. Its fourth PIO state machine (::fcppu_rna) counts
 read strobes, and the count *is* the position in the frame.

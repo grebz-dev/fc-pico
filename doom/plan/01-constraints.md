@@ -75,6 +75,20 @@ fcppu_rna report (zero-based last index)  = 15490
 The transmitter and counter use the same CS1 and `/RD` conditions, so there is no separate
 68-byte consumption rate.
 
+**Address-selection correction (2026-09-24):** the tutorial fills nametable 0 with tile
+`$80`, addressing the stream at `$0800`, and nametable 1 with tile `$00`, addressing the
+local font area. An address-only Mesen decode `(addr & $F800) == $0800` reproduces trace 6's
+66/64 cadence and the existing S0 screenshot without manually discarding PPU cycles.
+The previous mapper's `$0000-$0FFF` decode plus cycle filtering hid this requirement.
+The old Doom ROM's tile `$00` setup reproduces the hardware's count=128/mailbox-only failure
+under this corrected model. This is source and simulation evidence for the decode;
+the corrected Doom ROM still needs hardware validation.
+
+v2 must also restore the current PPU address to `$0801` after its three-byte heartbeat.
+Leaving it at `$0803` reduces the pre-render line from 66 to 62 selected reads even after
+`$2005` scroll writes, yielding count=15550 instead of 15554. This restoration changes
+no read-count constants.
+
 The stream-layout mistake was interpretive: `convVram()` runs an outer loop of 34 words, but
 its source index never resets per loop. Its useful prefix is one flat row-major 256x240 image,
 32 words per physical visible line. During pre-render, words 31-32 prefetch line 0's first
@@ -163,3 +177,8 @@ channel was not written in the previous frame (a new note) or when the period bi
 | `USE_ZONE_FOR_MALLOC`: `malloc` is wrapped into `Z_Malloc`; **no allocation on core 1 after startup** (`disallow_core1_malloc`). | The converter and bus layer must be statically allocated. |
 | Build flags of note: `DEMO1_ONLY=1` for the super-tiny target, `NO_USE_ARGS`, `NO_FILE_ACCESS`, `USE_WHD`, `WHD_SUPER_TINY`, `NO_USE_NET`, `USE_PICO_NET` (I2C). | The fcpico target starts from `doom_tiny` flags with `USE_PICO_NET=0`, `USB_SUPPORT=0`. |
 | Compiler: the README warns that binary size is tight and gcc 10.x is bad; author used arm-none-eabi-gcc 13.2.rel1. | Pin 13.2.Rel1 in CI. |
+
+## Changelog
+
+- 2026-09-24: explained the measured cadence with nametable/address selection and recorded
+  the v2 post-heartbeat address requirement; preserved the measured read-count constants.

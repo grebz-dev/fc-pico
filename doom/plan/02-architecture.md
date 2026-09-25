@@ -133,8 +133,9 @@ lives in the fix bank.
 
 ## What is deliberately not modelled
 
-- The PPU address lines. The whole design assumes the fixed fetch order; the model in 09 does
-  too.
+- The individual PPU address lines in firmware. The RP2350 sees the board's CS1 predicate;
+  the emulator must decode `$0800-$0FFF` before advancing the stream. Nametable contents
+  therefore matter even though the firmware itself only counts selected reads (01, 07).
 - NES sprites and OAM. `$4014` is never written; `$2001` still enables sprites (so that the
   fetch pattern is the one the count was calibrated for -- **do not change PPUMASK bits
   without recalibrating**).
@@ -241,3 +242,8 @@ bool fcapu_sfx_playing(int handle);
 void fcapu_pump(void);                              // once per heartbeat; emits via fcbus_apu_write
 const fcapu_stats_t *fcapu_stats(void);            // pairs per frame max, deferred, dropped
 ```
+
+## Changelog
+
+- 2026-09-24: clarified that emulation must decode the stream address range even though
+  firmware receives CS1 instead of inspecting individual address lines.

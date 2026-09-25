@@ -77,13 +77,18 @@ and they cannot change (D6).
 
 ### Version stamp
 
-The 14-byte build stamp at `$EFF0` becomes `"DOOM-vv-nnnnnn"` (protocol version, build number,
-e.g. `DOOM-02-000001`). `CHK_ROMVER` in the fix bank does not parse it: it skips reply bytes
-until it sees `'C'` (the firmware streams the sync word `"!#FC"` first, as `0x21212121,
-0x43462321`), then compares 14 bytes verbatim against `DB_ROM_VER`. Any 14-byte string works,
-and the firmware must stream the sync word before the stamp exactly as `rp_system::ver_dma()`
-does. (The "must begin with 20" description in `docs/pages/boot-and-reflash.md` refers to the
-tutorial's date-based stamps, not to a check in the code.)
+The 14-byte build stamp at `$EFF0` becomes `"20DOOM-vv-nnnn"` (mandatory `20` prefix,
+protocol version, build number, e.g. `20DOOM-02-0001`). `CHK_ROMVER` in the fix bank skips
+reply bytes until it sees `'C'` (the firmware streams the sync word `"!#FC"` first, as
+`0x21212121, 0x43462321`), then compares 14 bytes verbatim against `DB_ROM_VER`, and the
+firmware must stream the sync word before the stamp exactly as `rp_system::ver_dma()` does.
+
+After five mismatches, `.romv00` (`$F2B2` in `bootrom_fixr.bin`) accepts the reply as a
+cartridge only if its first two bytes are `"20"`; any other reply prints **PICO NOT FOUND** and
+halts without reflashing. Every stamp served by FC PICO firmware must therefore start with `20`.
+An earlier revision of this section said the check did not exist in the code; it does, and
+the original `DOOM-02-000001` stamp would have stopped every tutorial console at PICO NOT
+FOUND instead of reflashing (found while building the S1 reflash co-simulation, 2026-09-23).
 
 **Reproducible builds:** `dbdate.h` is replaced by a stamp derived from the protocol version
 and a version number in `bootrom/version.inc`, not the wall clock. Bumping the stamp is a

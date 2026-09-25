@@ -1,0 +1,39 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: Doom 6502 boot ROM
+
+on:
+  push:
+    paths: ['doom/bootrom/**', 'doom/tests/bootrom/**', 'doom/tools/nes/**', '.github/workflows/doom-bootrom.yml']
+  pull_request:
+    paths: ['doom/bootrom/**', 'doom/tests/bootrom/**', 'doom/tools/nes/**', '.github/workflows/doom-bootrom.yml']
+  workflow_dispatch:
+
+jobs:
+  bootrom:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build pinned native NESASM CE
+        run: |
+          git clone https://github.com/ClusterM/nesasm.git /tmp/fcpico-nesasm-ce
+          git -C /tmp/fcpico-nesasm-ce checkout 6fc41cda37b934aa29aa2639d0baa74424268e31
+          make -C /tmp/fcpico-nesasm-ce/source all
+          echo 'NESASM_BIN=/tmp/fcpico-nesasm-ce/nesasm' >> "$GITHUB_ENV"
+      - name: Prove tutorial PRG and iNES header reproducibility
+        run: doom/bootrom/ci/tutorial_md5_gate.sh
+      - name: Assemble Doom ROM twice and check permanent bank
+        run: |
+          doom/bootrom/build.sh
+          cp doom/bootrom/out/doom.nes /tmp/fcpico-doom-first.nes
+          doom/bootrom/build.sh
+          cmp /tmp/fcpico-doom-first.nes doom/bootrom/out/doom.nes
+      - name: Measure v2 NMI and run boot-ROM tests
+        run: |
+          python3 -m venv /tmp/fcpico-py
+          /tmp/fcpico-py/bin/python -m pip install py65==1.2.0 pytest
+          /tmp/fcpico-py/bin/python -m pytest doom/tests/bootrom -q -s
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: doom-bootrom
+          path: doom/bootrom/out/

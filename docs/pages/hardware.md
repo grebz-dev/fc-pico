@@ -31,8 +31,10 @@ Three signals are wired but unused, and their definitions are commented out in
 fcppu.pio: `PA12` (GP18), `PA13` (GP19) and `OD_DIR` (GP16). They are available if a
 future design needs partial address decoding.
 
-@note The PPU **address** lines are not connected at all. Position within the frame is
-derived by counting read strobes. @see @ref nes_doom
+@note Firmware uses CS1 instead of inspecting the individual PPU address lines.
+Position within the frame is derived by counting **selected** read strobes. The
+tutorial addresses the stream with tile `$80` / port `$0800`; its tile `$00` font
+area must not advance the stream in emulation. @see @ref nes_doom
 
 ## Bus turnaround
 

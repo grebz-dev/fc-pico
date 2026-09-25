@@ -89,9 +89,9 @@ does in the fork and pick whichever gives the cleaner experience).
 
 ## Implementation notes (engine fork, `src/fcpico/i_input_fcpico.c`)
 
-- Keep `TranslateKey`/`GetTypedChar` for the UART "SDL event forwarder" path so a developer can
-  still type on a keyboard through the serial port during bring-up (`I_GetEventTimeout` is
-  unchanged), and add the controller mapper on top.
+- The current FC PICO platform started with input stubs, so its first adapter
+  reads v2 heartbeat pad snapshots directly. USB serial remains available for
+  diagnostics and `bootsel`; a keyboard event forwarder is future work.
 - All mapping tables are `const` in flash; the state is a handful of bytes.
 - Expose `fcinput_set_option(FCINPUT_ALWAYS_RUN, on)` for the options menu (Phase 3 adds an
   "FC PICO" options page or reuses the Doom `M_Options` sliders: mouse sensitivity slot ->
@@ -104,3 +104,9 @@ does in the fork and pick whichever gives the cleaner experience).
 - Co-simulation: Mesen2 Lua scripts drive controller 1 (`emu.setInput`) to walk the E1M1
   start room, open the first door and change weapon; assert on game state read back through
   the serial log of the host model (`player->mo->x`, `readyweapon`).
+
+## Changelog
+
+- 2026-09-24: record the implemented direct pad adapter and host `--pads`
+  movement gate; the proposed UART event forwarder was not present in the
+  initial FC PICO platform.

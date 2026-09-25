@@ -13,7 +13,7 @@ from pathlib import Path
 
 import pytest
 
-from nes import bin2c, bincut, check_fixbank
+from nes import bin2c, bincut, check_fixbank, normalize_ines
 
 REPO_ROOT = Path(__file__).resolve().parents[3]
 TUTORIAL = REPO_ROOT / "tutorial_project"
@@ -24,6 +24,17 @@ pytestmark = pytest.mark.skipif(
 
 _HEX_BYTE_RE = re.compile(rb"0x([0-9a-fA-F]{2})")
 BOOTROM_FIXR_MD5 = "1A9A2AC85F1E7A15AF9DF47013432BF9"
+
+
+def test_native_nesasm_header_normalization_preserves_prg():
+    vendor = (TUTORIAL / "BOOTROM/rom.NES").read_bytes()
+    ce = bytearray(vendor)
+    ce[7] = 8
+    ce[11] = 7
+    assert normalize_ines.normalize(bytes(ce)) == vendor
+    ce[6] = 0x11
+    with pytest.raises(ValueError, match="mapper-0"):
+        normalize_ines.normalize(bytes(ce))
 
 
 def _parse_bin2c_bytes(text_bytes: bytes) -> bytes:

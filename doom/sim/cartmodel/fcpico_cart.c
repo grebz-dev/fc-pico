@@ -13,11 +13,25 @@
 #include "testpattern.h"
 
 static bool g_initialized;
-static const uint8_t *g_prg;
+static uint8_t g_prg[FCBUS_ROM_PRG_BYTES];
 static fcpico_cart_metrics_t g_metrics;
 static fcpico_testpattern_t g_pattern_app;
 static uint8_t g_stream[VRAM_BUF_BYTES_V2];
 static bool g_stream_enabled;
+static bool g_rom_v2;
+
+/* The console's PRG is flash and may be rewritten by the fix bank while the
+ * firmware keeps serving its own compiled-in image, so the model keeps a copy. */
+static bool load_served_rom(const char *path) {
+    FILE *input = fopen(path, "rb");
+    if (input == NULL) return false;
+    uint8_t header[FCBUS_ROM_INES_HDR];
+    bool valid = fread(header, 1, sizeof header, input) == sizeof header &&
+                 memcmp(header, "NES\x1a", 4) == 0 &&
+                 fread(g_prg, 1, sizeof g_prg, input) == sizeof g_prg && fgetc(input) == EOF;
+    if (fclose(input) != 0) valid = false;
+    return valid;
+}
 
 static bool load_stream(const char *path) {
     FILE *input = fopen(path, "rb");
@@ -37,7 +51,7 @@ static bool publish_stream(bool init) {
     if (!fcbus_core_back_is_free(core)) return false;
     const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V2;
     memcpy(fcbus_core_stream_back(core), g_stream, sizeof g_stream);
-    if (init) fcbus_core_request_data_mode(core);
+    if (init && !g_rom_v2) fcbus_core_request_data_mode(core);
     fcbus_core_palette(core, mailbox + MBX_PAL);
     fcbus_core_attr_table(core, mailbox + MBX_ATTR);
     fcbus_core_publish(core);
@@ -64,10 +78,11 @@ static void handle_init(uint8_t stage) {
 static void reset_link(void) {
     fcbus_config_t config = {
         .rom_image = g_prg,
-        .proto_default = FCBUS_PROTO_V1,
+        /* Match the device: the Doom firmware assumes v2 until told otherwise. */
+        .proto_default = g_rom_v2 ? FCBUS_PROTO_V2 : FCBUS_PROTO_V1,
     };
     fcbus_host_init(&config);
-    fcbus_host_set_bulk_lead_byte(g_stream_enabled);
+    fcbus_host_set_bulk_lead_byte(g_stream_enabled && !g_rom_v2);
     fcpico_testpattern_init(&g_pattern_app, fcbus_host_core());
     memset(&g_metrics, 0, sizeof g_metrics);
 }
@@ -117,7 +132,13 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
     const char *stream_path = getenv("FCPICO_STREAM_FILE");
     g_stream_enabled = stream_path != NULL && stream_path[0] != '\0';
     if (g_stream_enabled && !load_stream(stream_path)) return false;
-    g_prg = prg;
+    const char *serve_path = getenv("FCPICO_SERVE_ROM");
+    if (serve_path != NULL && serve_path[0] != '\0') {
+        if (!load_served_rom(serve_path)) return false;
+    } else {
+        memcpy(g_prg, prg, sizeof g_prg);
+    }
+    g_rom_v2 = memcmp(g_prg + FCBUS_ROM_STAMP_OFF, "20DOOM-02-", 10) == 0;
     reset_link();
     g_initialized = true;
     return true;
@@ -126,7 +147,7 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
 void fcpico_cart_shutdown(void) {
     g_initialized = false;
     g_stream_enabled = false;
-    g_prg = NULL;
+    g_rom_v2 = false;
     memset(&g_metrics, 0, sizeof g_metrics);
 }
 

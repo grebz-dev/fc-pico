@@ -56,7 +56,7 @@ def summarize_fetch_trace(rows, frame, cs1_mask):
     open_bus = 0
     sprite_reads = 0
     for line, fetches in by_line.items():
-        selected_tiles = 31 if line == -1 else 30
+        selected_tiles = (31 if line == -1 else 30) if cs1_mask == "0xf800" else 32
         expected_bg_cycles = [
             cycle for tile in range(selected_tiles)
             for cycle in (8 * tile + 5, 8 * tile + 7)
@@ -68,8 +68,10 @@ def summarize_fetch_trace(rows, frame, cs1_mask):
         for low, high in zip(bg[::2], bg[1::2]):
             if int(high["address"]) != int(low["address"]) + 8:
                 raise ValueError(f"scanline {line}: low/high pattern fetch address pair differs")
+            if cs1_mask == "0xf800" and (int(low["address"]) & 0xF800) != 0x0800:
+                raise ValueError(f"scanline {line}: background fetch misses the stream address range")
         sprites = [r for r in fetches if 255 < int(r["cycle"]) < 321]
-        expected_sprites = 0 if cs1_mask == "0xf000" else 16
+        expected_sprites = 16 if cs1_mask == "0xe000" else 0
         if len(sprites) != expected_sprites:
             raise ValueError(f"scanline {line}: expected {expected_sprites} sprite fetches, got {len(sprites)}")
         if len(fetches) != selected_tiles * 2 + 4 + expected_sprites:
@@ -78,7 +80,7 @@ def summarize_fetch_trace(rows, frame, cs1_mask):
         total += len(fetches)
         open_bus += sum(int(r["value"]) == 0xff for r in fetches)
     return {"frame": frame, "scanlines": len(by_line), "selected_reads": total,
-            "background_reads": 66 + 240 * 64,
+            "background_reads": total - sprite_reads,
             "sprite_reads": sprite_reads, "ff_values": open_bus}
 
 
@@ -87,7 +89,7 @@ def main():
     parser.add_argument("scenario", choices=["S0"])
     parser.add_argument("--diagnostic", action="store_true", help="check the bridge and determinism, not S0 correctness")
     parser.add_argument("--frames", type=int, default=300)
-    parser.add_argument("--cs1-mask", choices=["0xf000", "0xe000"], default="0xf000")
+    parser.add_argument("--cs1-mask", choices=["0xf800", "0xf000", "0xe000"], default="0xf800")
     parser.add_argument("--mesen", type=Path, default=HERE / "Mesen2/bin/linux-x64/Release/linux-x64/publish/Mesen")
     parser.add_argument("--output", type=Path, default=HERE / "results/S0")
     parser.add_argument("--golden", type=Path, default=HERE / "goldens/S0.argb.sha256",
@@ -95,6 +97,8 @@ def main():
     parser.add_argument("--fetch-frame", type=int, default=160,
                         help="capture one post-startup Mesen PPU rendering frame (default: 160)")
     args = parser.parse_args()
+    if args.cs1_mask != "0xf800" and not args.diagnostic:
+        parser.error("wider CS1 masks require --diagnostic; the stream is at $0800-$0FFF")
     if args.frames <= STARTUP_FRAMES:
         parser.error(f"--frames must exceed the {STARTUP_FRAMES}-frame startup window")
     if not (0 <= args.fetch_frame <= args.frames):
@@ -178,7 +182,7 @@ def main():
         strict_errors.append("no reviewed screenshot golden supplied")
     elif args.golden.read_text().strip() != runs[0]["final_argb_sha256"]:
         strict_errors.append("screenshot does not match the reviewed golden")
-    report = dict(scenario="S0", calibrated=True, cs1_mask=args.cs1_mask,
+    report = dict(scenario="S0", calibrated=args.cs1_mask == "0xf800", cs1_mask=args.cs1_mask,
                   debug_peeks_do_not_change_results=deterministic, runs=runs,
                   strict_s0_pass=deterministic and not strict_errors, strict_errors=strict_errors)
     (output / "report.json").write_text(json.dumps(report, indent=2) + "\n")

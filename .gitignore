@@ -17,3 +17,6 @@ CLAUDE.md
 
 # GNU ARM toolchain
 arm-gnu-toolchain*
+
+# locally assembled Doom console ROM (CI publishes it as an artifact)
+doom/bootrom/out/

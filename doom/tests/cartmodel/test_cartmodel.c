@@ -142,7 +142,10 @@ static void test_tick_forwards_the_heartbeat_watchdog(void) {
 }
 
 static void test_literal_ff_payloads_are_not_init_actions(void) {
-    init_cart();
+    /* The cartridge copies the PRG at init, like firmware with a compiled-in image. */
+    memset(g_prg, 0, sizeof g_prg);
+    g_prg[0x7f00] = 0x5a;
+    CHECK(fcpico_cart_init(g_prg, sizeof g_prg));
     start_tutorial_scene_at(0xff);
     CHECK_EQ(fcpico_cart_metrics()->init_actions, 1);
 
@@ -150,7 +153,6 @@ static void test_literal_ff_payloads_are_not_init_actions(void) {
      * not an init opcode while FP_COM_ROM awaits its page argument.  Follow it
      * with a new FP_COM_INI opcode without its stage: this catches an adapter
      * that carries stale INIT state across payload bytes. */
-    g_prg[0x7f00] = 0x5a;
     fcpico_cart_ppu_write(FP_COM_ROM);
     fcpico_cart_ppu_write(0xff);
     CHECK_EQ(fcpico_cart_metrics()->init_actions, 1);

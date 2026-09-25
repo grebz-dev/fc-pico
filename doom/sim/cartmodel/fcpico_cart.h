@@ -33,10 +33,11 @@ typedef struct {
 /**
  * Starts the one process-global host cartridge.
  *
- * `prg` must remain valid until fcpico_cart_shutdown() and must point to the
- * 32 KiB headerless PRG image that the tutorial boot ROM requests with
- * FP_COM_ROM.  Returns false without changing a live cartridge for a null
- * pointer or a length other than FCBUS_ROM_PRG_BYTES.
+ * `prg` is the console's 32 KiB headerless PRG.  The cartridge copies it and
+ * serves that copy for FP_COM_VER / FP_COM_ROM, unless the environment variable
+ * FCPICO_SERVE_ROM names an iNES image whose PRG the firmware should serve
+ * instead (the S1 reflash scenario).  Returns false for a null pointer, a
+ * length other than FCBUS_ROM_PRG_BYTES or an unreadable FCPICO_SERVE_ROM.
  */
 bool fcpico_cart_init(const uint8_t *prg, size_t prg_len);
 

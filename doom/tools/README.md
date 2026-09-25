@@ -5,6 +5,8 @@
 | `gen_protocol.py` | P0-T4 | `fcbus/fcbus_protocol.h` -> `bootrom/gen/protocol.inc`, `tools/fcpico/protocol.py`; `--check` |
 | `flash_layout_check.py` | P0-T1 | ELF flash end vs `port/flash_layout.h` |
 | `check_device_ram.py` | P1-T3 | ELF post-zone RP2350 heap-margin gate |
+| `whx2uf2.py` | P1-T6 | place `doom1.whx` at `0x10080000` in a UF2, optionally merged with the firmware UF2 |
+| `nes/normalize_ines.py` | P2-T1 | validate native NESASM CE header and normalize its two NES 2.0 bytes to vendor iNES |
 | `ppu_decode.py` | P0-T7 | stream + mailbox -> PNG (pure-Python PPU reconstruction) |
 | `fcvideo_ref.py` | P1-T2 | reference implementation of decimation, block cost, dither, pack |
 | `trace_decode.py` | P0-T9 | PIO sampler dump -> per-line strobe counts, `/RD` width histogram |

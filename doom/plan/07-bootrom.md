@@ -35,7 +35,7 @@ writes go to the cartridge (CS1) and are ignored; harmless.
 | 3 | `$ED00` | `jmp NMI` |
 | 3 | `$EE80` | `rti` |
 | 3 | `$EF00`/`$EF03` | `jmp UR_MAIN_SETUP` / `jmp UR_MAIN_LOOP` |
-| 3 | `$EFF0` | `DB "DOOM-02-000001"` -- from `gen/version.inc` (protocol version, build number), **not** the wall clock |
+| 3 | `$EFF0` | `DB "20DOOM-02-0002"` -- from `version.inc` (mandatory `20` prefix, protocol version, build number), **not** the wall clock |
 | 3 | `$EFFF` | `db 0` |
 | -- | `$F000` | `.incbin "bootrom_fixr.bin"` (copied from `tutorial_project/BOOTROM/`) |
 
@@ -87,14 +87,15 @@ and only then anything that can spill past vblank.
 | if `ATTR_VALID`: `SET_VRAM_ADD2 #$23C0`; 64 x `lda <zp / sta $2007` | unrolled | 12 + 448 |
 | if `PAL_VALID`: `SET_VRAM_ADD2 #$3F00`; 16 x `lda <zp / sta $2007` | unrolled | 12 + 112 |
 | controller packet: `SET_VRAM_ADD2 #$0800`; `lda #FP_COM_KEY / sta $2007`; pad1; pad2 | | 12 + 21 |
+| restore current PPU address to `$0801` (no `$2007` access) | `SET_VRAM_ADD2 #$0801` | 12 |
 | `$2000 <- FLG_2000`, `$2001 <- FLG_2001`, `$2005 <- 0`, `$2005 <- 0` | | 28 |
-| **vblank-critical subtotal** | | **1595** |
+| **vblank-critical subtotal** | | **1607** |
 | APU replay: up to 15 pairs, `ldy/bmi/inx/lda,x/inx/sta $4000,y/cpx/bne` | loop | 15 x 24 = 360 |
 | clear `NMI_FLG`, restore registers, `rti` | | 20 |
-| **total** | | **1975** (NTSC vblank = 2273) |
+| **total** | | **1987** (NTSC vblank = 2273) |
 
 The APU replay after the PPU work may legally spill past the end of vblank (APU registers are
-not rendering-sensitive), so the real constraint is the 1595-cycle critical section, which has
+not rendering-sensitive), so the real constraint is the estimated 1607-cycle critical section, which has
 a 30% margin. The per-item costs above are validated by measurement: the py65 harness in
 `tests/bootrom/` reports the tutorial NMI at 577 critical cycles for 65 `$2007` reads plus
 reply and register restore (7.0 cycles per read byte, as budgeted), 23.7 cycles per APU pair,
@@ -105,7 +106,12 @@ adjusts the expected read count: v2.1), send half the attribute table per frame,
 palette block (send palettes through `PF_COM_VRAM` pokes).
 
 The heartbeat is sent *before* the APU replay so the cartridge re-arms the DMA as early as
-possible. Nothing after the packet may touch `$2006`/`$2007`.
+possible. After the packet, restore `$2006` to `$0801`, then restore `$2000`/`$2001`
+and `$2005` as below. No `$2007` access may follow the packet. The three-byte packet
+otherwise leaves the current PPU address at `$0803`; `$2005` restores only the temporary
+scroll address, so two tiles (four selected reads) disappear from the pre-render line.
+The assembled ROM with this restoration measures 1614 critical / 2021 total cycles
+with 15 APU pairs, within the 1900 / 2200 limits; these supersede the draft estimates above.
 
 `jobPICO` (v1 command executor: `PF_COM_DMOD`, fades, VRAM pokes) runs from the main loop as
 in the tutorial, reading the first 16 mailbox bytes.
@@ -181,7 +187,7 @@ NMI:
 	SND_PICO_BUF  MBX_ZP_LO+MBX_PAL+8
 .no_vram
 
-	; 5. controller packet: the v2 heartbeat, last $2006/$2007 traffic of the frame
+	; 5. controller packet: the v2 heartbeat, last $2007 traffic of the frame
 	SET_VRAM_ADD2 #$0800
 	lda  #FP_COM_KEY
 	sta  $2007
@@ -190,7 +196,8 @@ NMI:
 	lda  <KEY2_NEW             ; pad 2, from KEY_RTN2 in this bank
 	sta  $2007
 
-	; 6. restore t: nametable 0, scroll (0,0); rendering settings
+	; 6. restore v to the tutorial's post-heartbeat address, then t/scroll
+	SET_VRAM_ADD2 #$0801
 	lda  <FLG_2000
 	sta  $2000
 	lda  <FLG_2001
@@ -246,8 +253,11 @@ state is at most one frame old when it is sent.
 
 ## Init (`UR_MAIN_SETUP`)
 
-1. Rendering off; clear nametable 0 (tile 0 everywhere) and attribute table (0); write a
-   16-entry black BG palette; scroll 0.
+1. Rendering off; fill nametable 0 with tile `$80` (pattern address `$0800`), zero its
+   attribute table, and clear adjacent nametable 1 to tile `$00`, as in the tutorial's
+   `PLY_STG_0`. Tile `$00` in nametable 0 would fetch the local font area instead of the
+   cartridge stream. Keeping nametable 1 clear excludes fetches that cross into it,
+   producing the measured 66/64 read cadence. Write a black BG palette; scroll 0.
 2. **Park the sprites off screen.** Rendering stays enabled for *both* backgrounds and
    sprites (step 4), because the read count was calibrated with that PPUMASK and the PPU
    keeps performing its eight sprite pattern fetches per scanline either way. Doom never
@@ -274,7 +284,15 @@ palette + attribute upload) and when the user resets the game.
 
 ## Building on Linux/CI
 
-`nesasm.exe` is a 32-bit Windows PE. Options, in order of preference:
+The vendor's `nesasm.exe` is a 32-bit Windows PE. The active build uses native
+NESASM CE pinned to `6fc41cda37b934aa29aa2639d0baa74424268e31`: it
+reassembles the tutorial PRG byte-for-byte, but emits NES 2.0 bytes 7 and 11
+where the vendor header has zeros. `tools/nes/normalize_ines.py` validates the
+entire expected header, zeros only those two bytes, and the tutorial MD5 gate
+then reproduces `B6CD675342B6C8AD79E537E2C9860579` exactly. CI builds the
+pinned source, runs that gate, assembles Doom twice, and verifies the fix bank.
+
+The original alternatives remain useful if the pinned native tool fails:
 
 1. **Wine** (`wine32` on Ubuntu 24.04: `dpkg --add-architecture i386 && apt install wine32:i386`).
    Bit-exact with what the vendor ships. `doom/bootrom/build.sh` wraps it; CI proves the
@@ -284,6 +302,11 @@ palette + attribute upload) and when the user resets the game.
    binary, accepted only if it reproduces the same MD5.
 3. Porting the sources to `ca65` -- last resort; the macro dialect (`TBL_JUMP`, `\@` locals,
    `.if`) makes this a real port.
+
+The current `bootrom/src/PG_main.asm` is a display-first v2 subset. It omits
+DPCM, data-mode command execution and pad 2 polling until those downstream
+features are integrated; the NMI mailbox, palette, attributes, heartbeat,
+APU replay, fix-bank addresses and cycle limits above are implemented now.
 
 `bin_catcut`, `binlink`, `Bin2C` are replaced by `tools/nes/bincut.py`, `tools/respack.py`,
 `tools/bin2c.py`, each checked against the tutorial's committed outputs.
@@ -297,10 +320,20 @@ palette + attribute upload) and when the user resets the game.
   `$ED00` until `rti`, assert `mpu.processorCycles` for the critical section (up to and
   including the `$2005` writes -- detect by the second `$2005` store) <= 1900 and the total
   <= 2200.
-- **Register order**: same harness asserts the sequence of `$2006` writes and that no
-  `$2006`/`$2007` access follows the controller packet.
+- **Register order**: same harness asserts `$2006 <- $0801` after the controller packet,
+  followed by the rendering/scroll restore, with no further `$2007` access.
+- **Setup**: execute `$EF00` and verify background tiles target `$0800-$0FFF`, attributes
+  and adjacent nametable are zeroed, and background/sprite rendering is enabled.
 - **Co-simulation** (Mesen2, 09): the NMI's `rti` scanline is < 261 in every frame of a
   3000-frame demo run; VRAM `$23C0`-`$23FF` and `$3F00`-`$3F0F` equal the mailbox the model sent
   for that frame.
 - **Reflash**: co-sim boots the *tutorial* ROM against the Doom firmware model and reaches the
   Doom ROM's `UR_MAIN_SETUP` (address breakpoint) within 60 s of emulated time.
+
+## Changelog
+
+- 2026-09-24: corrected tile selection and post-heartbeat PPU address; the address-based
+  Mesen mapper reproduces the old ROM's count=128 failure and the intermediate four-read
+  deficit, then passes the corrected ROM at count=15554 without cycle filtering.
+- 2026-09-23: accepted pinned native NESASM CE after a PRG byte-for-byte and
+  normalized-header tutorial MD5 gate; recorded the display-first ROM subset.

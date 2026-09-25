@@ -68,6 +68,7 @@ else()
     endif()
     if(FCPICO_BUILD_ENGINE)
         add_subdirectory(port/apu)
+        add_subdirectory(port/input)
         add_subdirectory(port/video)
         if(NOT PICO_ON_DEVICE)
             find_package(Threads REQUIRED)
@@ -89,6 +90,11 @@ else()
             add_test(NAME engine_title_menu_golden
                 COMMAND ${Python3_EXECUTABLE}
                     ${CMAKE_CURRENT_LIST_DIR}/tests/goldens/test_title_menu.py
+                    $<TARGET_FILE:doom_tiny_fcpico>
+                    ${CMAKE_CURRENT_LIST_DIR}/rp2040-doom/doom1.whx)
+            add_test(NAME engine_input_walk
+                COMMAND ${Python3_EXECUTABLE}
+                    ${CMAKE_CURRENT_LIST_DIR}/tests/input/test_engine_input.py
                     $<TARGET_FILE:doom_tiny_fcpico>
                     ${CMAKE_CURRENT_LIST_DIR}/rp2040-doom/doom1.whx)
         endif()

@@ -8,6 +8,7 @@
 #include "hardware/gpio.h"
 #include "hardware/irq.h"
 #include "hardware/pio.h"
+#include "hardware/sync.h"
 #include "pico/platform.h"
 #include "pico/time.h"
 
@@ -39,6 +40,15 @@ static uint32_t __not_in_flash_func(sample_read_count)(void) {
     return pio_sm_get(pio0, SM_TRCNT);
 }
 
+#if FCPICO_DIAGNOSTIC_ENGINE_DELAY
+static uint32_t __not_in_flash_func(sample_raw_read_count)(void) {
+    pio_sm_exec(pio1, 0, pio_encode_push(false, false));
+    pio_sm_exec(pio1, 0, pio_encode_mov_not(pio_x, pio_null));
+    pio_sm_restart(pio1, 0);
+    return pio_sm_get(pio1, 0);
+}
+#endif
+
 static void __not_in_flash_func(handle_actions)(fcbus_device_t *device) {
     fcbus_action_t action;
     while (fcbus_core_pop_action(&device->core, &action)) {
@@ -67,8 +77,22 @@ static void __not_in_flash_func(pio0_rx_irq)(void) {
     while (!pio_sm_is_rx_fifo_empty(pio0, SM_RECV)) {
         /* Mirrors getRcvCom()/jobRcvCom(): low byte from each RX FIFO word. */
         uint8_t byte = (uint8_t)pio_sm_get(pio0, SM_RECV);
-        fcbus_core_set_read_count(&device->core, sample_read_count());
+        if (fcbus_core_rx_will_heartbeat(&device->core, byte)) {
+#if FCPICO_DIAGNOSTIC_ENGINE_DELAY
+            device->diag_raw_read_count = sample_raw_read_count();
+#endif
+            fcbus_core_set_read_count(&device->core, sample_read_count());
+        }
+        uint32_t previous_frame = device->core.frame_no;
         fcbus_core_rx_byte(&device->core, byte);
+        if (device->core.frame_no != previous_frame) {
+            uint8_t next = (uint8_t)((device->pad_write + 1u) & 31u);
+            if (next == device->pad_read) {
+                device->pad_read = (uint8_t)((device->pad_read + 1u) & 31u);
+            }
+            device->pad_frames[device->pad_write] = device->core.pad1;
+            device->pad_write = next;
+        }
         handle_actions(device);
     }
     fcbus_core_rx_idle(&device->core);
@@ -118,6 +142,14 @@ bool fcbus_device_init(fcbus_device_t *device, const fcbus_config_t *config) {
     sm_config_set_in_shift(&config_count, true, true, 32);
     pio_sm_init(pio0, SM_TRCNT, offset, &config_count);
 
+#if FCPICO_DIAGNOSTIC_ENGINE_DELAY
+    offset = pio_add_program(pio1, &fcppu_raw_count_program);
+    pio_sm_config raw_config = fcppu_raw_count_program_get_default_config(offset);
+    sm_config_set_fifo_join(&raw_config, PIO_FIFO_JOIN_RX);
+    sm_config_set_in_shift(&raw_config, true, true, 32);
+    pio_sm_init(pio1, 0, offset, &raw_config);
+#endif
+
     /* Mirrors rp_dma.cpp:263-286: one 32-bit, read-incrementing, TX-DREQ channel. */
     device->dma_channel = dma_claim_unused_channel(true);
     dma_channel_config dma_config = dma_channel_get_default_config((uint)device->dma_channel);
@@ -133,6 +165,9 @@ bool fcbus_device_init(fcbus_device_t *device, const fcbus_config_t *config) {
     irq_set_exclusive_handler(PIO0_IRQ_0, pio0_rx_irq);
     irq_set_enabled(PIO0_IRQ_0, true);
     pio_enable_sm_mask_in_sync(pio0, 0x0fu);
+#if FCPICO_DIAGNOSTIC_ENGINE_DELAY
+    pio_sm_set_enabled(pio1, 0, true);
+#endif
 
     /* Mirrors rp_system.cpp:171-173: make the version stream available at boot. */
     fcbus_core_rx_byte(&device->core, FP_COM_VER);
@@ -144,6 +179,9 @@ void fcbus_device_deinit(fcbus_device_t *device) {
     irq_set_enabled(PIO0_IRQ_0, false);
     dma_channel_unclaim((uint)device->dma_channel);
     pio_set_sm_mask_enabled(pio0, 0x0fu, false);
+#if FCPICO_DIAGNOSTIC_ENGINE_DELAY
+    pio_sm_set_enabled(pio1, 0, false);
+#endif
     irq_device = NULL;
 }
 
@@ -172,4 +210,15 @@ const uint8_t *fcbus_device_palette(const fcbus_device_t *device) {
 }
 const uint8_t *fcbus_device_mailbox(const fcbus_device_t *device) {
     return device->core.mailbox_next;
+}
+
+bool fcbus_device_pop_pad_frame(fcbus_device_t *device, uint8_t *pad1) {
+    uint32_t saved = save_and_disable_interrupts();
+    bool available = device->pad_read != device->pad_write;
+    if (available) {
+        *pad1 = device->pad_frames[device->pad_read];
+        device->pad_read = (uint8_t)((device->pad_read + 1u) & 31u);
+    }
+    restore_interrupts(saved);
+    return available;
 }
