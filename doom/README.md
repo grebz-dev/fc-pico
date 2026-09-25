@@ -4,18 +4,27 @@ Doom -- the shareware `DOOM1.WAD`, via [RP2040 Doom](https://github.com/kilograh
 (itself a Chocolate Doom derivative) -- running on the RP2350 inside an
 [FC PICO](../README.md) cartridge, displayed by, and played from, an unmodified Famicom or NES.
 
-**Status: foundations in progress; M0 is not complete.** The host bus, controller, APU and
-video stream cores build and pass ten C tests. The RP2350 test-pattern firmware displays
-patterns on an NES-001, and the PPU bus model is calibrated to a complete hardware trace.
-The Doom engine platform skeleton links for RP2350, and the SDL-free host build composes
-320x200 indexed frames with deterministic title, menu and DEMO1 goldens. Device video
-stream publication, the v2 boot ROM and playable firmware are still to be implemented.
-Mesen co-simulation passes strict S0 with a reviewed test-pattern picture golden; Doom
-picture validation awaits the engine frame path.
+**Status (2026-09-24): Doom video and basic controller input work on an NES-001.**
+The v2 boot ROM runs on the console, the RP2350 converts and streams engine frames, and
+the console displays Doom. The reflash path passes S1 co-simulation; a ROM UPDATE was
+observed in an earlier hardware session, while the final `0002` stamp was not separately
+transcribed. Movement, strafing and menus work with a physical pad. A short B
+press still fails to activate **use** in gameplay; the input diagnosis is in
+[PROGRESS.md](PROGRESS.md). Conversion takes about 35.6 ms per frame on the tested
+firmware, above the [8 ms target](plan/04-video.md#acceptance-criteria-used-by-10-workplan).
+The current 200-line image leaves 16 blank NES lines above and 24 below, as specified in
+[the video plan](plan/04-video.md#stage-b----horizontal-decimation-320---256).
 
-Start with [issues/README.md](issues/README.md) for remaining work and
-[PROGRESS.md](PROGRESS.md) for verification evidence and current environment limitations.
-Agent operating rules are in the [Serena project memories](../.serena/memories/core.md).
+Host tests, strict test-pattern S0, fixed Doom-frame D0/D1 and reflash S1 co-simulation
+pass. Dynamic Doom-frame S2, full controller behavior, performance, saves and audio still
+need their own acceptance checks. This is a working hardware prototype, not a completed
+release milestone; see [issues/README.md](issues/README.md) for current work and
+[HARDWARE-LOG.md](HARDWARE-LOG.md) for observed console results.
+
+Use [PROGRESS.md](PROGRESS.md) for dated verification evidence and environment notes.
+[HARDWARE-REQUESTS.md](HARDWARE-REQUESTS.md) tracks requested console checks and
+[HARDWARE-LOG.md](HARDWARE-LOG.md) records their results. The plans describe intended
+behavior; an observed hardware result takes precedence over an old estimate.
 
 The plan was produced by reading the FC PICO documentation on the
 `docs/utf8-and-doxygen` branch, the `tuto1_hw` firmware and `BOOTROM` sources, and the RP2040
@@ -38,18 +47,18 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 10 | [plan/10-workplan.md](plan/10-workplan.md) | Phases and tasks with acceptance criteria -- **the execution checklist** |
 | 11 | [plan/11-risks.md](plan/11-risks.md) | Risk register, open questions, decisions that need a human |
 
-## Directory map (includes planned components)
+## Directory map
 
 | Path | Contents |
 |------|----------|
 | `plan/` | The documents above. |
-| `ci/workflows/` | GitHub Actions workflow templates; copied into `.github/workflows/` when Phase 0 lands. |
+| `ci/workflows/` | GitHub Actions workflow templates; activated workflows live in `.github/workflows/`. |
 | `rp2040-doom/` | Git submodule: the `grebz-dev/rp2040-doom` fork, branch `claude/doom-fc-pico-nes-2bb1bx`. The Doom engine and its `fcpico` platform layer live there. |
 | `fcbus/` | The cartridge bus library: `fcppu.pio`, DMA, frame streaming, mailbox, protocol. Plain C on pico-sdk, with a host backend. Ported from `tutorial_project/tuto1_hw/sys/`. |
 | `port/` | Glue that is specific to this repository: CMake superbuild, board config, flash layout, resource packing, the firmware `main()`. |
 | `bootrom/` | The Doom boot ROM: a new erasable bank derived from `tutorial_project/BOOTROM/`. The permanent fix bank is reused unchanged. |
 | `tools/` | Host tools: PPU stream decoder, music/SFX converters, DPCM packer, flash layout checker, golden-image updater. |
-| `sim/` | Simulation harnesses: PPU bus model, pioemu tests, Mesen2 mapper shim, full-chip simulator scripts. |
+| `sim/` | Simulation harnesses: PPU bus model, pioemu tests, MesenCE mapper and scenarios; full-chip simulation remains optional. |
 | `tests/` | Unit and golden tests (ctest + pytest). |
 
 ## Two repositories, one branch name
@@ -63,3 +72,24 @@ Work happens on branch `claude/doom-fc-pico-nes-2bb1bx` in **both** repositories
 Clone with `git clone --recurse-submodules`, or run `git submodule update --init doom/rp2040-doom`
 after a plain clone. The engine's own `3rdparty/tinyusb` submodule is **not** needed for the
 FC PICO target (no USB host); do not recurse into it unless building the original VGA targets.
+The MesenCE co-simulation checkout is a separate submodule at `doom/sim/mesen2/Mesen2`.
+
+## Keeping issues and plans current
+
+Treat [issues/README.md](issues/README.md) as the issue index and
+[plan/10-workplan.md](plan/10-workplan.md) as the task checklist. For each change:
+
+1. Update the affected `issues/I-*.md` **Status** section and the corresponding index row.
+   Use **open**, **partial**, or **done** consistently. Mark **done** only when that issue's
+   acceptance checks have passed; name the remaining checks when it is partial.
+2. Update the matching task row in `plan/10-workplan.md`. Correct any affected plan
+   specification or decision when implementation or hardware evidence changes it. Keep
+   proposed targets distinct from measured results and add a dated plan changelog entry
+   for a substantive correction.
+3. Put commands, results, measurements, and limits in [PROGRESS.md](PROGRESS.md). Record
+   physical observations in [HARDWARE-LOG.md](HARDWARE-LOG.md) and close or revise the
+   matching [hardware request](HARDWARE-REQUESTS.md). Link to that evidence from status
+   summaries instead of copying long serial logs into several files.
+4. Check that the README summary, issue index, issue status, work-plan table, and milestone
+   gates agree. Run `python3 doom/tools/check_md_links.py doom` and `git diff --check` before
+   committing documentation changes.

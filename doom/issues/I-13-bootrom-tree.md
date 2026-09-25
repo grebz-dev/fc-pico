@@ -3,16 +3,24 @@
 
 | | |
 |---|---|
-| **Lane** | B -- verified in CI only |
+| **Lane** | B -- local build and CI |
 | **Size** | M |
 | **Depends on** | [I-06](I-06-ci-host-lane.md) |
 | **Work plan task** | [P2-T1](../plan/10-workplan.md#p2-t1-doom-boot-rom-source-tree-and-linux-build) |
 
+## Status (2026-09-24)
+
+**partial**. The v2 ROM builds with pinned native NESASM CE; the tutorial MD5,
+reproducibility and unchanged fix-bank checks pass locally. The boot-ROM workflow
+exists, but a green remote CI run is not recorded here. The v2 ROM runs and displays
+Doom on NES-001; the final `0002` stamp was not transcribed on screen. See
+[`../PROGRESS.md`](../PROGRESS.md) and [`../HARDWARE-LOG.md`](../HARDWARE-LOG.md).
+
 ## Goal
 
-Every console-side change needs an assembler that runs in CI. `nesasm.exe` is a 32-bit
-Windows binary and Wine cannot be installed in the development sandbox, so this has to be
-proven in a CI job.
+Every console-side change needs a reproducible assembler build. The selected native
+NESASM CE toolchain passes the tutorial ROM MD5 gate locally; the workflow provides
+the remote CI check.
 
 ## Specification
 
@@ -33,7 +41,8 @@ and any file another open issue lists under **Owns**. The permanent fix bank is 
 
 1. Copy the tutorial's sources into `bootrom/src/`, trimmed as [`plan/07-bootrom.md`](../plan/07-bootrom.md) lists,
    with the opcode definitions coming from `bootrom/gen/protocol.inc`.
-2. Write `build.sh` around Wine plus the checked-in `nesasm.exe`.
+2. Build with pinned native NESASM CE; keep the vendor `nesasm.exe` as an alternative
+   only if it passes the same tutorial MD5 gate.
 3. Write the toolchain gate: re-assemble the *tutorial* ROM with a pinned `dbdate.h` and
    check `rom.NES` against MD5 `B6CD675342B6C8AD79E537E2C9860579`. If that passes, the
    toolchain is trustworthy; if it does not, nothing else about the ROM means anything.

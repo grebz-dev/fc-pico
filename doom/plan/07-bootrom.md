@@ -99,8 +99,9 @@ not rendering-sensitive), so the real constraint is the estimated 1607-cycle cri
 a 30% margin. The per-item costs above are validated by measurement: the py65 harness in
 `tests/bootrom/` reports the tutorial NMI at 577 critical cycles for 65 `$2007` reads plus
 reply and register restore (7.0 cycles per read byte, as budgeted), 23.7 cycles per APU pair,
-and 1724 cycles total in its worst case (24 pairs, sprite DMA on). The same harness runs
-against `doom.nes` unchanged once it exists ([P2-T2](10-workplan.md#p2-t2-v2-nmi-init-main-loop-controller-packet)). If measurement ([P2-T3](10-workplan.md#p2-t3-fcbus-v2)) shows the critical section over 1900 cycles, options in
+and 1724 cycles total in its worst case (24 pairs, sprite DMA on). The harness now runs against `doom.nes`; the latest stream-fix build measured
+1614 critical and 2021 total cycles, below the 1900 / 2200 limits. If a later
+measurement shows the critical section over 1900 cycles, options in
 order: read the attribute block only when `ATTR_VALID` (the cartridge knows what it sent and
 adjusts the expected read count: v2.1), send half the attribute table per frame, drop the
 palette block (send palettes through `PF_COM_VRAM` pokes).
@@ -116,7 +117,7 @@ with 15 APU pairs, within the 1900 / 2200 limits; these supersede the draft esti
 `jobPICO` (v1 command executor: `PF_COM_DMOD`, fades, VRAM pokes) runs from the main loop as
 in the tutorial, reading the first 16 mailbox bytes.
 
-### The v2 NMI, as nesasm (draft to be assembled in P2-T2)
+### The v2 NMI, as nesasm (design sketch; implemented in P2-T2)
 
 Names come from `gen/protocol.inc`; `RCV_PICO_BUF` is the tutorial's unrolled 8-byte read
 macro, `SND_PICO_BUF` its mirror image (8 x `lda <zp / sta $2007`).
@@ -294,10 +295,8 @@ pinned source, runs that gate, assembles Doom twice, and verifies the fix bank.
 
 The original alternatives remain useful if the pinned native tool fails:
 
-1. **Wine** (`wine32` on Ubuntu 24.04: `dpkg --add-architecture i386 && apt install wine32:i386`).
-   Bit-exact with what the vendor ships. `doom/bootrom/build.sh` wraps it; CI proves the
-   toolchain by re-assembling the tutorial ROM with `dbdate.h` pinned and checking
-   `rom.NES` MD5 `B6CD675342B6C8AD79E537E2C9860579` ([`docs/pages/build-pipeline.md`](../../docs/pages/build-pipeline.md)).
+1. **Wine** (`wine32` on Ubuntu 24.04): an alternative to the native build, subject to
+   the same tutorial MD5 gate ([`docs/pages/build-pipeline.md`](../../docs/pages/build-pipeline.md)).
 2. NESASM_X86 2.51+autozp rebuilt from source (the "minachun" distribution) as a native Linux
    binary, accepted only if it reproduces the same MD5.
 3. Porting the sources to `ca65` -- last resort; the macro dialect (`TBL_JUMP`, `\@` locals,

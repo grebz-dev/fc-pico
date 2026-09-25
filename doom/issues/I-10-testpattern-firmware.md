@@ -8,6 +8,10 @@
 | **Depends on** | [I-09](I-09-fcbus-device.md) |
 | **Work plan task** | [P0-T5](../plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware) / [P0-T9](../plan/10-workplan.md#p0-t9-hardware-trace-capture-hw) |
 
+## Status (2026-09-24)
+
+**done**. The NES-001 displays test patterns; Doom firmware also exposes the serial `bootsel` command. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 This is the artifact a human needs in order to answer the project's biggest open question.

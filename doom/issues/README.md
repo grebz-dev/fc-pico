@@ -1,9 +1,10 @@
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 # Issues
 
-The remaining work, cut into pieces that can be handed out one at a time. Each file is
-self-contained: what to build, which documents specify it, which files it owns, the exact
-commands that decide whether it is done, and the traps that have already bitten someone.
+The work is cut into pieces that can be handed out one at a time. Each file records its
+scope, acceptance checks and current state. Dated results belong in
+[`../PROGRESS.md`](../PROGRESS.md); console evidence belongs in
+[`../HARDWARE-LOG.md`](../HARDWARE-LOG.md).
 
 ## How to use these
 
@@ -19,6 +20,11 @@ commands that decide whether it is done, and the traps that have already bitten 
 - **Fix the plan as you go.** `plan/` is a specification and it has been wrong before; see
   the September 11 entry in [`../PROGRESS.md`](../PROGRESS.md). Correct it in the same commit as the code
   that revealed the error, and say so in the commit message.
+- **Use one state vocabulary.** **open** means the issue has not started, **partial** means
+  some deliverables exist but acceptance is incomplete, and **done** means its acceptance
+  checks passed. Keep each issue's **Status** section, this index, and
+  [`../plan/10-workplan.md`](../plan/10-workplan.md) synchronized. A working hardware
+  prototype does not by itself close broader performance or co-simulation gates.
 
 ## Adding a C test suite
 
@@ -43,37 +49,29 @@ again: fix the structure rather than the schedule.
 | [I-02](I-02-ppu-decode-tests.md) | Tests for the stream decoder | A -- host only, actionable now | S | none | **done** |
 | [I-03](I-03-fcvideo-ref-tests.md) | Tests for the reference video pipeline | A -- host only, actionable now | M | [I-02](I-02-ppu-decode-tests.md) (soft) | **done** |
 | [I-04](I-04-fcapu-core.md) | APU register sequencer | A -- host only | L | none | **done** |
-| [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only, actionable now | L | [I-04](I-04-fcapu-core.md) (soft) | open |
+| [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only | L | [I-04](I-04-fcapu-core.md) (soft) | **partial**: support tools pass; conversion pipeline remains |
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
-| [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host only, actionable now | M | none | **done** |
+| [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host + hardware | M | none | **partial**: B tap/use event lifetime fails in gameplay |
 | [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | [I-06](I-06-ci-host-lane.md) | **done**: builds clean on 13.2.Rel1; lane active |
 | [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | [I-08](I-08-device-superbuild.md) | **done**: test patterns display on NES-001; trace-calibrated count and stream model |
 | [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | [I-09](I-09-fcbus-device.md) | **done**: replacement firmware displays patterns on an NTSC NES-001 |
-| [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- partly local | M | [I-08](I-08-device-superbuild.md) (soft) | partial: GCC 13.2 device ELF links and fits; hardware boot check remains |
-| [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- try locally first | L | [I-11](I-11-engine-skeleton.md) | partial: SDL-free engine runs 600 deterministic indexed view frames; stream/pads await adapters |
-| [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- verified in CI only | M | [I-06](I-06-ci-host-lane.md) | open |
-| [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- verified in CI only | L | [I-13](I-13-bootrom-tree.md) | open |
-| [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | [I-06](I-06-ci-host-lane.md); [I-12](I-12-engine-host-build.md) for Doom scenarios only | **S0 done**: strict count, mailbox and screenshot golden pass; Doom scenarios await [I-12](I-12-engine-host-build.md) |
-| [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- depends on the host build | L | [I-12](I-12-engine-host-build.md) | partial: 320x200 host goldens pass; device sink and independent picture check remain |
-| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host core now, device after [I-16](I-16-stage-a-composition.md) | L | [I-03](I-03-fcvideo-ref-tests.md); [I-16](I-16-stage-a-composition.md) for device integration | partial: host core passes differential tests; tables and device integration remain |
-| [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | open |
+| [I-11](I-11-engine-skeleton.md) | Engine fork: superbuild guard and platform skeleton | B -- device + host | M | [I-08](I-08-device-superbuild.md) (soft) | **partial**: engine boots on NES-001; original VGA target check remains |
+| [I-12](I-12-engine-host-build.md) | Engine host build without SDL | A/B -- local host | L | [I-11](I-11-engine-skeleton.md) | **done**: deterministic indexed/stream runs and `--pads` movement gate |
+| [I-13](I-13-bootrom-tree.md) | Doom boot ROM source tree and Linux build | B -- local + CI | M | [I-06](I-06-ci-host-lane.md) | **partial**: local reproducibility/MD5/fix-bank gates pass; remote CI result unrecorded |
+| [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- local + CI | L | [I-13](I-13-bootrom-tree.md) | **partial**: v2 packet/NMI and cycle gates pass locally; remote CI result unrecorded |
+| [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | [I-06](I-06-ci-host-lane.md); [I-12](I-12-engine-host-build.md) for Doom scenarios | **partial**: strict S0, fixed-frame D0/D1 and reflash S1 pass; dynamic S2 remains |
+| [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- host + device | L | [I-12](I-12-engine-host-build.md) | **partial**: composed frames reach NES-001; independent picture check remains |
+| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host + device | L | [I-03](I-03-fcvideo-ref-tests.md); [I-16](I-16-stage-a-composition.md) for device integration | **partial**: real frames display; 35.6 ms conversion misses 8 ms target, dynamic S2 open |
+| [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | **partial**: LICENSES draft exists; enquiry remains |
 | [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | [I-10](I-10-testpattern-firmware.md) | **done**: complete trace 6 calibrates 66/64 reads and zero-based count |
 
 ## Suggested order
 
-The current priority is the display path. Hardware trace calibration, strict S0 and the
-host converter are complete. [I-11](I-11-engine-skeleton.md)/[I-12](I-12-engine-host-build.md)/[I-16](I-16-stage-a-composition.md) now establish the engine's 8-bit frame source;
-then finish device publication and validate Doom pictures in Mesen S2. See the execution
-order in [`../plan/10-workplan.md`](../plan/10-workplan.md).
-
-[I-01](I-01-ppubus-tests.md) through [I-04](I-04-fcapu-core.md), [I-06](I-06-ci-host-lane.md) and [I-07](I-07-input-mapper.md) are done. [I-05](I-05-audio-tools.md)'s remaining audio conversion work follows
-the display gate. The active host workflow from [I-06](I-06-ci-host-lane.md) provides the CI foundation for lane B.
-
-Device build acceptance and test-pattern display on an NES-001 are complete. The pinned
-13.2.Rel1 toolchain is in the repository root (the root `.gitignore` hides it from a tree
-listing). [I-11](I-11-engine-skeleton.md) and [I-12](I-12-engine-host-build.md) unblock [I-16](I-16-stage-a-composition.md) and the device half of [I-17](I-17-fcvideo-impl.md); [I-13](I-13-bootrom-tree.md) and [I-14](I-14-bootrom-nmi.md) cover the
-console; [I-15](I-15-mesen2-cosim.md) carries the later Doom co-simulation scenarios.
-
-[I-15](I-15-mesen2-cosim.md)'s tutorial-ROM/test-pattern S0 now passes with the hardware-calibrated PPU selection,
-valid mailbox, stable count and reviewed picture golden. Later Doom scenarios still need
-[I-12](I-12-engine-host-build.md) and the corresponding engine/video features. [I-18](I-18-licensing.md)'s licensing enquiry remains open.
+First close the B-use defect documented in [`../PROGRESS.md`](../PROGRESS.md) and
+complete the input checks in [`../HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md).
+Then improve [I-17](I-17-fcvideo-impl.md)'s measured 35.6 ms conversion time and run
+[I-15](I-15-mesen2-cosim.md)'s dynamic S2 gate. The 200-line letterbox is a deliberate
+layout choice; evaluate a taller image separately from the conversion defect. Continue
+save/load, audio, palette evaluation and the [I-18](I-18-licensing.md) enquiry after the
+display and input gates. The detailed task order is in
+[`../plan/10-workplan.md`](../plan/10-workplan.md).

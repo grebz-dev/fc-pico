@@ -53,7 +53,7 @@ every document that depends on it (listed in brackets).
 |----|----------|-----------|
 | D1 | **Build root is `fc-pico/doom` on pico-sdk CMake; RP2040 Doom is a git submodule; the Arduino IDE is not used for the Doom firmware.** [08] | RP2040 Doom needs its own linker script, `MinSizeRel`, `malloc` wrapping into the zone, and a host build. None of that fits the Arduino unity build. The tutorial firmware keeps its Arduino build untouched. |
 | D2 | **The bus layer is re-implemented as a plain-C library (`fcbus`) from the FC PICO sources and documentation, wire-compatible with the shipped v1 protocol, with a host backend.** [02, 03, 09] | The C++/Arduino `rp_system` cannot be linked into a C pico-sdk program cleanly, and the host backend is what makes co-simulation possible. `fcppu.pio` is reused verbatim. |
-| D3 | **Video: drop every fifth column (320 -> 256), keep 200 lines, letterbox 20 lines top and bottom, 4x4 ordered dither, one of four fixed sub-palettes per 16x16 block, conversion on core 1.** [04] | Cheapest path to M1; every later refinement (box filter, adaptive palettes, custom HUD) is additive. |
+| D3 | **Video: drop every fifth column (320 -> 256), keep 200 lines at NES lines 16..215, with 16 blank lines above and 24 below, 4x4 ordered dither, one of four fixed sub-palettes per 16x16 block, conversion on core 1.** [04] | The initial layout is implemented and visible on NES-001; taller output and converter optimization are separate follow-up work. |
 | D4 | **Protocol v2 extends the v1 mailbox to a fixed 128-byte layout carrying the attribute table and BG palette every frame, and adds an explicit controller packet.** [03, 07] | Four VRAM pokes per frame cannot carry 64 attribute bytes; raw controller bytes alias seven opcodes. A fixed length keeps `PPU_COUNT_VAL` constant. |
 | D5 | **Audio is an APU register sequencer written in C, fed by offline-converted music and effect scripts, plus DPCM samples stored in the boot ROM bank.** [06, 07] | No 6502 emulator on the cartridge (drops the GPL-v3 dependency the FC PICO docs flag), fully host-testable, deterministic write budget. |
 | D6 | **The permanent fix bank (`$F000`-`$FFFF`) is never modified; the Doom boot ROM is a new erasable bank that honours the fixed entry points.** [07] | The fix bank is what performs the reflash. Changing it needs a kazzo programmer and forfeits field updates. |
@@ -64,7 +64,9 @@ every document that depends on it (listed in brackets).
 
 ## How to use this plan
 
-An executor starts with the [Serena project memories](../../.serena/memories/core.md), then works
-[10-workplan.md](10-workplan.md) top to bottom. Every task names the documents that are its
-specification. Documents 01-09 are reference material and should be corrected, not
-contradicted, when execution reveals they are wrong; [task-completion guidance](../../.serena/memories/task_completion.md) explains how.
+Start with the current status in [../README.md](../README.md), the
+[issue index](../issues/README.md), and [10-workplan.md](10-workplan.md). Follow
+dependencies and the current priority rather than phase number alone. Documents 01-09
+are specifications; correct them when implementation or hardware evidence changes an
+assumption. The [README maintenance checklist](../README.md#keeping-issues-and-plans-current)
+describes which status and evidence files to update together.

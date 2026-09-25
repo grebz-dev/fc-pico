@@ -8,6 +8,10 @@
 | **Depends on** | none |
 | **Work plan task** | [P4-T1](../plan/10-workplan.md#p4-t1-fcapu-sequencer-core----spec-06-size-l-depends-p0-t4-acceptance-testsapu) |
 
+## Status (2026-09-24)
+
+**done**. Host APU sequencer and sanitizer tests pass; music assets remain separate work. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 Music and effects are the last subsystem with no host-testable core. The sequencer is pure

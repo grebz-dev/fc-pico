@@ -55,10 +55,11 @@ Engine-side changes needed for this to work (documented in the fork's [`FCPICO-P
   `pico_extras_import`, `project()`, `pico_sdk_init()`; `pico-extras` becomes optional (only the
   VGA targets need `pico_scanvideo_dpi` and `pico_audio_i2s`).
 - `src/CMakeLists.txt`: `add_doom_tiny(_fcpico render_newhope)` guarded by `FCPICO_SUPERBUILD`,
-  linking `fcbus`, `fcapu`, `common_fcpico` (a sibling of `common_pico` with the new
+  linking `fcbus_device` (or `fcbus_host`), `fcapu`, `fcinput`, `fcvideo` and
+  `common_fcpico` (a sibling of `common_pico` with the new
   `i_video/i_input/i_sound` files), and defining `FCPICO=1`, `NO_USE_ENDDOOM=1`, `USE_PICO_NET=0`,
   `USB_SUPPORT=0`, `TINY_WAD_ADDR=0x10080000`, `PICO_CORE1_STACK_SIZE=0x1000`,
-  `DEMO1_ONLY` **off** (all demos; the RP2350 has room) unless size forces it back on.
+  `DEMO1_ONLY` **off** (all demos; the RP2350 build fits and boots).
 - `src/pico/` stays as is for the VGA targets; `src/fcpico/` reuses `i_system.c`, `i_timer.c`,
   `picoflash.c`, `w_file_static.c`, `stubs.c`, `blit.S` from it by listing them explicitly.
 
@@ -72,27 +73,28 @@ Engine-side changes needed for this to work (documented in the fork's [`FCPICO-P
 | CMake / Ninja | >= 3.20 / any | |
 | Python | 3.11+ with `pytest`, `numpy`, `pillow`, `py65`, `rp2040-pio-emulator` | tools and tests |
 | host gcc | 13.x | host builds, `whd_gen`, `chocolate-doom` (needs SDL2 dev packages) |
-| Wine (32-bit) | distro | `nesasm.exe` |
+| NESASM CE | pinned `6fc41cda` | native Linux boot ROM build and tutorial MD5 gate; Wine is a fallback |
 | .NET SDK 10 | for the pinned MesenCE fork | co-simulation only |
 | Node 20 | optional | `rp2040js` full-chip sim (RP2040 build only) |
 
-`ci/workflows/*.yml` install exactly these. Local developers get `doom/tools/setup_env.sh`
-(Ubuntu 24.04) that installs the same set and exports `PICO_SDK_PATH`.
+The active GitHub workflows and `doom/tools/setup_env.sh` record the commands for
+their respective lanes. Templates in `ci/workflows/` describe later lanes; see
+[09](09-testing-ci.md#github-actions) for active versus planned workflows.
 
 ## Targets
 
 | Target | Platform | Output | Purpose |
 |--------|----------|--------|---------|
 | `fcpico_testpattern` | rp2350 | `.uf2` | M0: `fcbus` + a moving test pattern + serial CLI; no engine |
-| `fcpico_doom` | rp2350 | `.uf2`, `.elf`, `.map`, size report | the product |
-| `fcpico_doom_host` | host | executable | the whole engine + fcvideo + fcbus host backend; runs demos headless, dumps streams/PNGs, or serves the Mesen2 mapper |
+| `doom_tiny_fcpico` | rp2350 | `fcpico_doom.uf2`, `.elf`, `.map`, size report | Doom firmware |
+| `doom_tiny_fcpico` | host | `fcpico_doom_host` executable | SDL-free engine + fcvideo; runs demos headless, dumps streams/PNGs and accepts `--pads` |
 | `fcbus_host`, `fcvideo_host`, `fcapu_host` | host | static libs | used by tests and `sim/` |
 | `whd_gen`, `mus2mid` | host | executables | from the engine tree (`chocolate-doom` native build) |
-| `bootrom` | -- | `doom.nes`, `doom_bootrom.h` | via `bootrom/build.sh` (Wine); CMake custom target |
+| `bootrom` | -- | `doom.nes`, `doom_bootrom.h` | via `bootrom/build.sh` (pinned native NESASM CE); CMake custom target |
 | `resources` | -- | `fcres.h` | boot ROM image + music + SFX archive as a C array |
 
-The host build of the engine currently relies on `pico_host_sdl` for `scanvideo`; the fcpico
-host target must not need SDL. Inspection of pico-sdk 2.1.1 (`src/host/`): the base host
+The original engine host build relies on `pico_host_sdl` for `scanvideo`; the fcpico
+host target now builds without SDL. Inspection of pico-sdk 2.1.1 (`src/host/`): the base host
 platform provides `pico_stdlib`, `pico_time` (via `pico_time_adapter`), `hardware_sync`,
 `hardware_gpio`, `hardware_irq`, `hardware_timer`, `hardware_divider`, `pico_printf` and the
 **headers only** of `pico_multicore` (`multicore_launch_core1`, the inter-core FIFO, lockout);
@@ -102,7 +104,8 @@ backend. `sim/host_shim/` therefore implements, with pthreads: `multicore_launch
 (thread), the FIFO (mutex + condvar queue), `multicore_lockout_*` (no-ops), and whatever
 alarm-pool function the engine reaches (`I_GetTime` uses `time_us_64()`, which the base host
 provides). Semaphores (`pico/sem.h`) and spin locks are common code and work on the host as is.
-[P0-T3](10-workplan.md#p0-t3-engine-host-build-without-sdl) confirms the list by linking; nothing else is expected to be missing.
+[P0-T3](10-workplan.md#p0-t3-engine-host-build-without-sdl) confirmed the shim by linking
+and running deterministic host engine tests, including scripted `--pads` input.
 
 ## Flash layout (`port/flash_layout.h`, checked by `tools/flash_layout_check.py`)
 

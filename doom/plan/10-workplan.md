@@ -1,79 +1,53 @@
 # 10 -- Work plan
 
-Phases map to milestones in 00. Tasks are written to be executed one at a time by an agent
-following 12; each has a specification pointer, concrete steps, deliverables and an acceptance
-test that a machine (or, where marked **HW**, a human with hardware) can run. Sizes: S (< 1
+Phases map to milestones in 00. Tasks carry specification pointers, concrete steps,
+deliverables and acceptance checks that a machine (or, where marked **HW**, a human
+with hardware) can run. Sizes: S (< 1
 day of focused work), M (1-3 days), L (a week), XL (more). Dependencies are hard unless marked
 "soft".
 
 Conventions: paths are relative to `doom/` unless they start with `rp2040-doom/` (the engine
 submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes on the branch.
 
-## Current execution priority (2026-09-23)
+## Current execution priority (2026-09-24)
 
-The display and PPU path is the next integration priority. Milestone IDs below still describe
-deliverables, but the actionable order is now:
+Doom video and basic pad input have been observed on an NES-001. Keep the calibrated
+PPU-count, fixed-frame D0/D1 and reflash S1 gates green while closing the B-use
+input defect ([HR-4](../HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4)).
+Then optimize the measured 35.6 ms converter, run dynamic S2, and finish the M1/M2
+hardware checklists. The current 200-line letterbox is specified geometry; a taller
+image is a separate visual change. Save/load, audio and release work follow their
+listed dependencies.
 
-1. Keep the now-calibrated strict S0 count, mailbox, fetch and screenshot gates green while
-   integrating the display path. [HR-1](../HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](../issues/I-19-hw-trace.md) measured the RP2350/board behavior on NES-001.
-2. Complete [I-11](../issues/I-11-engine-skeleton.md)/[I-12](../issues/I-12-engine-host-build.md)/[I-16](../issues/I-16-stage-a-composition.md) so the engine produces composed 8-bit frames. [I-17](../issues/I-17-fcvideo-impl.md)'s host
-   converter tables, presets and synthetic flash palettes are now implemented and tested;
-   feed engine frames through that converter next.
-3. Integrate converter publication to `fcbus` and validate displayed frames in Mesen S2.
-   Freeze screenshot goldens only after strict S0 has established the PPU path.
-4. Resume the remaining audio assets and other downstream work after the display path has a
-   passing co-simulation gate. [I-04](../issues/I-04-fcapu-core.md)/[P4-T1](10-workplan.md#p4-t1-fcapu-sequencer-core----spec-06-size-l-depends-p0-t4-acceptance-testsapu) is already complete and needs no further core work.
+## Status
 
-The remaining hardware visual check for the corrected stream is [HR-2](../HARDWARE-REQUESTS.md#hr-2-corrected-stream-geometry-visual-check-task-i-17). A
-fixed-frame Doom stream now passes D0 (tutorial v1) and D1 (Doom v2) Mesen
-gates, including v2 palette/attribute RAM and NMI exit timing. S1 now models the
-fix bank's flash erase/reprogram and passes in both directions (tutorial -> Doom,
-Doom -> tutorial); it found and fixed a stamp that would have halted every
-tutorial console at PICO NOT FOUND. The first Doom hardware boot is [HR-3](../HARDWARE-REQUESTS.md#hr-3-first-doom-boot-v2-reflash-and-engine-display-tasks-p2-t4-p1-t3-p1-t6); dynamic
-frame-sequence co-simulation is the next software gate.
+Use **open**, **partial**, and **done** as in the [issue index](../issues/README.md).
+This table summarizes landed work; dated commands and measurements are in
+[`../PROGRESS.md`](../PROGRESS.md), and console results are in
+[`../HARDWARE-LOG.md`](../HARDWARE-LOG.md). Meeting an intermediate hardware check
+does not waive a task's remaining acceptance criteria.
 
----
+| Task | State | Remaining gate or evidence |
+|------|-------|----------------------------|
+| P0-T1 / P0-T2 | **partial** | Superbuild and Doom device boot work; original target/CI checks remain ([I-11](../issues/I-11-engine-skeleton.md)). |
+| P0-T3 / P0-T4 / P0-T5 / P0-T6 / P0-T7 / P0-T8 / P0-T9 / P0-T10 / P0-T11 | **done** | Host engine and bus tests, protocol generation, calibrated trace 6 and strict S0; see [issues](../issues/README.md). |
+| P0-T12 / P0-T13 | **partial** | Host CI is active; other lane results and licensing enquiry remain ([I-18](../issues/I-18-licensing.md)). |
+| P1-T1 / P1-T2 / P1-T3 | **partial** | Frames compose, convert and display on NES-001; independent picture check and conversion performance remain ([I-16](../issues/I-16-stage-a-composition.md), [I-17](../issues/I-17-fcvideo-impl.md)). |
+| P1-T4 | **partial** | Movement, strafe and menus work physically; B tap fails to activate use ([HR-4](../HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4)). |
+| P1-T6 | **partial** | Merged firmware/WHX UF2 boots; complete loading and layout acceptance remains. |
+| P1-T7 / P1-T8 | **partial** | Fixed-frame D0/D1 and first Doom hardware image pass; dynamic S2, 30-minute check and fps gate remain. |
+| P1-T9 | **open** | Measured conversion is ~35.6 ms; optimize and remeasure against <=8 ms target. |
+| P2-T1 / P2-T2 | **partial** | v2 ROM, local MD5/fix-bank and py65 cycle gates pass; remote boot-ROM CI result unrecorded ([I-13](../issues/I-13-bootrom-tree.md), [I-14](../issues/I-14-bootrom-nmi.md)). |
+| P2-T3 | **done** | v2 bus protocol runs on NES-001 at count=15554. |
+| P2-T4 | **partial** | S1 reflash passes in both directions and a hardware ROM UPDATE was observed; final `0002` stamp was not separately transcribed. |
+| P2-T5 | **partial** | Palette/attribute conversion and flash tables exist; scripted damage acceptance remains. |
+| P2-T6 / P2-T7 / P2-T8 | **open** | Palette report, dynamic S2 and full colour hardware acceptance remain. |
+| P3-T1 | **partial** | Base mapping and host `--pads` movement pass; context mappings and B-use fix remain. |
+| P4-T1 | **done** | Host APU sequencer tests pass; audio integration and assets are later tasks. |
+| P4-T3 | **partial** | APUS/DPCM support tools pass tests; [I-05](../issues/I-05-audio-tools.md) remains. |
 
-## Status (kept current; details in `../PROGRESS.md`)
-
-The remaining work is cut into individually assignable pieces in [`../issues/README.md`](../issues/README.md); that
-index, not this table, is the entry point for picking up work. The table below records what
-has actually landed on the branch.
-
-| Task | State | Evidence |
-|------|-------|----------|
-| [P0-T1](10-workplan.md#p0-t1-superbuild-skeleton-and-led-blink-firmware) | partial: device configuration and test-pattern target landed; device workflow is a template, build acceptance pending ([I-08](../issues/I-08-device-superbuild.md)) | `201ce2d`; [`../PROGRESS.md`](../PROGRESS.md) |
-| [P0-T2](10-workplan.md#p0-t2-engine-fork-superbuild-guard-and-empty-fcpico-platform) | partial: RP2350 engine skeleton links; hardware boot remains ([I-11](../issues/I-11-engine-skeleton.md)) | GCC 13.2.Rel1 `fcpico_doom.elf` and flash-layout check |
-| [P0-T3](10-workplan.md#p0-t3-engine-host-build-without-sdl) | host multicore/alarm shim implemented (`sim/host_shim/`, 22 symbols); the engine host build itself is issue [I-12](../issues/I-12-engine-host-build.md) | standalone shim harness; not included in the six host-only C tests |
-| [P0-T4](10-workplan.md#p0-t4-protocol-single-source-of-truth) | **done** | `tools/gen_protocol.py --check`; `pytest tests/protocol` (72) |
-| [P0-T5](10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware) | core logic **done**; device backend and test-pattern firmware landed, device acceptance pending ([I-09](../issues/I-09-fcbus-device.md)/[I-10](../issues/I-10-testpattern-firmware.md)) | five bus C tests; `201ce2d`, `c9c4e12` |
-| [P0-T6](10-workplan.md#p0-t6-fcbus-host-backend) | **done** | `ctest` target `test_host_roundtrip`; ASan-clean |
-| [P0-T7](10-workplan.md#p0-t7-ppu-bus-model-and-decoder) | **done**, calibrated model and decoder | `tests/tools/test_ppubus.py`, `tests/tools/test_trace_decode.py`, hardware trace 6 |
-| [P0-T8](10-workplan.md#p0-t8-pio-program-tests) | **done** (`fcppu_dir` skipped by design: pioemu has no IRQ support) | `pytest sim/pioemu` (13 passed, 1 skipped) |
-| [P0-T9](10-workplan.md#p0-t9-hardware-trace-capture-hw), [P0-T10](10-workplan.md#p0-t10-model-calibration) | **done** ([HR-1](../HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](../issues/I-19-hw-trace.md)) | `tests/fixtures/hw_trace_ntsc/trace_6.*`; strict S0 |
-| [P0-T11](10-workplan.md#p0-t11-mesen2-co-simulation-skeleton) | **done**; strict calibrated S0 passes | `sim/mesen2/build.sh`, `run_scenario.sh S0`; reviewed ARGB golden |
-| [P0-T12](10-workplan.md#p0-t12-activate-ci) | host CI lane **done** ([I-06](../issues/I-06-ci-host-lane.md)); device and other lanes remain templates | `.github/workflows/doom-host.yml` |
-| [P0-T13](10-workplan.md#p0-t13-licensing-and-attribution) | partial: [`LICENSES.md`](../LICENSES.md) drafted; the enquiry is issue [I-18](../issues/I-18-licensing.md) | -- |
-| [P2-T1](10-workplan.md#p2-t1-doom-boot-rom-source-tree-and-linux-build) (tools part) | `tools/nes/bincut.py`, `bin2c.py`, `check_fixbank.py`, `tools/respack.py` **done with tests** | `pytest tests/nes` |
-| [P2-T2](10-workplan.md#p2-t2-v2-nmi-init-main-loop-controller-packet) (harness part) | **done** for the tutorial ROM; memory inspection assertions added in `e9526b9` | historical measurements in [01](01-constraints.md); current Python rerun pending dependencies |
-| [P2-T2](10-workplan.md#p2-t2-v2-nmi-init-main-loop-controller-packet) (Doom NMI) | not started (issues [I-13](../issues/I-13-bootrom-tree.md), [I-14](../issues/I-14-bootrom-nmi.md)) | -- |
-| [P4-T1](10-workplan.md#p4-t1-fcapu-sequencer-core----spec-06-size-l-depends-p0-t4-acceptance-testsapu) | **done** ([I-04](../issues/I-04-fcapu-core.md), host APU sequencer) | 8/8 host and 8/8 sanitizer C tests; [`../PROGRESS.md`](../PROGRESS.md) |
-| [P4-T3](10-workplan.md#p4-t3-audio-tools----spec-06-pipeline-size-l-depends----acceptance-teststools-round-trips-mus2apuspy---auto-produces-all-13-streams-from-doom1wad-under-the-cap) (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; remaining conversion tooling is [I-05](../issues/I-05-audio-tools.md) | `pytest tests/audio` |
-| [P1-T2](10-workplan.md#p1-t2-stages-b-and-d-grey-lut-letterbox) (reference part) | **done** ([I-03](../issues/I-03-fcvideo-ref-tests.md)); device converter remains [I-17](../issues/I-17-fcvideo-impl.md) | reference pipeline tests; [`../PROGRESS.md`](../PROGRESS.md) |
-| [P1-T2](10-workplan.md#p1-t2-stages-b-and-d-grey-lut-letterbox) / [P2-T5](10-workplan.md#p2-t5-stages-c-and-e) (host converter part) | partial: C conversion, presets, table generation and flash palettes match the Python reference; engine frames and device integration remain [I-17](../issues/I-17-fcvideo-impl.md) | 9/9 host and sanitizer C tests; Python differential tests; [`../PROGRESS.md`](../PROGRESS.md) |
-| [P1-T4](10-workplan.md#p1-t4-input-v1-subset) / [P3-T1](10-workplan.md#p3-t1-full-input-mapping----spec-05-size-m-depends-p2-t3-acceptance-mapper-unit-tests-menus-navigable-on-host-via---pads) (input) | [P1-T4](10-workplan.md#p1-t4-input-v1-subset) software **done**: mapper, RP2350 adapter, and host `--pads` movement test; physical pad validation is [HR-4](../HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4). [P3-T1](10-workplan.md#p3-t1-full-input-mapping----spec-05-size-m-depends-p2-t3-acceptance-mapper-unit-tests-menus-navigable-on-host-via---pads) context mappings remain | `test_mapper`, `engine_input_walk`; [`../PROGRESS.md`](../PROGRESS.md) |
-| everything else | not started; see [`../issues/README.md`](../issues/README.md) for the assignable subset | -- |
-
-Verification on 2026-09-20 (full evidence and environment limits in [`../PROGRESS.md`](../PROGRESS.md)):
-
-```
-cmake -S doom -B /tmp/fcpico-doom-status-host -G Ninja -DFCPICO_HOST_ONLY=ON
-cmake --build /tmp/fcpico-doom-status-host
-ctest --test-dir /tmp/fcpico-doom-status-host --output-on-failure -> 6/6 passed
-doom/.venv/bin/python -m pytest doom/tests doom/sim -q -> 348 passed, 1 skipped
-python3 doom/tools/gen_protocol.py --check -> clean
-python3 doom/tools/check_md_links.py doom -> no broken links
-```
+The task bodies below retain the original deliverables and acceptance checks. Use
+the status table and implemented sources for the current commands and toolchain.
 
 ---
 
@@ -351,4 +325,5 @@ python3 doom/tools/check_md_links.py doom -> no broken links
 
 ## Changelog
 
+- 2026-09-24: align the execution summary with NES-001 Doom video/input, v2 ROM/reflash and measured converter cost; retain unmet acceptance gates.
 - 2026-09-20: reconciled landed work and current verification limits with source and progress.

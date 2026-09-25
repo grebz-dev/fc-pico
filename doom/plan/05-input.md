@@ -12,10 +12,10 @@ vote (needed while DPCM plays); the v2 boot ROM does the same for pad 2.
 
 The engine reads it once per tic in `I_StartTic()` (35 Hz) via `fcinput_poll()`, which
 computes pressed/released edges against the previous tic and posts `ev_keydown`/`ev_keyup`
-events with Doom key codes (`doomkeys.h`), exactly as the USB path does through
-`pico_key_down/up`. Because tics are slower than frames, a tap shorter than one tic
-(~28 ms) can be missed; the latch therefore ORs presses seen between polls ("sticky press for
-one poll"), which is what NES games do with `KEY_TRG`.
+events with Doom key codes (`doomkeys.h`). Because tics are slower than frames, a tap
+shorter than one tic (~28 ms) can be missed; the bus retains intermediate pad snapshots
+and the mapper latches presses between polls ("sticky press for one poll"). This keeps
+short pad taps available to the engine, though use-key handling still needs correction.
 
 ## Mapping
 
@@ -26,7 +26,7 @@ one poll"), which is what NES games do with `KEY_TRG`.
 | D-pad Up / Down | -- | move forward / back | `KEY_UPARROW` / `KEY_DOWNARROW` |
 | D-pad Left / Right | -- | turn (or strafe while B is held) | `KEY_LEFTARROW`/`KEY_RIGHTARROW`, or `,` / `.` (`key_strafeleft`/`key_straferight`) |
 | A | -- | fire | `KEY_RCTRL` (`key_fire`) |
-| B | **use** (released within 8 frames with no D-pad activity) | strafe modifier | tap -> `' '` (`key_use`) pulse for one tic; hold -> nothing itself, changes the Left/Right mapping |
+| B | **use** (released within 8 frames with no D-pad activity) | strafe modifier | intended: hold `' '` (`key_use`) for an engine tic after a tap; current adapter releases it before `G_BuildTiccmd()`, so use fails on hardware |
 | Select | next weapon | automap (held >= 20 frames) | `key_nextweapon` pulse; `KEY_TAB` pulse on hold threshold |
 | Start | menu | -- | `KEY_ESCAPE` |
 | Select + Start (together) | -- | -- | reserved: pause (`KEY_PAUSE`) |
@@ -110,3 +110,5 @@ does in the fork and pick whichever gives the cleaner experience).
 - 2026-09-24: record the implemented direct pad adapter and host `--pads`
   movement gate; the proposed UART event forwarder was not present in the
   initial FC PICO platform.
+- 2026-09-24: physical pad movement, strafe and menus pass; B tap/use fails
+  because keydown and keyup reach Doom before tic command construction.

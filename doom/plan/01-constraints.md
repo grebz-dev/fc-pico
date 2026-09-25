@@ -81,8 +81,8 @@ local font area. An address-only Mesen decode `(addr & $F800) == $0800` reproduc
 66/64 cadence and the existing S0 screenshot without manually discarding PPU cycles.
 The previous mapper's `$0000-$0FFF` decode plus cycle filtering hid this requirement.
 The old Doom ROM's tile `$00` setup reproduces the hardware's count=128/mailbox-only failure
-under this corrected model. This is source and simulation evidence for the decode;
-the corrected Doom ROM still needs hardware validation.
+under this corrected model. The corrected ROM has since run on the NES-001 at count=15554
+with Doom visible; see [`../HARDWARE-LOG.md`](../HARDWARE-LOG.md).
 
 v2 must also restore the current PPU address to `$0801` after its three-byte heartbeat.
 Leaving it at `$0803` reduces the pre-render line from 66 to 62 selected reads even after

@@ -8,6 +8,10 @@
 | **Depends on** | [I-10](I-10-testpattern-firmware.md) |
 | **Work plan task** | [P0-T9](../plan/10-workplan.md#p0-t9-hardware-trace-capture-hw) / [P0-T10](../plan/10-workplan.md#p0-t10-model-calibration) |
 
+## Status (2026-09-24)
+
+**done**. NES-001 trace 6 calibrated the 66/64 selected-read cadence and zero-based count. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal — complete 2026-09-22
 
 Resolve the former read-count contradiction with a real NES-001 trace and calibrate the

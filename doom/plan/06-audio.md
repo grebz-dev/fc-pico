@@ -1,5 +1,10 @@
 # 06 -- Audio
 
+The host `fcapu` sequencer and APUS/DPCM support tools are implemented and tested.
+Music conversion, engine sound integration and console audio remain open; see
+[`../issues/I-05-audio-tools.md`](../issues/I-05-audio-tools.md) and
+[`../issues/README.md`](../issues/README.md).
+
 The cartridge cannot make sound (the PWM pin drives nothing the console amplifies for the
 Doom use case). Everything is played by the console's APU from register writes the cartridge
 ships in the mailbox and the boot ROM replays during vblank ([`docs/pages/audio.md`](../../docs/pages/audio.md)).

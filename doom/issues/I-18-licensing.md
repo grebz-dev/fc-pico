@@ -8,6 +8,11 @@
 | **Depends on** | none |
 | **Work plan task** | [P0-T13](../plan/10-workplan.md#p0-t13-licensing-and-attribution) |
 
+## Status (2026-09-24)
+
+**partial**. [`../LICENSES.md`](../LICENSES.md) is drafted; the licensing enquiry and
+release decision still need a human response. See [`../PROGRESS.md`](../PROGRESS.md).
+
 ## Goal
 
 The firmware will combine GPLv2 engine code with sample code whose terms are not stated,

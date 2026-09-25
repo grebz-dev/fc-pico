@@ -72,7 +72,8 @@ Nearest-neighbour: keep source columns `x` where `x % 5 != 4` (drop every fifth)
 16..215 (top letterbox 16 lines so the Doom frame starts on an attribute-block boundary; bottom
 letterbox 24 lines). Aspect: the result is ~10% wider than Doom's intended 4:3; acceptable for
 M1, revisit in Phase 5 (options: box filter in RGB space before quantisation; 200->219 line
-duplication).
+duplication). The NES-001 photograph confirms the lower blank area; it is the specified
+layout, not an 8x8 tile or stream-capacity limit.
 
 ### Stage C -- sub-palette selection per 16x16 block
 
@@ -159,9 +160,10 @@ derivation tool in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) may r
   heartbeat, so a conversion that overruns one console frame simply publishes one frame later.
 - Doom's renderer may run up to two frames ahead (`display_frame_freed` initialised to 2 in
   `I_InitGraphics`); leave it.
-- Conversion must finish within one console frame (16.6 ms) to sustain 30 fps with margin;
-  the estimate is 3-6 ms. [P1-T8](10-workplan.md#p1-t8-hardware-session-m1-hw) measures it with `time_us_32()` and the serial CLI prints
-  min/avg/max per second.
+- The initial estimate was 3-6 ms. NES-001 serial output on 2026-09-24 measured
+  about 35.6 ms average and maximum on the tested firmware, above the 8 ms acceptance
+  target. [P1-T9](10-workplan.md#p1-t9-converter-performance-pass) must reduce this
+  cost and remeasure it with the serial frame counters.
 
 ## Per-frame latency budget
 
@@ -169,7 +171,7 @@ derivation tool in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) may r
 |-------|-------|------|
 | Doom render | core 0 + core 1 | 25-50 ms (20-40 fps, level dependent) |
 | Wait for heartbeat | -- | 0-16.6 ms |
-| Convert | core 1 IRQ | 3-6 ms (estimate) |
+| Convert | core 1 IRQ | ~35.6 ms measured on NES-001 (2026-09-24); <= 8 ms target |
 | Wait for next heartbeat, stream | -- | 16.6 ms + 16.6 ms |
 | Console NMI applies attributes/palette | 6502 | same frame as the stream |
 
