@@ -11,6 +11,19 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## HR-4 -- physical input result and B-use diagnosis (2026-09-24)
+- NES-001 input works for movement, strafing and menus. A B tap does not
+  activate use. A host probe replayed a B tap through `--pads`: pad frames
+  included press and release, the adapter emitted matching space keydown/up,
+  but `G_BuildTiccmd()` never set `BT_USE`. Both events arrive before it reads
+  the final key state. The probe was removed after diagnosis; firmware fixes
+  await the requested advice on the display layout.
+- The supplied photograph's lower gap matches the planned 200-line Doom image
+  at NES lines 16..215, leaving 24 blank lines beneath. The 256x240 output
+  stream has room to scale the image vertically; see `HARDWARE-LOG.md`.
+- Serial remained stable through `hb=2221` at `count=15554` with no new DMA
+  stops or resyncs. Conversion average/max at 540 frames was 35574/35612 us.
+
 ## P1-T4 -- NES pad input wired to Doom (2026-09-24)
 - The RP2350 bus now retains up to 31 consecutive pad-1 snapshots from v2
   heartbeats. `I_StartTic()` drains them into the existing mapper and posts

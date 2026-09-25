@@ -74,7 +74,9 @@ the result. The human fills in the result section and commits; the agent then co
   `[DEBUG-hr3]` lines after using the pad.
 - Record: console model, which actions worked, any missed/held inputs, whether
   the picture stayed stable, and serial lines in `HARDWARE-LOG.md`.
-- Result: pending physical controller validation.
+- Result: partial physical pass on NES-001. Movement, strafing and menus work;
+  B tap does not activate use. The v2 stream stayed at `count=15554` with no
+  further DMA stops or resyncs in the supplied capture. See `HARDWARE-LOG.md`.
 
 ### HR-2 Corrected stream geometry visual check (task I-17)
 - Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2`, built from `42fa091`;
