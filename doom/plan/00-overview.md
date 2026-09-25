@@ -64,7 +64,7 @@ every document that depends on it (listed in brackets).
 
 ## How to use this plan
 
-An executor starts at [12-agent-playbook.md](12-agent-playbook.md), then works
+An executor starts with the [Serena project memories](../../.serena/memories/core.md), then works
 [10-workplan.md](10-workplan.md) top to bottom. Every task names the documents that are its
 specification. Documents 01-09 are reference material and should be corrected, not
-contradicted, when execution reveals they are wrong; the playbook says how.
+contradicted, when execution reveals they are wrong; [task-completion guidance](../../.serena/memories/task_completion.md) explains how.

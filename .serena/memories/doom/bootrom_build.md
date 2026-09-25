@@ -1,0 +1,7 @@
+# Doom boot ROM build invariants
+
+- The new erasable ROM bank lives in `doom/bootrom/`; permanent fix-bank bytes from `tutorial_project/BOOTROM/bootrom_fixr.bin` occupy `$F000` onward and must remain unchanged. `$ED00` NMI, `$EE80` IRQ, `$EF00` setup, `$EF03` loop and `$EFF0` stamp are fixed entry points.
+- The stamp in `version.inc` must start with `20`; fix-bank `CHK_ROMVER` otherwise reports PICO NOT FOUND instead of reflashing.
+- Native NESASM CE is pinned to commit `6fc41cda37b934aa29aa2639d0baa74424268e31`. It emits two NES 2.0 header bytes unlike the vendor image; `doom/tools/nes/normalize_ines.py` validates and normalizes them before the tutorial ROM MD5 comparison. Set `NESASM_BIN` for `doom/bootrom/ci/tutorial_md5_gate.sh` and `doom/bootrom/build.sh`.
+- `doom/bootrom/out/doom.nes` is the 32,784-byte mapper-0 image embedded by the device build; `out/doom.raw.nes.0.nl` supplies `NMI_RTI` for Mesen timing checks. `out/` is local/generated. The cycle harness is under `doom/tests/bootrom/`; the architectural and timing contract remains in `doom/plan/07-bootrom.md`.
+- Boot ROM changes that affect PPU fetch cadence or read counts need the strict Mesen gate plus a hardware evidence request before claiming console validation.

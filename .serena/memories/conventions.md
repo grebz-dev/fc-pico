@@ -1,0 +1,11 @@
+# Conventions
+
+- All repository source is UTF-8 without BOM. Do not transcode generated assembler `*.lst` or `*.log`; this corrupts rebuilt listings.
+- Doom changes must preserve `tutorial_project/`, `Doxyfile`, and the permanent fix bank (`BOOTROM_FIX/`, `bootrom_fixr.bin`, `$F000` onward). Existing `docs/pages/` change only for a verified correction; new Doom pages are allowed. Do not modify unrelated `main` or `docs/*` branches.
+- Keep v1 wire constants unchanged. `doom/fcbus/fcbus_protocol.h` is the authored protocol source; `doom/tools/gen_protocol.py` generates committed `doom/bootrom/gen/*` and `doom/tools/fcpico/protocol.py`. `doom/port/flash_layout.h` owns flash placement. Do not copy protocol or address literals into another source.
+- Measured PPU count, address selection and stream layout require new hardware evidence before changing; see `mem:doom/bus_protocol` for the key invariants.
+- Core-1 code allocates only at startup. Bus ISR and SAVING-time code must be RAM-resident; do not log from the bus ISR or weaken engine `hard_assert`/`__not_in_flash_func` checks.
+- Engine changes belong in the `rp2040-doom` fork under `src/fcpico/` or guarded `#if FCPICO` blocks. Keep diffs small, do not reformat shared engine files, commit the engine change first, then advance this repository's submodule pin in a separate commit naming the engine commit. Avoid recursive submodule updates unless required.
+- New port-owned C/tools/sim files use BSD-3-Clause headers; Chocolate-Doom-derived engine files use GPLv2 headers. Doxygen comments describe mechanism; retain Japanese comments and add English above them. Non-C comments use `;///` (asm/PIO), `::/` (batch), or `///` (MML).
+- Golden changes go through `doom/tools/update_goldens.py`, with a reason in the commit. Do not commit Doom WAD/WHX assets; keep fixtures and goldens small.
+- Commit subjects are imperative and at most 72 characters; implementation commits include task ID and verification evidence. Correct a wrong plan in the same commit as the code that exposed it, note the correction in the plan changelog, update affected decisions, and search for contradictory numbers elsewhere.

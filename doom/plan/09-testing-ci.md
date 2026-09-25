@@ -222,7 +222,7 @@ Serial CLI (part of `port/cli.c`, both firmwares):
 Checklist per milestone lives in [`10-workplan.md`](10-workplan.md); results are appended to
 [`doom/HARDWARE-LOG.md`](../HARDWARE-LOG.md) by the human running the session (template provided). An agent that
 cannot run hardware records what it needs in [`doom/HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md) and continues with
-everything that does not depend on it (see [12](12-agent-playbook.md)).
+everything that does not depend on it (see [Serena task-completion guidance](../../.serena/memories/task_completion.md)).
 
 ### The trace sampler (P0-T9), concretely
 

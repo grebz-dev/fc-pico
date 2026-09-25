@@ -1,0 +1,7 @@
+# Task completion
+
+- Derive the acceptance command from `doom/plan/10-workplan.md` or the issue specification; read the named spec and relevant code before implementation. Historical environment limitations in `doom/PROGRESS.md` must be rechecked on the current machine.
+- Run the task-specific acceptance check and only relevant routine gates from `mem:suggested_commands`. C memory/undefined-behavior changes also need a host ASan/UBSan build; firmware changes need the pinned device build and flash layout check; protocol changes need regenerated checked-in outputs and `gen_protocol.py --check`.
+- Record exact commands, meaningful output, measurements with provenance, commit range, and remaining limits in `doom/PROGRESS.md`. Do not mark an outcome complete on expectation. Physical console claims require evidence in `doom/HARDWARE-LOG.md`; when hardware is unavailable, complete independent work and add a precise request to `doom/HARDWARE-REQUESTS.md`.
+- If execution exposes a wrong plan, correct it with the code and add a short changelog note; update decisions in `doom/plan/00-overview.md` when relevant and remove contradictions from related docs.
+- Reviewers should be able to identify task ID, specification, verification command and result from the commit and progress record. Ask a human for actual human decisions in `doom/plan/11-risks.md`.
