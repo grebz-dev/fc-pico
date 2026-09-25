@@ -51,7 +51,7 @@ again: fix the structure rather than the schedule.
 | [I-04](I-04-fcapu-core.md) | APU register sequencer | A -- host only | L | none | **done** |
 | [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only | L | [I-04](I-04-fcapu-core.md) (soft) | **partial**: support tools pass; conversion pipeline remains |
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
-| [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host + hardware | M | none | **partial**: B tap/use event lifetime fails in gameplay |
+| [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host + hardware | M | none | **partial**: B tap/use passes host Doom and hardware; full context mapping remains |
 | [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | [I-06](I-06-ci-host-lane.md) | **done**: builds clean on 13.2.Rel1; lane active |
 | [I-09](I-09-fcbus-device.md) | Device backend for the bus | B -- device tooling + CI | L | [I-08](I-08-device-superbuild.md) | **done**: test patterns display on NES-001; trace-calibrated count and stream model |
 | [I-10](I-10-testpattern-firmware.md) | Test-pattern firmware and serial CLI | B -- device tooling + CI | M | [I-09](I-09-fcbus-device.md) | **done**: replacement firmware displays patterns on an NTSC NES-001 |
@@ -61,17 +61,16 @@ again: fix the structure rather than the schedule.
 | [I-14](I-14-bootrom-nmi.md) | The v2 vertical-blank handler | B -- local + CI | L | [I-13](I-13-bootrom-tree.md) | **partial**: v2 packet/NMI and cycle gates pass locally; remote CI result unrecorded |
 | [I-15](I-15-mesen2-cosim.md) | MesenCE co-simulation skeleton | B -- local host + CI | L | [I-06](I-06-ci-host-lane.md); [I-12](I-12-engine-host-build.md) for Doom scenarios | **partial**: strict S0, fixed-frame D0/D1 and reflash S1 pass; dynamic S2 remains |
 | [I-16](I-16-stage-a-composition.md) | 8-bit frame composition in the engine | B -- host + device | L | [I-12](I-12-engine-host-build.md) | **partial**: composed frames reach NES-001; independent picture check remains |
-| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host + device | L | [I-03](I-03-fcvideo-ref-tests.md); [I-16](I-16-stage-a-composition.md) for device integration | **partial**: real frames display; 35.6 ms conversion misses 8 ms target, dynamic S2 open |
+| [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host + device | L | [I-03](I-03-fcvideo-ref-tests.md); [I-16](I-16-stage-a-composition.md) for device integration | **partial**: shadow-detail playback confirmed; precise geometry remains; 38.208 ms conversion misses 8 ms target, dynamic S2 open |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | **partial**: LICENSES draft exists; enquiry remains |
 | [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | [I-10](I-10-testpattern-firmware.md) | **done**: complete trace 6 calibrates 66/64 reads and zero-based count |
 
 ## Suggested order
 
-First close the B-use defect documented in [`../PROGRESS.md`](../PROGRESS.md) and
-complete the input checks in [`../HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md).
-Then improve [I-17](I-17-fcvideo-impl.md)'s measured 35.6 ms conversion time and run
-[I-15](I-15-mesen2-cosim.md)'s dynamic S2 gate. The 200-line letterbox is a deliberate
-layout choice; evaluate a taller image separately from the conversion defect. Continue
-save/load, audio, palette evaluation and the [I-18](I-18-licensing.md) enquiry after the
+Complete the remaining detailed geometry and scene checks in [HR-6](../HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6).
+B use, improved contrast and stable playback are now confirmed.
+Then improve [I-17](I-17-fcvideo-impl.md)'s measured 38.208 ms conversion time and run
+[I-15](I-15-mesen2-cosim.md)'s dynamic S2 gate. Continue
+save/load, audio, further palette evaluation and the [I-18](I-18-licensing.md) enquiry after the
 display and input gates. The detailed task order is in
 [`../plan/10-workplan.md`](../plan/10-workplan.md).

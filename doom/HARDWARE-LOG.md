@@ -11,6 +11,58 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-09-25 -- HR-6 shadow-detail and B-use milestone
+- Console: existing NES setup; model/region not reconfirmed in this report.
+- Cartridge firmware: `fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
+  `3d298001d93f028dd6a3e9f37287e8d77762704b0c1295485c8fd22275f88dbc`.
+- User result: “Flashed, works great! Contrast is much better and B button works.”
+  USB serial works. This validates playback, the contrast improvement and the
+  B-button fix with `FCPICO_DIAGNOSTIC_ENGINE_DELAY=ON` restored.
+- Serial: before console initialization, `init=0 hb=0 converted=1 pending=1`
+  and drops rise to 657 while the first published frame waits. At `hb=115`,
+  `init=1 count=15554 raw=41098 stops=1 resyncs=1`. These counts remain stable
+  through `hb=1829`; timeouts and protocol errors stay zero. Drops settle at
+  691 by `hb=359` and do not increase in the remaining capture.
+- Measurements: at 60 converted frames, average/max conversion is 38143/38183 us;
+  at 480 frames it is 38208/38251 us. This is approximately 2.63 ms slower than
+  the earlier 200-line firmware's 35.579 ms average. Both geometry and palette
+  changed, so this comparison does not isolate a cause. The <=8 ms target remains
+  unmet; conversion time is not an end-to-end gameplay FPS measurement.
+- Build finding: restoring the countdown/bus diagnostic profile resolves the
+  reported boot/USB failure on hardware. Which part of that profile is necessary
+  has not been isolated; preserve it in rebuilds. Native and bundled Windows
+  picotool emit identical firmware UF2s for the same ELF.
+- Remaining: detailed geometry, individual B chord/menu cases, photographs,
+  scene-specific color/HUD review and the longer stability checklist.
+- Attachments: serial excerpt and user confirmation supplied in chat.
+
+## 2026-09-25 -- HR-6 rebuild boot and USB failures
+- Console: existing NES setup; model/region not reconfirmed in this report.
+- First rebuild: `fcpico_doom_shadow_detail_whx.uf2`, SHA-256
+  `df1ca0f02dd20641fa372a6b42e6071c6d30dabe3325fa36167e831d1f703b3f`.
+  User reports BOOTSEL on USB connection and `PICO NOT FOUND` on the NES.
+- Second rebuild: same filename, SHA-256
+  `c94f3aafad23bdc60a6d11e21bebef935d1fb99f0d563230654d99b42822c852`.
+  Firmware UF2 was emitted by native picotool 2.1.1. User reports USB device
+  descriptor failures and, after about 30 seconds, `MEMORY 2048B OK
+  20DOOM-02-002 DEFGHIJKLMNOPQRS PICO NOT FOUND` (stamp transcribed as reported).
+- Build comparison: both rebuilds omitted `FCPICO_DIAGNOSTIC_ENGINE_DELAY=ON`,
+  retained by the previously working hardware candidates. It enables the
+  30-second startup countdown, bus statistics and raw PIO read counter.
+  Double support remains linked. Restoring this option produces 287836 firmware
+  bytes and an 8158-block merged image. Runtime causation is not yet established.
+- Tool comparison: the bundled `tutorial_project/bin/picotool.exe` runs under
+  WSL with Windows interop and reports v2.3.0. Its UF2 conversion of the restored
+  build's ELF is byte-identical to native picotool 2.1.1 output. Tool selection
+  therefore does not explain a difference for this ELF.
+- Next candidate: `/tmp/fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
+  `3d298001d93f028dd6a3e9f37287e8d77762704b0c1295485c8fd22275f88dbc`.
+  Flash layout, picotool metadata, embedded ROM and WHX comparisons passed.
+  Pending: with NES off, capture USB serial during the countdown and through
+  `entering D_DoomMain`; then power the NES on after startup. This separates
+  early USB/bus initialization failure from failure during engine execution.
+- Attachments: user reports supplied in chat.
+
 ## 2026-09-24 -- HR-4 controller input and screen photographs
 - Console: NES-001 (region not reconfirmed in this report)
 - Cartridge firmware: `fcpico_doom_input_whx.uf2` ([HR-4](HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4) candidate)

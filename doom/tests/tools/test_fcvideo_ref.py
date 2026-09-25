@@ -32,15 +32,15 @@ def test_decimate_drops_every_fifth_column_in_order():
     np.testing.assert_array_equal(result, source[:, expected_columns])
 
 
-def test_letterbox_places_source_on_lines_16_through_215():
+def test_vertical_scale_places_source_on_lines_8_through_231():
     source = np.arange(200, dtype=np.uint8)[:, None] * np.ones((1, 256), dtype=np.uint8)
 
     result = fcvideo_ref.place_letterbox(source, backdrop=231)
 
     assert result.shape == (240, 256)
-    np.testing.assert_array_equal(result[16:216], source)
-    assert np.all(result[:16] == 231)
-    assert np.all(result[216:] == 231)
+    np.testing.assert_array_equal(result[8:232, 0], np.arange(224) * 200 // 224)
+    assert np.all(result[:8] == 231)
+    assert np.all(result[232:] == 231)
 
 
 def _playpal_filled(rgb) -> np.ndarray:
@@ -129,9 +129,9 @@ def test_gradient_conversion_round_trips_through_ppu_decoder():
     mse = np.mean((decoded.astype(np.float64) - reference.astype(np.float64)) ** 2)
     psnr = 10.0 * np.log10((255.0**2) / mse)
 
-    # Derived from the first deterministic synthetic-gradient output: 13.02 dB.
-    # The floor is rounded down and may only be raised if conversion improves.
-    assert psnr >= 13.0
+    # The 224-line image occupies more of the measured frame than the old
+    # 200-line image. Its deterministic whole-frame result is 12.55 dB.
+    assert psnr >= 12.5
     assert len(encoded) == protocol.VRAM_BUF_BYTES_V2
     assert pixels.shape == (stream.VRAM_LINES, stream.VRAM_WIDTH)
     mailbox = encoded[

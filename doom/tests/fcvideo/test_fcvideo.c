@@ -15,7 +15,7 @@ static void test_solid_frame_and_linear_stride(void) {
     memset(source, 42, sizeof(source));
     memset(err, 100, sizeof(err));
     for (int p = 0; p < 4; p++) {
-        err[p * 256] = p == 0 ? 0 : 100;
+        err[p * 256] = p == 0 ? 0 : 20;
         err[p * 256 + 42] = p == 2 ? 0 : 100;
         for (int index = 0; index < 256; index++)
             for (int phase = 0; phase < 16; phase++)
@@ -27,13 +27,18 @@ static void test_solid_frame_and_linear_stride(void) {
     CHECK_EQ(fcvideo_sizeof(), sizeof(video));
     fcvideo_convert(&video, source, stream, attr, false);
 
-    CHECK_EQ(attr[0] & 3, 0);              /* Top letterbox block. */
-    CHECK_EQ((attr[0] >> 4) & 3, 2);       /* First Doom line. */
-    size_t first = (VRAM_HEAD_WORDS + 16 * VRAM_TILE_COLS) * 2;
+    CHECK_EQ(attr[0] & 3, 2);              /* First mixed margin/image block. */
+    size_t first = (VRAM_HEAD_WORDS + FCVIDEO_TOP_MARGIN * VRAM_TILE_COLS) * 2;
     CHECK_EQ(stream[first], 0x00);
     CHECK_EQ(stream[first + 1], 0xff);
-    size_t prior_last = (VRAM_HEAD_WORDS + 15 * VRAM_TILE_COLS + 31) * 2;
+    size_t prior_last = (VRAM_HEAD_WORDS + (FCVIDEO_TOP_MARGIN - 1) * VRAM_TILE_COLS + 31) * 2;
     CHECK_EQ(first, prior_last + 2);
+    CHECK_EQ(stream[prior_last], 0);
+    size_t last = (VRAM_HEAD_WORDS + 231 * VRAM_TILE_COLS) * 2;
+    CHECK_EQ(stream[last + 1], 0xff);
+    size_t after = (VRAM_HEAD_WORDS + 232 * VRAM_TILE_COLS) * 2;
+    CHECK_EQ(stream[after], 0);
+    CHECK_EQ(stream[after + 1], 0);
     uint8_t *mailbox = stream + VRAM_MAILBOX_OFF_V2;
     CHECK_EQ(mailbox[MBX_MAGIC], PF_MAGIC_NO);
     CHECK_EQ(mailbox[MBX_FLAGS], MBX_FLAG_V2 | MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID);
@@ -55,7 +60,22 @@ static void test_solid_frame_and_linear_stride(void) {
     CHECK_MEM(stream, first_stream, sizeof(stream));
 }
 
+static void test_vertical_source_rows(void) {
+    fcvideo_frame_begin(&video);
+    for (int y = 0; y < FCVIDEO_SRC_HEIGHT; y++) {
+        memset(source + y * FCVIDEO_SRC_WIDTH, y, FCVIDEO_SRC_WIDTH);
+        fcvideo_push_line(&video, y, source + y * FCVIDEO_SRC_WIDTH);
+    }
+    for (int row = 0; row < VRAM_LINES; row++) {
+        uint8_t expected = row < FCVIDEO_TOP_MARGIN || row >= 232
+                         ? 0 : (uint8_t)((row - FCVIDEO_TOP_MARGIN)
+                             * FCVIDEO_SRC_HEIGHT / FCVIDEO_SCALED_HEIGHT);
+        CHECK_EQ(video.frame[row * FCVIDEO_WIDTH], expected);
+    }
+}
+
 int main(void) {
     test_solid_frame_and_linear_stride();
+    test_vertical_source_rows();
     return ctest_lite_result();
 }

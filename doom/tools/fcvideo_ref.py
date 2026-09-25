@@ -64,8 +64,9 @@ BAYER4X4: tuple[tuple[int, int, int, int], ...] = (
 BAYER_FLAT: tuple[int, ...] = tuple(v for row in BAYER4X4 for v in row)
 
 DOOM_HEIGHT = 200
-LETTERBOX_TOP = 16  # console lines 0..15: top letterbox (so the Doom frame starts on an attribute-block boundary)
-LETTERBOX_BOTTOM = stream.VRAM_LINES - LETTERBOX_TOP - DOOM_HEIGHT  # 24: console lines 216..239
+SCALED_HEIGHT = 224
+LETTERBOX_TOP = 8  # preserve one blank tile row on each side
+LETTERBOX_BOTTOM = stream.VRAM_LINES - LETTERBOX_TOP - SCALED_HEIGHT
 
 N_BLOCK_X = stream.VRAM_WIDTH // 16  # 16
 N_BLOCK_Y = stream.VRAM_LINES // 16  # 15
@@ -85,20 +86,21 @@ def decimate_320_to_256(line320) -> np.ndarray:
 
 
 def place_letterbox(frame_200x256, backdrop: int = 0) -> np.ndarray:
-    """Stage B, vertical: place a 200x256 Doom frame into the 240-line console frame.
+    """Stage B, vertical: scale a 200x256 Doom frame to 224 lines.
 
-    Console lines 0..15 (top) and 216..239 (bottom) are filled with
-    ``backdrop``; lines 16..215 are ``frame_200x256`` verbatim.
+    Console lines 0..7 and 232..239 are filled with ``backdrop``.
+    Source row for scaled row d is floor(d * 200 / 224).
     """
     frame = np.asarray(frame_200x256)
     if frame.shape[0] != DOOM_HEIGHT:
         raise ValueError(f"expected {DOOM_HEIGHT} source lines, got {frame.shape[0]}")
     out = np.full((stream.VRAM_LINES,) + frame.shape[1:], backdrop, dtype=frame.dtype)
-    out[LETTERBOX_TOP : LETTERBOX_TOP + DOOM_HEIGHT] = frame
+    src_y = np.arange(SCALED_HEIGHT) * DOOM_HEIGHT // SCALED_HEIGHT
+    out[LETTERBOX_TOP : LETTERBOX_TOP + SCALED_HEIGHT] = frame[src_y]
     return out
 
 
-def build_err_and_lut(playpal_rgb, subpalettes, backdrop: int):
+def build_err_and_lut(playpal_rgb, subpalettes, backdrop: int, shadow_lift: bool = False):
     """Stage E: the dither-pair search shared by stage C's cost and stage D's LUT.
 
     ``playpal_rgb``: ``(256, 3)`` Doom ``PLAYPAL`` colours, 0..255 per
@@ -111,7 +113,8 @@ def build_err_and_lut(playpal_rgb, subpalettes, backdrop: int):
     ordered pairs ``(a, b)`` of that sub-palette's 4 entries (0 = backdrop,
     1..3 = ``subpalettes[p]``) and all 17 mix ratios ``r`` (``r/16``, 0..16)
     for the pair+ratio whose linear RGB blend is closest to
-    ``playpal_rgb[idx]``.
+    ``playpal_rgb[idx]``. The optional ``shadow_lift`` applies the device's
+    integer shadow curve to PLAYPAL before the search.
 
     Returns ``(err, lut)``:
 
@@ -127,6 +130,10 @@ def build_err_and_lut(playpal_rgb, subpalettes, backdrop: int):
     playpal_rgb = np.asarray(playpal_rgb, dtype=np.float64)
     if playpal_rgb.shape != (256, 3):
         raise ValueError(f"playpal_rgb must have shape (256, 3), got {playpal_rgb.shape}")
+    if shadow_lift:
+        # Small integer shadow lift, identical to the device table builder.
+        values = playpal_rgb.astype(np.int32)
+        playpal_rgb = values + (values * (255 - values) + 384) // 768
     if len(subpalettes) != 4:
         raise ValueError(f"subpalettes must have 4 entries, got {len(subpalettes)}")
 
@@ -255,8 +262,8 @@ def convert(frame320x200_idx, playpal, preset):
     ``frame320x200_idx``: ``(200, 320)`` ``PLAYPAL`` indices (a composed
     Doom frame, stage A's output). ``playpal``: ``(256, 3)`` RGB. ``preset``:
     an object (or mapping) with ``subpalettes`` (4 sequences of 3 NES
-    indices) and ``backdrop`` (one NES index) -- see the presets table in
-    plan 04.
+    indices), ``backdrop`` (one NES index), and optional ``shadow_lift`` --
+    see the presets table in plan 04.
 
     Returns ``(stream_bytes, attr64, pal16, pix)``:
 
@@ -283,9 +290,13 @@ def convert(frame320x200_idx, playpal, preset):
     frame256 = decimate_320_to_256(frame320x200_idx)
     frame_idx = place_letterbox(frame256, backdrop=0)  # PLAYPAL index 0 is Doom's own backdrop/black
 
-    err, lut = build_err_and_lut(playpal, subpalettes, backdrop)
+    shadow_lift = (preset.get("shadow_lift", False) if isinstance(preset, dict)
+                   else getattr(preset, "shadow_lift", False))
+    err, lut = build_err_and_lut(playpal, subpalettes, backdrop, shadow_lift)
     attr64 = choose_block_palettes(frame_idx, err, prev_attr=None)
     pix = quantize(frame_idx, lut, attr64)
+    pix[:LETTERBOX_TOP] = 0
+    pix[stream.VRAM_LINES - LETTERBOX_BOTTOM:] = 0
 
     pal16 = bytearray(protocol.MBX_PAL_LEN)
     pal16[0] = backdrop & 0xFF

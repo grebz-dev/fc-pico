@@ -65,6 +65,8 @@ static void test_b_tap_uses_and_hold_strafes(void) {
     frame(&f, 0);
     fcinput_poll(&f.input, &f.ring);
     expect_event(&f, FCINPUT_KEY_USE, true);
+    CHECK_EQ(f.ring.count, 0);
+    fcinput_poll(&f.input, &f.ring);
     expect_event(&f, FCINPUT_KEY_USE, false);
 
     frame(&f, FCINPUT_PAD_B | FCINPUT_PAD_LEFT);

@@ -19,8 +19,9 @@ from fcpico import protocol, stream  # noqa: E402
 
 PRESET = {
     "backdrop": 0x0F,
-    "subpalettes": ((0x00, 0x10, 0x30), (0x07, 0x17, 0x30),
+    "subpalettes": ((0x1D, 0x00, 0x30), (0x08, 0x18, 0x30),
                     (0x06, 0x16, 0x30), (0x09, 0x19, 0x30)),
+    "shadow_lift": True,
 }
 
 
@@ -37,7 +38,7 @@ def main() -> int:
         with Image.open(raw / "frame000000.png") as preview:
             playpal = np.asarray(preview.getpalette()[:768], dtype=np.uint8).reshape(256, 3)
         err, lut = fcvideo_ref.build_err_and_lut(
-            playpal, PRESET["subpalettes"], PRESET["backdrop"]
+            playpal, PRESET["subpalettes"], PRESET["backdrop"], PRESET["shadow_lift"]
         )
         previous = None
         checked = (0, 100, 101)
@@ -50,6 +51,8 @@ def main() -> int:
             if number not in checked:
                 continue
             pixels = fcvideo_ref.quantize(image, lut, attr)
+            pixels[:fcvideo_ref.LETTERBOX_TOP] = 0
+            pixels[stream.VRAM_LINES - fcvideo_ref.LETTERBOX_BOTTOM:] = 0
             mailbox = bytearray(protocol.FC_COM_BUF_SIZE_V2)
             mailbox[protocol.MBX_FLAGS] = (
                 protocol.MBX_FLAG_V2 | protocol.MBX_FLAG_ATTR_VALID |

@@ -9,15 +9,15 @@ day of focused work), M (1-3 days), L (a week), XL (more). Dependencies are hard
 Conventions: paths are relative to `doom/` unless they start with `rp2040-doom/` (the engine
 submodule) or `tutorial_project/`. "CI green" means the relevant workflow passes on the branch.
 
-## Current execution priority (2026-09-24)
+## Current execution priority (2026-09-25)
 
 Doom video and basic pad input have been observed on an NES-001. Keep the calibrated
-PPU-count, fixed-frame D0/D1 and reflash S1 gates green while closing the B-use
-input defect ([HR-4](../HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4)).
-Then optimize the measured 35.6 ms converter, run dynamic S2, and finish the M1/M2
-hardware checklists. The current 200-line letterbox is specified geometry; a taller
-image is a separate visual change. Save/load, audio and release work follow their
-listed dependencies.
+PPU-count, fixed-frame D0/D1 and reflash S1 gates green. The B-use fix and improved
+shadow-detail contrast are now confirmed on hardware; 224-line playback works.
+[HR-6](../HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6)
+retains detailed geometry, chord and scene checks. Optimize the measured 38.208 ms converter, run
+dynamic S2, and finish the M1/M2 hardware checklists. Save/load, audio and release
+work follow their listed dependencies.
 
 ## Status
 
@@ -32,17 +32,18 @@ does not waive a task's remaining acceptance criteria.
 | P0-T1 / P0-T2 | **partial** | Superbuild and Doom device boot work; original target/CI checks remain ([I-11](../issues/I-11-engine-skeleton.md)). |
 | P0-T3 / P0-T4 / P0-T5 / P0-T6 / P0-T7 / P0-T8 / P0-T9 / P0-T10 / P0-T11 | **done** | Host engine and bus tests, protocol generation, calibrated trace 6 and strict S0; see [issues](../issues/README.md). |
 | P0-T12 / P0-T13 | **partial** | Host CI is active; other lane results and licensing enquiry remain ([I-18](../issues/I-18-licensing.md)). |
-| P1-T1 / P1-T2 / P1-T3 | **partial** | Frames compose, convert and display on NES-001; independent picture check and conversion performance remain ([I-16](../issues/I-16-stage-a-composition.md), [I-17](../issues/I-17-fcvideo-impl.md)). |
-| P1-T4 | **partial** | Movement, strafe and menus work physically; B tap fails to activate use ([HR-4](../HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4)). |
+| P1-T1 / P1-T2 / P1-T3 | **partial** | Frames compose, convert and display on NES-001; 224-line layout awaits a physical picture check and conversion performance remains ([I-16](../issues/I-16-stage-a-composition.md), [I-17](../issues/I-17-fcvideo-impl.md)). |
+| P1-T4 | **partial** | Movement, strafe and menus work physically; B use passes host Doom and hardware in [HR-6](../HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6). |
 | P1-T6 | **partial** | Merged firmware/WHX UF2 boots; complete loading and layout acceptance remains. |
 | P1-T7 / P1-T8 | **partial** | Fixed-frame D0/D1 and first Doom hardware image pass; dynamic S2, 30-minute check and fps gate remain. |
-| P1-T9 | **open** | Measured conversion is ~35.6 ms; optimize and remeasure against <=8 ms target. |
+| P1-T9 | **open** | Measured conversion is 38.208 ms; optimize and remeasure against <=8 ms target. |
 | P2-T1 / P2-T2 | **partial** | v2 ROM, local MD5/fix-bank and py65 cycle gates pass; remote boot-ROM CI result unrecorded ([I-13](../issues/I-13-bootrom-tree.md), [I-14](../issues/I-14-bootrom-nmi.md)). |
 | P2-T3 | **done** | v2 bus protocol runs on NES-001 at count=15554. |
 | P2-T4 | **partial** | S1 reflash passes in both directions and a hardware ROM UPDATE was observed; final `0002` stamp was not separately transcribed. |
 | P2-T5 | **partial** | Palette/attribute conversion and flash tables exist; scripted damage acceptance remains. |
-| P2-T6 / P2-T7 / P2-T8 | **open** | Palette report, dynamic S2 and full colour hardware acceptance remain. |
-| P3-T1 | **partial** | Base mapping and host `--pads` movement pass; context mappings and B-use fix remain. |
+| P2-T6 | **partial** | Three-scene [palette report](../assets/palette_eval.md) and improved hardware contrast confirmed; full corpus/scene checks remain. |
+| P2-T7 / P2-T8 | **open** | Dynamic S2 and full colour hardware acceptance remain. |
+| P3-T1 | **partial** | Base mapping and host `--pads` movement pass; B-use fix passes hardware; full context mappings remain. |
 | P4-T1 | **done** | Host APU sequencer tests pass; audio integration and assets are later tasks. |
 | P4-T3 | **partial** | APUS/DPCM support tools pass tests; [I-05](../issues/I-05-audio-tools.md) remains. |
 

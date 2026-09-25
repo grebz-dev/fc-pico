@@ -6,11 +6,13 @@
 
 const fcvideo_preset_t fcvideo_presets[FCVIDEO_PRESET_COUNT] = {
     {0x0f, {{0x00, 0x10, 0x30}, {0x07, 0x17, 0x27},
-            {0x06, 0x16, 0x26}, {0x09, 0x19, 0x29}}},
+            {0x06, 0x16, 0x26}, {0x09, 0x19, 0x29}}, 0},
     {0x0f, {{0x00, 0x10, 0x30}, {0x07, 0x17, 0x30},
-            {0x06, 0x16, 0x30}, {0x09, 0x19, 0x30}}},
+            {0x06, 0x16, 0x30}, {0x09, 0x19, 0x30}}, 0},
     {0x0f, {{0x10, 0x09, 0x2d}, {0x07, 0x28, 0x18},
-            {0x02, 0x01, 0x11}, {0x06, 0x16, 0x3d}}},
+            {0x02, 0x01, 0x11}, {0x06, 0x16, 0x3d}}, 0},
+    {0x0f, {{0x1d, 0x00, 0x30}, {0x08, 0x18, 0x30},
+            {0x06, 0x16, 0x30}, {0x09, 0x19, 0x30}}, 1},
 };
 
 /* Same NESDev example 2C02 RGB palette as tools/fcpico/nes_palette.py. */
@@ -48,6 +50,12 @@ void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
             palette[p * 4 + i + 1] = preset->subpalettes[p][i];
 
         for (int index = 0; index < 256; index++) {
+            int target[3];
+            for (int channel = 0; channel < 3; channel++) {
+                int source = playpal_rgb[index * 3 + channel];
+                target[channel] = source + (preset->shadow_lift
+                    ? (source * (255 - source) + 384) / 768 : 0);
+            }
             double best_dist2 = INFINITY;
             int best_a = 0, best_b = 0, best_ratio = 0;
             /* Loop order is the Python oracle's flattened (a,b,r) order;
@@ -59,7 +67,7 @@ void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
                         for (int channel = 0; channel < 3; channel++) {
                             double mixed = (nes_rgb[palette[p * 4 + a]][channel] * (16 - ratio)
                                             + nes_rgb[palette[p * 4 + b]][channel] * ratio) / 16.0;
-                            double diff = mixed - playpal_rgb[index * 3 + channel];
+                            double diff = mixed - target[channel];
                             dist2 += diff * diff;
                         }
                         if (dist2 < best_dist2) {
@@ -177,8 +185,18 @@ void fcvideo_frame_begin(fcvideo_t *video) {
 void fcvideo_push_line(fcvideo_t *video, int y,
                        const uint8_t line[FCVIDEO_SRC_WIDTH]) {
     if (y < 0 || y >= FCVIDEO_SRC_HEIGHT) return;
-    uint8_t *dst = video->frame + (y + 16) * FCVIDEO_WIDTH;
+    /* Output row d samples source floor(d * 200 / 224). Each source row
+     * therefore fills one or two destination rows. */
+    int first = (y * FCVIDEO_SCALED_HEIGHT + FCVIDEO_SRC_HEIGHT - 1)
+              / FCVIDEO_SRC_HEIGHT;
+    int end = ((y + 1) * FCVIDEO_SCALED_HEIGHT + FCVIDEO_SRC_HEIGHT - 1)
+            / FCVIDEO_SRC_HEIGHT;
+    uint8_t *dst = video->frame + (FCVIDEO_TOP_MARGIN + first) * FCVIDEO_WIDTH;
     for (int x = 0; x < FCVIDEO_WIDTH; x++) dst[x] = line[(x / 4) * 5 + (x & 3)];
+    for (int row = first + 1; row < end; row++) {
+        memcpy(video->frame + (FCVIDEO_TOP_MARGIN + row) * FCVIDEO_WIDTH,
+               dst, FCVIDEO_WIDTH);
+    }
 }
 
 void fcvideo_convert_staged(fcvideo_t *video,
@@ -198,6 +216,8 @@ void fcvideo_convert_staged(fcvideo_t *video,
                 if (flat >= FCVIDEO_FRAME_BYTES) continue;
                 int px = flat % FCVIDEO_WIDTH;
                 int py = flat / FCVIDEO_WIDTH;
+                if (py < FCVIDEO_TOP_MARGIN ||
+                    py >= FCVIDEO_TOP_MARGIN + FCVIDEO_SCALED_HEIGHT) continue;
                 uint8_t palette = attr_get(attr, px / 16, py / 16);
                 uint8_t index = video->frame[flat];
                 uint8_t position = (uint8_t)((px & 3) | ((py & 3) << 2));

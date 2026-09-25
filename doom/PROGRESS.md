@@ -11,6 +11,90 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## HR-6 -- hardware shadow-detail and B-use milestone (2026-09-25)
+- User confirms Doom works, contrast is much better and the B button works.
+  USB serial is stable through 1,829 heartbeats at `count=15554`, with one startup
+  DMA stop/resync and no later increase, zero timeouts/errors, and drops settled
+  at 691. At 480 frames, conversion average/max is 38208/38251 us.
+- Hardware-tested UF2: `/tmp/fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
+  `3d298001d93f028dd6a3e9f37287e8d77762704b0c1295485c8fd22275f88dbc`,
+  8158 blocks, 287836 firmware bytes, 236452 bytes free before WHX.
+- Two rebuilds omitted `FCPICO_DIAGNOSTIC_ENGINE_DELAY=ON` and failed hardware
+  startup. Restoring the previously working profile succeeds; the specific timing
+  or diagnostic dependency is not isolated. Both native picotool 2.1.1 and bundled
+  Windows picotool 2.3.0 produce identical firmware UF2s from the restored ELF.
+- Added `tools/build_shadow_detail.sh` to preserve the toolchain, board, startup
+  diagnostics, embedded ROM, flash layout check and picotool/WHX packaging. It
+  records build configuration and checksums outside `/tmp`; see [build guide](plan/08-build.md#hardware-milestone-build).
+- Verified milestone commit: fresh script build reproduces the hardware-tested
+  merged UF2 hash exactly; local bootstrap of pinned picotool succeeds; tutorial
+  ROM MD5 and flash layout gates pass. Host CTest 10/10, focused Python tests
+  259/259, and Markdown links pass.
+- Remaining: precise geometry/chord/scene checks, longer stability, dynamic S2,
+  converter optimization and later audio/save milestones. No broader release
+  acceptance is implied. Details are in [the hardware log](HARDWARE-LOG.md).
+
+## P2-T6 -- shadow detail video candidate (2026-09-25)
+- The default now uses `$1D $00 $30` for gray and `$08 $18 $30` for brown,
+  while retaining white in each subpalette. Its integer PLAYPAL shadow lift
+  runs once while building the error and Bayer lookup tables; frame conversion
+  and stream layout are unchanged. The earlier presets remain selectable.
+- [Three-scene comparison and measurements](assets/palette_eval.md) show less
+  sparse gray and more visible room geometry. A high-contrast dither penalty
+  and removing shared white reduced HUD legibility; RGB interpolation would
+  soften thin text and increase converter work.
+- The rebuilt host engine emitted a v2 stream for DEMO1 frame 300; a mailbox
+  decode produced [this candidate preview](assets/shadow_detail_frame300.png).
+  Host and RP2350 engine builds passed. Firmware
+  occupies 287812 bytes, leaving 236476 bytes before WHX. The merged UF2 is
+  `/tmp/fcpico_doom_shadow_detail_whx.uf2` (8158 blocks), SHA-256
+  `25796370ce0a6a8df662fc05710b0cdbf4fa300bfa6b9bd9053befacea7cd46a`.
+- Subsequent hardware result: [HR-6](HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6)
+  confirms improved contrast, working B and stable playback; detailed geometry
+  and scene checks remain. No new test suite was run for this visual exploration.
+
+## P1-T4 / video follow-up -- B use and 224-line display candidate (2026-09-25)
+- Commits: working tree after parent `b2bb6ef`; engine host-runner diagnostic is
+  submodule commit `3c8af2bb`.
+- Input: the B tap now posts use keydown for one poll and keyup on the next,
+  so Doom samples the down state while building a tic command. The mapper
+  regression failed before the change with an extra immediate keyup, then
+  passed. The real host runner's scripted E1M1 B tap produced `use frames > 0`
+  while an idle pad produced zero.
+- Video: nearest-neighbour vertical scaling maps 200 Doom rows to 224 NES
+  rows at lines 8..231. Both eight-line margins are explicitly zeroed in
+  bitplane packing because they share attribute blocks with image rows. The
+  reference converter uses the same source-row map. The whole-frame synthetic
+  gradient PSNR is 12.55 dB under the new area weighting (previous 200-line
+  layout: 13.02 dB); the updated acceptance floor is 12.5 dB.
+- Verified: `cmake --build build-host && ctest --test-dir build-host
+  --output-on-failure` -> 10/10 passed; `doom/.venv/bin/python -m pytest
+  doom/tests/tools doom/tests/fcvideo -q` -> 259 passed; `python3
+  doom/tests/input/test_engine_input.py /tmp/fcpico-bfix-engine/rp2040-doom/src/fcpico_doom_host
+  doom/rp2040-doom/doom1.whx` -> passed; `doom/.venv/bin/python
+  doom/tests/fcvideo/check_engine_stream.py
+  /tmp/fcpico-bfix-engine/rp2040-doom/src/fcpico_doom_host
+  doom/rp2040-doom/doom1.whx` -> frames 0, 100 and 101 byte-exact against
+  the Python reference. `DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python
+  doom/sim/mesen2/run_doom_frame.py /tmp/fcpico-bfix-stream/frame000100.bin
+  --rom /tmp/fcpico-review/device/rp2040-doom/src/fcpico/doom_bootrom/doom.nes
+  --frames 180 --output /tmp/fcpico-bfix-d1` -> 30 stable v2 heartbeats at
+  count 15554, no DMA stops, exact palette/attributes, 0.9936 visible-picture
+  correlation, and 30 NMI exits on scanline 255. `python3
+  doom/tools/check_md_links.py doom` -> 45 files, 529 links, 0 broken.
+- Device: `cmake --build /tmp/fcpico-review/device --target doom_tiny_fcpico
+  -j 4` passed with GCC 13.2; `python3 doom/tools/flash_layout_check.py
+  /tmp/fcpico-review/device/rp2040-doom/src/fcpico_doom.elf` passed with
+  287772 firmware bytes and 236516 free before WHX. `whx2uf2.py` produced
+  `/tmp/fcpico_doom_buse_scale224_whx.uf2` (8158 blocks), SHA-256
+  `14160dd8f6301f4c41b12f6f39979a71f5a1f554799ac83284e598b1842d67b4`.
+- Left out: B-use behavior, picture height and conversion timing on NES-001
+  require [HR-5](HARDWARE-REQUESTS.md#hr-5-b-use-and-taller-video-task-p1-t4-and-video-follow-up).
+  The previous 35.6 ms measurement belongs to the 200-line firmware, not this
+  candidate. Work stops at this physical verification gate before audio.
+- Plan changes: [04](plan/04-video.md), [05](plan/05-input.md), [10](plan/10-workplan.md),
+  and D3 in [00](plan/00-overview.md) now describe the host-verified candidate.
+
 ## HR-4 -- physical input result and B-use diagnosis (2026-09-24)
 - NES-001 input works for movement, strafing and menus. A B tap does not
   activate use. A host probe replayed a B tap through `--pads`: pad frames

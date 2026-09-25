@@ -1,5 +1,53 @@
 # 08 -- Build system, repositories, flash layout
 
+## Hardware milestone build
+
+The 2026-09-25 shadow-detail/B-use firmware works on the user's NES setup. Rebuild
+from the repository root:
+
+```bash
+doom/tools/build_shadow_detail.sh --bootstrap-tools
+```
+
+Requires CMake, Ninja, a host C/C++ compiler, make, git, Python 3, the project-local
+`arm-gnu-toolchain-13.2.Rel1-x86_64-arm-none-eabi`, and a recursive Pico SDK 2.1.1
+checkout (default `$HOME/.local/fcpico/pico-sdk`). The bootstrap option downloads
+pinned native picotool 2.1.1 and NESASM CE if missing, building under `.build/tools`.
+It does not install system packages. Later builds can omit `--bootstrap-tools`.
+For existing installations:
+
+```bash
+PICOTOOL_DIR=/path/to/install/lib/cmake/picotool \
+NESASM_BIN=/path/to/nesasm \
+PICO_SDK_PATH=/path/to/pico-sdk \
+doom/tools/build_shadow_detail.sh
+```
+
+`BUILD_DIR`, `TOOLS_DIR`, `ARM_TOOLCHAIN_PATH` and `JOBS` are optional overrides.
+Outputs live in `.build/doom-shadow/artifacts/`: the merged
+`fcpico_doom_shadow_detail_delay_whx.uf2`, firmware-only UF2 and ELF, `doom.nes`,
+`SHA256SUMS`, `CMakeCache.txt`, revision/tool information and the tracked-source diff.
+Commit source changes before a release build; untracked source files are not included
+in the diff artifact. Build paths/dates/configuration can affect binary hashes.
+
+The script explicitly enables `FCPICO_DIAGNOSTIC_ENGINE_DELAY=ON`: the 30-second
+startup countdown, bus statistics and raw read counter were part of the successful
+hardware profile. Removing that profile caused USB/boot failures in two rebuilds;
+restoring it works. Do not remove it until the dependency is diagnosed and verified
+on hardware. During flashing keep the NES off, allow USB startup/countdown to finish,
+then power the NES on. The firmware accepts `bootsel` over USB serial.
+
+Use picotool to create firmware UF2s. The bundled `tutorial_project/bin/picotool.exe`
+works through WSL Windows interop and reports v2.3.0; its conversion was byte-identical
+to native v2.1.1 for this ELF. The script uses native v2.1.1 for SDK CMake integration.
+If Windows interop is sandbox-blocked, obtain permission for that command or use the
+native tool. Do not substitute a hand-written raw-binary UF2 wrapper.
+
+The hardware-tested merged file has SHA-256
+`3d298001d93f028dd6a3e9f37287e8d77762704b0c1295485c8fd22275f88dbc`,
+8158 blocks and 287836 firmware bytes. Its observed conversion average/max is
+38208/38251 us. See [hardware evidence](../HARDWARE-LOG.md).
+
 ## Repositories and branches
 
 | Repository | Branch | Role |

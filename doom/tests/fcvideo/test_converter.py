@@ -29,7 +29,8 @@ class Tables(ctypes.Structure):
 
 
 class Preset(ctypes.Structure):
-    _fields_ = [("backdrop", U8), ("subpalettes", (U8 * 3) * 4)]
+    _fields_ = [("backdrop", U8), ("subpalettes", (U8 * 3) * 4),
+                ("shadow_lift", U8)]
 
 
 @pytest.fixture(scope="module")
@@ -136,6 +137,8 @@ def _reference(frame, err, lut, palette, previous=None):
     image = fcvideo_ref.place_letterbox(reduced, backdrop=0)
     attr = fcvideo_ref.choose_block_palettes(image, err, prev_attr=previous)
     pixels = fcvideo_ref.quantize(image, lut, attr)
+    pixels[:fcvideo_ref.LETTERBOX_TOP] = 0
+    pixels[stream.VRAM_LINES - fcvideo_ref.LETTERBOX_BOTTOM:] = 0
     mailbox = bytearray(protocol.FC_COM_BUF_SIZE_V2)
     mailbox[protocol.MBX_FLAGS] = (
         protocol.MBX_FLAG_V2 | protocol.MBX_FLAG_ATTR_VALID | protocol.MBX_FLAG_PAL_VALID

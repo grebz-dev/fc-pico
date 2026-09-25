@@ -20,3 +20,6 @@ arm-gnu-toolchain*
 
 # locally assembled Doom console ROM (CI publishes it as an artifact)
 doom/bootrom/out/
+
+# Reproducible device builds and locally provisioned build tools
+.build/

@@ -26,7 +26,7 @@ short pad taps available to the engine, though use-key handling still needs corr
 | D-pad Up / Down | -- | move forward / back | `KEY_UPARROW` / `KEY_DOWNARROW` |
 | D-pad Left / Right | -- | turn (or strafe while B is held) | `KEY_LEFTARROW`/`KEY_RIGHTARROW`, or `,` / `.` (`key_strafeleft`/`key_straferight`) |
 | A | -- | fire | `KEY_RCTRL` (`key_fire`) |
-| B | **use** (released within 8 frames with no D-pad activity) | strafe modifier | intended: hold `' '` (`key_use`) for an engine tic after a tap; current adapter releases it before `G_BuildTiccmd()`, so use fails on hardware |
+| B | **use** (released within 8 frames with no D-pad activity) | strafe modifier | hold `' '` (`key_use`) for one engine tic after a tap; host `BT_USE` and physical B-use checks pass |
 | Select | next weapon | automap (held >= 20 frames) | `key_nextweapon` pulse; `KEY_TAB` pulse on hold threshold |
 | Start | menu | -- | `KEY_ESCAPE` |
 | Select + Start (together) | -- | -- | reserved: pause (`KEY_PAUSE`) |
@@ -112,3 +112,5 @@ does in the fork and pick whichever gives the cleaner experience).
   initial FC PICO platform.
 - 2026-09-24: physical pad movement, strafe and menus pass; B tap/use fails
   because keydown and keyup reach Doom before tic command construction.
+- 2026-09-25: B use now remains down for one engine tic. The scripted host
+  Doom run observes `BT_USE`; the user confirms the B button works in HR-6.

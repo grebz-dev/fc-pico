@@ -68,16 +68,17 @@ overlap), for lines 0..199, plus the current `next_pal`.
 ### Stage B -- horizontal decimation 320 -> 256
 
 Nearest-neighbour: keep source columns `x` where `x % 5 != 4` (drop every fifth). A 256-entry
-`src_x[256]` table is the whole implementation. Vertical: 200 lines placed at console lines
-16..215 (top letterbox 16 lines so the Doom frame starts on an attribute-block boundary; bottom
-letterbox 24 lines). Aspect: the result is ~10% wider than Doom's intended 4:3; acceptable for
-M1, revisit in Phase 5 (options: box filter in RGB space before quantisation; 200->219 line
-duplication). The NES-001 photograph confirms the lower blank area; it is the specified
-layout, not an 8x8 tile or stream-capacity limit.
+`src_x[256]` table is the whole implementation. Vertical: scale 200 source lines to 224
+console lines, at lines 8..231. Output line `d` uses source line `floor(d * 200 / 224)`.
+The top and bottom eight lines remain blank. This follow-up uses more of the NES picture
+area after the NES-001 photograph showed the original 200-line image at lines 16..215
+with a large lower gap. The margins stay on tile-row boundaries and are explicitly blanked
+after palette selection, since they share 16-line attribute blocks with the image.
 
 ### Stage C -- sub-palette selection per 16x16 block
 
-16 block columns x 13 block rows cover the Doom frame (the 13th row is half height). For each
+16 block columns x 15 block rows cover the scaled Doom frame (the first and last rows
+also contain eight blank margin lines). For each
 block and each sub-palette `p` (0..3), cost = sum over the block's pixels of
 `err[p][idx]`, where `err` is a precomputed `uint8_t[4][256]`: the residual error of the best
 *dither pair* for Doom colour `idx` under sub-palette `p` (stage D's LUT is built from the same
@@ -86,7 +87,7 @@ choice unless another palette is cheaper by more than `HYST_PCT` (default 12%). 
 choice into the attribute shadow (`fcbus_attr_set(bx, by, p)` -- same packing as
 `rp_system::setAtr()`), and set `ATTR_VALID` in the back mailbox.
 
-Cost: 208 blocks x 256 px x 4 palettes = 212,992 byte loads and adds (the Doom frame covers 16 x 13 of the screen's 16 x 15 blocks). Vectorise trivially by
+Cost: 240 blocks x 256 px x 4 palettes = 245,760 byte loads and adds. Vectorise trivially by
 accumulating four `uint16_t` sums per pixel from a `uint32_t err4[256]` table (one load, four
 byte-lane adds). Estimated 1.5-2.5 ms at 150 MHz.
 
@@ -102,9 +103,9 @@ precomputed as: for Doom colour `idx` under sub-palette `p`, the two palette ent
 and mix ratio `r/16` that best approximate it; the 16 Bayer thresholds turn `r` into a pattern).
 A 4 KB variant with a 2x2 pattern (5 levels) is a compile-time option.
 
-Cost: 51,200 pixel lookups (256 x 200) plus packing; estimated 1-2 ms. Letterbox lines need none.
+Cost: 57,344 pixel lookups (256 x 224) plus packing. Margin lines need none.
 
-The letterbox lines and the prefetch words are written once at init (all zeros = backdrop).
+The margin lines and the prefetch words remain zero (backdrop).
 
 ### Stage E -- NES palette sets
 
@@ -123,6 +124,13 @@ by the console's palette, which is exactly how the NES does screen flashes.
 
 Sub-palette presets (`fcvideo_presets.h`), selectable at build time, evaluated in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) by
 PSNR against the 8-bit reference frames and by a legibility check of the menu font:
+
+The current default is the shadow-detail preset: `$1D $00 $30` grays,
+`$08 $18 $30` browns, `$06 $16 $30` reds and `$09 $19 $30` greens. It applies
+the integer PLAYPAL shadow lift `v + (v*(255-v)+384)/768` only while generating
+the error/dither tables; the frame loop still uses the same lookups. The
+[preview and measurements](../assets/palette_eval.md) motivated this candidate;
+HR-6 now confirms much better contrast on hardware; detailed scene checks remain.
 
 | Preset | P0 | P1 | P2 | P3 | Notes |
 |--------|----|----|----|----|-------|
@@ -161,7 +169,8 @@ derivation tool in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) may r
 - Doom's renderer may run up to two frames ahead (`display_frame_freed` initialised to 2 in
   `I_InitGraphics`); leave it.
 - The initial estimate was 3-6 ms. NES-001 serial output on 2026-09-24 measured
-  about 35.6 ms average and maximum on the tested firmware, above the 8 ms acceptance
+  about 35.6 ms on the 200-line firmware. The 2026-09-25 shadow-detail/224-line
+  build measures 38.208 ms average and 38.251 ms maximum, above the 8 ms acceptance
   target. [P1-T9](10-workplan.md#p1-t9-converter-performance-pass) must reduce this
   cost and remeasure it with the serial frame counters.
 
@@ -171,7 +180,7 @@ derivation tool in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) may r
 |-------|-------|------|
 | Doom render | core 0 + core 1 | 25-50 ms (20-40 fps, level dependent) |
 | Wait for heartbeat | -- | 0-16.6 ms |
-| Convert | core 1 IRQ | ~35.6 ms measured on NES-001 (2026-09-24); <= 8 ms target |
+| Convert | core 1 IRQ | 38.208 ms average / 38.251 ms max (2026-09-25); <= 8 ms target |
 | Wait for next heartbeat, stream | -- | 16.6 ms + 16.6 ms |
 | Console NMI applies attributes/palette | 6502 | same frame as the stream |
 
