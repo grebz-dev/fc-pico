@@ -8,20 +8,17 @@
 | **Depends on** | [I-08](I-08-device-superbuild.md) (soft) |
 | **Work plan task** | [P0-T2](../plan/10-workplan.md#p0-t2-engine-fork-superbuild-guard-and-empty-fcpico-platform) |
 
+## Status (2026-09-24)
+
+**partial**. The `doom_tiny_fcpico` target builds and runs Doom on an NES-001, so the
+hardware boot check is complete. The original `doom_tiny` and `chocolate-doom` target
+configuration checks in step 4 have not been recorded. See
+[`../PROGRESS.md`](../PROGRESS.md) and [`../HARDWARE-LOG.md`](../HARDWARE-LOG.md).
+
 ## Goal
 
-The engine is a submodule with a documented plan and no code. Until it can be configured
-from the superbuild, neither the host runs nor any video work can start.
-
-## Current execution (2026-09-23)
-
-The parent now configures the engine with `FCPICO_BUILD_ENGINE=ON`, and the RP2350
-`doom_tiny_fcpico` target links to `fcpico_doom.elf` with GCC 13.2.Rel1. The platform
-adapters are silent/no-display stubs, and the flash-layout check passes at 237,896 bytes
-used. The existing test-pattern target and all 10 host C suites still pass. Standalone
-Pico host configuration succeeds; native `chocolate-doom` configuration cannot be
-checked locally because SDL2 development packages are absent. Hardware boot to the
-serial marker and `D_DoomMain` remains unverified, so [P0-T2](../plan/10-workplan.md#p0-t2-engine-fork-superbuild-guard-and-empty-fcpico-platform) is partial.
+The engine fork needs a superbuild entry point and an FC PICO platform layer so its host
+and RP2350 targets can share the renderer without changing the original VGA targets.
 
 ## Specification
 

@@ -8,6 +8,15 @@
 | **Depends on** | [I-12](I-12-engine-host-build.md) |
 | **Work plan task** | [P1-T1](../plan/10-workplan.md#p1-t1-stage-a-8-bit-frame-composition) |
 
+## Status (2026-09-24)
+
+**partial**. The adapter composes 320x200 indexed lines from the renderer's view buffers and
+packed overlays, including status/menu/title and the wipe, without a device-sized full-frame
+buffer. The host sink writes raw frames and PNG previews; a 600-frame DEMO1 capture has
+golden hashes every tenth frame, and title/menu cases have separate goldens. The device
+sink now feeds [I-17](I-17-fcvideo-impl.md)'s device converter; Doom is visible on
+the NES-001. The independent Chocolate Doom picture comparison in step 4 remains open.
+
 ## Goal
 
 RP2040 Doom never assembles a whole 8-bit frame: the view is in one buffer and everything
@@ -55,12 +64,3 @@ python3 doom/tests/goldens/check.py /tmp/f
 Keep everything reachable during `VIDEO_TYPE_SAVING` out of flash: the original marks
 those functions `__no_inline_not_in_flash_func` because they run while flash is being
 programmed. Losing that attribute produces a crash only on hardware, only when saving.
-
-## Status (2026-09-23)
-
-Partial. The adapter composes 320x200 indexed lines from the renderer's view buffers and
-packed overlays, including status/menu/title and the wipe, without a device-sized full-frame
-buffer. The host sink writes raw frames and PNG previews; a 600-frame DEMO1 capture has
-golden hashes every tenth frame, and title/menu cases have separate goldens. The device
-sink still discards the lines until [I-17](I-17-fcvideo-impl.md) stream conversion and publication are integrated.
-An independent Chocolate Doom screenshot comparison and hardware picture check remain open.

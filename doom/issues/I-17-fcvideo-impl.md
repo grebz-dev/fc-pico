@@ -14,24 +14,14 @@ This is the part that makes Doom look like Doom on four colours a block. It is p
 computation over byte arrays, so it can be finished and proven on the host and only then
 wired to the bus interrupt.
 
-## Current execution (2026-09-21)
+## Status (2026-09-24)
 
-Update 2026-09-23: real composed DEMO1 streams match the Python oracle and a
-fixed frame now passes Mesen D0 at the visible-frame and console palette/attribute
-RAM boundary. The RP2350 candidate converts composed scanlines and publishes to
-`fcbus`; its ELF/UF2 passes flash and RAM headroom checks, but hardware boot and
-conversion timing are unmeasured. D0 uses tutorial v1; Doom-ROM S2 and v2 NMI
-timing remain open. See [`../sim/mesen2/DOOM-FRAME.md`](../sim/mesen2/DOOM-FRAME.md).
-
-The host core under `port/video/` decimates and letterboxes 320x200 frames, chooses
-attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 32-word
-scanline stream and writes the v2 mailbox. A differential test compares the complete C stream
-and attributes against `tools/fcvideo_ref.py` for gradient, checkerboard and random frames.
-Presets A/B/C and palette-0 `err`/`lut` generation now match that Python oracle byte for byte,
-including a complete stream built from C-generated tables. The 14 synthetic flash palette
-sets match the engine's red/yellow/green tint arithmetic. Engine frame input, device
-publication/timing, and Doom picture acceptance remain open. Strict Mesen S0 now validates
-the 32-word selected-read schedule and a test-pattern picture golden against trace 6.
+**partial**. The host converter matches the Python oracle on synthetic and real engine
+frames. The RP2350 converter publishes frames through `fcbus`, and the NES-001 displays
+Doom. Mesen D0/D1 fixed-frame checks pass. Hardware conversion averages about 35.6 ms,
+above the 8 ms target; dynamic S2 and a performance pass remain. The current 200-line
+image at NES lines 16..215 is the specified letterbox, not a stream-size limit. See
+[`../PROGRESS.md`](../PROGRESS.md) and [`../HARDWARE-LOG.md`](../HARDWARE-LOG.md).
 
 ## Specification
 

@@ -3,10 +3,18 @@
 
 | | |
 |---|---|
-| **Lane** | B -- verified in CI only |
+| **Lane** | B -- local tests and CI |
 | **Size** | L |
 | **Depends on** | [I-13](I-13-bootrom-tree.md) |
 | **Work plan task** | [P2-T2](../plan/10-workplan.md#p2-t2-v2-nmi-init-main-loop-controller-packet) |
+
+## Status (2026-09-24)
+
+**partial**. The v2 NMI, controller packet and palette/attribute updates are
+implemented. Local py65 tests measured 1614 critical / 2021 total cycles in the
+latest stream-fix build, below the 1900 / 2200 limits; D1 co-simulation and
+NES-001 display passed. A green remote boot-ROM CI run is not recorded. See
+[`../PROGRESS.md`](../PROGRESS.md).
 
 ## Goal
 
@@ -16,8 +24,8 @@ harness that measures it already exists and is calibrated against the tutorial R
 
 ## Specification
 
-[`plan/07-bootrom.md`](../plan/07-bootrom.md): [the assembly draft](../plan/07-bootrom.md#the-v2-nmi-as-nesasm-draft-to-be-assembled-in-p2-t2), [the cycle table](../plan/07-bootrom.md#the-v2-nmi-with-its-cycle-budget) (1595 critical, 1975 total
-with 15 APU pairs) and [the init sequence](../plan/07-bootrom.md#init-ur_main_setup) including the OAM parking step.
+[`plan/07-bootrom.md`](../plan/07-bootrom.md): [the assembly sketch](../plan/07-bootrom.md#the-v2-nmi-as-nesasm-design-sketch-implemented-in-p2-t2), [the cycle table](../plan/07-bootrom.md#the-v2-nmi-with-its-cycle-budget) (estimated 1607 critical / 1987 total; latest measured 1614 / 2021)
+and [the init sequence](../plan/07-bootrom.md#init-ur_main_setup) including the OAM parking step.
 
 ## Owns (create or modify only these)
 

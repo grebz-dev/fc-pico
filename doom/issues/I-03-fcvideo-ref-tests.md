@@ -8,6 +8,10 @@
 | **Depends on** | [I-02](I-02-ppu-decode-tests.md) (soft) |
 | **Work plan task** | [P1-T2](../plan/10-workplan.md#p1-t2-stages-b-and-d-grey-lut-letterbox) |
 
+## Status (2026-09-24)
+
+**done**. The reference video pipeline and letterbox tests pass. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 This module is the specification the on-device converter will be checked against. Until it

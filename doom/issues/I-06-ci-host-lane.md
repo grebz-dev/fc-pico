@@ -8,6 +8,10 @@
 | **Depends on** | none |
 | **Work plan task** | [P0-T12](../plan/10-workplan.md#p0-t12-activate-ci) |
 
+## Status (2026-09-24)
+
+**done**. The host CI workflow is active; device and co-simulation lanes have separate gates. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 Nothing in this repository is checked automatically today, and the device, boot-ROM and

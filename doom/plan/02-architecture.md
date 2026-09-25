@@ -58,7 +58,8 @@ core 1 becomes the "video card".
    choose a sub-palette per 16x16 block, dither and pack into the *back* stream buffer,
    write the attribute table and palette into the *back* mailbox, then mark the back buffer
    as "display next". If no new frame, do nothing: the DMA keeps streaming the same buffer.
-   Elapsed: 3-6 ms estimated; measured in [P1-T8](10-workplan.md#p1-t8-hardware-session-m1-hw).
+   Elapsed: ~35.6 ms measured on NES-001 (2026-09-24), above the 8 ms target;
+   optimize in [P1-T9](10-workplan.md#p1-t9-converter-performance-pass).
 4. **Game logic, core 0.** Unchanged RP2040 Doom loop: `TryRunTics()`, `D_Display()`,
    `pd_begin_frame()`/`pd_end_frame()`; the input mapper feeds `D_PostEvent` from the latched
    controller bytes once per tic; `I_UpdateSound()` pumps the APU sequencer.
@@ -83,7 +84,7 @@ ISR, at a heartbeat, and the ISR only ever selects a buffer the converter has fi
 | Core | Context | Priority | Work | Max duration |
 |------|---------|----------|------|--------------|
 | 1 | `PIO0_IRQ_0` | highest of the app (0x40) | `fcbus_isr()` | < 20 us |
-| 1 | `LOW_PRIO_IRQ` (31) | lowest (0xC0) | frame conversion | < 8 ms |
+| 1 | `LOW_PRIO_IRQ` (31) | lowest (0xC0) | frame conversion | <= 8 ms target; ~35.6 ms measured |
 | 1 | thread | -- | `pd_core1_loop()`: visplanes, columns, `I_UpdateSound()` polling | per frame |
 | 0 | thread | -- | game loop | per tic |
 | 0 | timer alarm (SDK) | default | `time_us_64` only | -- |
@@ -152,8 +153,9 @@ implement; names are binding, signatures may grow.
 differ from what follows. Two differences matter: every entry point is prefixed
 `fcbus_core_*` or `fcbus_host_*` rather than `fcbus_*`, and the core takes an explicit
 `fcbus_core_t *` so it can be instantiated more than once (the host backend keeps the
-single global instance this sketch assumed). The sketch is kept for the modules that are
-still unwritten.
+single global instance this sketch assumed). The sketches below are historical design
+notes; implemented headers in `fcbus/`, `port/` and `rp2040-doom/src/fcpico/` are
+authoritative for code and tests.
 
 ### `fcbus/fcbus.h`
 

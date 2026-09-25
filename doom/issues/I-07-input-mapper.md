@@ -8,6 +8,14 @@
 | **Depends on** | none |
 | **Work plan task** | [P1-T4](../plan/10-workplan.md#p1-t4-input-v1-subset) / [P3-T1](../plan/10-workplan.md#p3-t1-full-input-mapping----spec-05-size-m-depends-p2-t3-acceptance-mapper-unit-tests-menus-navigable-on-host-via---pads) |
 
+## Status (2026-09-24)
+
+**partial**. Host mapper tests pass and physical movement, strafe and menus work. B tap
+produces keydown and keyup before Doom builds the tic command, so the required use action
+fails. Add a game-level use regression and correct the event lifetime before closing this
+issue. See [`../PROGRESS.md`](../PROGRESS.md) and
+[`../HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md).
+
 ## Goal
 
 Eight buttons have to drive a game built for a keyboard, and the mapping is all edge cases:

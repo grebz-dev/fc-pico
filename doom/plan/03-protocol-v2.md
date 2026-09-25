@@ -1,5 +1,10 @@
 # 03 -- Protocol v2
 
+The v2 mailbox, explicit controller heartbeat and count=15554 are implemented in the
+Doom ROM and device bus. They have passed D1/S1 co-simulation and NES-001 display;
+dynamic S2 and the broader controller checks remain. See
+[`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 The FC PICO wire protocol ([`docs/pages/protocol.md`](../../docs/pages/protocol.md)) is kept as **v1** and used unchanged for
 milestone M1. **v2** is a superset introduced with the Doom boot ROM for M2. The firmware speaks
 both; which one is in use is decided per console by the boot ROM that is actually running there,

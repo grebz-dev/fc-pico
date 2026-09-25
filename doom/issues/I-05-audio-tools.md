@@ -8,6 +8,11 @@
 | **Depends on** | [I-04](I-04-fcapu-core.md) (soft) |
 | **Work plan task** | [P4-T3](../plan/10-workplan.md#p4-t3-audio-tools----spec-06-pipeline-size-l-depends----acceptance-teststools-round-trips-mus2apuspy---auto-produces-all-13-streams-from-doom1wad-under-the-cap) |
 
+## Status (2026-09-24)
+
+**partial**. APUS/DPCM support tools exist and have tests; the music and effect
+conversion pipeline in this issue remains. See [`../PROGRESS.md`](../PROGRESS.md).
+
 ## Goal
 
 Every music and effect byte the firmware will ever play comes out of these converters, and

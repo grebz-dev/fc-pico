@@ -8,6 +8,10 @@
 | **Depends on** | [I-06](I-06-ci-host-lane.md) |
 | **Work plan task** | [P0-T1](../plan/10-workplan.md#p0-t1-superbuild-skeleton-and-led-blink-firmware) |
 
+## Status (2026-09-24)
+
+**done**. The RP2350 configuration and device target build with the pinned GCC toolchain. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 Every remaining device-side issue is blocked on a configuration that can build for the

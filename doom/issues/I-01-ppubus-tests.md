@@ -8,6 +8,10 @@
 | **Depends on** | none |
 | **Work plan task** | [P0-T7](../plan/10-workplan.md#p0-t7-ppu-bus-model-and-decoder) |
 
+## Status (2026-09-24)
+
+**done**. Model tests and the hardware-calibrated 66/64 read-count checks pass. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal — complete; calibrated by I-19
 
 The model tests now pin both internal consistency and the real trace: 66 pre-render reads,

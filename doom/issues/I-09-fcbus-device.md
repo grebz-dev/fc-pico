@@ -8,6 +8,10 @@
 | **Depends on** | [I-08](I-08-device-superbuild.md) |
 | **Work plan task** | [P0-T5](../plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware) |
 
+## Status (2026-09-24)
+
+**done**. Test patterns and the v2 Doom stream run on an NES-001 with stable selected-read counts. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 The core and the host backend are done and tested. The device backend is the one piece that

@@ -8,6 +8,10 @@
 | **Depends on** | none |
 | **Work plan task** | [P0-T7](../plan/10-workplan.md#p0-t7-ppu-bus-model-and-decoder) |
 
+## Status (2026-09-24)
+
+**done**. Stream decoder and golden tests pass. See [`../PROGRESS.md`](../PROGRESS.md) for dated evidence.
+
 ## Goal
 
 The decoder is what turns a stream buffer back into something a human or a PSNR gate can

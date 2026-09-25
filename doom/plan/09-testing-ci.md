@@ -17,15 +17,16 @@ is involved, and so that most of it runs on every push.
 
 ## L0 -- builds and static checks
 
-- Device build (`rp2350-arm-s`, MinSizeRel) of `fcpico_testpattern` and `fcpico_doom`; host
-  build of `fcpico_doom_host`, libraries, `whd_gen`, `mus2mid`, tests.
+- Device build (`rp2350-arm-s`, MinSizeRel) of `fcpico_testpattern` and
+  `doom_tiny_fcpico` (output `fcpico_doom`); host build of `doom_tiny_fcpico`
+  (output `fcpico_doom_host`), libraries and tests.
 - `-Wall -Wextra -Werror` on all *new* code (`fcbus`, `fcvideo`, `fcapu`, `port`, `sim`,
   `tools`); the engine keeps its own warning policy.
 - `tools/gen_protocol.py --check`: generated 6502 include and Python constants match the header.
 - `tools/flash_layout_check.py <elf>`: flash end < `TINY_WAD_ADDR`; WHX end < archive start.
 - Size report (`arm-none-eabi-size -A`, top 30 symbols by `nm --size-sort`) as an artifact.
 - Boot ROM: reproducible assembly; fix-bank bytes identical to `bootrom_fixr.bin`; tutorial ROM
-  MD5 gate proves the Wine toolchain.
+  MD5 gate proves the pinned native NESASM CE toolchain.
 
 ## L1 -- unit tests (ctest, pytest)
 
@@ -44,31 +45,26 @@ in a second configuration.
 
 ## L2 -- engine host runs
 
-`fcpico_doom_host` (the full engine with the fcpico platform layer and the `fcbus` host
-backend) supports:
+`fcpico_doom_host` (the SDL-free engine with the fcpico platform layer) supports:
 
 ```
-fcpico_doom_host --whx doom1.whx --demo 1 --frames 600 --dump-8bit out/ --dump-stream out/ --pads pads.txt
+fcpico_doom_host --whx doom1.whx --demo 1 --frames 600 --lockstep --dump-8bit out/ --dump-stream streams/
 ```
 
-- `--demo N --frames F`: run DEMO N for F console frames with a synthetic 60.1 Hz heartbeat
-  (the host backend calls the ISR-equivalent on a timer or, in `--lockstep` mode, once per
-  converted frame for determinism).
-- `--dump-8bit`: the composed 320x200 8-bit frame + `PLAYPAL` as PNG per frame.
-- `--dump-stream`: per frame, the 17,344/17,408-byte stream, the mailbox, and the expected
-  count, as `.bin` + JSON.
-- `--pads`: scripted controller input per frame.
+- `--demo N --frames F --lockstep`: deterministic demo playback for F converted frames.
+- `--dump-8bit`: each composed 320x200 indexed frame as `.raw`, plus a PLAYPAL PNG
+  preview every 100th frame.
+- `--dump-stream`: each complete 17,408-byte v2 stream as `.bin`.
+- `--pads`: scripted controller byte per engine tic; `--warp` starts a level for
+  movement checks.
 - Determinism: two identical runs produce identical dumps (Doom's demo playback is
   deterministic; the host backend must be too -- no wall-clock dependence).
 
-Golden tests (`tests/goldens/`):
-
-- `demo1/`: SHA-256 of every 10th frame's stream+mailbox for the first 600 frames, plus the
-  PNG of every 100th decoded frame for humans.
-- PSNR gate: `ppu_decode.py` decodes the stream to 256x240 RGB using the NES palette table; the
-  8-bit source is decimated and mapped through `PLAYPAL`; PSNR must not fall below the stored
-  per-frame threshold (stored on first acceptance; may only be raised).
-- `tools/update_goldens.py` regenerates hashes and thresholds; the diff is reviewed like code.
+Current golden tests (`tests/goldens/`) check SHA-256 of every tenth 320x200 indexed
+DEMO1 frame in a 600-frame run, six PNG previews and separate title/menu frames.
+Real NES stream frames 0, 100 and 101 also match the independent Python converter
+byte-for-byte. A dynamic 256x240 S2 picture series and its perceptual threshold
+remain planned; fixed-frame D0/D1 already compare pictures and console RAM.
 
 ## L3 -- PPU-bus model (`sim/ppubus/`)
 
@@ -157,7 +153,8 @@ engine or ARM compiler. The fork is `https://github.com/grebz-dev/MesenCE-FC-PIC
   ISR-equivalent synchronously on the emulator thread (swap buffers, count check); the engine
   runs on its own thread(s) with the same semaphores as on device. `fcpico_cart_create(mode)`
   will select `testpattern` or `doom` (the latter needs `--whx`). The current adapter uses
-  one global `fcbus_host` instance with `fcpico_cart_init(prg, len)`; Doom mode is future work.
+  one global `fcbus_host` instance with `fcpico_cart_init(prg, len)`. Fixed Doom-frame
+  D0/D1 and reflash S1 are implemented; dynamic Doom-frame S2 remains.
 
 ### Lua scenarios (`sim/mesen2/lua/`)
 
@@ -292,14 +289,15 @@ field rewritten to the private number (`tools/nes/set_mapper.py`); the PRG bytes
 
 ## GitHub Actions
 
-Templates in `doom/ci/workflows/`, activated in [P0-T12](10-workplan.md#p0-t12-activate-ci) by copying to `.github/workflows/`:
+Workflow templates live in `doom/ci/workflows/`. The host and boot-ROM workflows have
+copies in `.github/workflows/`; confirm remote CI results separately from local tests.
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|
-| `doom-build.yml` | push/PR touching `doom/**` | `firmware` (arm-none-eabi 13.2.Rel1, pico-sdk 2.1.1, UF2/ELF/map/size artifacts, layout check), `host` (host libs + engine host build + ctest + pytest + L2 goldens), `bootrom` (Wine + nesasm, MD5 gate, reproducibility, py65 tests) |
-| `doom-sim.yml` | push/PR | `pioemu` (L4); `fullchip` (L5, `continue-on-error: true` until stable) |
-| `doom-cosim.yml` | nightly 03:00 UTC + manual | Mesen2 build (cached) + S0-S5 |
-| `doom-docs.yml` | push touching `docs/**`, `doom/**/*.md` | Doxygen with the repo's zero-warning rule, artifact `docs/html` |
+| `doom-host.yml` | active in `.github/workflows/` | host libraries, engine tests and Python checks |
+| `doom-device.yml` | active in `.github/workflows/` | pinned ARM build, UF2 and layout check |
+| `doom-bootrom.yml` | active in `.github/workflows/` | pinned native NESASM CE, tutorial MD5 gate, reproducibility and py65 tests |
+| `doom-cosim.yml`, `doom-sim.yml`, `doom-docs.yml` | templates only | later co-simulation, optional full-chip and documentation lanes |
 
 Pinned action versions and toolchain tags are in the templates; bump deliberately.
 

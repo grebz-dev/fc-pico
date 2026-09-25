@@ -8,6 +8,14 @@
 | **Depends on** | [I-11](I-11-engine-skeleton.md) |
 | **Work plan task** | [P0-T3](../plan/10-workplan.md#p0-t3-engine-host-build-without-sdl) |
 
+## Status (2026-09-24)
+
+**done**. The SDL-free runner produces deterministic indexed frames and NES streams from
+600-frame DEMO1 runs. It also accepts `--pads`; the host E1M1 movement test observes a
+player-position change from scripted Up input. Stream output has independent Python
+comparison coverage. Dynamic S2 remains [I-15](I-15-mesen2-cosim.md), outside this
+host-build issue. See [`../PROGRESS.md`](../PROGRESS.md).
+
 ## Goal
 
 A host build of the whole engine is what makes deterministic demo runs, golden frames and
@@ -57,15 +65,3 @@ diff -r /tmp/o1 /tmp/o2
 `get_core_num()` returns the real core in the shim, but the SDK's host spin locks are
 documented as single-threaded dummies. If the engine relies on a spin lock across the two
 threads, say so in the shim README rather than papering over it.
-
-## Status (2026-09-23)
-
-Partial. `PICO_PLATFORM=host` builds the SDL-free engine and host shim. The runner loads
-`doom1.whx` by path, plays DEMO1 in single-tic lockstep, and dumps composed 320x200
-indexed frames and 17,408-byte v2 NES streams. `engine_host_determinism` compares every
-indexed and stream frame across two 600-frame runs. Real Doom stream frames 0, 100 and
-101 also match the independent Python converter byte-for-byte. Device and test-pattern
-builds still link.
-
-`--pads` remains unsupported, so the full command-line contract is not complete.
-The stream dumps are converter output, not yet an S2 Mesen run or hardware display.
