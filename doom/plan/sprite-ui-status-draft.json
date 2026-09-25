@@ -1,0 +1,177 @@
+{
+  "screens": [
+    {
+      "name": "compact-status-draft",
+      "groups": [
+        {
+          "name": "ready-ammo-symbol",
+          "x": 24,
+          "y": 192,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "health-symbol",
+          "x": 80,
+          "y": 192,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "armor-symbol",
+          "x": 184,
+          "y": 192,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "key-slot-0",
+          "x": 216,
+          "y": 192,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "key-slot-1",
+          "x": 224,
+          "y": 192,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "key-slot-2",
+          "x": 232,
+          "y": 192,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "ready-ammo-value",
+          "x": 24,
+          "y": 200,
+          "width": 16,
+          "height": 8
+        },
+        {
+          "name": "health-value-percent",
+          "x": 80,
+          "y": 200,
+          "width": 16,
+          "height": 8
+        },
+        {
+          "name": "armor-value-percent",
+          "x": 184,
+          "y": 200,
+          "width": 16,
+          "height": 8
+        },
+        {
+          "name": "face",
+          "x": 120,
+          "y": 200,
+          "width": 16,
+          "height": 16
+        },
+        {
+          "name": "weapon-2",
+          "x": 40,
+          "y": 208,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "weapon-3",
+          "x": 56,
+          "y": 208,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "weapon-4",
+          "x": 72,
+          "y": 208,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "weapon-5",
+          "x": 184,
+          "y": 208,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "weapon-6",
+          "x": 200,
+          "y": 208,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "weapon-7",
+          "x": 216,
+          "y": 208,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "ammo-type-0",
+          "x": 16,
+          "y": 216,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "ammo-0-current-max",
+          "x": 24,
+          "y": 216,
+          "width": 24,
+          "height": 8
+        },
+        {
+          "name": "ammo-type-1",
+          "x": 128,
+          "y": 216,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "ammo-1-current-max",
+          "x": 136,
+          "y": 216,
+          "width": 24,
+          "height": 8
+        },
+        {
+          "name": "ammo-type-2",
+          "x": 16,
+          "y": 224,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "ammo-2-current-max",
+          "x": 24,
+          "y": 224,
+          "width": 24,
+          "height": 8
+        },
+        {
+          "name": "ammo-type-3",
+          "x": 128,
+          "y": 224,
+          "width": 8,
+          "height": 8
+        },
+        {
+          "name": "ammo-3-current-max",
+          "x": 136,
+          "y": 224,
+          "width": 24,
+          "height": 8
+        }
+      ]
+    }
+  ]
+}

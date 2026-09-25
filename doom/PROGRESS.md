@@ -11,6 +11,20 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## P3-U1 -- source dimensions and sprite capacity gate (2026-09-25)
+- Added the [feasibility audit](plan/12a-sprite-ui-u1-audit.md) with active
+  producer inventory, WHX metadata identity/dimensions, NMI/transport lower
+  bounds and the remaining layout, storage and timing decisions.
+- Added `tools/check_sprite_layout.py` to reject proposed native layouts above
+  64 OAM entries, eight sprites per scanline or 256x240 bounds. `--lines` prints
+  each occupied scanline. A compact status draft uses 38 OAM entries and peaks
+  at eight per line; it is not legibility-approved and cannot coexist with an
+  80-character message under its current allocation.
+- Verified: three boundary tests pass; a direct 246x15 `M_JKILL` source-patch
+  rectangle fails at 62 OAM entries and 31 sprites per scanline; Markdown links
+  pass (49 files, 589 links, zero broken). This is host arithmetic/source
+  evidence only, with no new ROM, Mesen or physical sprite result.
+
 ## P3-U1..U6 -- sprite UI roadmap (2026-09-25)
 - Planning only: explored engine UI/vpatch composition, host/device frame sinks,
   converter, bus/boot-ROM transport and the calibrated Mesen validation paths.
