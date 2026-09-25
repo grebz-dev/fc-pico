@@ -5,9 +5,9 @@ displayed and played through the console -- lives outside the Doxygen tree, in t
 directory of the `claude/doom-fc-pico-nes-2bb1bx` branch:
 
 - `doom/README.md` -- entry point and reading order
-- `doom/plan/00-overview.md` .. `12-agent-playbook.md` -- goals, constraints, architecture,
-  protocol v2, video, input, audio, boot ROM, build, testing/CI, work plan, risks, and the
-  operating rules for an AI agent executing the plan
+- `doom/plan/00-overview.md` .. `11-risks.md` -- goals, constraints, architecture,
+  protocol v2, video, input, audio, boot ROM, build, testing/CI, work plan, and risks
+- `.serena/memories/core.md` -- agent guidance and references to focused project memories
 - `doom/rp2040-doom/` -- the engine, as a git submodule of the `grebz-dev/rp2040-doom` fork
 
 The plan was derived from @ref architecture, @ref nes_doom, @ref protocol, @ref hardware,

@@ -15,7 +15,7 @@ picture validation awaits the engine frame path.
 
 Start with [issues/README.md](issues/README.md) for remaining work and
 [PROGRESS.md](PROGRESS.md) for verification evidence and current environment limitations.
-The [agent playbook](plan/12-agent-playbook.md) defines the operating rules.
+Agent operating rules are in the [Serena project memories](../.serena/memories/core.md).
 
 The plan was produced by reading the FC PICO documentation on the
 `docs/utf8-and-doxygen` branch, the `tuto1_hw` firmware and `BOOTROM` sources, and the RP2040
@@ -37,7 +37,6 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 9 | [plan/09-testing-ci.md](plan/09-testing-ci.md) | Test pyramid: host unit tests, PPU-bus model, pioemu, full-chip sim, Mesen2 co-simulation, hardware rig, GitHub Actions |
 | 10 | [plan/10-workplan.md](plan/10-workplan.md) | Phases and tasks with acceptance criteria -- **the execution checklist** |
 | 11 | [plan/11-risks.md](plan/11-risks.md) | Risk register, open questions, decisions that need a human |
-| 12 | [plan/12-agent-playbook.md](plan/12-agent-playbook.md) | Operating rules for an AI agent executing this plan |
 
 ## Directory map (includes planned components)
 

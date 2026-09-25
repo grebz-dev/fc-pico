@@ -1,0 +1,7 @@
+# Doom bus and protocol invariants
+
+- `doom/fcbus/fcbus_protocol.h` is the only authored source for opcodes, mailbox fields, count constants and key bits; `doom/tools/gen_protocol.py` regenerates `doom/bootrom/gen/*` and `doom/tools/fcpico/protocol.py`. Keep v1 wire values unchanged; v2 extends the mailbox.
+- NES-001 trace 6 establishes 66 CS1-qualified reads on pre-render and 64 on each visible line. Picture: `66 + 240*64 = 15426` reads; NMI: one dummy plus 64 mailbox reads; the `fcppu_rna` report is the zero-based last index `15490`. Do not substitute PiPU's full-bus read count.
+- The selected picture stream is flat, 32 16-bit words per visible line starting at word 31; `VRAM_LINE_WORDS=34` is the converter batch size, not the consumed line stride. Normal frame re-arm begins with buffer byte zero. Manual `out pins, 8` nudges consume real bytes.
+- Pattern fetch selection depends on PPU addresses: tutorial nametable 0 uses tile `$80` (`$0800`), nametable 1 uses tile `$00` (font area). Doom v2 restores `$0801` after its three-byte heartbeat so pre-render reads remain 66. Changing these relationships needs a hardware trace and an update to `doom/plan/01-constraints.md`.
+- Device bus ISR and SAVING-time converter paths must remain RAM-resident; core 1 performs no allocation after init and no bus ISR logging. Detailed ABI and evidence remain in `doom/plan/01-constraints.md` and `doom/plan/03-protocol-v2.md`.
