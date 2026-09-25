@@ -11,6 +11,143 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Plan changes: <documents touched>
 ```
 
+## P1-T4 -- NES pad input wired to Doom (2026-09-24)
+- The RP2350 bus now retains up to 31 consecutive pad-1 snapshots from v2
+  heartbeats. `I_StartTic()` drains them into the existing mapper and posts
+  Doom key events; short presses between tics survive. The host runner accepts
+  one numeric pad byte per tic via `--pads`, and `--warp` starts a level for
+  reproducible movement checks. Start opens the menu and A/B map to menu
+  accept/back while it is active.
+- Verified: GCC 13.2 RP2350 `doom_tiny_fcpico` build and flash layout check
+  passed (287724 firmware bytes, 236564 free before WHX). Host CTest 10/10;
+  engine host CTest 4/4, including an E1M1 scripted Up run whose player
+  position differs from an idle run. The merged input UF2 is
+  `/tmp/fcpico-hw-doom/fcpico_doom_input_whx.uf2` (8157 blocks), SHA-256
+  `82405a0823193a0d7ea7c6b8f5c053450e7d049399fa23d1d7f21973caf5fbd8`.
+- Left out: physical pad check (HR-4), pad 2, and context-specific automap
+  controls. The measured 35.6 ms conversion time still exceeds the plan's
+  performance target and needs a separate optimization pass.
+
+## HR-3 -- Doom visible on NES-001 (2026-09-24)
+- Hardware result: the user reports Doom playing back on screen with the
+  stream-fix/BOOTSEL image. Serial showed stable v2 count 15554 from heartbeat
+  20 through 385, converted frames rising from 6 to 120, and no additional
+  DMA stops or resyncs after the initial one of each. Timeouts and protocol
+  errors remained zero. The 2020 dropped frames accrued around startup and
+  did not grow during the captured steady interval.
+- Measurements: `conversion_us=35579/35614` average/max at 120 converted
+  frames. Image quality, longer stability, and physical controller input have
+  not yet been reported; details are in `HARDWARE-LOG.md`.
+
+## HR-3 -- USB serial BOOTSEL command in Doom firmware (2026-09-24)
+- The device main core now accepts `bootsel` followed by Enter on USB serial and
+  calls the RP2350 ROM USB-boot reset. It polls during the 30-second diagnostic
+  delay and at the end of each rendered frame, so later UF2 updates can start
+  with the cartridge installed.
+- Verified: `cmake --build /tmp/fcpico-review/device --target doom_tiny_fcpico -j 4`
+  passed with GCC 13.2; `flash_layout_check.py` passed with 286516 firmware bytes
+  and 237772 bytes free before the WHX address. `whx2uf2.py` produced the merged
+  candidate at `/tmp/fcpico-hw-doom/fcpico_doom_streamfix_delay_bootsel_whx.uf2`
+  (8153 blocks), SHA-256
+  `1221d341ac281b28cdd0712410aefa7b91b3fab99e7f0a15c76ad8e07e593127`.
+- Left out: physical USB command validation; HR-3 hardware validation is pending.
+
+## HR-3 / I-14 / I-15 -- pre-hardware review: stream selection and PPU address fixes (2026-09-24)
+- Findings: the Doom setup filled nametable 0 with tile `$00`, unlike the working
+  tutorial's `$80`. This targets `$0000` instead of the `$0800` stream port. The
+  previous Mesen mapper selected all `$0000-$0FFF` reads and discarded fetches at
+  specific cycles to force the measured count, hiding the setup error. Selecting
+  `(addr & $F800) == $0800`, with no cycle filtering, reproduces the existing
+  hardware failure exactly: black screen, 129 physical mailbox reads / count=128,
+  zero selected rendering reads, and one DMA stop per heartbeat. The same decode
+  naturally reproduces the tutorial's measured 66/64 cadence and existing S0 golden.
+- Second finding: correcting tiles alone yields count=15550 (62 pre-render reads),
+  still outside the v2 sync window. The three-byte heartbeat leaves the PPU's current
+  address at `$0803`; `$2005` updates temporary scroll state, so it does not undo this.
+  Restoring `$2006` to `$0801` after the packet restores the tutorial's pre-render phase,
+  producing count=15554 without changing any protocol/count constant.
+- Changes: setup uses tile `$80` in nametable 0, clears attributes and adjacent nametable
+  1 to zero, and the NMI restores `$0801` before control/scroll registers. ROM stamp is
+  `20DOOM-02-0002` so the fixed bank installs the change. Mesen now decodes addresses;
+  wider masks require diagnostic mode. The Doom runner checks every completed steady
+  heartbeat for the exact count and no new DMA stops, including mailbox-only failures.
+- Regression loop: `doom/.venv/bin/python -m pytest doom/tests/bootrom/test_doom_setup.py -q`
+  failed on the old assembled ROM (`background fetches ... [0]`), then passed after the
+  fix. The heartbeat-order test also failed before the address restore. With the rebuilt
+  mapper, `run_doom_frame.py ... --rom /tmp/fcpico-review/before/doom.nes` now fails with
+  `count=128, expected=15554, new DMA stops=1`; the intermediate tile-only run recorded
+  count=15550. Captures/logs are under `/tmp/fcpico-review/`.
+- Verified: pinned NESASM CE tutorial MD5 gate passed; unchanged fix-bank check passed.
+  `cmake --build build-host && ctest --test-dir build-host --output-on-failure` -> 10/10.
+  `doom/.venv/bin/python -m pytest doom/tests doom/sim/pioemu -q` -> 386 passed, 1 skipped.
+  New PIO tests confirm the raw diagnostic counts both selected and unselected `/RD`
+  pulses once, while the existing counter counts only selected pulses; both report N-1.
+  The earlier heartbeat sampling and ROM-tail changes remain covered by host tests.
+- Co-simulation: `DOTNET_ROOT=/home/josh/.dotnet doom/sim/mesen2/run_scenario.sh S0
+  --frames 180 --output /tmp/fcpico-review/S0` -> strict pass, count=15490, 15426 selected
+  rendering reads, unchanged screenshot golden. Real host DEMO1 frame 100 through D0/D1
+  -> correlation 0.9942, exact palette/attributes/mailbox. S1 tutorial -> `0002`, broken
+  Doom `0001` -> `0002`, and recovery `0002` -> tutorial each passed 3000-frame runs with
+  byte-exact final PRG and 30 stable final heartbeats. v2 count=15554, v1 count=15490;
+  no steady DMA stops. v2 NMI exits at scanline 255; py65 worst case 1614 critical /
+  2021 total cycles, below 1900 / 2200 limits.
+- Device: GCC 13.2 diagnostic and recovery builds passed; 286108 firmware flash bytes,
+  238180 bytes free before WHX, 36052 post-zone RAM bytes (minimum 24576). Merged UF2:
+  `/tmp/fcpico-hw-doom/fcpico_doom_streamfix_delay_whx.uf2`, 8151 blocks, SHA-256
+  `17f60cda5ea6905a9885bb39796156a66da7721c4f62906cd597f329b12127c7`.
+  Reconstructed UF2 payload contains the exact assembled `0002` ROM and byte-exact WHX.
+  It retains the 30-second delay, raw counter, heartbeat fix, ROM tail and double support.
+- Limits: the address decode is supported by tutorial code, measured cadence and exact
+  reproduction of the hardware symptom; this is not a new electrical measurement or a
+  hardware validation of the fixed ROM. Physical boot/display and dynamic frame sequences
+  remain unverified. The old raw-count-only request is superseded in `HARDWARE-REQUESTS.md`.
+
+## P2-T4 / P1-T6 -- S1 reflash co-simulation, stamp fix, first Doom hardware UF2 (2026-09-23)
+- What landed: the Mesen FC PICO mapper now emulates the cartridge PRG flash (JEDEC
+  unlock on A10-A0, 4 KiB sector erase, bit-clearing program, a short DQ7/DQ6/DQ3
+  status phase that the fix bank polls). The cart model keeps its own copy of the
+  served ROM (`FCPICO_SERVE_ROM` may name a different one) and, like the device,
+  defaults to protocol v2 when serving the Doom ROM. `run_doom_frame.py --serve-rom
+  --frames` runs S1 and byte-compares the console's final PRG with the served image.
+  `tools/whx2uf2.py` merges `doom1.whx` at `0x10080000` into the firmware UF2.
+- Bug found: the fix bank's `CHK_ROMVER` (`$F2B2` in `bootrom_fixr.bin`) reflashes after
+  five mismatches only if the cartridge stamp starts with `"20"`; otherwise it prints
+  PICO NOT FOUND and halts. The previous `DOOM-02-000001` stamp would never have
+  reflashed a tutorial console; S1 reproduces that (PRG unchanged, 4,703 bytes differ).
+  The stamp is now `20DOOM-02-0001`, a bootrom test pins the prefix, and plan 03's
+  claim that the check does not exist is corrected.
+- Verified: S1 `run_doom_frame.py frame000100.bin --rom tutorial rom.NES --serve-rom
+  doom.nes --frames 3000` -> console PRG equals `doom.nes`; correlation 0.9942;
+  16/16 palette, 64/64 attributes and 128-byte mailbox equal; 30 NMI exits on
+  scanline 255. Reverse recovery (Doom console, tutorial served) -> PRG equals
+  `rom.NES`. D0, D1 and strict S0 still pass. Host CTest 10/10; pytest 373 passed,
+  1 skipped; bootrom 24 passed; protocol and link checks clean. GCC 13.2 device ELF
+  uses 282,488 flash bytes (241,800 free before WHX). Merged UF2
+  `/tmp/fcpico-hw-doom/fcpico_doom_whx.uf2` (8,137 blocks) is HR-3.
+- Left out: timing of the real flash chip (the model completes erase/program
+  immediately after a short status phase); hardware boot, display and conversion
+  timing are HR-3. Dynamic multi-frame co-simulation, input and sound remain open.
+
+## I-13 / I-14 / I-15 -- v2 console ROM and fixed-frame D1 gate (2026-09-23)
+- What landed: a display-first 32 KB Doom v2 NES ROM with the unchanged fix
+  bank, 128-byte mailbox NMI, per-frame palette and attribute writes, explicit
+  controller heartbeat, and 15-pair APU replay. Native NESASM CE at commit
+  `6fc41cda` builds it; normalization of two NES 2.0 header bytes makes a
+  tutorial reassembly reproduce MD5 `b6cd675342b6c8ad79e537e2c9860579`.
+  The device build now embeds the v2 ROM, and a dedicated boot-ROM workflow
+  assembles it twice, checks the fix bank, and runs the py65 tests.
+- Verified: worst-case py65 NMI uses 1602 critical / 2009 total cycles
+  (limits 1900 / 2200), 129 `$2007` reads, and all 15 APU writes. D1 Mesen
+  frame 100 has 0.9942 visible correlation; 16/16 palette, 64/64 attributes,
+  and the normalized 128-byte mailbox agree. 30 post-startup NMI exits occur
+  on scanline 255. New RP2350 ELF/UF2 links with the v2 ROM, uses 282,488
+  firmware bytes (241,800 before WHX), and leaves 36,368 post-zone RAM bytes.
+- Left out: S1 erase/reflash cannot be measured with the current Mesen mapper,
+  which does not emulate PRG flash writes. D1 replays a fixed frame; dynamic
+  frame sequences, pad 2, v1 bulk data mode in the new ROM, hardware boot,
+  conversion timing and sound production remain open. Do not flash this UF2
+  without an explicit hardware reflash procedure and recovery plan.
+
 ## I-17 / P1-T3 -- Doom picture in Mesen, device publication candidate (2026-09-23)
 - What landed: D0 replays an actual DEMO1 frame through the tutorial-ROM Mesen PPU.
   The screenshot agrees with the independent PPU reconstruction, and console

@@ -144,10 +144,14 @@ engine or ARM compiler. The fork is `https://github.com/grebz-dev/MesenCE-FC-PIC
   `Core/NES/Mappers/Homebrew/FcPico.h`, enabled by the optional `FCPICO` build flag.
   Registered under private NES 2.0 mapper number 4093; the `.nes` header is patched
   by `tools/nes/set_mapper.py` for co-sim only -- the console image stays mapper 0.
-- `EnableCustomVramRead() -> true`; `MapperReadVram(addr, type)`: for `(addr & cs1_mask) == 0`
-  (initial hypothesis `< 0x1000`; `0xE000` mask also selectable, neither calibrated) and rendering/CPU reads only (not debugger
+- `EnableCustomVramRead() -> true`; `MapperReadVram(addr, type)`: for `(addr & 0xF800) == 0x0800`
+  and rendering/CPU reads only (not debugger
   reads), return `fcpico_cart_ppu_read()`; else fall through to the base mapper's CHR RAM.
   `MapperWriteVram(addr, value)`: same predicate -> `fcpico_cart_ppu_write(value)`.
+  The tutorial's tile `$80`/`$00` nametables produce trace 6's measured 66/64 cadence
+  naturally. Never drop fetches by scanline/cycle to force the expected count. Wider
+  `$F000`/`$E000` masks are diagnostic comparisons only. Doom display gates assert each
+  post-startup heartbeat's count and DMA-stop counter, including mailbox-only failures.
 - The cart model (`sim/cartmodel/`, C API) wraps the `fcbus` host backend: reads pull from the
   current stream buffer and count; writes go through the rx dispatcher; the heartbeat runs the
   ISR-equivalent synchronously on the emulator thread (swap buffers, count check); the engine
@@ -253,20 +257,20 @@ unless needed.
 
 ```cpp
 class FcPico : public BaseMapper {
-    fcpico_cart_t *_cart; uint16_t _cs1_mask = 0xE000;   // pattern space: (addr & mask) == 0
+    fcpico_cart_t *_cart;
     uint16_t GetPrgPageSize() override { return 0x8000; }
     uint16_t GetChrPageSize() override { return 0x2000; }
-    uint32_t GetChrRamSize() override { return 0x2000; } // never read: every pattern fetch is intercepted
+    uint32_t GetChrRamSize() override { return 0x2000; } // local font outside the stream window
     bool EnableCustomVramRead() override { return true; }
     void InitMapper() override { SelectPrgPage(0, 0); SelectChrPage(0, 0);
                                  _cart = fcpico_cart_create(getenv("FCPICO_CART_MODE"), getenv("FCPICO_WHX")); }
     uint8_t MapperReadVram(uint16_t addr, MemoryOperationType type) override {
-        if ((addr & _cs1_mask) == 0 && IsRealPpuRead(type))       // rendering fetches and CPU $2007 reads, not debugger peeks
+        if ((addr & 0xF800) == 0x0800 && IsRealPpuRead(type))     // rendering fetches and CPU $2007 reads, not debugger peeks
             return fcpico_cart_ppu_read(_cart);
         return InternalReadVram(addr);                             // nametables/attributes from CIRAM as on hardware
     }
     void MapperWriteVram(uint16_t addr, uint8_t value) override {
-        if ((addr & _cs1_mask) == 0) fcpico_cart_ppu_write(_cart, value);   // $2007 writes to the port
+        if ((addr & 0xF800) == 0x0800) fcpico_cart_ppu_write(_cart, value); // $2007 writes to the port
         else InternalWriteVram(addr, value);
     }
 };
@@ -281,8 +285,9 @@ The S0 runner compares actual traces and screenshots with and without repeated d
 
 `fcpico_cart_ppu_write()` runs the `fcbus` dispatcher; on a heartbeat it performs the
 ISR-equivalent synchronously (count check, buffer swap) before returning, so the next
-`ppu_read` already comes from the new stream. `_cs1_mask` becomes a runtime parameter once
-P0-T10 has established the real decode. The `.nes` image is `doom.nes` with its header's mapper
+`ppu_read` already comes from the new stream. The wider runtime masks are diagnostic only;
+the default address decode is supported by tutorial source and the measured cadence (01).
+The `.nes` image is `doom.nes` with its header's mapper
 field rewritten to the private number (`tools/nes/set_mapper.py`); the PRG bytes are untouched.
 
 ## GitHub Actions
@@ -297,3 +302,8 @@ Templates in `doom/ci/workflows/`, activated in P0-T12 by copying to `.github/wo
 | `doom-docs.yml` | push touching `docs/**`, `doom/**/*.md` | Doxygen with the repo's zero-warning rule, artifact `docs/html` |
 
 Pinned action versions and toolchain tags are in the templates; bump deliberately.
+
+## Changelog
+
+- 2026-09-24: replaced cycle-filtered stream selection with the tutorial's address decode
+  and required steady heartbeat/count checks in the Doom display gate.

@@ -72,7 +72,7 @@ class PpuBus:
         prerender_reads: int = 66,
         mailbox_len: int = protocol.FC_COM_BUF_SIZE_V1,
         counter_report_bias: int = protocol.PPU_COUNTER_REPORT_BIAS,
-        cs1_mask: int = 0xF000,
+        cs1_mask: int = 0xF800,
         bytes_per_line: int | None = None,
     ):
         if mailbox_len not in (protocol.FC_COM_BUF_SIZE_V1, protocol.FC_COM_BUF_SIZE_V2):

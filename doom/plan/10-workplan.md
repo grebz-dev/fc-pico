@@ -24,8 +24,13 @@ deliverables, but the actionable order is now:
 4. Resume the remaining audio assets and other downstream work after the display path has a
    passing co-simulation gate. I-04/P4-T1 is already complete and needs no further core work.
 
-The remaining hardware visual check for the corrected stream is HR-2. The next software
-gate is an engine frame source for Mesen S2.
+The remaining hardware visual check for the corrected stream is HR-2. A
+fixed-frame Doom stream now passes D0 (tutorial v1) and D1 (Doom v2) Mesen
+gates, including v2 palette/attribute RAM and NMI exit timing. S1 now models the
+fix bank's flash erase/reprogram and passes in both directions (tutorial -> Doom,
+Doom -> tutorial); it found and fixed a stamp that would have halted every
+tutorial console at PICO NOT FOUND. The first Doom hardware boot is HR-3; dynamic
+frame-sequence co-simulation is the next software gate.
 
 ---
 
@@ -56,7 +61,7 @@ has actually landed on the branch.
 | P4-T3 (tools part) | `tools/audio/apus.py`, `dpcm.py`, `sfx2dpcm.py`, `dpcm_pack.py` **done with tests**; remaining conversion tooling is I-05 | `pytest tests/audio` |
 | P1-T2 (reference part) | **done** (I-03); device converter remains I-17 | reference pipeline tests; `../PROGRESS.md` |
 | P1-T2 / P2-T5 (host converter part) | partial: C conversion, presets, table generation and flash palettes match the Python reference; engine frames and device integration remain I-17 | 9/9 host and sanitizer C tests; Python differential tests; `../PROGRESS.md` |
-| P1-T4 / P3-T1 (mapper part) | **done** (I-07); engine adapter and menu mappings remain | `ctest` target `test_mapper` |
+| P1-T4 / P3-T1 (input) | P1-T4 software **done**: mapper, RP2350 adapter, and host `--pads` movement test; physical pad validation is HR-4. P3-T1 context mappings remain | `test_mapper`, `engine_input_walk`; `../PROGRESS.md` |
 | everything else | not started; see `../issues/README.md` for the assignable subset | -- |
 
 Verification on 2026-09-20 (full evidence and environment limits in `../PROGRESS.md`):

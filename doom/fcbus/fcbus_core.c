@@ -373,6 +373,29 @@ void fcbus_core_set_read_count(fcbus_core_t *c, uint32_t count) {
     c->pending_read_count = count;
 }
 
+bool fcbus_core_rx_will_heartbeat(const fcbus_core_t *c, uint8_t b) {
+    if (c->rxwait == FCBUS_RXW_KEY_PAD2) {
+        return true;
+    }
+    if (c->rxwait != FCBUS_RXW_NONE || c->proto == FCBUS_PROTO_V2) {
+        return false;
+    }
+    switch (b) {
+    case FP_COM_VER:
+    case FP_COM_ROM:
+    case FP_COM_LOG:
+    case FP_COM_DRQ:
+    case FP_COM_DLD:
+    case FP_COM_RST:
+    case FP_COM_INI:
+    case FP_COM_KEY:
+    case FP_COM_HELLO:
+        return false;
+    default:
+        return true;
+    }
+}
+
 static void do_heartbeat_from_rx(fcbus_core_t *c) {
     (void)fcbus_core_heartbeat(c, c->pending_read_count);
 }
@@ -389,7 +412,14 @@ void fcbus_core_rx_byte(fcbus_core_t *c, uint8_t b) {
     switch (c->rxwait) {
     case FCBUS_RXW_ROM_PAGE: {
         uint32_t off = ((uint32_t)(b & 0x7F)) << 8;
-        push_action(c, FCBUS_ACT_STREAM_RESPONSE, 0, c->rom_image + off, 256);
+        /* ROM_UPDATE reads $2007 once to fill the PPU buffer, then once for
+         * each of 256 programmed bytes. A 256-byte DMA stalls on that last
+         * fetch and can consume the next page's first byte while recovering.
+         * Keep one extra word queued, as the tutorial's long ROM DMA does. */
+        memcpy(c->rom_scratch, c->rom_image + off, 256);
+        memset(c->rom_scratch + 256, 0xFF, 4);
+        push_action(c, FCBUS_ACT_STREAM_RESPONSE, 0, c->rom_scratch,
+                    (uint16_t)sizeof c->rom_scratch);
         c->rxwait = FCBUS_RXW_NONE;
         return;
     }

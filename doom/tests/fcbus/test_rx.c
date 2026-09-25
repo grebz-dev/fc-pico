@@ -129,6 +129,27 @@ static void test_key_packet(void) {
     CHECK_EQ(fcbus_core_stats(&g_c)->frames, frames_before + 2);
 }
 
+static void test_read_counter_sampled_only_on_heartbeat(void) {
+    init_core(FCBUS_PROTO_V2);
+    CHECK(!fcbus_core_rx_will_heartbeat(&g_c, FP_COM_KEY));
+    fcbus_core_rx_byte(&g_c, FP_COM_KEY);
+    CHECK(!fcbus_core_rx_will_heartbeat(&g_c, KEY_A));
+    fcbus_core_rx_byte(&g_c, KEY_A);
+    CHECK(fcbus_core_rx_will_heartbeat(&g_c, FP_COM_VER));
+    fcbus_core_set_read_count(&g_c, PPU_COUNT_VAL_V2);
+    fcbus_core_rx_byte(&g_c, FP_COM_VER);
+    CHECK_EQ(fcbus_core_stats(&g_c)->last_count, PPU_COUNT_VAL_V2);
+    CHECK_EQ(fcbus_core_stats(&g_c)->dma_stops, 0);
+
+    init_core(FCBUS_PROTO_V1);
+    CHECK(!fcbus_core_rx_will_heartbeat(&g_c, FP_COM_INI));
+    CHECK(fcbus_core_rx_will_heartbeat(&g_c, KEY_UP));
+    fcbus_core_rx_byte(&g_c, FP_COM_INI);
+    CHECK(!fcbus_core_rx_will_heartbeat(&g_c, KEY_UP));
+    fcbus_core_rx_byte(&g_c, 0);
+    CHECK(fcbus_core_rx_will_heartbeat(&g_c, KEY_UP));
+}
+
 static void test_protocol_identification(void) {
     /* A bare byte identifies a v1 console. */
     init_core(FCBUS_PROTO_UNKNOWN);
@@ -214,9 +235,14 @@ static void test_rom_page_response(void) {
         fcbus_action_t act;
         CHECK(fcbus_core_pop_action(&g_c, &act));
         CHECK_EQ(act.kind, FCBUS_ACT_STREAM_RESPONSE);
-        CHECK_EQ(act.len, 256);
+        /* ROM_UPDATE makes one dummy $2007 fetch plus 256 programming fetches.
+         * DMA must still have a word queued after the page's last data byte. */
+        CHECK_EQ(act.len, 260);
         CHECK_EQ(act.data[0], pages[i] & 0x7F);
-        CHECK(act.data == g_rom + ((pages[i] & 0x7F) << 8));
+        CHECK_MEM(act.data, g_rom + ((pages[i] & 0x7F) << 8), 256);
+        if (act.len >= 260) {
+            for (int tail = 256; tail < 260; tail++) CHECK_EQ(act.data[tail], 0xFF);
+        }
     }
 }
 
@@ -297,6 +323,7 @@ int main(void) {
     test_every_byte_value_v1();
     test_every_byte_value_v2();
     test_key_packet();
+    test_read_counter_sampled_only_on_heartbeat();
     test_protocol_identification();
     test_opcode_arguments_are_not_reinterpreted();
     test_version_response();

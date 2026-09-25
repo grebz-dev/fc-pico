@@ -155,6 +155,19 @@ skip_ppu_data2:
 	wait 1 gpio PI_RD_BIT
 .wrap
 
+; Diagnostic counter for every PPU /RD strobe, including accesses where CS1 is
+; high. Comparing it with fcppu_rna distinguishes absent rendering reads from
+; reads rejected by the cartridge-select predicate.
+.program fcppu_raw_count
+	mov  x, ~null
+.wrap_target
+	wait 0 gpio PI_RD_BIT
+	mov  isr, !x
+	jmp  x-- raw_count_done
+raw_count_done:
+	wait 1 gpio PI_RD_BIT
+.wrap
+
 % c-sdk {
 
 

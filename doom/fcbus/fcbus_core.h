@@ -240,9 +240,9 @@ typedef struct fcbus_core {
     fcbus_stats_t stats;
 
     /* --- scratch response buffers, referenced by queued FCBUS_ACT_STREAM_RESPONSE
-     *     actions; sized for the largest reply this core ever produces on its own
-     *     (FP_COM_ROM pages point straight into rom_image and need no scratch space) --- */
+     *     actions --- */
     uint8_t ver_scratch[8 + 16];  /**< Sync word + boot-ROM stamp (ver_dma()). */
+    uint8_t rom_scratch[256 + 4]; /**< ROM page plus one DMA word for the final dummy fetch. */
     uint8_t drq_header[8];        /**< drq_ret()'s two little-endian words. */
     uint8_t data_payload[256];    /**< Current data-mode payload, zero-padded to a page. */
 
@@ -327,6 +327,11 @@ void fcbus_core_palette(fcbus_core_t *c, const uint8_t pal[16]);
  *  mirroring how rp_system::jobRcvCom()'s default case samples SM_TRCNT synchronously,
  *  inside the very interrupt that received the byte. */
 void fcbus_core_set_read_count(fcbus_core_t *c, uint32_t count);
+
+/** True only for a received byte that will complete a frame heartbeat. The device
+ *  must sample and reset its PIO read counter once per frame, immediately before
+ *  dispatching this byte; sampling packet headers or arguments loses the count. */
+bool fcbus_core_rx_will_heartbeat(const fcbus_core_t *c, uint8_t b);
 
 /** Dispatches one byte received from the 6502. See doom/plan/03-protocol-v2.md,
  *  "Firmware-side state machine", for the full rule set this implements. */
