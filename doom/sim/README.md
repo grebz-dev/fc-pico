@@ -9,4 +9,4 @@
 | `cartmodel/` | L6 | C API wrapping the host backend + test pattern or engine, linked into the Mesen2 mapper |
 | `host_shim/` | L2 | pthread `multicore`/`sem` shims so the engine's host build needs no SDL |
 
-See `../plan/09-testing-ci.md`.
+See [`../plan/09-testing-ci.md`](../plan/09-testing-ci.md).

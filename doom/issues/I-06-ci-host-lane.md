@@ -6,7 +6,7 @@
 | **Lane** | A -- host only, actionable now |
 | **Size** | M |
 | **Depends on** | none |
-| **Work plan task** | P0-T12 |
+| **Work plan task** | [P0-T12](../plan/10-workplan.md#p0-t12-activate-ci) |
 
 ## Goal
 
@@ -17,12 +17,12 @@ remaining work can ever be verified, and the host lane is the part that can go g
 
 ## Specification
 
-`plan/09-testing-ci.md`, the GitHub Actions table. The existing templates in
+[the GitHub Actions section of `plan/09-testing-ci.md`](../plan/09-testing-ci.md#github-actions). The existing templates in
 `ci/workflows/` assume targets that do not exist yet, which is why none of them is active.
 
 ## Owns (create or modify only these)
 
-`.github/workflows/doom-host.yml` (new), `ci/workflows/doom-host.yml` (new), `ci/README.md` (update)
+`.github/workflows/doom-host.yml` (new), `ci/workflows/doom-host.yml` (new), [`ci/README.md`](../ci/README.md) (update)
 
 ## Must not touch
 
@@ -39,7 +39,7 @@ and any file another open issue lists under **Owns**.
    two so they cannot drift (the existing templates already do this).
 3. Pin action versions and the Python version; cache pip.
 4. Split the other templates' jobs out of `doom-build.yml` so that activating the device lane
-   later (I-08) is a copy, not a rewrite. Say in `ci/README.md` which lanes are active and
+   later ([I-08](I-08-device-superbuild.md)) is a copy, not a rewrite. Say in [`ci/README.md`](../ci/README.md) which lanes are active and
    which are waiting on which issue.
 
 ## Acceptance

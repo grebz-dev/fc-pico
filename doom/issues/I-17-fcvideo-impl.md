@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | A for host conversion; B for device integration |
 | **Size** | L |
-| **Depends on** | I-03; I-16 only for engine frames and device integration |
-| **Work plan task** | P1-T2 / P1-T3 / P2-T5 |
+| **Depends on** | [I-03](I-03-fcvideo-ref-tests.md); [I-16](I-16-stage-a-composition.md) only for engine frames and device integration |
+| **Work plan task** | [P1-T2](../plan/10-workplan.md#p1-t2-stages-b-and-d-grey-lut-letterbox) / [P1-T3](../plan/10-workplan.md#p1-t3-device-integration-cores-irqs-semaphores) / [P2-T5](../plan/10-workplan.md#p2-t5-stages-c-and-e) |
 
 ## Goal
 
@@ -21,7 +21,7 @@ fixed frame now passes Mesen D0 at the visible-frame and console palette/attribu
 RAM boundary. The RP2350 candidate converts composed scanlines and publishes to
 `fcbus`; its ELF/UF2 passes flash and RAM headroom checks, but hardware boot and
 conversion timing are unmeasured. D0 uses tutorial v1; Doom-ROM S2 and v2 NMI
-timing remain open. See `../sim/mesen2/DOOM-FRAME.md`.
+timing remain open. See [`../sim/mesen2/DOOM-FRAME.md`](../sim/mesen2/DOOM-FRAME.md).
 
 The host core under `port/video/` decimates and letterboxes 320x200 frames, chooses
 attributes with hysteresis, dithers through supplied `err`/`lut` tables, packs the 32-word
@@ -35,7 +35,7 @@ the 32-word selected-read schedule and a test-pattern picture golden against tra
 
 ## Specification
 
-`plan/04-video.md` stages B to E; `tools/fcvideo_ref.py` is the reference this must
+[`plan/04-video.md` stages B](../plan/04-video.md#stage-b----horizontal-decimation-320---256) to [E](../plan/04-video.md#stage-e----nes-palette-sets); `tools/fcvideo_ref.py` is the reference this must
 agree with, byte for byte, on the same input.
 
 ## Owns (create or modify only these)
@@ -51,12 +51,12 @@ and any file another open issue lists under **Owns**.
 ## Steps
 
 1. Implement stages B to E in C, with the same table layout the reference uses.
-2. Test by differential comparison: start with synthetic frames; add dumps from I-16 when its
+2. Test by differential comparison: start with synthetic frames; add dumps from [I-16](I-16-stage-a-composition.md) when its
    8-bit composition exists. For a corpus of frames,
    the C output must equal `tools/fcvideo_ref.py`'s output exactly.
 3. Add the palette presets from the plan, including PiPU's measured set as preset C.
 4. Wire `fcvideo_frame_begin/line_sink/frame_end` to `fcbus_core_publish()` and measure the
-   conversion time; report it through the CLI from I-10.
+   conversion time; report it through the CLI from [I-10](I-10-testpattern-firmware.md).
 5. Validate the resulting Doom stream through Mesen S2 once engine frames are available.
    Host reference equality is the acceptance gate for the independent first slice; an
    open-bus S0 screenshot is not pixel evidence.

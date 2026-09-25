@@ -1,8 +1,8 @@
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 # NTSC hardware trace fixture
 
-This directory holds the real-console evidence requested by HR-1 in
-`doom/HARDWARE-REQUESTS.md`.  Keep serial output verbatim so the decoder and future
+This directory holds the real-console evidence requested by [HR-1](../../../HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9) in
+[`doom/HARDWARE-REQUESTS.md`](../../../HARDWARE-REQUESTS.md).  Keep serial output verbatim so the decoder and future
 co-simulation changes can be checked against the original capture.
 
 Expected files:

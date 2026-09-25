@@ -36,7 +36,7 @@ core 1 becomes the "video card".
 | `bootrom` | fc-pico `doom/bootrom/` | 6502 asm (nesasm 2.51+autozp) | Erasable-bank program for the console: v2 NMI, controller packet, data mode, DPCM sample bank, fixed entry points. |
 | `port` | fc-pico `doom/port/` | C + CMake | `main()`, clock/voltage setup, flash layout header, resource archive (boot ROM image, music, SFX), watchdog, serial debug CLI. |
 | `tools` | fc-pico `doom/tools/` | Python 3 | `ppu_decode.py` (stream -> PNG), `mus2apu.py`, `sfx2apu.py`, `dpcm_pack.py`, `flash_layout_check.py`, `gen_protocol.py` (one header -> 6502 `.inc` + Python constants), `update_goldens.py`. |
-| `sim` | fc-pico `doom/sim/` | C, Python, C++ (Mesen2 mapper), TypeScript/Renode scripts | See 09. |
+| `sim` | fc-pico `doom/sim/` | C, Python, C++ (Mesen2 mapper), TypeScript/Renode scripts | See [09](09-testing-ci.md). |
 
 ## One frame, end to end
 
@@ -58,7 +58,7 @@ core 1 becomes the "video card".
    choose a sub-palette per 16x16 block, dither and pack into the *back* stream buffer,
    write the attribute table and palette into the *back* mailbox, then mark the back buffer
    as "display next". If no new frame, do nothing: the DMA keeps streaming the same buffer.
-   Elapsed: 3-6 ms estimated; measured in P1-T8.
+   Elapsed: 3-6 ms estimated; measured in [P1-T8](10-workplan.md#p1-t8-hardware-session-m1-hw).
 4. **Game logic, core 0.** Unchanged RP2040 Doom loop: `TryRunTics()`, `D_Display()`,
    `pd_begin_frame()`/`pd_end_frame()`; the input mapper feeds `D_PostEvent` from the latched
    controller bytes once per tic; `I_UpdateSound()` pumps the APU sequencer.
@@ -144,7 +144,7 @@ lives in the fix bank.
 
 ## API sketches
 
-The seams between modules, as C prototypes. These are the contracts the tasks in 10
+The seams between modules, as C prototypes. These are the contracts the tasks in [10](10-workplan.md)
 implement; names are binding, signatures may grow.
 
 @note `fcbus` is no longer a sketch: it is implemented and tested (`fcbus/fcbus_core.h`,

@@ -6,7 +6,7 @@
 | **Lane** | A -- host only, actionable now |
 | **Size** | M |
 | **Depends on** | none |
-| **Work plan task** | P1-T4 / P3-T1 |
+| **Work plan task** | [P1-T4](../plan/10-workplan.md#p1-t4-input-v1-subset) / [P3-T1](../plan/10-workplan.md#p3-t1-full-input-mapping----spec-05-size-m-depends-p2-t3-acceptance-mapper-unit-tests-menus-navigable-on-host-via---pads) |
 
 ## Goal
 
@@ -16,7 +16,7 @@ not integration, so it can be settled now and simply called from the engine late
 
 ## Specification
 
-`plan/05-input.md` in full.
+[`plan/05-input.md`](../plan/05-input.md) in full.
 
 ## Owns (create or modify only these)
 

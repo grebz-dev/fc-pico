@@ -4,7 +4,7 @@
 
 pytest tests for the four PIO programs in `doom/fcbus/fcppu.pio` (`fcppu_w`, `fcppu_r`,
 `fcppu_dir`, `fcppu_rna`), using `rp2040-pio-emulator` (`pioemu` 0.88.0) to assemble and run one
-state machine at a time. See `doom/plan/09-testing-ci.md`, section "L4", for where this sits in
+state machine at a time. See [`doom/plan/09-testing-ci.md`](../../plan/09-testing-ci.md), section "L4", for where this sits in
 the overall test pyramid, and `doom/fcbus/fcppu.pio` itself for what each program does.
 
 Every test assembles the **real** `fcbus/fcppu.pio` through `conftest.py`'s `load_program()` --

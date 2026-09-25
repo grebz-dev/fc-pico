@@ -1,6 +1,6 @@
 # 03 -- Protocol v2
 
-The FC PICO wire protocol (`docs/pages/protocol.md`) is kept as **v1** and used unchanged for
+The FC PICO wire protocol ([`docs/pages/protocol.md`](../../docs/pages/protocol.md)) is kept as **v1** and used unchanged for
 milestone M1. **v2** is a superset introduced with the Doom boot ROM for M2. The firmware speaks
 both; which one is in use is decided per console by the boot ROM that is actually running there,
 and the firmware learns it from the first controller message it receives.
@@ -52,7 +52,7 @@ per frame must be a constant both sides agree on. v2 changes that constant once 
 15554) and then holds it; what it must not do is vary from frame to frame. A variable-length mailbox (skip the
 attribute block when unchanged) is a documented v2.1 option -- the cartridge always knows what
 it sent, so it could adjust the expected count per frame -- but it is not needed to fit the
-NMI budget (see 07) and it complicates the model.
+NMI budget (see [07](07-bootrom.md)) and it complicates the model.
 
 ### Console -> cartridge: explicit controller packet
 

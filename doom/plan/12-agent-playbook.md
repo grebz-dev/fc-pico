@@ -5,12 +5,12 @@ following the same rules will not go wrong either.
 
 ## Before the first task
 
-1. Read `doom/README.md`, then 00, 01, 02 fully. Skim 03-09. Open 10 and find the first task
-   whose dependencies are done (tasks record completion in `doom/PROGRESS.md`, see below).
-2. Read the FC PICO documentation the plan was derived from: `README.md`,
-   `docs/pages/architecture.md`, `nes-doom-technique.md`, `protocol.md`, `hardware.md`,
-   `graphics.md`, `boot-and-reflash.md`, `build-pipeline.md`. They are short and precise.
-3. Read `doom/rp2040-doom/README.md` and `FCPICO-PORT.md`, then `src/pico/i_video.c`,
+1. Read [`doom/README.md`](../README.md), then 00, 01, 02 fully. Skim 03-09. Open 10 and find the first task
+   whose dependencies are done (tasks record completion in [`doom/PROGRESS.md`](../PROGRESS.md), see below).
+2. Read the FC PICO documentation the plan was derived from: [`README.md`](../../README.md),
+   [`docs/pages/architecture.md`](../../docs/pages/architecture.md), [`nes-doom-technique.md`](../../docs/pages/nes-doom-technique.md), [`protocol.md`](../../docs/pages/protocol.md), [`hardware.md`](../../docs/pages/hardware.md),
+   [`graphics.md`](../../docs/pages/graphics.md), [`boot-and-reflash.md`](../../docs/pages/boot-and-reflash.md), [`build-pipeline.md`](../../docs/pages/build-pipeline.md). They are short and precise.
+3. Read [`doom/rp2040-doom/README.md`](../rp2040-doom/README.md) and [`FCPICO-PORT.md`](../rp2040-doom/FCPICO-PORT.md), then `src/pico/i_video.c`,
    `src/pico/i_system.c`, `src/pd_render.cpp` (at least `pd_end_frame`, `pd_core1_loop`),
    `src/CMakeLists.txt`.
 4. Check current tools and dependencies; historical sandbox limitations are not permanent.
@@ -19,7 +19,7 @@ following the same rules will not go wrong either.
 
 ## The loop
 
-For each task in 10:
+For each task in [10](10-workplan.md):
 
 1. **Restate** the task's acceptance test in your own words at the top of your working notes.
    If you cannot state how it will be verified by a command, the task is not ready: fix the
@@ -28,12 +28,12 @@ For each task in 10:
    start from memory of how "Doom ports usually work"; this one is unusual.
 3. **Implement** in the smallest slices that keep every build green. Commit each slice.
 4. **Verify** with the task's acceptance command(s). Paste the command and the relevant
-   output into the commit message body or `PROGRESS.md`. Never mark a task done on the
+   output into the commit message body or [`PROGRESS.md`](../PROGRESS.md). Never mark a task done on the
    strength of "should work".
-5. **Record** in `doom/PROGRESS.md`: task ID, commit range, what was verified and how, what
+5. **Record** in [`doom/PROGRESS.md`](../PROGRESS.md): task ID, commit range, what was verified and how, what
    was left out and why, measurements (fps, cycles, bytes) with the command that produced them.
 6. If the task needs hardware you do not have, do every part that does not, then write a
-   precise request in `doom/HARDWARE-REQUESTS.md` (what to flash, what to run, what to record,
+   precise request in [`doom/HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md) (what to flash, what to run, what to record,
    where to put the result) and move to the next task whose dependencies are satisfied.
 
 ## Hard rules
@@ -48,7 +48,7 @@ For each task in 10:
   second place, stop and include the header.
 - **No allocation on core 1 after init**, no `printf` from the bus ISR, nothing reachable from
   the ISR or the SAVING-time converter may live in flash. The engine's `hard_assert` and the
-  `__not_in_flash_func` audit in P1-T3 enforce this; do not weaken them.
+  `__not_in_flash_func` audit in [P1-T3](10-workplan.md#p1-t3-device-integration-cores-irqs-semaphores) enforce this; do not weaken them.
 - **Preserve the measured PPU accounting.** The console selects 66 pre-render reads and
   64 reads per visible line; `fcppu_rna` reports the final read's zero-based index.
   `VRAM_LINE_WORDS=34` describes the original converter's batch size, while the selected
@@ -71,8 +71,8 @@ For each task in 10:
   `i_*_fcpico.c` files derived from `src/pico/i_*.c` are GPLv2). Say which in the header.
 - **Commit hygiene**: imperative subject <= 72 chars, body says what was verified. Tag the task
   ID (`P1-T2`). No model names or generated-by lines in code or docs pushed to the repository.
-- **Ask a human** only for the items in 11 "Decisions that need a human". Everything else,
-  decide, record the decision in `PROGRESS.md`, and move on.
+- **Ask a human** only for the items in [11](11-risks.md) "Decisions that need a human". Everything else,
+  decide, record the decision in [`PROGRESS.md`](../PROGRESS.md), and move on.
 
 ## Changing the plan
 
@@ -111,15 +111,15 @@ doom/sim/mesen2/run_scenario.sh S2
 
 | File | Purpose |
 |------|---------|
-| `doom/PROGRESS.md` | task-by-task log of what was done and verified; the source for milestone gates |
-| `doom/HARDWARE-REQUESTS.md` | precise, self-contained requests for a human with the console; each with a "result" slot |
-| `doom/HARDWARE-LOG.md` | filled by the human; the agent reads it and updates 01 and `PROGRESS.md` |
-| `doom/LICENSES.md` | component licences |
+| [`doom/PROGRESS.md`](../PROGRESS.md) | task-by-task log of what was done and verified; the source for milestone gates |
+| [`doom/HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md) | precise, self-contained requests for a human with the console; each with a "result" slot |
+| [`doom/HARDWARE-LOG.md`](../HARDWARE-LOG.md) | filled by the human; the agent reads it and updates 01 and [`PROGRESS.md`](../PROGRESS.md) |
+| [`doom/LICENSES.md`](../LICENSES.md) | component licences |
 
 ## What good looks like
 
 A reviewer opening any commit on this branch can see: the task ID, the spec it implements, the
-command that proves it, and its output. A reviewer opening `PROGRESS.md` can see exactly which
+command that proves it, and its output. A reviewer opening [`PROGRESS.md`](../PROGRESS.md) can see exactly which
 milestone gate is next and what blocks it. A reviewer opening any document in `plan/` finds it
 consistent with the code.
 

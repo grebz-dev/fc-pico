@@ -6,7 +6,7 @@
 | **Lane** | A -- host only, actionable now |
 | **Size** | L |
 | **Depends on** | none |
-| **Work plan task** | P4-T1 |
+| **Work plan task** | [P4-T1](../plan/10-workplan.md#p4-t1-fcapu-sequencer-core----spec-06-size-l-depends-p0-t4-acceptance-testsapu) |
 
 ## Goal
 
@@ -15,8 +15,8 @@ logic over a byte cursor, so it can be finished and proven without any hardware.
 
 ## Specification
 
-`plan/06-audio.md` in full, especially "Decision D5", the arbitration order, the
-15-pair cap (`APU_PAIRS_MAX_V2`) and the note-retrigger rule. The `.apus` reader already
+[`plan/06-audio.md`](../plan/06-audio.md) in full, especially ["Decision D5"](../plan/06-audio.md#decision-d5-a-register-sequencer-not-a-6502-emulator), [the arbitration order](../plan/06-audio.md#arbitration-per-frame-in-this-order-until-15-pairs), the
+15-pair cap (`APU_PAIRS_MAX_V2`) and [the note-retrigger rule](../plan/06-audio.md#note-retrigger-rule-from-fc-pico-gb). The `.apus` reader already
 exists in `tools/audio/apus.py` and is tested; this is the C side that plays those streams.
 
 ## Owns (create or modify only these)
@@ -32,7 +32,7 @@ and any file another open issue lists under **Owns**.
 
 ## Steps
 
-1. Implement `fcapu` per the API sketch in `plan/02-architecture.md`: init, music play/stop/
+1. Implement `fcapu` per the API sketch in [`plan/02-architecture.md`](../plan/02-architecture.md): init, music play/stop/
    pause/volume, sfx start/stop/playing, and `fcapu_pump()` which emits at most
    `APU_PAIRS_MAX_V2` pairs per frame through a caller-supplied write callback (do not call
    into `fcbus` directly -- take a function pointer, so the tests can capture the writes).

@@ -2,19 +2,19 @@
 
 Numbers the design has to respect. Each row says where it comes from. Rows marked
 **(inferred)** or **(empirical)** must be confirmed by the Phase 0 hardware session
-(see 10-workplan, P0-T9) and this document updated with the measured value.
+(see [10-workplan](10-workplan.md), [P0-T9](10-workplan.md#p0-t9-hardware-trace-capture-hw)) and this document updated with the measured value.
 
 ## The cartridge
 
 | Item | Value | Source |
 |------|-------|--------|
-| MCU | RP2350 (Pico 2 class): 2x Cortex-M33, 150 MHz default, 520 KB SRAM in 10 banks, 3 PIO blocks (12 state machines), 16 DMA channels, 2x 4 KB scratch SRAM | FC PICO manual via `docs/pages/hardware.md`; RP2350 datasheet |
+| MCU | RP2350 (Pico 2 class): 2x Cortex-M33, 150 MHz default, 520 KB SRAM in 10 banks, 3 PIO blocks (12 state machines), 16 DMA channels, 2x 4 KB scratch SRAM | FC PICO manual via [`docs/pages/hardware.md`](../../docs/pages/hardware.md); RP2350 datasheet |
 | Flash | **4 MB QSPI (inferred)** -- FC PICO GB, an independent project on the same board, builds with the Arduino "4MB (Sketch: 3.5MB, FS: 512KB)" setting. Confirm with `picotool info -a` and `flash_get_size()` at first boot. | axsann/FC_PICO_GB README |
 | Overclock precedent | 276 MHz, `-O2`, on this exact board (FC PICO GB); 270 MHz with `vreg 1.30 V` and QMI clkdiv 3 on Pico 2 (RP2040 Doom `i_main.c`) | those projects |
-| USB | USB-C; BOOT button for UF2 drag-and-drop; USB CDC serial for logs | `docs/pages/flashing.md` |
-| Bus pins | D0..D7 = GP6..GP13, CS1 = GP17, PPU /RD = GP20, PPU /WR = GP21; PA12 (GP18), PA13 (GP19), OD_DIR (GP16) wired but unused; user key GP24, LED GP25, PWM audio GP28 | `fcppu.pio`, `docs/pages/hardware.md` |
-| Console-side ROM | NROM-256 board, 32 KB PRG in an AM29F040B-class flash, no CHR-ROM; the RP2350 is the CHR device | `docs/pages/hardware.md`, `flashing.md` |
-| Level shifting | On board, undocumented | `hardware.md` |
+| USB | USB-C; BOOT button for UF2 drag-and-drop; USB CDC serial for logs | [`docs/pages/flashing.md`](../../docs/pages/flashing.md) |
+| Bus pins | D0..D7 = GP6..GP13, CS1 = GP17, PPU /RD = GP20, PPU /WR = GP21; PA12 (GP18), PA13 (GP19), OD_DIR (GP16) wired but unused; user key GP24, LED GP25, PWM audio GP28 | `fcppu.pio`, [`docs/pages/hardware.md`](../../docs/pages/hardware.md) |
+| Console-side ROM | NROM-256 board, 32 KB PRG in an AM29F040B-class flash, no CHR-ROM; the RP2350 is the CHR device | [`docs/pages/hardware.md`](../../docs/pages/hardware.md), [`flashing.md`](../../docs/pages/flashing.md) |
+| Level shifting | On board, undocumented | [`hardware.md`](../../docs/pages/hardware.md) |
 
 ## The console
 
@@ -28,7 +28,7 @@ Numbers the design has to respect. Each row says where it comes from. Rows marke
 | Sprite DMA (`$4014`) | 513-514 cycles | **not needed by Doom** -- reclaimed |
 | Tutorial NMI, measured with py65 (`tests/bootrom/`) | 577 cycles vblank-critical (dummy + 64 mailbox reads, reply, PPU registers); 1149 total with sprite DMA and no APU pairs; **1724 total worst case** (24 pairs + sprite DMA); APU replay 23.7 cycles per pair | `tests/bootrom/tutorial_nmi_cycles.json`; entry sequence (7) included; DMA stall modelled as +513 |
 | Controller read (4x majority vote, fix bank `BR_KEY_RTN`) | ~650 cycles | runs in the main loop, not the NMI |
-| Handshake spin (`PICO_COM_WAIT`) | 256 x (`dex` 2 + `bne` 3) = 1280 cycles = **0.72 ms** | `docs/pages/protocol.md` says "roughly 1.3 ms"; the arithmetic says 0.72 ms. Treat 0.7 ms as the budget for any cartridge response. |
+| Handshake spin (`PICO_COM_WAIT`) | 256 x (`dex` 2 + `bne` 3) = 1280 cycles = **0.72 ms** | [`docs/pages/protocol.md`](../../docs/pages/protocol.md) says "roughly 1.3 ms"; the arithmetic says 0.72 ms. Treat 0.7 ms as the budget for any cartridge response. |
 | PPU bus timing | Each PPU memory access spans 2 dots (~372 ns); /RD is asserted for roughly one dot (~186 ns). The cartridge must turn the bus around and present data inside that window. | nesdev wiki "PPU rendering" (verify; site was unreachable when this was written) |
 
 ## The bus contract (fixed ABI, from `docs/pages/protocol.md`)
@@ -49,7 +49,7 @@ unchanged.** Protocol v2 (03) changes only what is explicitly listed there.
 | Controller bits | A `$80`, B `$40`, Select `$20`, Start `$10`, Up `$08`, Down `$04`, Left `$02`, Right `$01` | `SysEqu.h`, `rp_system.h` |
 | Mandatory dummy read | Every `$2007` read sequence discards one byte first | |
 | Attribute-table quirk | Bulk uploads to `$23C0` need one extra dummy read | `SysPico.asm` |
-| Boot stamp | 14 bytes at `$EFF0`, compared against `_rom[0x6FF0]`; mismatch => self-reflash | `boot-and-reflash.md` |
+| Boot stamp | 14 bytes at `$EFF0`, compared against `_rom[0x6FF0]`; mismatch => self-reflash | [`boot-and-reflash.md`](../../docs/pages/boot-and-reflash.md) |
 | Fixed 6502 entry points | `$ED00` NMI, `$EE80` IRQ, `$EF00` MAIN_SETUP, `$EF03` MAIN_LOOP, `$EFF0` stamp, `$EFFF` erase flag; fix bank `$F000` INIT, `$F003` TRANS_SYS_FONT, `$F006` KEY_RTN, `$F009`/`$F00C` beeps | |
 | PPUCTRL / PPUMASK defaults | `$2000` = `%100_01_0_00` (NMI on, BG pattern table `$0000`, **sprite pattern table `$1000`**), `$2001` = `%000_11_11_0` | `SysEqu.h` -- note the comment there says "SP$0000"; the bits say `$1000` |
 
@@ -126,7 +126,7 @@ from console VRAM and uses the 65-read NMI sequence measured above.
 last fell and, when the gap exceeds a threshold (`countUp > 50` iterations), treats it as
 vertical blank and resets its FIFO to the frame start. The vblank gap (no pattern fetches
 from the end of line 239 until the NMI's `$2007` reads) is easy to see from a PIO program.
-This is recorded in 11 (R1) as the fallback if the count-based sync proves fragile.
+This is recorded in [11](11-risks.md) (R1) as the fallback if the count-based sync proves fragile.
 
 **FC PICO GB** (`axsann/FC_PICO_GB`, the second implementation on this board) confirms
 `PPU_COUNT_VAL = 15426 + FC_COM_BUF_SIZE` with a 16-byte mailbox (15,442), the same
@@ -165,14 +165,14 @@ channel was not written in the previous frame (a new note) or when the period bi
 
 | Fact | Consequence |
 |------|-------------|
-| RP2040 Doom keeps the 3D view in `frame_buffer[2][320*168]` as 8-bit palette indices; the status bar, menus, HUD text and intermission screens are **not** in that buffer but drawn per scanline from "vpatch" overlay lists by `fill_scanlines()` in `i_video.c` (into 16-bit RGB for `scanvideo`). | The FC PICO video layer must re-run that composition into an 8-bit 320x200 frame. `draw_vpatch()` becomes an 8-bit writer (drop the `palette[]` lookup). See 04. |
+| RP2040 Doom keeps the 3D view in `frame_buffer[2][320*168]` as 8-bit palette indices; the status bar, menus, HUD text and intermission screens are **not** in that buffer but drawn per scanline from "vpatch" overlay lists by `fill_scanlines()` in `i_video.c` (into 16-bit RGB for `scanvideo`). | The FC PICO video layer must re-run that composition into an 8-bit 320x200 frame. `draw_vpatch()` becomes an 8-bit writer (drop the `palette[]` lookup). See [04](04-video.md). |
 | Frame handoff is `pd_end_frame()` -> `sem_release(render_frame_ready)`; the display side acquires it in `new_frame_stuff()` and flips `display_frame_index`; `display_frame_freed` throttles the renderer to at most two frames ahead. | Reuse both semaphores as-is; the converter takes the display-side role. |
 | Core 0 runs game logic and builds column lists; core 1 draws visplanes and half the columns (`pd_core1_loop`), and in the original also composes scanlines in a low-priority IRQ (`LOW_PRIO_IRQ 31`). | The converter runs on core 1 in the same low-priority-IRQ slot; the bus ISR is a separate, higher-priority, microsecond-scale handler. |
-| Palette changes arrive as `I_SetPaletteNum(n)` with n in 0..13 (`PLAYPAL`); the RP2350 build synthesises tints from palette 0 when the WHX carries only one palette. | Map the 14 palettes to 14 precomputed NES palette sets; the per-pixel LUT is built for palette 0 only. See 04. |
+| Palette changes arrive as `I_SetPaletteNum(n)` with n in 0..13 (`PLAYPAL`); the RP2350 build synthesises tints from palette 0 when the WHX carries only one palette. | Map the 14 palettes to 14 precomputed NES palette sets; the per-pixel LUT is built for palette 0 only. See [04](04-video.md). |
 | Video types: `NONE`, `TEXT` (ENDOOM), `SAVING`, `DOUBLE` (level), `SINGLE` (full-screen patch: title, intermission), `WIPE`. | Each needs an 8-bit composition path; `TEXT` can be a fixed 32-column font rendering instead of the 80-column VGA text mode. |
 | `I_GetTime()` is `time_us_64()` based; the tic rate is independent of display refresh. | Nothing to change for the 60.1 Hz heartbeat. |
-| Input arrives via `pico_key_down/up(scancode, ...)` -> `D_PostEvent`. | The controller mapper posts synthetic key events. See 05. |
-| Sound: `sound_pico_module` (ADPCM mixer) and `music_opl_module` (emu8950) through `I_PicoSoundSetMusicGenerator`. `I_UpdateSound()` is polled from the game loop and from core 1 wait loops. | Replace both modules with `sound_fcpico_module` / `music_fcpico_module` that drive the APU sequencer; `I_UpdateSound()` becomes the sequencer's per-frame pump. See 06. |
+| Input arrives via `pico_key_down/up(scancode, ...)` -> `D_PostEvent`. | The controller mapper posts synthetic key events. See [05](05-input.md). |
+| Sound: `sound_pico_module` (ADPCM mixer) and `music_opl_module` (emu8950) through `I_PicoSoundSetMusicGenerator`. `I_UpdateSound()` is polled from the game loop and from core 1 wait loops. | Replace both modules with `sound_fcpico_module` / `music_fcpico_module` that drive the APU sequencer; `I_UpdateSound()` becomes the sequencer's per-frame pump. See [06](06-audio.md). |
 | Saves: `picoflash_sector_program()` writes 4 KB sectors; slots are found by `P_SaveGameGetExistingFlashSlotAddresses()`. | Keep. Place the slots above the asset archive. |
 | `USE_ZONE_FOR_MALLOC`: `malloc` is wrapped into `Z_Malloc`; **no allocation on core 1 after startup** (`disallow_core1_malloc`). | The converter and bus layer must be statically allocated. |
 | Build flags of note: `DEMO1_ONLY=1` for the super-tiny target, `NO_USE_ARGS`, `NO_FILE_ACCESS`, `USE_WHD`, `WHD_SUPER_TINY`, `NO_USE_NET`, `USE_PICO_NET` (I2C). | The fcpico target starts from `doom_tiny` flags with `USE_PICO_NET=0`, `USB_SUPPORT=0`. |

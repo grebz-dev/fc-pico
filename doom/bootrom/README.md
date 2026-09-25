@@ -6,7 +6,7 @@ three-byte controller heartbeat, and replays up to 15 APU pairs. It parks all
 sprites once, then uses BG+sprite rendering to preserve the measured PPU read
 count. The permanent fix bank (`tutorial_project/BOOTROM/bootrom_fixr.bin`) is
 included unchanged at `$F000`. This is not yet the full audio/input/data-mode
-ROM described in `../plan/07-bootrom.md`.
+ROM described in [`../plan/07-bootrom.md`](../plan/07-bootrom.md).
 
 Build `20DOOM-02-0002` restores the tutorial's stream selection: nametable 0
 uses tile `$80` (pattern `$0800`), and nametable 1 uses tile `$00`. The NMI

@@ -10,7 +10,7 @@ From RP2040 Doom's 320x200 palette-indexed frame to the bytes the PPU pulls off 
   `$23C0`; each byte covers a 32x32 area as four 2-bit quadrants).
 - Sub-palette entry 0 is always the shared backdrop colour (`$3F00`); entries 1-3 are free.
   So at most **13 distinct colours** on screen, chosen from the PPU's 64 (about 54 unique).
-- The pattern data itself is what `fcbus` streams (`docs/pages/graphics.md`,
+- The pattern data itself is what `fcbus` streams ([`docs/pages/graphics.md`](../../docs/pages/graphics.md),
   `rp_system::convVram()`): 32 selected 16-bit words per visible scanline, low byte =
   bitplane 0, high byte = bitplane 1, pixel 0 of each 8-pixel run in bit 7. The flat
   row-major picture starts at word 31. The pre-render line consumes words 31-32 as line
@@ -20,7 +20,7 @@ From RP2040 Doom's 320x200 palette-indexed frame to the bytes the PPU pulls off 
 
 ## Input (what RP2040 Doom produces)
 
-See 01, "Engine facts". The 3D view is in `frame_buffer[display_frame_index]` (320x168, 8-bit
+See [01](01-constraints.md), "Engine facts". The 3D view is in `frame_buffer[display_frame_index]` (320x168, 8-bit
 `PLAYPAL` indices); everything else -- status bar, menu, HUD messages, intermission and title
 screens, the melt wipe, the ENDOOM text screen -- is composed **per scanline** by
 `fill_scanlines()` in `src/pico/i_video.c` from "vpatch" overlay lists, writing 16-bit RGB into
@@ -52,7 +52,7 @@ Port `i_video.c` with these substitutions:
 | `palette_convert_scanline()` (8->16 via interp) | `memcpy` (or nothing: compose in place) |
 | `draw_vpatch()` writing `palette[pal[v]]` | writes `pal[v]` (the index). `shared_pal[]` becomes `uint8_t`. The `stbar` XIP-streaming DMA optimisation is dropped (the RP2350 build already moves its cache to main RAM; measure first, re-add only if the status bar row costs > 0.3 ms). |
 | `scanline_func_wipe` reading `palette[...]` | index copy |
-| `render_text_mode_scanline` (80-column VGA text for ENDOOM) | not ported; the fcpico target sets `NO_USE_ENDDOOM=1`. `I_Quit` -> watchdog reboot (see 05). |
+| `render_text_mode_scanline` (80-column VGA text for ENDOOM) | not ported; the fcpico target sets `NO_USE_ENDDOOM=1`. `I_Quit` -> watchdog reboot (see [05](05-input.md)). |
 | `new_frame_stuff()` / `new_frame_init_overlays_palette_and_wipe()` | kept: frame flip, overlay list rebuild, wipe advance. The `palette[]` rebuild becomes "select NES palette set `next_pal`" (stage E). Must stay `__no_inline_not_in_flash_func` because it runs while flash is being programmed during saves. |
 | `fill_scanlines()` driven by `scanvideo` buffer callbacks | `fcvideo_convert_frame()` driven by the `fcbus` heartbeat via `LOW_PRIO_IRQ` |
 | `I_InitGraphics` launching `core1()` with `scanvideo_setup` | launches `core1()` that installs the bus ISR (`fcbus_attach_irq(core1)`), the low-priority conversion IRQ, then runs `pd_core1_loop()` forever |
@@ -120,7 +120,7 @@ When `next_pal` changes, copy the set into the back mailbox's palette block and 
 `PAL_VALID`. The per-pixel LUT is **not** rebuilt (it is built for palette 0); tinting is done
 by the console's palette, which is exactly how the NES does screen flashes.
 
-Sub-palette presets (`fcvideo_presets.h`), selectable at build time, evaluated in P2-T6 by
+Sub-palette presets (`fcvideo_presets.h`), selectable at build time, evaluated in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) by
 PSNR against the 8-bit reference frames and by a legibility check of the menu font:
 
 | Preset | P0 | P1 | P2 | P3 | Notes |
@@ -130,7 +130,7 @@ PSNR against the 8-bit reference frames and by a legibility check of the menu fo
 
 Backdrop `$0F` (black) in both. Values are NES palette indices; hue numbers (`$x7` orange-brown,
 `$x6` red, `$x9` green, `$x0` grey) chosen to match Doom's dominant materials. The k-means
-derivation tool in P2-T6 may replace these with data-driven picks.
+derivation tool in [P2-T6](10-workplan.md#p2-t6-palette-preset-evaluation) may replace these with data-driven picks.
 
 ### What NES DOOM did (PiPU `frameprocess.c`), and what to copy
 
@@ -160,7 +160,7 @@ derivation tool in P2-T6 may replace these with data-driven picks.
 - Doom's renderer may run up to two frames ahead (`display_frame_freed` initialised to 2 in
   `I_InitGraphics`); leave it.
 - Conversion must finish within one console frame (16.6 ms) to sustain 30 fps with margin;
-  the estimate is 3-6 ms. P1-T8 measures it with `time_us_32()` and the serial CLI prints
+  the estimate is 3-6 ms. [P1-T8](10-workplan.md#p1-t8-hardware-session-m1-hw) measures it with `time_us_32()` and the serial CLI prints
   min/avg/max per second.
 
 ## Per-frame latency budget

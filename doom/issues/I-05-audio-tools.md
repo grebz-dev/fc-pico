@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | A -- host only, actionable now |
 | **Size** | L |
-| **Depends on** | I-04 (soft) |
-| **Work plan task** | P4-T3 |
+| **Depends on** | [I-04](I-04-fcapu-core.md) (soft) |
+| **Work plan task** | [P4-T3](../plan/10-workplan.md#p4-t3-audio-tools----spec-06-pipeline-size-l-depends----acceptance-teststools-round-trips-mus2apuspy---auto-produces-all-13-streams-from-doom1wad-under-the-cap) |
 
 ## Goal
 
@@ -15,7 +15,7 @@ they are the part a human can improve later without touching code.
 
 ## Specification
 
-`plan/06-audio.md`, "Offline pipeline" and "Existing arrangements to start from".
+[`plan/06-audio.md`](../plan/06-audio.md), ["Offline pipeline"](../plan/06-audio.md#offline-pipeline-doomtoolsaudio) and ["Existing arrangements to start from"](../plan/06-audio.md#existing-arrangements-to-start-from).
 `tools/audio/apus.py` (writer, tested) and `dpcm.py` (encoder, tested) already exist.
 
 ## Owns (create or modify only these)
@@ -55,4 +55,4 @@ python3 -m pytest doom/tests/tools -q
 
 FamiStudio's exact command-line option names are still unknown (its documentation was
 unreachable). Do not invent them: drive the tools from files, and record the real option
-names in `plan/06-audio.md` if you get a chance to run it.
+names in [`plan/06-audio.md`](../plan/06-audio.md) if you get a chance to run it.

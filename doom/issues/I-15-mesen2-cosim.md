@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- host emulator build, local and CI |
 | **Size** | L |
-| **Depends on** | I-06; I-12 only for Doom scenarios, not S0 |
-| **Work plan task** | P0-T11 |
+| **Depends on** | [I-06](I-06-ci-host-lane.md); [I-12](I-12-engine-host-build.md) only for Doom scenarios, not S0 |
+| **Work plan task** | [P0-T11](../plan/10-workplan.md#p0-t11-mesen2-co-simulation-skeleton) |
 
 ## Goal
 
@@ -30,7 +30,7 @@ scenarios still depend on the engine and v2 ROM work.
   `5c2de02e` under `sim/mesen2/Mesen2`; the mapper lives in the fork at
   `Core/NES/Mappers/Homebrew/FcPico.h` behind the optional `FCPICO_ROOT` makefile flag.
 - Built and run locally. The toolchain is .NET SDK 10, SDL2 and a C++17 compiler; neither
-  .NET nor SDL2 needs root (see `../PROGRESS.md` for the exact no-sudo recipe).
+  .NET nor SDL2 needs root (see [`../PROGRESS.md`](../PROGRESS.md) for the exact no-sudo recipe).
 - **The bridge works.** The unmodified tutorial PRG boots, its `$2007` writes reach the real
   `fcbus_host` dispatcher, `FP_COM_INI` is answered through the tutorial's own
   `PF_COM_DMOD` -> `DRQ` -> `DLD` bulk transfer, and in steady state the run is exactly one
@@ -40,19 +40,19 @@ scenarios still depend on the engine and v2 ROM work.
 - **Strict S0 fails, and the reason is a plan defect, not a bug in this issue.** The measured
   per-frame selected read count is 16388 (`241 x 68`) under a `$0000`-`$0FFF` decode and
   20244 (`241 x 84`) under `$0000`-`$1FFF`, against `PPU_COUNT_VAL_V1`'s 15426 + 64. The
-  arithmetic and what it implies are written up in `plan/09-testing-ci.md`, "S0 as measured".
+  arithmetic and what it implies are written up in [`plan/09-testing-ci.md` under "S0 calibrated to hardware"](../plan/09-testing-ci.md#s0-calibrated-to-hardware-2026-09-22).
   No protocol constant was changed and no read was discarded to make the check pass; the
   count check fails every heartbeat, the DMA stops, and the screenshot is white.
-- Resolving the contradiction needs the hardware trace, which is issue I-19. Everything this
+- Resolving the contradiction needs the hardware trace, which is issue [I-19](I-19-hw-trace.md). Everything this
   issue can prove about the bus without hardware is now proven. A focused PPU rendering trace
   also validates the emulator fetch timeline: 241 lines x 68 background reads for the narrow
   decode, and 16 additional sprite reads per line for the wide decode. The returned bytes
   remain open bus, so this does not validate displayed pixels. What remains is strict S0 and
-  the Doom-mode adapter/scenarios S1-S6, which need I-12.
+  the Doom-mode adapter/scenarios S1-S6, which need [I-12](I-12-engine-host-build.md).
 
 ## Specification
 
-`plan/09-testing-ci.md`, "L6 -- Mesen2 co-simulation". The mapper sketch there has been
+[`plan/09-testing-ci.md` section "L6 -- Mesen2 co-simulation"](../plan/09-testing-ci.md#l6----mesen2-co-simulation-simmesen2). The mapper sketch there has been
 corrected against the built fork, and "S0 as measured" records what the first working run
 found.
 
@@ -73,7 +73,7 @@ and any file another open issue lists under **Owns**.
 1. Pin the user's MesenCE fork as a submodule under `sim/mesen2/Mesen2`.
 2. Write the mapper. Its first job is to correct the plan's sketch: find the real predicate
    that distinguishes a rendering or CPU read from a debugger peek, and fix
-   `plan/09-testing-ci.md` in the same commit.
+   [`plan/09-testing-ci.md`](../plan/09-testing-ci.md) in the same commit.
 3. Write `sim/cartmodel/` as a C API over `fcbus_host` plus the test-pattern generator.
 4. Scenario S0: the tutorial boot ROM against the test-pattern model, asserting a stable
    `ppu_count` histogram and a screenshot hash, run headless with `--testRunner`.

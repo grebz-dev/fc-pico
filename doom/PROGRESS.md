@@ -1,6 +1,6 @@
 # Progress log
 
-One entry per task from `plan/10-workplan.md`, newest first. Format:
+One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest first. Format:
 
 ```
 ## <task id> -- <title>
@@ -20,7 +20,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   await the requested advice on the display layout.
 - The supplied photograph's lower gap matches the planned 200-line Doom image
   at NES lines 16..215, leaving 24 blank lines beneath. The 256x240 output
-  stream has room to scale the image vertically; see `HARDWARE-LOG.md`.
+  stream has room to scale the image vertically; see [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
 - Serial remained stable through `hb=2221` at `count=15554` with no new DMA
   stops or resyncs. Conversion average/max at 540 frames was 35574/35612 us.
 
@@ -37,7 +37,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   position differs from an idle run. The merged input UF2 is
   `/tmp/fcpico-hw-doom/fcpico_doom_input_whx.uf2` (8157 blocks), SHA-256
   `82405a0823193a0d7ea7c6b8f5c053450e7d049399fa23d1d7f21973caf5fbd8`.
-- Left out: physical pad check (HR-4), pad 2, and context-specific automap
+- Left out: physical pad check ([HR-4](HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4)), pad 2, and context-specific automap
   controls. The measured 35.6 ms conversion time still exceeds the plan's
   performance target and needs a separate optimization pass.
 
@@ -50,7 +50,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   did not grow during the captured steady interval.
 - Measurements: `conversion_us=35579/35614` average/max at 120 converted
   frames. Image quality, longer stability, and physical controller input have
-  not yet been reported; details are in `HARDWARE-LOG.md`.
+  not yet been reported; details are in [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
 
 ## HR-3 -- USB serial BOOTSEL command in Doom firmware (2026-09-24)
 - The device main core now accepts `bootsel` followed by Enter on USB serial and
@@ -63,7 +63,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   candidate at `/tmp/fcpico-hw-doom/fcpico_doom_streamfix_delay_bootsel_whx.uf2`
   (8153 blocks), SHA-256
   `1221d341ac281b28cdd0712410aefa7b91b3fab99e7f0a15c76ad8e07e593127`.
-- Left out: physical USB command validation; HR-3 hardware validation is pending.
+- Left out: physical USB command validation; [HR-3](HARDWARE-REQUESTS.md#hr-3-first-doom-boot-v2-reflash-and-engine-display-tasks-p2-t4-p1-t3-p1-t6) hardware validation is pending.
 
 ## HR-3 / I-14 / I-15 -- pre-hardware review: stream selection and PPU address fixes (2026-09-24)
 - Findings: the Doom setup filled nametable 0 with tile `$00`, unlike the working
@@ -113,7 +113,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Limits: the address decode is supported by tutorial code, measured cadence and exact
   reproduction of the hardware symptom; this is not a new electrical measurement or a
   hardware validation of the fixed ROM. Physical boot/display and dynamic frame sequences
-  remain unverified. The old raw-count-only request is superseded in `HARDWARE-REQUESTS.md`.
+  remain unverified. The old raw-count-only request is superseded in [`HARDWARE-REQUESTS.md`](HARDWARE-REQUESTS.md).
 
 ## P2-T4 / P1-T6 -- S1 reflash co-simulation, stamp fix, first Doom hardware UF2 (2026-09-23)
 - What landed: the Mesen FC PICO mapper now emulates the cartridge PRG flash (JEDEC
@@ -136,10 +136,10 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   `rom.NES`. D0, D1 and strict S0 still pass. Host CTest 10/10; pytest 373 passed,
   1 skipped; bootrom 24 passed; protocol and link checks clean. GCC 13.2 device ELF
   uses 282,488 flash bytes (241,800 free before WHX). Merged UF2
-  `/tmp/fcpico-hw-doom/fcpico_doom_whx.uf2` (8,137 blocks) is HR-3.
+  `/tmp/fcpico-hw-doom/fcpico_doom_whx.uf2` (8,137 blocks) is [HR-3](HARDWARE-REQUESTS.md#hr-3-first-doom-boot-v2-reflash-and-engine-display-tasks-p2-t4-p1-t3-p1-t6).
 - Left out: timing of the real flash chip (the model completes erase/program
   immediately after a short status phase); hardware boot, display and conversion
-  timing are HR-3. Dynamic multi-frame co-simulation, input and sound remain open.
+  timing are [HR-3](HARDWARE-REQUESTS.md#hr-3-first-doom-boot-v2-reflash-and-engine-display-tasks-p2-t4-p1-t3-p1-t6). Dynamic multi-frame co-simulation, input and sound remain open.
 
 ## I-13 / I-14 / I-15 -- v2 console ROM and fixed-frame D1 gate (2026-09-23)
 - What landed: a display-first 32 KB Doom v2 NES ROM with the unchanged fix
@@ -227,7 +227,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   test-pattern targets still link. Raw output from manual runs is under
   `/tmp/fcpico-host-frames-a/` and `-b/` (600 files each, 53,760 bytes per view).
 - Left out: the raw view omits status/menu/wipe composition. `--dump-stream` and `--pads`
-  report unsupported until I-16/I-17 and the input adapter land; I-12 acceptance remains
+  report unsupported until [I-16](issues/I-16-stage-a-composition.md)/[I-17](issues/I-17-fcvideo-impl.md) and the input adapter land; [I-12](issues/I-12-engine-host-build.md) acceptance remains
   partial. This is not yet a co-simulation-ready Doom video stream.
 
 ## I-11 / P0-T2 -- RP2350 engine platform skeleton (2026-09-23)
@@ -269,7 +269,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   RP2350 test-pattern UF2 builds and passes the flash-layout check (68,564 bytes used,
   455,724 free); SHA-256 `a1f129761e70c0c3f6aa65b02e7e69cfe9e93cd244da08ddcb1bc66d25d7b2e9`.
 - Left out: the corrected stream geometry needs the replacement hardware UF2 visual check;
-  engine frame composition/publication remains I-11/I-12/I-16/I-17.
+  engine frame composition/publication remains [I-11](issues/I-11-engine-skeleton.md)/[I-12](issues/I-12-engine-host-build.md)/[I-16](issues/I-16-stage-a-composition.md)/[I-17](issues/I-17-fcvideo-impl.md).
 
 ## I-10 / I-19 -- first NTSC measurement and test-pattern init repair (2026-09-22)
 - Commits: this commit.
@@ -286,10 +286,10 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   checks and `149` cartmodel checks; all 10 host C suites pass. The RP2350 UF2 builds and
   `flash_layout_check.py` reports 68,564 bytes used with 455,724 bytes free.
 - Hardware follow-up: the replacement UF2 displays its test patterns successfully on the
-  same NES-001, confirming the init-event diagnosis and completing I-10. Three decoder-valid
-  traces remain I-19's last hardware input. Strict Mesen S0 remains intentionally
+  same NES-001, confirming the init-event diagnosis and completing [I-10](issues/I-10-testpattern-firmware.md). Three decoder-valid
+  traces remain [I-19](issues/I-19-hw-trace.md)'s last hardware input. Strict Mesen S0 remains intentionally
   uncalibrated until those traces determine which strobes the PIO counter omits.
-- Plan changes: HR-1, I-10, the hardware log, and the new hardware fixture directory record
+- Plan changes: [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9), [I-10](issues/I-10-testpattern-firmware.md), the hardware log, and the new hardware fixture directory record
   the session and exact artifact.
 
 ## I-17 -- NES presets, PLAYPAL tables and flash sets (2026-09-21)
@@ -308,7 +308,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   converted frame using C-generated tables to the Python stream oracle. Further cases cover
   all 3 presets and 14 flash sets.
 - Left out: engine frame input, device publication and timing, and real
-  Mesen pixels remain open. Strict S0 is still gated by I-19's hardware count calibration.
+  Mesen pixels remain open. Strict S0 is still gated by [I-19](issues/I-19-hw-trace.md)'s hardware count calibration.
 
 ## I-17 -- host video stream core (2026-09-21)
 - Commits: this commit.
@@ -334,7 +334,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   checkerboard and random frames, plus a repeated frame with hysteresis and a palette flash.
   Its 34-word/line layout matches the independently measured Mesen fetch-order gate below.
 - Left out: device timing/publication, engine frame composition, table generation and
-  Mesen pixel goldens. S0 DMA remains stopped pending HR-1/I-19; no displayed-pixel
+  Mesen pixel goldens. S0 DMA remains stopped pending [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](issues/I-19-hw-trace.md); no displayed-pixel
   correctness claim is made from its current open-bus screenshot.
 
 ## I-15 -- Mesen PPU fetch-order gate and display-first order (2026-09-21)
@@ -365,10 +365,10 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 
 - Both fetch traces contain `$FF` for every rendering read: the measured heartbeat counts
   are still 16453 and 20309 against v1's 15490. Strict S0 therefore remains failing, and
-  neither trace is a pixel golden or a hardware calibration. HR-1/I-19 must settle the
+  neither trace is a pixel golden or a hardware calibration. [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](issues/I-19-hw-trace.md) must settle the
   counter before the display path can make those claims.
-- Next: implement I-17's host converter stages B-E against the Python reference, then feed
-  engine frames through it after I-11/I-12/I-16. Keep co-simulation as the picture gate.
+- Next: implement [I-17](issues/I-17-fcvideo-impl.md)'s host converter stages B-E against the Python reference, then feed
+  engine frames through it after [I-11](issues/I-11-engine-skeleton.md)/[I-12](issues/I-12-engine-host-build.md)/[I-16](issues/I-16-stage-a-composition.md). Keep co-simulation as the picture gate.
 
 ## I-04 / P4-T1 -- host APU sequencer (2026-09-21)
 - Commits: this commit.
@@ -394,7 +394,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - The unmodified sanitizer command ran every test body successfully but LeakSanitizer
   failed at process exit under this environment's ptrace restriction. Disabling only leak
   detection gave the clean ASan/UBSan run above; this module performs no allocation.
-- Left out: engine sound/music adapters and asset conversion remain P4-T2/P4-T3. No
+- Left out: engine sound/music adapters and asset conversion remain [P4-T2](plan/10-workplan.md#p4-t2-engine-soundmusic-modules----spec-06-api-table-size-m-depends-p4-t1-p1-t5)/[P4-T3](plan/10-workplan.md#p4-t3-audio-tools----spec-06-pipeline-size-l-depends----acceptance-teststools-round-trips-mus2apuspy---auto-produces-all-13-streams-from-doom1wad-under-the-cap). No
   device or listening claim is made here.
 
 ## I-08 / I-09 / I-10 -- resumed acceptance verification (2026-09-21)
@@ -436,8 +436,8 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Measurements: 64880 bytes, 87.6% flash budget free; `text 64880, data 0, bss 301868`,
   matching the earlier independent builds.
 - Documentation: corrected the CI README introduction to acknowledge both active lanes.
-- Left out: hardware acceptance still needs HR-1/I-19; strict S0 remains unresolved.
-  I-04 remains the next independent implementation task.
+- Left out: hardware acceptance still needs [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](issues/I-19-hw-trace.md); strict S0 remains unresolved.
+  [I-04](issues/I-04-fcapu-core.md) remains the next independent implementation task.
 
 ## I-15 -- co-simulation diagnostic histogram fix (2026-09-21)
 - Commits: this commit.
@@ -458,7 +458,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - A second diagnostic with `--cs1-mask 0xe000` reports `[20309]`, with 20,244 rendering
   reads and the same 65 CPU mailbox reads. Both masks remain deterministic under the
   per-frame debugger-peek run; neither can produce the firmware's expected 15,490 count.
-- Left out: strict S0 remains gated on HR-1/I-19; no protocol or count constant was changed.
+- Left out: strict S0 remains gated on [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](issues/I-19-hw-trace.md); no protocol or count constant was changed.
 
 ## I-08 / I-09 / I-10 -- device build acceptance (2026-09-20)
 - Commits: this commit (build fix and records); the implementation landed earlier in
@@ -493,10 +493,10 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   `PATH`, and `.github/workflows/doom-device.yml` is present and byte-identical to its
   template. **Check the repository root before concluding a tool is missing.**
 - Left out: this is build acceptance only. Nothing here has run on an RP2350 or a Famicom,
-  so I-08, I-09 and I-10 stay short of their hardware-facing claims and HR-1/I-19 still
+  so [I-08](issues/I-08-device-superbuild.md), [I-09](issues/I-09-fcbus-device.md) and [I-10](issues/I-10-testpattern-firmware.md) stay short of their hardware-facing claims and [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](issues/I-19-hw-trace.md) still
   gates the bus model. The device lane was already active in `.github/workflows`.
-- Plan changes: `port/CMakeLists.txt`, both `doom-device.yml` copies, `ci/README.md`,
-  `issues/README.md`.
+- Plan changes: `port/CMakeLists.txt`, both `doom-device.yml` copies, [`ci/README.md`](ci/README.md),
+  [`issues/README.md`](issues/README.md).
 
 ## P0-T11 / I-15 -- co-simulation runs, and it contradicts the plan (2026-09-20)
 - Commits: `87862d0` (scope), this commit; fork `grebz-dev/MesenCE-FC-PICO` at `5c2de02e`.
@@ -536,7 +536,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   contradiction (`241 x 68 = 16388` consumed bytes versus `15426` counted picture reads)
   with a number attached.
 - Two of the three candidate explanations in `plan/01` can now be closed off the bench, which
-  is recorded as a sharpened HR-1 rather than as an edit to `plan/01` (I-19 owns that file).
+  is recorded as a sharpened [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9) rather than as an edit to `plan/01` ([I-19](issues/I-19-hw-trace.md) owns that file).
   The counter's qualifier is not in doubt: the tutorial configures `fcppu_rna` with
   `sm_config_set_jmp_pin(&cn, PI_CS1_BIT)`, so the count is "CS1-low reads per frame" exactly.
   And the cheap CS1 hypothesis is dead as an explanation of the count: a narrow `$0000`-`$0FFF`
@@ -548,8 +548,8 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - Left out, deliberately: no protocol constant was changed and no read was discarded to make
   the count check pass. Consequently the DMA stops on every heartbeat, every selected read
   returns open bus, and S0's screenshot is a white screen -- so no screenshot golden was
-  frozen either. Strict S0 stays failing until I-19 answers the counter question.
-  Doom-mode cartridge and scenarios S1-S6 remain future work behind I-12.
+  frozen either. Strict S0 stays failing until [I-19](issues/I-19-hw-trace.md) answers the counter question.
+  Doom-mode cartridge and scenarios S1-S6 remain future work behind [I-12](issues/I-12-engine-host-build.md).
 - Local toolchain, no root required (WSL2 Ubuntu 22.04, the sandbox has no sudo):
   `curl -sSL https://dot.net/v1/dotnet-install.sh | bash -s -- --channel 10.0` installs the
   SDK into `~/.dotnet`; `apt-get download libsdl2-dev` plus `dpkg -x` into
@@ -559,10 +559,10 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   `--libs`, and repointing `libSDL2.so` at the system runtime `libSDL2-2.0.so.0.18.2`, which
   was already installed. Then
   `PATH="$HOME/.dotnet:$HOME/.local/bin:$PATH" DOTNET_ROOT="$HOME/.dotnet"`.
-- Plan changes: `plan/09-testing-ci.md` gains "S0 as measured" and a corrected CI paragraph;
+- Plan changes: [`plan/09-testing-ci.md`](plan/09-testing-ci.md) gains "S0 as measured" and a corrected CI paragraph;
   `ci/workflows/doom-cosim.yml` is rewritten against the commands that actually work and
-  stays inactive; `ci/README.md`, `issues/I-15`, `issues/README.md` and
-  `plan/10-workplan.md` updated. `plan/01` still carries the uncorrected prior-art
+  stays inactive; [`ci/README.md`](ci/README.md), `issues/I-15`, [`issues/README.md`](issues/README.md) and
+  [`plan/10-workplan.md`](plan/10-workplan.md) updated. `plan/01` still carries the uncorrected prior-art
   paragraph; it is owned by neither this issue nor its author, and the measurement above is
   the input a future correction needs.
 
@@ -590,19 +590,19 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   13.2.Rel1; Wine and .NET are absent from PATH. Earlier test counts below are historical.
 - Previously unlogged implementation: `201ce2d` added device CMake configuration,
   the RP2350 bus backend, test-pattern firmware, serial CLI, trace capture/decoder and
-  synthetic trace tests (I-08/I-09/I-10). `c9c4e12` corrected DMA rearming and trace word
+  synthetic trace tests ([I-08](issues/I-08-device-superbuild.md)/[I-09](issues/I-09-fcbus-device.md)/[I-10](issues/I-10-testpattern-firmware.md)). `c9c4e12` corrected DMA rearming and trace word
   alignment. `e9526b9` exposed boot-ROM emulator memory and added protocol assertions.
   These commits do not record device build acceptance. The device workflow exists only
-  at `ci/workflows/doom-device.yml`, so I-08/I-09/I-10 remain partial pending validation
+  at `ci/workflows/doom-device.yml`, so [I-08](issues/I-08-device-superbuild.md)/[I-09](issues/I-09-fcbus-device.md)/[I-10](issues/I-10-testpattern-firmware.md) remain partial pending validation
   and review against their acceptance criteria.
-- Milestone: M0 remains incomplete. No hardware session is recorded; HR-1/I-19 still gates
-  bus-model calibration and board facts. Licensing enquiry HA-1/I-18 is also pending.
+- Milestone: M0 remains incomplete. No hardware session is recorded; [HR-1](HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9)/[I-19](issues/I-19-hw-trace.md) still gates
+  bus-model calibration and board facts. Licensing enquiry [HA-1](HARDWARE-REQUESTS.md#ha-1-licensing-enquiry-task-p0-t13)/[I-18](issues/I-18-licensing.md) is also pending.
 - Next: restore Python test dependencies and run the suite; finish device build/CI
-  acceptance for I-08 through I-10. I-04 (APU sequencer) is independent host work;
-  I-11/I-12 begin the engine integration path.
+  acceptance for [I-08](issues/I-08-device-superbuild.md) through [I-10](issues/I-10-testpattern-firmware.md). [I-04](issues/I-04-fcapu-core.md) (APU sequencer) is independent host work;
+  [I-11](issues/I-11-engine-skeleton.md)/[I-12](issues/I-12-engine-host-build.md) begin the engine integration path.
 - Cleanup: removed the superseded resume and September 11 review summaries. Their applied
   corrections remain in the specifications and the historical progress entry below;
-  unresolved questions remain in `plan/11-risks.md` and the hardware requests.
+  unresolved questions remain in [`plan/11-risks.md`](plan/11-risks.md) and the hardware requests.
 
 ## P1-T4 / P3-T1 -- host-testable controller mapper
 - Commits: this commit
@@ -613,7 +613,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   Select tap-versus-automap, Select+Start pause, sticky presses, and an optional cheat matcher.
 - Left out: engine event adapter and context-specific menu mappings remain integration work in
   the engine fork; the mapper deliberately has no dependency on Doom headers.
-- Plan changes: none; issue I-07 is complete.
+- Plan changes: none; issue [I-07](issues/I-07-input-mapper.md) is complete.
 
 ## P0-T12 -- activate the host CI lane
 - Commits: this commit
@@ -625,7 +625,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   tests, generated-file validation, Markdown link validation, and an exact template diff.
 - Left out: device, boot-ROM, full-chip, co-simulation and documentation workflows remain
   inactive until the issue named for each lane can produce a green job.
-- Plan changes: none; issue I-06 is complete.
+- Plan changes: none; issue [I-06](issues/I-06-ci-host-lane.md) is complete.
 
 ## P1-T2 (reference part) -- reference video pipeline tests
 - Commits: this commit
@@ -635,9 +635,9 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 - What landed: stage B decimation and letterboxing tests; stage E exact-colour and midpoint
   dither tests; stage C palette selection and hysteresis boundary tests; a stage D Bayer-index
   test; and an end-to-end v2 stream conversion decoded through `ppu_decode.py`.
-- Left out: the device converter remains issue I-17; this issue only establishes the tested
+- Left out: the device converter remains issue [I-17](issues/I-17-fcvideo-impl.md); this issue only establishes the tested
   reference against which that implementation will be compared.
-- Plan changes: none; issue I-03 is complete.
+- Plan changes: none; issue [I-03](issues/I-03-fcvideo-ref-tests.md) is complete.
 
 ## Plan review and issue set -- 2026-09-11
 - Commits: this commit
@@ -651,17 +651,17 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   that `241 x 68 = 16388` consumed bytes and `15426` counted picture reads cannot both be
   read as bytes-per-line arithmetic, and names the cheapest hypothesis to test (CS1 may
   decode only `$0000`-`$0FFF`, excluding sprite fetches). That question is now gated on the
-  hardware trace, issue I-19, and no plan figure derived from it should be trusted until then.
+  hardware trace, issue [I-19](issues/I-19-hw-trace.md), and no plan figure derived from it should be trusted until then.
 - Also: 07 gained an init step that parks every OAM Y byte at `$EF` once, because sprites are
   deliberately left enabled in PPUMASK for fetch-pattern fidelity while cold-boot OAM is
   zeroed, which would draw 64 sprites in the corner.
 - Deliverable: `../issues/` -- 19 self-contained issues plus an index, each with an Owns file
-  list so two workers never collide, and acceptance stated as an exact command. Lane A (I-01
-  to I-07) is verifiable in this sandbox today; lane B (I-08 to I-17) cannot be (no
+  list so two workers never collide, and acceptance stated as an exact command. Lane A ([I-01](issues/I-01-ppubus-tests.md)
+  to [I-07](issues/I-07-input-mapper.md)) is verifiable in this sandbox today; lane B ([I-08](issues/I-08-device-superbuild.md) to [I-17](issues/I-17-fcvideo-impl.md)) cannot be (no
   `arm-none-eabi-gcc`, no Wine, no .NET, and the proxy returns 403 for the ARM toolchain), so
-  each of those issues carries the CI job that proves it; lane C (I-18, I-19) needs a person.
+  each of those issues carries the CI job that proves it; lane C ([I-18](issues/I-18-licensing.md), [I-19](issues/I-19-hw-trace.md)) needs a person.
 - Left out: filing these as GitHub issues. They are files on the branch, not tracker entries.
-- Plan changes: 01, 02, 03, 04, 06, 07, 09, 10 (status table now points at `../issues/README.md`).
+- Plan changes: 01, 02, 03, 04, 06, 07, 09, 10 (status table now points at [`../issues/README.md`](issues/README.md)).
 
 ## P0-T5 (core), P0-T6, P0-T3 (shim) -- the bus, host-testable end to end
 - Commits: `ed582e6`
@@ -682,7 +682,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   And the host backend did not count reads taken while the DMA was stopped, so a stopped
   frame reported count 0 forever and the link could never regain phase; the real `fcppu_rna`
   counts regardless of whether `fcppu_r` is running, which is precisely how phase recovers.
-- Left out: the device backend (issue I-09) and the test-pattern firmware (I-10). Neither can
+- Left out: the device backend (issue [I-09](issues/I-09-fcbus-device.md)) and the test-pattern firmware ([I-10](issues/I-10-testpattern-firmware.md)). Neither can
   be compiled here.
 
 ## P2-T1, P4-T3 (tools parts) -- tests for the drafted NES and audio tools
@@ -694,7 +694,7 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
   `tools/respack.py`, and `tools/fcpico/stream.py`. `check_fixbank.py` asserts the permanent
   `$F000`-`$FFFF` bank is byte-identical, which is the one mistake that bricks a cartridge.
 - Left out: `tools/fcvideo_ref.py` and `tools/ppu_decode.py` are drafted and still untested
-  (issues I-03 and I-02), and `sim/ppubus/ppubus.py` is untested and uncalibrated (I-01).
+  (issues [I-03](issues/I-03-fcvideo-ref-tests.md) and [I-02](issues/I-02-ppu-decode-tests.md)), and `sim/ppubus/ppubus.py` is untested and uncalibrated ([I-01](issues/I-01-ppubus-tests.md)).
 
 ## P2-T2 (harness part) -- NMI cycle-count harness, measured on the tutorial ROM
 - Commits: see `git log -- doom/tests/bootrom`
@@ -708,4 +708,4 @@ One entry per task from `plan/10-workplan.md`, newest first. Format:
 
 ## Planning
 
-Planning completed; implementation tasks proceed per `plan/10-workplan.md`.
+Planning completed; implementation tasks proceed per [`plan/10-workplan.md`](plan/10-workplan.md).

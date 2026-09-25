@@ -2,7 +2,7 @@
 
 The cartridge cannot make sound (the PWM pin drives nothing the console amplifies for the
 Doom use case). Everything is played by the console's APU from register writes the cartridge
-ships in the mailbox and the boot ROM replays during vblank (`docs/pages/audio.md`).
+ships in the mailbox and the boot ROM replays during vblank ([`docs/pages/audio.md`](../../docs/pages/audio.md)).
 
 ## The instrument
 
@@ -47,7 +47,7 @@ so that up to 4 pairs remain for SFX in every frame.
 
 Two kinds:
 
-1. **DPCM** samples in the boot ROM bank (`$C000`-`$ECFF`, see 07). Trigger = 4 writes:
+1. **DPCM** samples in the boot ROM bank (`$C000`-`$ECFF`, see [07](07-bootrom.md)). Trigger = 4 writes:
    `$4010 = rate | 0x00`, `$4012 = (addr - 0xC000) >> 6`, `$4013 = (len - 1) >> 4`,
    `$4015 &= ~0x10` then `$4015 |= 0x10` (that is 5 writes; the clear can be skipped if the
    channel is known idle). One DPCM voice.
@@ -123,7 +123,7 @@ in the fcpico target.
 
 - **FamiStudio** (MIT, cross-platform; command-line form `FamiStudio <input> <command>
   <output> [-options]`, full option list via its `-help`; the docs site was unreachable when
-  this was written, so P4-T3 records the exact `midi-import`, `.ftm` import and `vgm-export`
+  this was written, so [P4-T3](10-workplan.md#p4-t3-audio-tools----spec-06-pipeline-size-l-depends----acceptance-teststools-round-trips-mus2apuspy---auto-produces-all-13-streams-from-doom1wad-under-the-cap) records the exact `midi-import`, `.ftm` import and `vgm-export`
   option names in this section) is the arranging tool. Its project files
   (`.fms`) are checked in under `doom/assets/music/` so arrangements are reproducible; a human
   can improve them in the GUI without touching code.
@@ -149,11 +149,11 @@ Music needed for the shareware episode: `D_E1M1`-`D_E1M9`, `D_INTER`, `D_INTRO`,
 
 `rasteri/PiPU` (GPL) ships `music/DOOM.ftm`, a FamiTracker module with eight Doom songs
 arranged for the 2A03: **Intro, Inter, E1M1, E1M2, E1M3, E1M4, E2M1, E3M1** (plus `DOOM.nsf`
-and a `famitone`-style driver on the NES side). FamiStudio imports `.ftm`, so P4-T4 starts by
+and a `famitone`-style driver on the NES side). FamiStudio imports `.ftm`, so [P4-T4](10-workplan.md#p4-t4-arrangements----size-l-human-assisted-depends-p4-t3-acceptance-famistudio-projects-for-d_e1m1-d_intro-d_introa-d_inter-committed-vgm-export-reproducible-via-cli-others-auto) starts by
 importing that module, exporting VGM per song and converting with `vgm2apus.py`; only
 `D_E1M5`-`D_E1M9`, `D_VICTOR` and `D_BUNNY` need new arrangements (auto or human). Licensing:
 the module is distributed under the repository's GPL; reusing it in this GPLv2/GPLv3-mixed
-firmware is compatible, with attribution to Andrew Tait in `LICENSES.md` (decision H6 still
+firmware is compatible, with attribution to Andrew Tait in [`LICENSES.md`](../LICENSES.md) (decision H6 still
 applies to taste). Verify the songs' completeness by listening once in FamiStudio.
 
 ## Note-retrigger rule (from FC PICO GB)

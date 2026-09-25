@@ -33,8 +33,8 @@ is involved, and so that most of it runs on every push.
 |-------|-------------------|
 | `tests/fcbus/` | mailbox builder (v1/v2 layouts, terminators, overflow refusal), rx dispatcher (all 256 byte values in every state), sync decision table (count = VAL-3..VAL+3 -> stop/nudge2/nudge1/arm), stream word addressing (`fcbus_stream_word(line,tile)` equals `convVram()`'s `31 + 34*y + x`), publish/swap semantics, data-mode DRQ ordering (palette, attributes, step, none) |
 | `tests/fcvideo/` | decimation table; block cost against a brute-force Python reference; LUT/dither/pack against a reference implementation (`tools/fcvideo_ref.py`) on synthetic and captured frames; hysteresis; palette-set generation; letterbox and prefetch words |
-| `tests/apu/` | see 06 |
-| `tests/input/` | see 05 |
+| `tests/apu/` | see [06](06-audio.md) |
+| `tests/input/` | see [05](05-input.md) |
 | `tests/tools/` (pytest) | `ppu_decode.py` round trip with `fcvideo_ref.py`; `sfx2dpcm.py` decode-back RMS; `vgm2apus.py` cap enforcement; `respack.py` index; `bincut.py`/`bin2c.py` byte-identical to the tutorial's committed outputs |
 | `tests/protocol/` | 03's obligations |
 | `tests/bootrom/` (pytest + `py65`) | NMI cycle count and register order; `FP_COM_KEY` packet bytes; init sequence writes |
@@ -86,7 +86,7 @@ video output:
 - Fault injection: drop or duplicate N reads in frame K, hold the heartbeat for M frames, send
   a v1 raw byte in v2 mode -- to test the resync logic and the state machine.
 
-**Calibration** (P0-T10): the defaults reproduce trace 6 in
+**Calibration** ([P0-T10](10-workplan.md#p0-t10-model-calibration)): the defaults reproduce trace 6 in
 `tests/fixtures/hw_trace_ntsc/`: 66 pre-render reads and 64 selected reads per visible line.
 The NMI contributes one dummy and 64 mailbox reads, making 15,491 physical reads. The
 `fcppu_rna` report is the zero-based last-read index, 15,490, matching `PPU_COUNT_VAL_V1`.
@@ -122,7 +122,7 @@ Purpose: validate the PIO + DMA + IRQ integration of the real firmware binary, w
 | `PicoSimulator/PicoSimulator` | C++, WIP | yes | yes | no | headless CLI, external device hooks |
 
 None simulates the RP2350, so this level runs an **RP2040 build of `fcpico_testpattern`** (the
-bus layer is chip-agnostic per `docs/pages/hardware.md`; `PICO_BOARD=pico`, `PICO_PLATFORM=rp2040`).
+bus layer is chip-agnostic per [`docs/pages/hardware.md`](../../docs/pages/hardware.md); `PICO_BOARD=pico`, `PICO_PLATFORM=rp2040`).
 The harness (`sim/fullchip/rp2040js/`) drives GP17/GP20/GP21 from the L3 model's timeline,
 samples GP6-GP13 and their direction on each `/RD` low, sends `$2007` writes via GP21, and
 asserts the received stream equals what the host backend would produce for the same frames.
@@ -219,10 +219,10 @@ Serial CLI (part of `port/cli.c`, both firmwares):
 | `dump attr` / `dump pal` / `dump mailbox` | last published values |
 | `reboot`, `bootsel` | |
 
-Checklist per milestone lives in `10-workplan.md`; results are appended to
-`doom/HARDWARE-LOG.md` by the human running the session (template provided). An agent that
-cannot run hardware records what it needs in `doom/HARDWARE-REQUESTS.md` and continues with
-everything that does not depend on it (see 12).
+Checklist per milestone lives in [`10-workplan.md`](10-workplan.md); results are appended to
+[`doom/HARDWARE-LOG.md`](../HARDWARE-LOG.md) by the human running the session (template provided). An agent that
+cannot run hardware records what it needs in [`doom/HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md) and continues with
+everything that does not depend on it (see [12](12-agent-playbook.md)).
 
 ### The trace sampler (P0-T9), concretely
 
@@ -242,7 +242,7 @@ frame less the vblank tail; capture twice with a half-frame offset to cover ever
 and the interval to the previous edge, runs of 2-dot-spaced qualifying reads (a tile pair),
 the per-line count of qualifying reads, the vblank gap, and the `$2007` write and read
 bursts. The deliverable is the per-line count and the *timing position* of any uncounted
-pair (see 01, "Prior-art evidence").
+pair (see [01](01-constraints.md), "Prior-art evidence").
 
 ### Vblank-gap synchronisation (fallback, from PiPU)
 
@@ -250,7 +250,7 @@ If the count-based sync misbehaves on some consoles, the same sampler logic give
 sync source: a PIO program that raises an interrupt when `/RD` has been idle for longer than
 any in-picture gap (the sprite-fetch window is 64 dots ~ 12 us; the vblank gap is > 1 ms).
 The ISR then restarts the DMA at the gap instead of at the controller packet, and the count
-becomes a check rather than the trigger. Recorded as R1's mitigation in 11; not planned
+becomes a check rather than the trigger. Recorded as R1's mitigation in [11](11-risks.md); not planned
 unless needed.
 
 ### The Mesen2 mapper, concretely
@@ -292,7 +292,7 @@ field rewritten to the private number (`tools/nes/set_mapper.py`); the PRG bytes
 
 ## GitHub Actions
 
-Templates in `doom/ci/workflows/`, activated in P0-T12 by copying to `.github/workflows/`:
+Templates in `doom/ci/workflows/`, activated in [P0-T12](10-workplan.md#p0-t12-activate-ci) by copying to `.github/workflows/`:
 
 | Workflow | Trigger | Jobs |
 |----------|---------|------|

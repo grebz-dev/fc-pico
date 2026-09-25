@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- verified in CI only |
 | **Size** | L |
-| **Depends on** | I-08 |
-| **Work plan task** | P0-T5 |
+| **Depends on** | [I-08](I-08-device-superbuild.md) |
+| **Work plan task** | [P0-T5](../plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware) |
 
 ## Goal
 
@@ -16,8 +16,8 @@ real console.
 
 ## Specification
 
-`plan/02-architecture.md` ("Core assignment and interrupt priorities"),
-`plan/01-constraints.md` ("The bus contract", "Hardware calibration"), and
+[`plan/02-architecture.md`](../plan/02-architecture.md) (["Core assignment and interrupt priorities"](../plan/02-architecture.md#core-assignment-and-interrupt-priorities)),
+[`plan/01-constraints.md`](../plan/01-constraints.md) (["The bus contract"](../plan/01-constraints.md#the-bus-contract-fixed-abi-from-docspagesprotocolmd), ["Hardware calibration"](../plan/01-constraints.md#hardware-calibration-of-the-read-count-measured-2026-09-22)), and
 `tutorial_project/tuto1_hw/sys/rp_system.cpp` -- `init()`, `ppu_dma()`, `jobRcvCom()`,
 `rom_dma()`, `ver_dma()`, `drq_ret()` -- plus `rp_dma.cpp`. `fcbus_core` already implements
 every decision; this is the PIO, DMA and interrupt plumbing around it.

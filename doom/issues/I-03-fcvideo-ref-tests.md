@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | A -- host only, actionable now |
 | **Size** | M |
-| **Depends on** | I-02 (soft) |
-| **Work plan task** | P1-T2 |
+| **Depends on** | [I-02](I-02-ppu-decode-tests.md) (soft) |
+| **Work plan task** | [P1-T2](../plan/10-workplan.md#p1-t2-stages-b-and-d-grey-lut-letterbox) |
 
 ## Goal
 
@@ -15,7 +15,7 @@ is tested, "the device matches the reference" means nothing.
 
 ## Specification
 
-`plan/04-video.md`, stages B to E, including the corrected block counts (the Doom
+[`plan/04-video.md` stages B](../plan/04-video.md#stage-b----horizontal-decimation-320---256) to [E](../plan/04-video.md#stage-e----nes-palette-sets), including the corrected block counts (the Doom
 frame covers 16 x 13 of the screen's 16 x 15 blocks, 51,200 pixels).
 
 ## Owns (create or modify only these)
@@ -57,4 +57,4 @@ python3 -m pytest doom/tests/tools -q
 ## Traps
 
 Do not tune the thresholds until the test passes; derive one from the first accepted
-output and then only ever raise it (`plan/09-testing-ci.md`, L2).
+output and then only ever raise it ([`plan/09-testing-ci.md`](../plan/09-testing-ci.md), L2).

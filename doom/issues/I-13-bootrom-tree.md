@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- verified in CI only |
 | **Size** | M |
-| **Depends on** | I-06 |
-| **Work plan task** | P2-T1 |
+| **Depends on** | [I-06](I-06-ci-host-lane.md) |
+| **Work plan task** | [P2-T1](../plan/10-workplan.md#p2-t1-doom-boot-rom-source-tree-and-linux-build) |
 
 ## Goal
 
@@ -16,8 +16,8 @@ proven in a CI job.
 
 ## Specification
 
-`plan/07-bootrom.md` in full, especially the bank layout, the RAM map (which
-addresses the fix bank dictates) and "Building on Linux/CI".
+[`plan/07-bootrom.md`](../plan/07-bootrom.md) in full, especially [the bank layout](../plan/07-bootrom.md#bank-layout-pg_mainasm), [the RAM map](../plan/07-bootrom.md#ram-map-defsraminc) (which
+addresses the fix bank dictates) and ["Building on Linux/CI"](../plan/07-bootrom.md#building-on-linuxci).
 
 ## Owns (create or modify only these)
 
@@ -31,7 +31,7 @@ and any file another open issue lists under **Owns**. The permanent fix bank is 
 
 ## Steps
 
-1. Copy the tutorial's sources into `bootrom/src/`, trimmed as `plan/07-bootrom.md` lists,
+1. Copy the tutorial's sources into `bootrom/src/`, trimmed as [`plan/07-bootrom.md`](../plan/07-bootrom.md) lists,
    with the opcode definitions coming from `bootrom/gen/protocol.inc`.
 2. Write `build.sh` around Wine plus the checked-in `nesasm.exe`.
 3. Write the toolchain gate: re-assemble the *tutorial* ROM with a pinned `dbdate.h` and
@@ -53,5 +53,5 @@ Every command must pass from the repository root.
 
 The RAM map is not free: `BOOTROM_FIX/SysEqu.h` fixes `KEY_*` at `$82`-`$8C`,
 `FLG_2000/2001` at `$B0`/`$B1`, `NMI_FLG` at `$B3` and the flash buffers at `$400`/`$500`.
-`plan/07-bootrom.md` has the resulting map; verify it against both `SysEqu.h` files before
+[`plan/07-bootrom.md`](../plan/07-bootrom.md) has the resulting map; verify it against both `SysEqu.h` files before
 writing a line of assembly.

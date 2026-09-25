@@ -6,7 +6,7 @@
 | **Lane** | A -- host only, actionable now |
 | **Size** | S |
 | **Depends on** | none |
-| **Work plan task** | P0-T7 |
+| **Work plan task** | [P0-T7](../plan/10-workplan.md#p0-t7-ppu-bus-model-and-decoder) |
 
 ## Goal — complete; calibrated by I-19
 
@@ -15,9 +15,8 @@ The model tests now pin both internal consistency and the real trace: 66 pre-ren
 
 ## Specification
 
-`plan/09-testing-ci.md` section "L3 -- PPU-bus model"; `plan/01-constraints.md`
-sections "The bus contract", "Prior-art evidence" and "Hardware calibration of the read
-count".
+[`plan/09-testing-ci.md` section "L3 -- PPU-bus model"](../plan/09-testing-ci.md#l3----ppu-bus-model-simppubus); [`plan/01-constraints.md`](../plan/01-constraints.md)
+sections ["The bus contract"](../plan/01-constraints.md#the-bus-contract-fixed-abi-from-docspagesprotocolmd), ["Prior-art evidence"](../plan/01-constraints.md#prior-art-evidence-read-from-the-sources-no-hardware) and ["Hardware calibration of the read count"](../plan/01-constraints.md#hardware-calibration-of-the-read-count-measured-2026-09-22).
 
 ## Owns (create or modify only these)
 

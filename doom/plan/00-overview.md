@@ -25,13 +25,13 @@ into the PPU byte stream, an attribute table and a palette, and ships them to th
 
 ## Non-goals (for the first release)
 
-- Ultimate Doom, Doom II, PWADs. Flash is 4 MB (inferred; see 01); only the shareware WHX fits
+- Ultimate Doom, Doom II, PWADs. Flash is 4 MB (inferred; see [01](01-constraints.md)); only the shareware WHX fits
   alongside the firmware. The build must not preclude larger flash parts later.
 - Network play. The cartridge has no second bus.
 - Faithful OPL2 music. The console's APU has five channels; music is *arranged* for it.
 - NES sprites. Everything is background pattern data, as in NES DOOM.
 - Clone-console compatibility beyond what the stock FC PICO firmware achieves.
-- PAL consoles. Should work in principle (see 11), untested.
+- PAL consoles. Should work in principle (see [11](11-risks.md)), untested.
 
 ## Milestones
 

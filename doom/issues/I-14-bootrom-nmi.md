@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- verified in CI only |
 | **Size** | L |
-| **Depends on** | I-13 |
-| **Work plan task** | P2-T2 |
+| **Depends on** | [I-13](I-13-bootrom-tree.md) |
+| **Work plan task** | [P2-T2](../plan/10-workplan.md#p2-t2-v2-nmi-init-main-loop-controller-packet) |
 
 ## Goal
 
@@ -16,8 +16,8 @@ harness that measures it already exists and is calibrated against the tutorial R
 
 ## Specification
 
-`plan/07-bootrom.md`: the assembly draft, the cycle table (1595 critical, 1975 total
-with 15 APU pairs) and the init sequence including the OAM parking step.
+[`plan/07-bootrom.md`](../plan/07-bootrom.md): [the assembly draft](../plan/07-bootrom.md#the-v2-nmi-as-nesasm-draft-to-be-assembled-in-p2-t2), [the cycle table](../plan/07-bootrom.md#the-v2-nmi-with-its-cycle-budget) (1595 critical, 1975 total
+with 15 APU pairs) and [the init sequence](../plan/07-bootrom.md#init-ur_main_setup) including the OAM parking step.
 
 ## Owns (create or modify only these)
 
