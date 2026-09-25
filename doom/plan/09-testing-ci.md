@@ -191,6 +191,19 @@ the final ARGB frame to match `sim/mesen2/goldens/S0.argb.sha256`. The reviewed 
 test pattern's vertical bars. The strict 180-frame run completes in about three seconds
 after the emulator build.
 
+### Planned sprite UI coverage
+
+[12 -- Sprite UI](12-sprite-ui.md) specifies proposed U0 (sprite transport), U1
+(fixed Doom UI) and U2 (dynamic Doom UI) scenarios and their artifacts. They do not
+exist yet. Extend fixed-frame fixtures beyond the BG stream to include UI payload,
+atlas and presentation generation; compare OAM/CHR/sprite palette and exact UI
+masks with an independent compositor. Keep hardware sprite limits enabled and
+verify per-line occupancy, atomic updates, transition cleanup and NMI/DMA budgets.
+Dynamic U2 depends on the still-open S2 integration and exercises real S3 input.
+Keep strict S0, legacy D0/D1 and S1 unchanged as regressions, with equivalent
+upgrade/recovery gates for the successor protocol. Mesen passes do not substitute
+for physical CHR mapping, PIO timing, legibility and controller playtests.
+
 ### CI
 
 `ci/workflows/doom-cosim.yml`: builds MesenCE (Linux, .NET 10,

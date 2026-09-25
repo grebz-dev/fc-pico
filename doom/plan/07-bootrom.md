@@ -1,5 +1,14 @@
 # 07 -- The Doom boot ROM (6502)
 
+> **Next feature, planning only:** [12 -- Sprite UI](12-sprite-ui.md) supersedes
+> the no-visible-sprites assumption for the future ROM. The setup/NMI below is
+> the current v2 baseline. New work must replace one-time OAM parking with bounded
+> coherent updates, load verified resident tiles and write sprite palettes.
+> Adding 513/514-cycle OAM DMA to measured 1614/2021-cycle NMI work exceeds the
+> existing budgets; prove a revised schedule before enabling UI. Preserve fixed-bank
+> bytes, controller heartbeat, address restoration and upgrade/recovery gates.
+
+
 A new **erasable bank** (`$8000`-`$EFFF`) for the console, assembled with the same
 `nesasm 2.51+autozp` the tutorial uses, installed by the cartridge through the unchanged
 permanent **fix bank** (`$F000`-`$FFFF`, `BOOTROM_FIX/`, `bootrom_fixr.bin`,
@@ -65,7 +74,7 @@ $8A`-`$8C` (written by `KEY_RTN` at `$F006` every frame), `FLG_2000 $B0`, `FLG_2
 | `$B0`-`$BF` | `FLG_2000`, `FLG_2001`, `NMI_FLG` at their fix-bank addresses; `SYS_TIMER`, `STG_COD` |
 | `$C0`-`$FF` | **mailbox v2 bytes 64-127** (the attribute table). The wire order is still one contiguous 128-byte block; the NMI's unrolled reads simply target two zero-page windows. |
 | `$0100` | stack |
-| `$0200`-`$02FF` | unused (was OAM; Doom never does sprite DMA) |
+| `$0200`-`$02FF` | unused by current Doom NMI; proposed OAM shadow for [sprite UI](12-sprite-ui.md), subject to fixed-bank RAM audit |
 | `$0300`-`$03FF` | palette work (`PAL_WRK`), fade state |
 | `$0400`-`$04FF` | `PICO_DATA_BUF` bulk staging (shared with the fix bank's flash buffers, which are only live during a reflash) |
 | `$0500`-`$05FF` | `FLASH_EXEC_BUF` -- leave free |
@@ -261,8 +270,8 @@ state is at most one frame old when it is sent.
    producing the measured 66/64 read cadence. Write a black BG palette; scroll 0.
 2. **Park the sprites off screen.** Rendering stays enabled for *both* backgrounds and
    sprites (step 4), because the read count was calibrated with that PPUMASK and the PPU
-   keeps performing its eight sprite pattern fetches per scanline either way. Doom never
-   writes OAM, and OAM after a cold boot is zeroed, which would put 64 sprites in the
+   keeps performing its eight sprite pattern fetches per scanline either way. The current Doom
+   NMI never updates OAM after setup; uninitialized OAM could put sprites in the
    top-left corner as visible garbage. So write `$EF` (below the visible area) into every
    fourth OAM byte exactly once -- `$2003 = 0` then 256 writes to `$2004`, or one `$4014`
    DMA from a prepared page -- and never touch OAM again. This is the only sprite-related

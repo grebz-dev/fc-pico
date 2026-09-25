@@ -4,7 +4,9 @@ From RP2040 Doom's 320x200 palette-indexed frame to the bytes the PPU pulls off 
 
 ## Output format (what the console can display)
 
-- 256x240 background, 8x8 tiles, no scrolling, no sprites used.
+- Current baseline: 256x240 background, 8x8 tiles, no scrolling, no visible sprites.
+  Planned: native-resolution foreground sprites for status/HUD/menu UI, alongside
+  the streamed world; see [12 -- Sprite UI](12-sprite-ui.md).
 - Per pixel: 2 bits selecting one of four entries of a *sub-palette*.
 - Per 16x16 block: 2 bits selecting one of four sub-palettes (the attribute table, 64 bytes at
   `$23C0`; each byte covers a 32x32 area as four 2-bit quadrants).
@@ -25,6 +27,16 @@ See [01](01-constraints.md), "Engine facts". The 3D view is in `frame_buffer[dis
 screens, the melt wipe, the ENDOOM text screen -- is composed **per scanline** by
 `fill_scanlines()` in `src/pico/i_video.c` from "vpatch" overlay lists, writing 16-bit RGB into
 `scanvideo` buffers. There is no full 320x200 8-bit frame anywhere.
+
+## Planned UI branch
+
+The pipeline below describes the current composed-background path. The next feature
+extracts UI intent before `compose_frame()` flattens vpatches, produces native 2bpp
+assets/OAM and a sprite palette, and publishes them with the matching background.
+Migrated UI bypasses stages B-D; remove its original drawing, including text baked
+into STBAR, to avoid duplication. Decorative panels/world imagery retain this
+pipeline. [12](12-sprite-ui.md) defines layout limits, assets, transition behavior
+and independent composite-image testing. Existing conversion timing targets remain.
 
 ## The pipeline
 

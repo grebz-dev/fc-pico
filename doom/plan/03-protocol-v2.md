@@ -1,5 +1,17 @@
 # 03 -- Protocol v2
 
+## Planned sprite UI extension
+
+This document remains the implemented v2 baseline. [12](12-sprite-ui.md) requires
+an explicitly negotiated successor for bounded UI state/OAM and sprite palette
+updates; v2 has no such payload. Keep v1/v2 offsets and counts unchanged. Decide
+fixed transfer length, generation/commit behavior, capability fallback and cycle
+budget in P3-U1/U3 before assigning new constants. Coordinate with audio's proposed
+v3, and generate all consumers from `fcbus_protocol.h`. No protocol code or values
+change as part of this plan.
+
+## Current baseline
+
 The v2 mailbox, explicit controller heartbeat and count=15554 are implemented in the
 Doom ROM and device bus. They have passed D1/S1 co-simulation and NES-001 display;
 dynamic S2 and the broader controller checks remain. See

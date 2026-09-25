@@ -1,5 +1,12 @@
 # 06 -- Audio
 
+> **Dependency update (2026-09-25):** Required [sprite UI](12-sprite-ui.md)
+> precedes audio integration in execution priority. Coordinate P4-T5's proposed
+> boot-ROM v3 with P3-U3 before assigning a protocol version. Budget APU replay
+> and DMC stalls together with UI reception, sprite palettes and OAM DMA, and
+> revalidate controller reads under their combined worst case.
+
+
 The host `fcapu` sequencer and APUS/DPCM support tools are implemented and tested.
 Music conversion, engine sound integration and console audio remain open; see
 [`../issues/I-05-audio-tools.md`](../issues/I-05-audio-tools.md) and

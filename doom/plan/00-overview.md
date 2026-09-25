@@ -29,7 +29,7 @@ into the PPU byte stream, an attribute table and a palette, and ships them to th
   alongside the firmware. The build must not preclude larger flash parts later.
 - Network play. The cartridge has no second bus.
 - Faithful OPL2 music. The console's APU has five channels; music is *arranged* for it.
-- NES sprites. Everything is background pattern data, as in NES DOOM.
+- World-object NES sprites: the 3D scene remains a streamed background. Foreground UI sprites are now required; see [12](12-sprite-ui.md).
 - Clone-console compatibility beyond what the stock FC PICO firmware achieves.
 - PAL consoles. Should work in principle (see [11](11-risks.md)), untested.
 
@@ -40,9 +40,9 @@ into the PPU byte stream, an attribute table and a palette, and ships them to th
 | **M0** | Foundations | pico-sdk build of an `fcbus` test-pattern firmware; host build of the bus model; boot ROM assembles on Linux CI; PPU-bus model calibrated against a hardware trace; CI green. | CI + one hardware session (trace capture, test pattern on a real console). |
 | **M1** | Grey Doom | DEMO1 plays on the console in greyscale (one sub-palette, no attribute updates), at >= 15 fps, using the **unmodified v1 protocol and tutorial boot ROM** where possible. | Mesen2 co-simulation golden frames + hardware session. |
 | **M2** | Colour Doom | Protocol v2 boot ROM installed by self-reflash; per-block palettes; palette flashes; >= 20 fps. | NMI cycle budget test, co-sim goldens, hardware. |
-| **M3** | Playable | Full controller scheme, menus, save/load, cheats, options. | Scripted input tests in co-sim; hardware playtest checklist. |
+| **M3** | Playable | Full controller scheme, readable sprite UI (**M3-UI**, P3-U1..U6), menus, save/load, cheats, options. | UI capacity/timing gates, fixed and dynamic Mesen scenarios, scripted input tests; hardware playtest checklist. |
 | **M4** | Audible | Music and effects on the APU, DPCM weapon sounds from the boot ROM bank. | APU write-budget tests; NSF/register-log playback in an emulator; hardware. |
-| **M5** | Release | Overclock, adaptive palettes, HUD polish, docs, flashing guide, tagged UF2 + boot ROM. | Full CI matrix + soak test (1 h) on hardware. |
+| **M5** | Release | Overclock, adaptive palettes, final visual review, docs, flashing guide, tagged UF2 + boot ROM. | Full CI matrix + soak test (1 h) on hardware. |
 
 ## Decision log
 
@@ -61,6 +61,16 @@ every document that depends on it (listed in brackets).
 | D8 | **Testing is layered: host unit tests, a calibrated PPU-bus model with golden frames, pioemu tests for the PIO programs, an optional full-chip simulator run, and Mesen2 co-simulation with a custom mapper as the pre-hardware gate.** [09] | Hardware sessions are scarce; every failure class must be catchable before one. |
 | D9 | **Protocol constants live in exactly one header and are generated into the 6502 include and the Python tools.** [03, 12] | The FC PICO docs list three hand-synchronised copies with no check; Doom adds two more consumers. |
 | D10 | **Initial clock 150 MHz; overclock is a Phase 5 task with its own validation.** [01, 10] | FC PICO GB runs this hardware at 276 MHz, RP2040 Doom expects 270 MHz, but the PIO bus timing must be re-validated after any change. |
+
+### Sprite UI decision (2026-09-25)
+
+**D11:** Foreground UI sprites are a required M3 playability goal, superseding the
+original no-sprites non-goal and optional P5-T3 HUD work. Keep the world background
+stream and prove native tile storage, per-line sprite capacity, frame coherence
+and NMI timing before migration. A negotiated transport revision is expected;
+its number and exact layout are not decided. [12](12-sprite-ui.md) defines the
+design and Mesen/hardware evidence required. D3 continues to govern the world;
+D4 describes the current v2 baseline, not the future UI payload.
 
 ## How to use this plan
 
