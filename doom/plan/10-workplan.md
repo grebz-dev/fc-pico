@@ -15,9 +15,24 @@ Doom video and basic pad input have been observed on an NES-001. Keep the calibr
 PPU-count, fixed-frame D0/D1 and reflash S1 gates green. The B-use fix and improved
 shadow-detail contrast are now confirmed on hardware; 224-line playback works.
 [HR-6](../HARDWARE-REQUESTS.md#hr-6-shadow-detail-and-pending-bvideo-checks-task-p2-t6)
-retains detailed geometry, chord and scene checks. Optimize the measured 38.208 ms converter, run
-dynamic S2, and finish the M1/M2 hardware checklists. Save/load, audio and release
-work follow their listed dependencies.
+retains detailed geometry, chord and scene checks.
+
+The next feature is **sprite UI (P3-U1..U6)**: status/HUD text, symbols, indicators,
+Doomguy face and menus at native resolution. It replaces optional P5-T3 polish.
+Execute in this order, preserving task IDs and unfinished acceptance gates:
+
+1. Capture the working baseline and complete U1's layout/storage/transport budget
+   study; continue converter optimization (P1-T9), dynamic S2 (P2-T7) and HR-6
+   checks as prerequisites for final performance/physical acceptance.
+2. Prove sprite tiles and hardware fetch behavior (U2), then a timed, coherent
+   transport/boot-ROM path (U3). Host and fixed Mesen checks accompany each step.
+3. Migrate all scoped UI (U4), integrate save/load (P3-T2) and options as their
+   screens become available, complete dynamic Mesen validation (U5), then run
+   the NES-001 UI/input acceptance session (U6). Early UI checks may precede
+   save/load but cannot close M3-UI without its transition coverage.
+4. Finish remaining M3 input/playability gates, then audio and release work.
+
+Sprite work does not waive the <=8 ms converter target, dynamic S2, or M1/M2 gates.
 
 ## Status
 
@@ -43,6 +58,7 @@ does not waive a task's remaining acceptance criteria.
 | P2-T5 | **partial** | Palette/attribute conversion and flash tables exist; scripted damage acceptance remains. |
 | P2-T6 | **partial** | Three-scene [palette report](../assets/palette_eval.md) and improved hardware contrast confirmed; full corpus/scene checks remain. |
 | P2-T7 / P2-T8 | **open** | Dynamic S2 and full colour hardware acceptance remain. |
+| P3-U1 / P3-U2 / P3-U3 / P3-U4 / P3-U5 / P3-U6 | **open** | Sprite UI plan only; capacity/storage/timing proof, implementation, Mesen and hardware gates remain ([I-20](../issues/I-20-sprite-ui.md)). |
 | P3-T1 | **partial** | Base mapping and host `--pads` movement pass; B-use fix passes hardware; full context mappings remain. |
 | P4-T1 | **done** | Host APU sequencer tests pass; audio integration and assets are later tasks. |
 | P4-T3 | **partial** | APUS/DPCM support tools pass tests; [I-05](../issues/I-05-audio-tools.md) remains. |
@@ -280,6 +296,66 @@ the status table and implemented sources for the current commands and toolchain.
 
 ## Phase 3 -- Playable (milestone M3)
 
+### P3-U1 Sprite UI feasibility and layout
+
+- Spec: [12](12-sprite-ui.md). Size: M. Depends: working P2-T3 and current frame-composition baseline.
+- Deliver: producer/widget inventory, native-pixel layouts for every required screen,
+  per-line/total OAM and atlas budgets, console/RP2350 memory map, transport alternatives
+  and worst-case byte/cycle table. Preserve a baseline artifact manifest.
+- Acceptance: every required widget accounted for; overflow/long text policies explicit;
+  physical pattern-storage probe specified; chosen design fits budgets or records the
+  exact unresolved scope decision. Do not promise a full-width sprite-only text row.
+
+### P3-U2 Resident tiles and sprite probe
+
+- Spec: [12](12-sprite-ui.md). Size: M. Depends: P3-U1.
+- Deliver: deterministic native 2bpp asset pipeline and a minimal glyph/icon/face probe
+  using non-streamed pattern memory; proposed U0 Mesen fixture and independent reference.
+- Acceptance: tile/address/mirroring tests, original BG/count unchanged, sprite limit
+  enforced, fixed-bank unchanged; **HW** confirms storage and visible sprites before
+  final atlas allocation. Initial static probe may use setup-time OAM writes.
+
+### P3-U3 UI transport and boot-ROM schedule
+
+- Spec: [12](12-sprite-ui.md), [03](03-protocol-v2.md), [07](07-bootrom.md). Size: L. Depends: P3-U1, P3-U2.
+- Deliver: negotiated protocol, generated constants, bounded UI staging/commit,
+  sprite palette and OAM update path, ROM stamp and recovery support. Coordinate
+  successor version and budgets with P4-T5 audio work.
+- Acceptance: full/empty/malformed/stalled updates, all PPU flags and DMA parities
+  meet measured cycle limits; constant per-mode count; atomic generation; U0 plus
+  strict S0, legacy D0/D1 and new/old S1 recovery pass. No fixed-bank changes.
+
+### P3-U4 Status bar, face, HUD and menu migration
+
+- Spec: [12](12-sprite-ui.md). Size: XL. Depends: P3-U3.
+- Sequence: status numbers/labels and keys/weapon indicators; complete face states;
+  HUD/messages/pause/automap labels; menus, cursor, sliders, save names and prompts;
+  remaining UI in intermission/finale and supported screens. Inventory determines
+  explicit foreground versus decorative background ownership.
+- Deliver: shared UI module and immutable snapshot seam, matching host/device sinks,
+  native assets and removal of duplicate legacy foreground draws.
+- Acceptance: exact glyph and state fixtures, all face selections, bounded long-text
+  layouts, no default flicker/dropout, asset/RAM/flash checks and U1 fixed UI comparisons.
+  Preserve wipe/saving constraints; integrate P3-T2 save/load when available.
+
+### P3-U5 Dynamic Mesen UI and regression suite
+
+- Spec: [12](12-sprite-ui.md), [09](09-testing-ci.md). Size: L. Depends: P3-U4, P2-T7 dynamic S2 integration; P3-T2 for save/load cases.
+- Deliver: U2 scripted states/input, versioned replay fixtures, OAM/CHR/palette/crop
+  dumps, generation/cycle/counter logs, runnable commands and CI lane/artifacts.
+- Acceptance: 3000-frame deterministic run, transition/stall stress, real menu input,
+  no mismatched UI generations or post-startup sync failures; U0/U1, S0/D0/D1/S1
+  regressions green. Report local and remote CI results separately.
+
+### P3-U6 Sprite UI acceptance on NES-001 **HW**
+
+- Spec: [12](12-sprite-ui.md). Size: M. Depends: P3-U5; P1-T9 for performance gate.
+- Deliver: reproducible UF2/ROM/asset hashes and hardware request with matched Mesen
+  scenes, readable status/face/HUD/menu captures, overscan and flicker checks,
+  controller navigation, palette flashes, reset/save/load, timing and 30-minute soak.
+- Acceptance: complete M3-UI gate in [12](12-sprite-ui.md); record human observations
+  and serial measurements. Earlier partial checks do not close performance or save gates.
+
 ### P3-T1 Full input mapping -- Spec 05. Size M. Depends P2-T3. Acceptance: mapper unit tests; menus navigable on host via `--pads`.
 ### P3-T2 Save and load -- Spec 08 flash layout, 04 SAVING. Size M. Depends P1-T3. Acceptance: co-sim S5; `FCPICO_AUTO_SAVENAME`; device saves survive power cycle (**HW**).
 ### P3-T3 Options page and config sector -- Size M. Depends P3-T1. Acceptance: always-run, turn speed, palette preset persisted; unit test of the config codec.
@@ -305,7 +381,12 @@ the status table and implemented sources for the current commands and toolchain.
 
 ### P5-T1 Overclock evaluation -- Spec 01, `rp2040-doom/src/i_main.c`. Size M. Depends P1-T9. Steps: 200/250/270 MHz with `vreg` and QMI timing; PIO bus validation (trace + stats) at each; fps gain table. Acceptance: chosen clock documented; **HW** 1-h soak at that clock.
 ### P5-T2 Adaptive palettes (optional) -- Size L. Depends P2-T6.
-### P5-T3 HUD and text polish (optional custom 256-wide status bar in the letterbox) -- Size L.
+### P5-T3 HUD and text polish (superseded)
+
+Required work moved forward to P3-U1..U6 and M3-UI; retain this ID for historical
+references. Phase 5 may do final visual review, but it is no longer where legibility
+or sprite UI implementation is deferred.
+
 ### P5-T4 rp2040js full-chip harness (optional) -- Spec 09 L5. Size M.
 ### P5-T5 Documentation -- Size M. Steps: Doxygen pages `docs/pages/doom-*.md` (architecture, protocol v2, build, user guide, troubleshooting); update `docs/pages/references.md`; user flashing guide with the reflash warning.
 ### P5-T6 Release -- Size S. Steps: tag; artifacts `fcpico_doom.uf2`, `doom1_whx.uf2`, `doom.nes`, checksums; release notes.
@@ -320,11 +401,13 @@ the status table and implemented sources for the current commands and toolchain.
 | M0 | [P0-T1](10-workplan.md#p0-t1-superbuild-skeleton-and-led-blink-firmware)..T13 done; CI green; fixture committed; calibration explanation in [01](01-constraints.md) |
 | M1 | [P1-T1](10-workplan.md#p1-t1-stage-a-8-bit-frame-composition)..T8 done; S2(600) green; hardware log entry with fps >= 15 |
 | M2 | [P2-T1](10-workplan.md#p2-t1-doom-boot-rom-source-tree-and-linux-build)..T8; S1, S2(3000) green; hardware log with reflash + colour + fps >= 20 |
-| M3 | [P3-T1](10-workplan.md#p3-t1-full-input-mapping----spec-05-size-m-depends-p2-t3-acceptance-mapper-unit-tests-menus-navigable-on-host-via---pads), T2, T3, T5, T7; S3, S5 green; playtest checklist complete |
+| M3 | [P3-T1](10-workplan.md#p3-t1-full-input-mapping----spec-05-size-m-depends-p2-t3-acceptance-mapper-unit-tests-menus-navigable-on-host-via---pads), T2, T3, T5, T7; P3-U1..U6 / M3-UI complete; S3, S5 and UI Mesen gates green; playtest checklist complete |
 | M4 | [P4-T1](10-workplan.md#p4-t1-fcapu-sequencer-core----spec-06-size-l-depends-p0-t4-acceptance-testsapu)..T6; S4 green; listening checklist |
 | M5 | [P5-T1](10-workplan.md#p5-t1-overclock-evaluation----spec-01-rp2040-doomsrci_mainc-size-m-depends-p1-t9-steps-200250270-mhz-with-vreg-and-qmi-timing-pio-bus-validation-trace--stats-at-each-fps-gain-table-acceptance-chosen-clock-documented-hw-1-h-soak-at-that-clock), T5, T6 (+ optional); soak 1 h; release artifacts |
 
 ## Changelog
+
+- 2026-09-25: promote sprite status/HUD/face/menu UI to required M3-UI; add P3-U1..U6, feasibility gates and Mesen/hardware validation; supersede optional P5-T3. Planning only.
 
 - 2026-09-24: align the execution summary with NES-001 Doom video/input, v2 ROM/reflash and measured converter cost; retain unmet acceptance gates.
 - 2026-09-20: reconciled landed work and current verification limits with source and progress.

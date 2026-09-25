@@ -137,9 +137,11 @@ lives in the fix bank.
 - The individual PPU address lines in firmware. The RP2350 sees the board's CS1 predicate;
   the emulator must decode `$0800-$0FFF` before advancing the stream. Nametable contents
   therefore matter even though the firmware itself only counts selected reads (01, 07).
-- NES sprites and OAM. `$4014` is never written; `$2001` still enables sprites (so that the
-  fetch pattern is the one the count was calibrated for -- **do not change PPUMASK bits
-  without recalibrating**).
+- Current baseline: visible NES sprites/OAM updates are absent after setup parks OAM.
+  Planned UI adds a shared presentation snapshot/render package, resident sprite tiles,
+  OAM and a sprite palette; see [12](12-sprite-ui.md). Host/device sinks must publish
+  it coherently with the background. `$2001` already enables sprites; preserve the
+  calibrated fetch selection and do not change PPUMASK without new evidence.
 - Scrolling. Scroll is always (0,0); `$2005` is written every NMI to keep the address latch
   deterministic.
 

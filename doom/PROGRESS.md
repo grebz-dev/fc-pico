@@ -11,6 +11,21 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## P3-U1..U6 -- sprite UI roadmap (2026-09-25)
+- Planning only: explored engine UI/vpatch composition, host/device frame sinks,
+  converter, bus/boot-ROM transport and the calibrated Mesen validation paths.
+- Added plan 12 and I-20; promoted status/HUD/menu text, symbols, indicators and
+  Doomguy face sprites from optional release polish to required M3-UI. Reordered
+  the execution checklist while retaining incomplete performance/S2/save gates.
+- Feasibility gates: real per-line sprite limits, physical non-streamed pattern
+  storage, native layouts, asset/memory budgets and measured OAM/NMI scheduling.
+  Specified fixed/dynamic UI co-simulation, independent composite comparisons,
+  legacy regressions and NES-001 acceptance artifacts.
+- Verified: `python3 doom/tools/check_md_links.py doom` -> 48 files, 584 links,
+  zero broken; `git diff --check` -> clean.
+- No firmware, engine, boot-ROM, emulator, test code or generated assets changed.
+  No new emulator or hardware execution is claimed.
+
 ## HR-6 -- hardware shadow-detail and B-use milestone (2026-09-25)
 - User confirms Doom works, contrast is much better and the B button works.
   USB serial is stable through 1,829 heartbeats at `count=15554`, with one startup

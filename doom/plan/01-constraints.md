@@ -1,5 +1,12 @@
 # 01 -- Constraints and budgets
 
+> Planned UI sprites add constraints beyond the current background stream:
+> 64 OAM entries, eight sprites per scanline, resident 2bpp tile/palette budgets,
+> verified physical pattern-memory mapping and a new measured NMI schedule.
+> See [12 -- Sprite UI](12-sprite-ui.md) before allocating buffers or transport
+> bytes; Mesen's 8 KB CHR RAM is not a hardware capacity measurement.
+
+
 Numbers the design has to respect. Each row says where it comes from. Rows marked
 **(inferred)** or **(empirical)** must be confirmed by the Phase 0 hardware session
 (see [10-workplan](10-workplan.md), [P0-T9](10-workplan.md#p0-t9-hardware-trace-capture-hw)) and this document updated with the measured value.

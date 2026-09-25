@@ -27,6 +27,15 @@ need their own acceptance checks. This is a working hardware prototype, not a co
 release milestone; see [issues/README.md](issues/README.md) for current work and
 [HARDWARE-LOG.md](HARDWARE-LOG.md) for observed console results.
 
+**Next feature goal: native-resolution sprite UI.** Move status-bar text, symbols,
+indicators, Doomguy's face, HUD messages and menus out of the dithered background
+conversion path. This is required playability work, promoted ahead of save/options,
+audio and release polish. Start with sprite-capacity, pattern-memory and NMI-budget
+proofs; preserve the working video/input baseline and continue converter optimization
+and dynamic S2 validation. The staged design, limitations and Mesen/hardware gates
+are in [plan/12-sprite-ui.md](plan/12-sprite-ui.md), tracked by
+[I-20](issues/I-20-sprite-ui.md). **Planning only; no sprite UI is implemented yet.**
+
 Use [PROGRESS.md](PROGRESS.md) for dated verification evidence and environment notes.
 [HARDWARE-REQUESTS.md](HARDWARE-REQUESTS.md) tracks requested console checks and
 [HARDWARE-LOG.md](HARDWARE-LOG.md) records their results. The plans describe intended
@@ -52,6 +61,7 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 9 | [plan/09-testing-ci.md](plan/09-testing-ci.md) | Test pyramid: host unit tests, PPU-bus model, pioemu, full-chip sim, Mesen2 co-simulation, hardware rig, GitHub Actions |
 | 10 | [plan/10-workplan.md](plan/10-workplan.md) | Phases and tasks with acceptance criteria -- **the execution checklist** |
 | 11 | [plan/11-risks.md](plan/11-risks.md) | Risk register, open questions, decisions that need a human |
+| 12 | [plan/12-sprite-ui.md](plan/12-sprite-ui.md) | Next feature: sprite UI design, capacity/timing gates, migration and Mesen validation |
 
 ## Directory map
 
