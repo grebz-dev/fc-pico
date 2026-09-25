@@ -11,6 +11,25 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-09-24 -- HR-4 controller input and screen photographs
+- Console: NES-001 (region not reconfirmed in this report)
+- Cartridge firmware: `fcpico_doom_input_whx.uf2` (HR-4 candidate)
+- Results: input works for movement, strafing and menus. Tapping B does not
+  activate use, although B works as a strafe modifier and in menus. The
+  supplied Doom photograph shows the game and status bar within the active
+  picture, with unused space beneath. A Super Mario Bros. photograph on the
+  same display uses more of the vertical picture area.
+- Serial: v2 `count=15554` through `hb=2221`; `stops=1`, `resyncs=1`,
+  `timeouts=0`, `errors=0` remained fixed. `converted` reached 590. Startup
+  drops settled at 856, then rose to 871 before remaining fixed in the later
+  capture. Conversion averaged 35574 us with 35612 us maximum at 540 frames.
+- Diagnosis: the mapper emits B-use keydown and keyup in the same engine tic.
+  A host probe with a scripted B tap observed both matching-space events and
+  zero tic commands with `BT_USE`. The converter deliberately places 200 Doom
+  lines at NES lines 16..215, leaving 24 lines below; this is a layout choice.
+- Attachments: photographs and serial transcript supplied in chat. The local
+  image files are `FCPICO_DOOM_HW_PHOTO.jpg` and `MARIO_HW_PHOTO.jpg` (not committed).
+
 ## 2026-09-24 -- HR-3 Doom playback on NES-001
 - Console: NES-001 (region not reconfirmed in this report)
 - Cartridge firmware: `fcpico_doom_streamfix_delay_bootsel_whx.uf2` (current HR-3 candidate)
