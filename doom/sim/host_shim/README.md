@@ -4,8 +4,8 @@
 
 pthreads-based host-side shim for the fc-pico Doom port's `host` build (`PICO_PLATFORM=host`),
 filling in exactly what pico-sdk 2.1.1's host platform ships headers for but no implementation
-of, without pulling in SDL2. This is the piece `doom/plan/08-build.md`'s "host build" paragraph
-calls for and its P0-T3 asks to confirm by linking.
+of, without pulling in SDL2. This is the piece [`doom/plan/08-build.md`](../../plan/08-build.md)'s "host build" paragraph
+calls for and its [P0-T3](../../plan/10-workplan.md#p0-t3-engine-host-build-without-sdl) asks to confirm by linking.
 
 ## What the SDK host platform provides vs what this shim adds
 

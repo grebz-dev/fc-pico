@@ -7,7 +7,7 @@
 CPU cycles it takes, from the fixed `ROM_NMI_ENTRY` trampoline (`$ED00`)
 through `RTI`. `test_tutorial_nmi.py` points it at the *tutorial* boot ROM
 (`tutorial_project/BOOTROM/rom.NES`) and is what pins down the numbers used
-in `doom/plan/07-bootrom.md` and `doom/plan/01-constraints.md`; a future
+in [`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md) and [`doom/plan/01-constraints.md`](../../plan/01-constraints.md); a future
 `test_doom_nmi.py` will point the same harness at `doom/bootrom/out/doom.nes`
 once that ROM exists (see "Pointing this at the Doom ROM" below).
 
@@ -58,7 +58,7 @@ The result (`NmiResult`) reports, among other things:
 | `extra_cycles` | `513` for every `$4014` write observed. See "DMA stall" below. |
 | `corrected_cycles` | `raw_cycles + extra_cycles`. |
 | `total_cycles` | `corrected_cycles + entry_cycles` -- the full real-hardware-equivalent cost, from the NMI line's falling edge through `RTI`'s last cycle. **This is the number to compare against a real vblank budget** (`NTSC_VBLANK_CYCLES = 2273`). |
-| `critical_section_cycles` | The `cycle` recorded at the *second* write to `$2005` (same 0-based-at-`$ED00` basis as `writes`), or `None` if there weren't two. This is "everything that can affect what gets rendered next frame has now happened" -- see `doom/plan/07-bootrom.md`'s "vblank-critical subtotal". |
+| `critical_section_cycles` | The `cycle` recorded at the *second* write to `$2005` (same 0-based-at-`$ED00` basis as `writes`), or `None` if there weren't two. This is "everything that can affect what gets rendered next frame has now happened" -- see [`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md)'s "vblank-critical subtotal". |
 | `writes` | `(cycle, address, value)` for every `$2000`-`$2007` / `$4000`-`$4017` write, in order. |
 | `apu_writes` | Just the `$4000`-`$4013` writes from `writes`, as `(address, value)` -- the decoded APU register replay. |
 | `reads_2007` | How many `$2007` reads happened (dummy included). |
@@ -80,7 +80,7 @@ has to be labelled accurately:
 - A stock NES emulator cannot model this cartridge correctly. FC PICO is not conventional
   CHR-ROM: reads advance a stream without using the PPU address, and `$2007` writes form the
   return channel. Expected screenshots therefore require the custom Mesen2 mapper and
-  cartridge model described by issue I-15, not merely loading `rom.NES` in an emulator.
+  cartridge model described by issue [I-15](../../issues/I-15-mesen2-cosim.md), not merely loading `rom.NES` in an emulator.
 - Mesen2 co-simulation executes the tutorial ROM against a hardware-calibrated mapper and
   checks a test-pattern screenshot in strict S0. It cannot settle electrical timing or PIO
   sampling margins; trace 6 provides the selected-read count and pulse-width evidence.
@@ -137,7 +137,7 @@ sanity check that the measurement is wired up correctly, not a bug.
   fetching the vector before the first instruction of the handler runs; there
   is no corresponding instruction for `step()` to execute, so this harness
   never measures it -- it just adds the textbook constant on top of what was
-  actually simulated (see `doom/plan/01-constraints.md`'s "NMI entry + `rti`
+  actually simulated (see [`doom/plan/01-constraints.md`](../../plan/01-constraints.md)'s "NMI entry + `rti`
   ~13 cycles" row: `7 + 6`, the 6 being `RTI`'s own, already-measured cost).
 
 - **Interrupt entry is faked directly at `$ED00`, not via `$FFFA`/`$FFFB` or
@@ -146,7 +146,7 @@ sanity check that the measurement is wired up correctly, not a bug.
   vector and letting it read `ROM_NMI_ENTRY` from there. For both the
   tutorial ROM (verified byte-for-byte against `rom.NES`: `$FFFA`/`$FFFB` =
   `$ED00`) and the planned Doom ROM (`ROM_NMI_ENTRY` is a fixed fix-bank
-  contract, `doom/plan/07-bootrom.md`) these are the same address, so this
+  contract, [`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md)) these are the same address, so this
   is a shortcut, not a divergence -- but it's a shortcut that assumes the
   vector really does point at `$ED00`, worth re-checking if this harness is
   ever pointed at a ROM that might not honour that contract.
@@ -186,7 +186,7 @@ sanity check that the measurement is wired up correctly, not a bug.
   5-cycle cost regardless of `y`. Nothing here needed a workaround.
 
 - **Why the fake `$2007` ignores `$2006`.** This isn't a simplification of
-  the *protocol* -- per `docs/pages/protocol.md`, `$2006` is not
+  the *protocol* -- per [`docs/pages/protocol.md`](../../../docs/pages/protocol.md), `$2006` is not
   addressing real memory here at all; parking the PPU address in
   pattern-table space just asserts the cartridge's chip select, and the
   cartridge then answers a flat stream of qualifying reads it's already
@@ -198,7 +198,7 @@ sanity check that the measurement is wired up correctly, not a bug.
 ## Pointing this at the Doom ROM
 
 `doom/bootrom/out/doom.nes` does not exist yet. Once it does, per
-`doom/plan/07-bootrom.md`:
+[`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md):
 
 - The entry point is unchanged: `ROM_NMI_ENTRY = $ED00`, same `jmp NMI`
   trampoline contract, same fixed fix-bank boundary. `NmiHarness`'s
@@ -213,7 +213,7 @@ sanity check that the measurement is wired up correctly, not a bug.
   serve 1 dummy + 128 bytes to however many `lda $2007`s the v2 NMI issues.
 - `NmiHarness(load_ines(doom_nes_path))` also needs no change, provided
   `doom.nes`'s PRG is still exactly 32 KB mapped flat at `$8000`-`$FFFF`
-  (`doom/plan/07-bootrom.md`'s bank layout: 4 x 8 KB banks, no mapper
+  ([`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md)'s bank layout: 4 x 8 KB banks, no mapper
   switching) -- if that ever stops being true, `NmiHarness.__init__`'s
   32 KB-exactly check is the first thing to revisit.
 - The write log, `critical_section_cycles` (second `$2005` write),
@@ -225,7 +225,7 @@ What a new `test_doom_nmi.py` **will** need to supply itself, rather than
 inheriting from this one:
 
 - **Its own RAM preset.** Only what the fix bank owns across the bank
-  boundary is pinned by `doom/plan/07-bootrom.md`: `KEY_NEW` (`$85`),
+  boundary is pinned by [`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md): `KEY_NEW` (`$85`),
   `FLG_2000`/`FLG_2001`/`NMI_FLG` (`$B0`/`$B1`/`$B3`) are confirmed to stay
   at the tutorial's addresses. Nothing in the plan docs yet pins where
   `PICO_COM`, the magic-byte offset, or an `ATTR_VALID`/`PAL_VALID`-style
@@ -234,9 +234,9 @@ inheriting from this one:
   Doom-specific preset dict from the real `doom/bootrom` source once it
   exists (e.g. its `defs/ram.inc`).
 - **A different post-mailbox shape to assert against.** Per
-  `doom/plan/07-bootrom.md`'s "v2 NMI" table, Doom's handler does not do
+  [`doom/plan/07-bootrom.md`](../../plan/07-bootrom.md)'s "v2 NMI" table, Doom's handler does not do
   sprite DMA at all (`$0200`-`$02FF` is explicitly "unused ... Doom never
-  does sprite DMA", and `01-constraints.md` lists `$4014` as "not needed by
+  does sprite DMA", and [`01-constraints.md`](../../plan/01-constraints.md) lists `$4014` as "not needed by
   Doom -- reclaimed") -- there is no `PALFADE_VAL` check to key a test on.
   Instead there are conditional attribute-table (`$23C0`, 64 bytes) and
   palette (`$3F00`, 16 bytes) upload blocks, each with their own `$2006`

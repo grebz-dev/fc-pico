@@ -59,7 +59,7 @@ Work happens on branch `claude/doom-fc-pico-nes-2bb1bx` in **both** repositories
 
 - `grebz-dev/fc-pico` -- this repository: plan, bus library, boot ROM, build, tests, CI.
 - `grebz-dev/rp2040-doom` -- the engine fork, consumed here as the submodule `doom/rp2040-doom`.
-  Its own notes for the port are in `FCPICO-PORT.md` at the root of that repository.
+  Its own notes for the port are in [`FCPICO-PORT.md`](rp2040-doom/FCPICO-PORT.md) at the root of that repository.
 
 Clone with `git clone --recurse-submodules`, or run `git submodule update --init doom/rp2040-doom`
 after a plain clone. The engine's own `3rdparty/tinyusb` submodule is **not** needed for the

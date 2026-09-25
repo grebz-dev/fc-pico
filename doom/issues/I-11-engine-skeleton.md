@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- partly local |
 | **Size** | M |
-| **Depends on** | I-08 (soft) |
-| **Work plan task** | P0-T2 |
+| **Depends on** | [I-08](I-08-device-superbuild.md) (soft) |
+| **Work plan task** | [P0-T2](../plan/10-workplan.md#p0-t2-engine-fork-superbuild-guard-and-empty-fcpico-platform) |
 
 ## Goal
 
@@ -21,12 +21,12 @@ adapters are silent/no-display stubs, and the flash-layout check passes at 237,8
 used. The existing test-pattern target and all 10 host C suites still pass. Standalone
 Pico host configuration succeeds; native `chocolate-doom` configuration cannot be
 checked locally because SDL2 development packages are absent. Hardware boot to the
-serial marker and `D_DoomMain` remains unverified, so P0-T2 is partial.
+serial marker and `D_DoomMain` remains unverified, so [P0-T2](../plan/10-workplan.md#p0-t2-engine-fork-superbuild-guard-and-empty-fcpico-platform) is partial.
 
 ## Specification
 
-`rp2040-doom/FCPICO-PORT.md` (already written, in the submodule) and
-`plan/08-build.md`.
+[`rp2040-doom/FCPICO-PORT.md`](../rp2040-doom/FCPICO-PORT.md) (already written, in the submodule) and
+[`plan/08-build.md`](../plan/08-build.md).
 
 ## Owns (create or modify only these)
 
@@ -40,12 +40,12 @@ and any file another open issue lists under **Owns**. Do not reformat engine fil
 
 ## Steps
 
-1. Add the `FCPICO_SUPERBUILD` guards described in `FCPICO-PORT.md` so the parent project
+1. Add the `FCPICO_SUPERBUILD` guards described in [`FCPICO-PORT.md`](../rp2040-doom/FCPICO-PORT.md) so the parent project
    initialises the SDK, and make `pico-extras` optional.
 2. Create `src/fcpico/` with a `common_fcpico` library and stub `i_video_fcpico.c`,
    `i_input_fcpico.c`, `i_sound_fcpico.c` that satisfy the engine's interfaces and do
    nothing.
-3. Add the `doom_tiny_fcpico` target with the flag set from `plan/08-build.md`.
+3. Add the `doom_tiny_fcpico` target with the flag set from [`plan/08-build.md`](../plan/08-build.md).
 4. Verify the original targets still configure: `doom_tiny` and `chocolate-doom` must be
    unaffected when `FCPICO_SUPERBUILD` is unset.
 5. Commit and push the submodule branch first, then advance the pin here in a separate

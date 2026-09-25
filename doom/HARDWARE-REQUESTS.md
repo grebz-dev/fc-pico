@@ -19,17 +19,17 @@ the result. The human fills in the result section and commits; the agent then co
 
 ### HR-1 Phase 0 trace capture and board facts (task P0-T9)
 - Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2` from the current
-  P0-T5/P0-T9 build (SHA-256 `be283708ba21e4ffa75ad4dec665461cd52db9220888d86888096f8051389cbf`).
+  [P0-T5](plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware)/[P0-T9](plan/10-workplan.md#p0-t9-hardware-trace-capture-hw) build (SHA-256 `be283708ba21e4ffa75ad4dec665461cd52db9220888d86888096f8051389cbf`).
 - Console ROM expected: tutorial (unchanged).
 - Steps: 1. Insert the cartridge, power on, confirm the test pattern is visible.
   2. Connect USB-C, open the serial console at 115200, run `stats` for 60 s and paste the
      output. 3. Run `trace` three times; save each complete dump as `trace_<n>.hex` and
      validate each with `python3 doom/tools/trace_decode.py <dump> --json`.
   4. Run `picotool info -a` on the UF2 and on the connected board; paste both.
-- Record: `doom/tests/fixtures/hw_trace_ntsc/` (see its `README.md`; dumps + `stats.txt` +
-  `picotool.txt`), and the console model/revision in `HARDWARE-LOG.md`.
+- Record: `doom/tests/fixtures/hw_trace_ntsc/` (see its [`README.md`](tests/fixtures/hw_trace_ntsc/README.md); dumps + `stats.txt` +
+  `picotool.txt`), and the console model/revision in [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
 - **Sharpened by co-simulation (2026-09-20).** The trace no longer has to explore the whole
-  count discrepancy; two of the three candidate explanations in `plan/01-constraints.md` can
+  count discrepancy; two of the three candidate explanations in [`plan/01-constraints.md`](plan/01-constraints.md) can
   be settled or have already been settled off the bench:
   - The counter's qualifier is not in doubt. `fcppu_rna` counts a read exactly when CS1 is
     low (`sm_config_set_jmp_pin(&cn, PI_CS1_BIT)` in the tutorial's `rp_system.cpp`), so
@@ -73,10 +73,10 @@ the result. The human fills in the result section and commits; the agent then co
   hold Select for automap. 5. Record a few serial `video frames` or
   `[DEBUG-hr3]` lines after using the pad.
 - Record: console model, which actions worked, any missed/held inputs, whether
-  the picture stayed stable, and serial lines in `HARDWARE-LOG.md`.
+  the picture stayed stable, and serial lines in [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
 - Result: partial physical pass on NES-001. Movement, strafing and menus work;
   B tap does not activate use. The v2 stream stayed at `count=15554` with no
-  further DMA stops or resyncs in the supplied capture. See `HARDWARE-LOG.md`.
+  further DMA stops or resyncs in the supplied capture. See [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
 
 ### HR-2 Corrected stream geometry visual check (task I-17)
 - Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2`, built from `42fa091`;
@@ -87,7 +87,7 @@ the result. The human fills in the result section and commits; the agent then co
   checkerboard appears; then try `pattern 0` to return to bars. 3. Run `stats` after about
   60 seconds and copy the complete line.
 - Record: console model, whether each pattern appears and fills the expected picture area,
-  any tearing or horizontal shift, and the `stats` line in `HARDWARE-LOG.md`. A photo is
+  any tearing or horizontal shift, and the `stats` line in [`HARDWARE-LOG.md`](HARDWARE-LOG.md). A photo is
   useful if alignment looks wrong.
 - Result: pending.
 
@@ -104,7 +104,7 @@ method; installing this image enables the serial command for later updates.
 This supersedes the raw-count-only diagnostic below. Review found two console-ROM bugs:
 tile `$00` selected the font area instead of the `$0800` stream, and the v2 heartbeat left
 the PPU address four rendering reads out of phase. Both are fixed and reproduce/pass in
-the corrected address-based Mesen mapper. See `PROGRESS.md` for before/after evidence.
+the corrected address-based Mesen mapper. See [`PROGRESS.md`](PROGRESS.md) for before/after evidence.
 
 For the next hardware validation, keep the NES off while flashing; wait through the
 30-second startup delay, then power on. The new stamp should cause one complete ROM
@@ -140,10 +140,10 @@ It serves the original tutorial ROM; the reverse reflash passed in Mesen. The fi
   output. 6. Optionally flash the recovery UF2 and confirm the console returns to the
   tutorial ROM.
 - Record: every on-screen message and where it stopped if it did (a photo of any text),
-  whether Doom appears, any tearing/rolling/wrong colours, serial output, in `HARDWARE-LOG.md`.
+  whether Doom appears, any tearing/rolling/wrong colours, serial output, in [`HARDWARE-LOG.md`](HARDWARE-LOG.md).
 - Result: the current candidate displays Doom on NES-001. USB serial reports
   steady v2 `count=15554`, increasing converted frames, and no further DMA
-  stops after startup. See `HARDWARE-LOG.md` for the transcript and conversion
+  stops after startup. See [`HARDWARE-LOG.md`](HARDWARE-LOG.md) for the transcript and conversion
   timing. Visual quality, extended stability, and input remain to be checked.
 - Diagnostic 1: flash `/tmp/fcpico-hw-doom/fcpico_diagnostic_usb_bus.uf2`
   (SHA-256 `94fbf9d92b7cfb704781e3abee0edc24d32bc1fb130f21b813af146dd0fb5630`).
@@ -183,7 +183,7 @@ It serves the original tutorial ROM; the reverse reflash passed in Mesen. The fi
 - Console result: reflash loops. After `ROM UPDATE END`, the console's local
   stamp is `0DOOM-02-0001` versus the cartridge's `20DOOM-02-0001`; it erases
   `$8000` through `$E000` and retries. Serial stays available but prints no
-  later engine output. See `HARDWARE-LOG.md`. The fix bank makes 257 `$2007`
+  later engine output. See [`HARDWARE-LOG.md`](HARDWARE-LOG.md). The fix bank makes 257 `$2007`
   fetches per 256-byte page, whereas the device supplied exactly 256 bytes;
   a one-word DMA tail is the next candidate to test.
 - ROM-tail candidate: flash `/tmp/fcpico-hw-doom/fcpico_doom_romtail_delay_whx.uf2`
@@ -240,7 +240,7 @@ It serves the original tutorial ROM; the reverse reflash passed in Mesen. The fi
 ## Human actions (not hardware)
 
 ### HA-1 Licensing enquiry (task P0-T13)
-- Ask impact soft (product page / X: @HD64180, see `docs/pages/references.md`) whether the FC
+- Ask impact soft (product page / X: @HD64180, see [`docs/pages/references.md`](../docs/pages/references.md)) whether the FC
   PICO sample sources (bus layer, boot ROM) may be redistributed in a GPLv2 combined work, and
   whether they object to a modified boot ROM being installed by a third-party firmware.
 - Result: (pending)

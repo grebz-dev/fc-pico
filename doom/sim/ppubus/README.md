@@ -3,8 +3,8 @@
 Pure-Python model of the **console side** of the fcbus PPU bus: the sequence
 of qualifying `$2007` read strobes and NMI-time `$2007` write traffic one
 NTSC frame produces, without emulating the 6502 or the PPU's own video
-timing. See `doom/plan/09-testing-ci.md` ("L3") and
-`doom/plan/01-constraints.md` ("The bus contract", "Hardware calibration")
+timing. See [`doom/plan/09-testing-ci.md`](../../plan/09-testing-ci.md) ("L3") and
+[`doom/plan/01-constraints.md`](../../plan/01-constraints.md) ("The bus contract", "Hardware calibration")
 for the numbers this is built from.
 
 The defaults are calibrated to the NES-001 trace: 66 pre-render reads, 64

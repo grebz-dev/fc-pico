@@ -49,7 +49,7 @@ add_subdirectory(port)                              # fcpico_doom (UF2), fcpico_
 if (FCPICO_BUILD_TESTS) enable_testing(); add_subdirectory(tests) endif()
 ```
 
-Engine-side changes needed for this to work (documented in the fork's `FCPICO-PORT.md`):
+Engine-side changes needed for this to work (documented in the fork's [`FCPICO-PORT.md`](../rp2040-doom/FCPICO-PORT.md)):
 
 - top-level `CMakeLists.txt`: `if (NOT FCPICO_SUPERBUILD)` around `pico_sdk_import`,
   `pico_extras_import`, `project()`, `pico_sdk_init()`; `pico-extras` becomes optional (only the
@@ -102,7 +102,7 @@ backend. `sim/host_shim/` therefore implements, with pthreads: `multicore_launch
 (thread), the FIFO (mutex + condvar queue), `multicore_lockout_*` (no-ops), and whatever
 alarm-pool function the engine reaches (`I_GetTime` uses `time_us_64()`, which the base host
 provides). Semaphores (`pico/sem.h`) and spin locks are common code and work on the host as is.
-P0-T3 confirms the list by linking; nothing else is expected to be missing.
+[P0-T3](10-workplan.md#p0-t3-engine-host-build-without-sdl) confirms the list by linking; nothing else is expected to be missing.
 
 ## Flash layout (`port/flash_layout.h`, checked by `tools/flash_layout_check.py`)
 
@@ -132,6 +132,6 @@ console reflashes its boot ROM on first boot ("ROM UPDATE"), then Doom starts.
 ## What is not touched
 
 `tutorial_project/` (the Arduino firmware, the tutorial boot ROM, the Windows tools) remains
-buildable exactly as documented in `docs/pages/build-pipeline.md`. The Doom boot ROM copies
+buildable exactly as documented in [`docs/pages/build-pipeline.md`](../../docs/pages/build-pipeline.md). The Doom boot ROM copies
 files out of it at Phase 2 rather than modifying them; the fix bank binary is copied, never
 rebuilt.

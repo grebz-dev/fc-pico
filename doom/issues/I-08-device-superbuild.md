@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- verified in CI only |
 | **Size** | M |
-| **Depends on** | I-06 |
-| **Work plan task** | P0-T1 |
+| **Depends on** | [I-06](I-06-ci-host-lane.md) |
+| **Work plan task** | [P0-T1](../plan/10-workplan.md#p0-t1-superbuild-skeleton-and-led-blink-firmware) |
 
 ## Goal
 
@@ -16,8 +16,8 @@ and the proxy blocks the download -- so this issue's deliverable is a CI job tha
 
 ## Specification
 
-`plan/08-build.md` in full: the superbuild sketch, the toolchain pins (pico-sdk
-2.1.1, arm-none-eabi-gcc 13.2.Rel1, picotool 2.1.1) and the flash layout.
+[`plan/08-build.md`](../plan/08-build.md) in full: [the superbuild sketch](../plan/08-build.md#superbuild), [the toolchain pins](../plan/08-build.md#toolchain-pins) (pico-sdk
+2.1.1, arm-none-eabi-gcc 13.2.Rel1, picotool 2.1.1) and [the flash layout](../plan/08-build.md#flash-layout-portflash_layouth-checked-by-toolsflash_layout_checkpy).
 
 ## Owns (create or modify only these)
 
@@ -32,11 +32,11 @@ and any file another open issue lists under **Owns**. In particular leave the `F
 ## Steps
 
 1. Write `cmake/boards/fcpico.h` starting from pico-sdk's `pico2.h`: 4 MB flash, the FC PICO
-   pin macros from `plan/01-constraints.md`, nothing else.
+   pin macros from [`plan/01-constraints.md`](../plan/01-constraints.md), nothing else.
 2. Replace the device branch's `FATAL_ERROR` with the real superbuild: SDK import, project,
    `pico_sdk_init()`, then the subdirectories. Keep `FCPICO_HOST_ONLY=ON` byte-compatible.
 3. Add a trivial device target that proves the toolchain: a `fcpico_hello` that blinks GP25
-   and prints the unique ID, so the job has something to build before I-09 and I-10 land.
+   and prints the unique ID, so the job has something to build before [I-09](I-09-fcbus-device.md) and [I-10](I-10-testpattern-firmware.md) land.
 4. Write the device CI job: fetch and cache pico-sdk 2.1.1, install arm-none-eabi-gcc
    13.2.Rel1, configure `MinSizeRel`, build, run `tools/flash_layout_check.py` on the ELF,
    and upload the UF2, map and size report.
@@ -53,5 +53,5 @@ cmake -S doom -B build-host -G Ninja -DFCPICO_HOST_ONLY=ON && cmake --build buil
 
 ## Traps
 
-`plan/01-constraints.md` warns that the engine is size-sensitive and that gcc 10.x
+[`plan/01-constraints.md`](../plan/01-constraints.md) warns that the engine is size-sensitive and that gcc 10.x
 miscompiles it. Pin the version in CI and print it in the job log.

@@ -6,7 +6,7 @@
 | **Lane** | A -- host only, actionable now |
 | **Size** | S |
 | **Depends on** | none |
-| **Work plan task** | P0-T7 |
+| **Work plan task** | [P0-T7](../plan/10-workplan.md#p0-t7-ppu-bus-model-and-decoder) |
 
 ## Goal
 
@@ -15,7 +15,7 @@ look at, so every golden image in the project will be produced by it. It has no 
 
 ## Specification
 
-`plan/04-video.md` (the output format section) and `plan/09-testing-ci.md` L2/L3.
+[`plan/04-video.md` (the output format section)](../plan/04-video.md#output-format-what-the-console-can-display) and [`plan/09-testing-ci.md` L2](../plan/09-testing-ci.md#l2----engine-host-runs)/[L3](../plan/09-testing-ci.md#l3----ppu-bus-model-simppubus).
 `tools/fcpico/stream.py` is already tested by `tests/tools/test_stream.py`; the decoder on
 top of it is not.
 

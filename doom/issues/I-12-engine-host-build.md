@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | A/B -- try locally first |
 | **Size** | L |
-| **Depends on** | I-11 |
-| **Work plan task** | P0-T3 |
+| **Depends on** | [I-11](I-11-engine-skeleton.md) |
+| **Work plan task** | [P0-T3](../plan/10-workplan.md#p0-t3-engine-host-build-without-sdl) |
 
 ## Goal
 
@@ -16,7 +16,7 @@ this connects them.
 
 ## Specification
 
-`plan/08-build.md` ("host build") and `sim/host_shim/README.md`, which records
+[`plan/08-build.md` ("host build")](../plan/08-build.md#targets) and [`sim/host_shim/README.md`](../sim/host_shim/README.md), which records
 exactly what pico-sdk's host platform does and does not provide.
 
 ## Owns (create or modify only these)

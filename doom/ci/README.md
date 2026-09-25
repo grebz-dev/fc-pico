@@ -14,17 +14,17 @@ inactive for the reasons listed below.
 | `doom-cosim.yml` | MesenCE co-simulation scenarios (nightly / manual) | L6 (template; strict S0 passes locally) |
 | `doom-docs.yml` | Doxygen with the repository's zero-warning rule | docs |
 
-Pinned versions (bump deliberately, in one commit, with a note in `plan/08-build.md`):
+Pinned versions (bump deliberately, in one commit, with a note in [`plan/08-build.md`](../plan/08-build.md)):
 pico-sdk 2.1.1, arm-none-eabi-gcc 13.2.Rel1, picotool 2.1.1, Python 3.11, .NET 10 for MesenCE.
 
 ## Lane status
 
-- Host: active in `doom-host.yml` (issue I-06).
+- Host: active in `doom-host.yml` (issue [I-06](../issues/I-06-ci-host-lane.md)).
 - Device firmware: active in `doom-device.yml`, which is byte-identical to this template and
   checks that itself. The same commands were run locally against arm-none-eabi-gcc 13.2.Rel1
   and pico-sdk 2.1.1: clean build, `fcpico_testpattern.uf2`, 87.6% of the flash budget free
-  (I-08 through I-10). What remains for I-09 and I-10 is hardware, not CI.
-- Boot ROM: waiting for the source tree and Linux build in issue I-13.
+  ([I-08](../issues/I-08-device-superbuild.md) through [I-10](../issues/I-10-testpattern-firmware.md)). What remains for [I-09](../issues/I-09-fcbus-device.md) and [I-10](../issues/I-10-testpattern-firmware.md) is hardware, not CI.
+- Boot ROM: waiting for the source tree and Linux build in issue [I-13](../issues/I-13-bootrom-tree.md).
 - Full-chip simulation: waiting for a validated test-pattern build and simulation harness.
 - MesenCE co-simulation: the skeleton builds and strict S0 passes locally against the
   hardware-calibrated mapper and reviewed picture golden. The template remains inactive

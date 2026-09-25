@@ -1,18 +1,18 @@
 # fcbus -- the cartridge bus library
 
 Plain-C, pico-sdk implementation of the FC PICO cartridge bus, wire-compatible with the shipped
-v1 protocol and extended to v2. Specification: `../plan/02-architecture.md`,
-`../plan/03-protocol-v2.md`; origin: `tutorial_project/tuto1_hw/sys/{rp_system,rp_dma}.*` and
-`sys/pio/fcppu.pio` (copied verbatim here at task P0-T5).
+v1 protocol and extended to v2. Specification: [`../plan/02-architecture.md`](../plan/02-architecture.md),
+[`../plan/03-protocol-v2.md`](../plan/03-protocol-v2.md); origin: `tutorial_project/tuto1_hw/sys/{rp_system,rp_dma}.*` and
+`sys/pio/fcppu.pio` (copied verbatim here at task [P0-T5](../plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware)).
 
-Present now: `fcbus_protocol.h` (the single source of truth, task P0-T4) and `fcppu.pio`
+Present now: `fcbus_protocol.h` (the single source of truth, task [P0-T4](../plan/10-workplan.md#p0-t4-protocol-single-source-of-truth)) and `fcppu.pio`
 (byte-identical copy of `tutorial_project/tuto1_hw/sys/pio/fcppu.pio`; a CI step diffs the two).
 
 Files:
 
 | File | Role |
 |------|------|
-| `fcbus_protocol.h` | the single source of truth for opcodes, mailbox layouts, counts, key bits (P0-T4) |
+| `fcbus_protocol.h` | the single source of truth for opcodes, mailbox layouts, counts, key bits ([P0-T4](../plan/10-workplan.md#p0-t4-protocol-single-source-of-truth)) |
 | `fcppu.pio` | four PIO programs, unchanged from the tutorial; header generated at build time |
 | `fcbus_core.c/.h` | hardware-independent logic: mailbox builder, rx dispatcher and state machine, sync decision, stream addressing, shadows, data-mode responder |
 | `fcbus_device.c` | PIO/DMA/IRQ glue (`init`, ISR, DMA re-arm, ROM/version serving) -- RAM-resident where the ISR needs it |

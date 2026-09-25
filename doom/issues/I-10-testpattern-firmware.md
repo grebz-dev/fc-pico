@@ -5,19 +5,18 @@
 |---|---|
 | **Lane** | B -- verified in CI only |
 | **Size** | M |
-| **Depends on** | I-09 |
-| **Work plan task** | P0-T5 / P0-T9 |
+| **Depends on** | [I-09](I-09-fcbus-device.md) |
+| **Work plan task** | [P0-T5](../plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware) / [P0-T9](../plan/10-workplan.md#p0-t9-hardware-trace-capture-hw) |
 
 ## Goal
 
 This is the artifact a human needs in order to answer the project's biggest open question.
-`plan/01-constraints.md` documents two irreconcilable readings of the frame read count, and
+[`plan/01-constraints.md`](../plan/01-constraints.md) documents two irreconcilable readings of the frame read count, and
 only a strobe trace from a real console can settle it. Nothing else unblocks calibration.
 
 ## Specification
 
-`plan/09-testing-ci.md` sections "L7 -- hardware" (the CLI command table) and "The
-trace sampler (P0-T9), concretely"; `HARDWARE-REQUESTS.md` HR-1, which is written against
+[`plan/09-testing-ci.md` section "L7 -- hardware"](../plan/09-testing-ci.md#l7----hardware) (the CLI command table) and ["The trace sampler (P0-T9), concretely"](../plan/09-testing-ci.md#the-trace-sampler-p0-t9-concretely); [`HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md) [HR-1](../HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9), which is written against
 this firmware.
 
 ## Owns (create or modify only these)
@@ -40,7 +39,7 @@ and any file another open issue lists under **Owns**.
 3. `trace`: the PIO1 sampler plus DMA described in the plan, dumping a multi-scanline window
    of CS1, /RD and /WR samples as hex. The original 15.7 ms text dump exceeded the hardware
    session's terminal capture limits; the current 2.0 ms window still spans about 31 NTSC
-   scanlines and contains the within-line evidence HR-1 needs.
+   scanlines and contains the within-line evidence [HR-1](../HARDWARE-REQUESTS.md#hr-1-phase-0-trace-capture-and-board-facts-task-p0-t9) needs.
 4. `tools/trace_decode.py` to turn that dump into per-line qualifying-read counts, a /RD low
    width histogram and the vblank gap -- with a synthetic round-trip test, since no real
    dump exists yet.
@@ -71,5 +70,5 @@ divergence in co-simulation.
 The replacement implementation keeps a monotonic init event/stage in `fcbus_stats_t` and
 routes both device firmware and the Mesen adapter through the same host-tested test-pattern
 controller. The replacement UF2 displays the test patterns successfully on the same NES-001.
-I-10's hardware display requirement is complete; the short trace captures and model
-calibration remain I-19.
+[I-10](I-10-testpattern-firmware.md)'s hardware display requirement is complete; the short trace captures and model
+calibration remain [I-19](I-19-hw-trace.md).

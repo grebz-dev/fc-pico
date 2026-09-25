@@ -13,7 +13,7 @@ Appended by whoever runs a console session. Newest first.
 
 ## 2026-09-24 -- HR-4 controller input and screen photographs
 - Console: NES-001 (region not reconfirmed in this report)
-- Cartridge firmware: `fcpico_doom_input_whx.uf2` (HR-4 candidate)
+- Cartridge firmware: `fcpico_doom_input_whx.uf2` ([HR-4](HARDWARE-REQUESTS.md#hr-4-controller-input-on-doom-task-p1-t4) candidate)
 - Results: input works for movement, strafing and menus. Tapping B does not
   activate use, although B works as a strafe modifier and in menus. The
   supplied Doom photograph shows the game and status bar within the active
@@ -32,7 +32,7 @@ Appended by whoever runs a console session. Newest first.
 
 ## 2026-09-24 -- HR-3 Doom playback on NES-001
 - Console: NES-001 (region not reconfirmed in this report)
-- Cartridge firmware: `fcpico_doom_streamfix_delay_bootsel_whx.uf2` (current HR-3 candidate)
+- Cartridge firmware: `fcpico_doom_streamfix_delay_bootsel_whx.uf2` (current [HR-3](HARDWARE-REQUESTS.md#hr-3-first-doom-boot-v2-reflash-and-engine-display-tasks-p2-t4-p1-t3-p1-t6) candidate)
 - Console ROM: Doom v2 stamp `20DOOM-02-0002` embedded in the candidate; on-screen
   post-update stamp was not separately transcribed.
 - Results: Doom is visibly playing back on the console. USB serial reached
@@ -121,7 +121,7 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: none
 
 ## 2026-09-24 -- HR-3 first Doom boot
-- Console: NES-001 (per HR-3; region not reconfirmed in this report)
+- Console: NES-001 (per [HR-3](HARDWARE-REQUESTS.md#hr-3-first-doom-boot-v2-reflash-and-engine-display-tasks-p2-t4-p1-t3-p1-t6); region not reconfirmed in this report)
 - Cartridge firmware: `fcpico_doom_whx.uf2` (user-reported flash)
 - Console ROM: tutorial stamp `2026-0205-1239` remains visible; Doom stamp
   `20DOOM-02-0001` appeared briefly

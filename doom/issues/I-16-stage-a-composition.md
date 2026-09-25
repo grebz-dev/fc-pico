@@ -5,8 +5,8 @@
 |---|---|
 | **Lane** | B -- depends on the host build |
 | **Size** | L |
-| **Depends on** | I-12 |
-| **Work plan task** | P1-T1 |
+| **Depends on** | [I-12](I-12-engine-host-build.md) |
+| **Work plan task** | [P1-T1](../plan/10-workplan.md#p1-t1-stage-a-8-bit-frame-composition) |
 
 ## Goal
 
@@ -17,7 +17,7 @@ every later video stage consumes.
 
 ## Specification
 
-`plan/04-video.md`, stage A, and the substitution table against
+[`plan/04-video.md` stage A](../plan/04-video.md#stage-a----8-bit-composition-engine-side-srcfcpicoi_video_fcpicoc), and the substitution table against
 `rp2040-doom/src/pico/i_video.c`.
 
 ## Owns (create or modify only these)
@@ -62,5 +62,5 @@ Partial. The adapter composes 320x200 indexed lines from the renderer's view buf
 packed overlays, including status/menu/title and the wipe, without a device-sized full-frame
 buffer. The host sink writes raw frames and PNG previews; a 600-frame DEMO1 capture has
 golden hashes every tenth frame, and title/menu cases have separate goldens. The device
-sink still discards the lines until I-17 stream conversion and publication are integrated.
+sink still discards the lines until [I-17](I-17-fcvideo-impl.md) stream conversion and publication are integrated.
 An independent Chocolate Doom screenshot comparison and hardware picture check remain open.

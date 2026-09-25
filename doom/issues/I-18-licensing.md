@@ -6,7 +6,7 @@
 | **Lane** | C -- human |
 | **Size** | S |
 | **Depends on** | none |
-| **Work plan task** | P0-T13 |
+| **Work plan task** | [P0-T13](../plan/10-workplan.md#p0-t13-licensing-and-attribution) |
 
 ## Goal
 
@@ -17,12 +17,12 @@ design.
 
 ## Specification
 
-`plan/11-risks.md` R6 and H1; `docs/pages/references.md` for the third-party
+[`plan/11-risks.md`](../plan/11-risks.md) R6 and H1; [`docs/pages/references.md`](../../docs/pages/references.md) for the third-party
 components and how to reach impact soft.
 
 ## Owns (create or modify only these)
 
-`LICENSES.md`, `HARDWARE-REQUESTS.md` (the HA-1 entry)
+[`LICENSES.md`](../LICENSES.md), [`HARDWARE-REQUESTS.md`](../HARDWARE-REQUESTS.md) (the [HA-1](../HARDWARE-REQUESTS.md#ha-1-licensing-enquiry-task-p0-t13) entry)
 
 ## Must not touch
 
@@ -32,12 +32,12 @@ and any file another open issue lists under **Owns**.
 
 ## Steps
 
-1. Complete `LICENSES.md`: every component, its origin, its licence, and what it obliges.
-2. Ask impact soft (product page, or X as `docs/pages/references.md` records) two questions:
+1. Complete [`LICENSES.md`](../LICENSES.md): every component, its origin, its licence, and what it obliges.
+2. Ask impact soft (product page, or X as [`docs/pages/references.md`](../../docs/pages/references.md) records) two questions:
    may the sample bus layer and boot ROM be redistributed inside a GPLv2 combined work, and
    do they object to a third-party firmware installing a modified boot ROM.
-3. Record the answer in `LICENSES.md` and, if it constrains the design, in
-   `plan/11-risks.md`.
+3. Record the answer in [`LICENSES.md`](../LICENSES.md) and, if it constrains the design, in
+   [`plan/11-risks.md`](../plan/11-risks.md).
 
 ## Acceptance
 
