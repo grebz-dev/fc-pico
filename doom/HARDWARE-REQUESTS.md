@@ -60,6 +60,29 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Open requests
 
+### HR-13 Styled status, sprite logo and episode names (task P3-U4 visual follow-up)
+- Flash: `/tmp/fcpico-styled-hud-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `279b8e01fa04e65e6ebd40e6cf43478ece67202ab297ea2ce4add68c751b3d19`.
+  Embedded ROM SHA-256
+  `ac3d04b0ba7952be6d4d7a369c00c92df8905fd4d785999323f0712710e55abb`
+  matches the passing Mesen ROM. Test stamp `20DOOM-04-9009`; the permanent
+  fix bank remains unchanged.
+- Steps: flash with the NES off and let the ROM update finish. At the title
+  menu, look for the small red/gold DOOM sprite logo over the transparent game
+  picture. Start New Game and inspect the episode menu: `KNEE DEEP IN / THE
+  DEAD`, `SHORES OF HELL`, and `INFERNO` should replace numbered labels, with
+  a cursor on the selected episode. In gameplay, inspect the gray status
+  frame and the dark shadows beside red values. Pause and confirm native
+  status and menu labels stay visible over the game picture; the paused menu
+  intentionally omits the logo to fit the NES's 64-entry OAM budget.
+- Record: title menu, episode menu and status photos; whether any logo or
+  episode glyphs are missing after a cold boot and another power cycle;
+  whether the new panel helps or hurts readability; and several serial
+  heartbeat lines. Expected `proto=4`, `count=15122`, no rising stop/error
+  count. The generated lower-half sprite patterns have passed Mesen but are
+  the main new physical storage check.
+- Result: pending physical run.
+
 ### HR-12 Transparent sprite menus, gray status, red text and special faces (task P3-U6)
 - Flash: `/tmp/fcpico-native-palette-device/artifacts/fcpico_doom_native_status_whx.uf2`,
   SHA-256 `9b78b727cb30c381776d1332ac598deb7bec51ee9372b81f1d99172002f00520`.

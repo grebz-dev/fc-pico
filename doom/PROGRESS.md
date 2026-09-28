@@ -11,6 +11,28 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## P3-U4 visual follow-up -- styled status and native menu art (2026-09-28)
+- [HR-12](HARDWARE-REQUESTS.md#hr-12-transparent-sprite-menus-gray-status-red-text-and-special-faces-task-p3-u6)
+  physically passed red text, gray status backing and hit/pickup faces; the
+  shareware episode menu still used numbered labels. Plan 12 now records the
+  visual follow-up and its OAM/palette constraints.
+- The status backing has a native pixel metal frame and section separators.
+  Tall sprite digits and the BG ammo row have dark one-pixel shadows. The
+  shareware episode menu uses three actual names packed into 19 paired-glyph
+  CHR tiles and 21 OAM entries. A 64×24, 24-tile red/gold DOOM sprite logo
+  replaces the converted main-menu patch on the title screen. It is omitted
+  on the paused game menu because 35 status entries plus 26 menu entries and
+  a cursor leave only two OAM slots.
+- `ctest --test-dir build-host --output-on-failure` passed 11/11 and
+  `python -m pytest doom/tests -q` passed 388/388. Mesen title, episode,
+  paused main/options, status, ouch and grin probes each passed 30 heartbeats
+  at `count=15122`, no DMA stops, and NMI exit on scanline 256. The device
+  build passed flash layout and fix-bank gates, links at 289808 firmware
+  bytes, and embeds ROM SHA-256
+  `ac3d04b0ba7952be6d4d7a369c00c92df8905fd4d785999323f0712710e55abb`.
+  New lower-half sprite pattern storage and display contrast await NES-001
+  validation in [HR-13](HARDWARE-REQUESTS.md#hr-13-styled-status-sprite-logo-and-episode-names-task-p3-u4-visual-follow-up).
+
 ## P3-U6 -- transparent menu and special face candidate (2026-09-27)
 - [HR-11](HARDWARE-REQUESTS.md#hr-11-native-pause-hud-sprite-menus-and-idle-face-task-p3-u5)
   passed on NES-001 for persistent status and idle face animation. The game

@@ -95,7 +95,7 @@ static void test_native_status_gray_palette(void) {
         }
     }
     size_t first = (VRAM_HEAD_WORDS + FCVIDEO_STATUS_START * VRAM_TILE_COLS) * 2;
-    CHECK_EQ(stream[first], 0xFF);
+    CHECK_EQ(stream[first], 0);
     CHECK_EQ(stream[first + 1], 0);
     fcvideo_set_native_status(&video, false);
 }
