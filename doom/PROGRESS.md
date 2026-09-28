@@ -11,6 +11,37 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## P3-U4 visual follow-up -- Mesen iteration after HR-14 (2026-09-28)
+- [HR-14](HARDWARE-REQUESTS.md#hr-14-aligned-status-and-paused-menu-doom-logo-task-p3-u4-visual-follow-up)
+  reported a yellow logo corner outside menus, incomplete right-side face,
+  shortened difficulty labels, small main-menu letters and `READ` instead of
+  `READ ME`. A stale-menu-ID Mesen probe reproduced the corner; scanline OAM
+  accounting reproduced nine sprites on each upper face row. Both checks were
+  red before the fixes and green after them.
+- The ROM now gates logo drawing on the active menu bit. The face moves to a
+  full-height center niche, and weapon/key rows move below the number rows;
+  Mesen sees no scanline with more than eight active sprites. The paused main
+  menu uses 8×8 full-size letters, a 56×24, 21-tile original-derived logo
+  with three brighter visible colors, and live health/armor. The face,
+  weapons and keys reappear when the menu closes. `READ ME` is complete.
+- The difficulty menu suppresses abbreviated sprite labels and keeps Doom's
+  original styled patches. A scripted host-engine run reached skill menu ID 3
+  and showed the full five original names; its captured frame also passed v4
+  Mesen cosimulation. These long patches still pass through the background
+  converter and are visibly dithered. Native background treatment remains a
+  separate clarity improvement.
+- Native-size editable PNGs for title/paused logos, all 42 faces and paired
+  episode letters now round-trip losslessly through `edit_sprite_sheets.py`.
+  `preview_native_ui.sh` generates Mesen test scenes without a device build.
+  `pytest doom/tests -q` passed 389/389 and host C tests passed 11/11.
+  Paused, title, episode, difficulty, options, gameplay, ouch and stale-ID
+  Mesen probes each passed 30 stable `count=15122` heartbeats and NMI exit on
+  scanline 256. The host engine builds and the input-walk test passes. Two
+  host image-golden tests still fail against old expected frames; both fail
+  identically with the submodule's original `m_menu.c`, so this iteration did
+  not cause those mismatches. No UF2 was built during this iteration, as
+  requested.
+
 ## P3-U4 visual follow-up -- physical alignment and paused logo (2026-09-28)
 - [HR-13](HARDWARE-REQUESTS.md#hr-13-styled-status-sprite-logo-and-episode-names-task-p3-u4-visual-follow-up)
   photo showed top status values crossing the metal border and Doomguy

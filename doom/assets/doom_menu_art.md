@@ -8,19 +8,30 @@ to the three visible colors of one sprite palette. The 64-pixel width fits
 the NES's eight-sprites-per-scanline limit. Transparent pixels leave the
 menu's game image visible. `doom_menu_logo_preview.png` is a 4× preview.
 
-`doom_menu_logo_small.chr` is a 48×24, 18-tile reduction of the same source
-patch. It fits above the paused main menu while the status remains visible;
+`doom_menu_logo_small.chr` is a 56×24, 21-tile reduction of the same source
+patch. It fits above the paused main menu while health and armor remain visible;
 `doom_menu_logo_small_preview.png` is its 4× preview.
 
-`doom_episode_pairs.chr` contains 31 paired-glyph tiles for the shareware
-episode names and main-menu labels. Each tile packs two narrow characters with a dark shadow.
+`doom_episode_pairs.chr` contains 19 paired-glyph tiles for the shareware
+episode names. Each tile packs two narrow characters with a dark shadow.
 `doom_menu_art.json` records the label lines and tile IDs. The sheet is
 generated from code, so the WHX is not copied into the repository.
 
 The large logo uses sprite tiles `$60..$7F` and 32 OAM entries at the title.
-The small logo uses `$1F..$30` and 18 OAM entries on the paused main menu.
-Four static H/R status labels now occupy the native background stream, freeing
-OAM for the small logo. A paused main menu uses 31 status, 14 paired-label,
-18 logo and one cursor entries: all 64 OAM entries. The episode labels use
-21 OAM entries. These lower-half pattern addresses require physical
-validation even though the Mesen model passes.
+The paused logo uses `$13..$27` and 21 OAM entries. Main-menu labels use the
+full-size 8×8 sprite font, including `READ ME`. Its paused layout uses 12
+health/armor sprites, 28 label sprites, 21 logo sprites and one cursor; the
+face, weapons and keys remain visible in gameplay and other menus. Four static
+H/R labels occupy the native status background. The episode labels use 21 OAM
+entries. These lower-half pattern addresses require physical validation even
+though the Mesen model passes.
+
+The editable sources are `doom_menu_logo_edit.png`,
+`doom_menu_logo_small_edit.png` and `doom_episode_pairs_edit.png`, all at
+native pixel size. Edit them in Aseprite, GIMP or another pixel editor with
+nearest-neighbor scaling and no new colors or semi-transparent pixels. Run
+`doom/.venv/bin/python doom/tools/edit_sprite_sheets.py import` to convert
+the PNGs back to the CHR files that the ROM builder reads. The import command
+checks size and exact four-color palettes. Running `build_doom_menu_art.py`
+again restores source-derived art and overwrites manual CHR edits; `export`
+rewrites the editable PNGs from the current CHR. Preserve edits before either.

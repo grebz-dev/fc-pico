@@ -15,8 +15,8 @@ from PIL import Image
 from build_doomguy_faces import ROOT, WHDATA, Whx
 
 LOGO_SIZE = (64, 32)
-SMALL_LOGO_SIZE = (48, 24)
-MAIN_MENU_LABELS = ("NEW", "OPTIONS", "LOAD", "SAVE", "READ", "QUIT")
+SMALL_LOGO_SIZE = (56, 24)
+MAIN_MENU_LABELS = ("NEW", "OPTIONS", "LOAD", "SAVE", "READ ME", "QUIT")
 EPISODE_LINES = (
     (("KNEE DEEP IN", "THE DEAD"), ("SHORES OF HELL",), ("INFERNO",)),
 )
@@ -90,7 +90,7 @@ def logo_pixels(whx: Whx, size: tuple[int, int] = LOGO_SIZE) -> np.ndarray:
     original = patch_pixels(whx.lump(int(lookup[labels.index("M_DOOM") + 1])))
     assert original.shape == (60, 123)
     # Both sprite layouts preserve the source patch's nearly 2:1 aspect ratio.
-    # The title uses eight sprites per line; the paused menu uses six.
+    # The title uses eight sprites per line; the paused menu uses seven.
     sample = np.asarray(Image.fromarray(original).resize(
         size, Image.Resampling.NEAREST))
     rgb = np.frombuffer(whx.named("PLAYPAL")[:768], dtype=np.uint8).reshape(256, 3)
@@ -109,8 +109,7 @@ def logo_pixels(whx: Whx, size: tuple[int, int] = LOGO_SIZE) -> np.ndarray:
 
 def episode_tiles() -> tuple[bytes, dict[str, int]]:
     pairs = sorted({(line + " ")[at:at + 2]
-                    for line in (*MAIN_MENU_LABELS,
-                                 *(line for episode in EPISODE_LINES[0] for line in episode))
+                    for line in (line for episode in EPISODE_LINES[0] for line in episode)
                     for at in range(0, len(line), 2)})
     data = bytearray()
     for pair in pairs:
@@ -138,7 +137,7 @@ def main() -> int:
     logo = logo_pixels(whx)
     small_logo = logo_pixels(whx, SMALL_LOGO_SIZE)
     pairs, lookup = episode_tiles()
-    assert len(pairs) == 31 * 16
+    assert len(pairs) == 19 * 16
     (args.output / "doom_menu_logo.chr").write_bytes(encode_tiles(logo))
     (args.output / "doom_menu_logo_small.chr").write_bytes(encode_tiles(small_logo))
     (args.output / "doom_episode_pairs.chr").write_bytes(pairs)
@@ -148,7 +147,7 @@ def main() -> int:
     preview.resize((256, 128), Image.Resampling.NEAREST).save(
         args.output / "doom_menu_logo_preview.png")
     Image.fromarray(palette[small_logo], "RGBA").resize(
-        (192, 96), Image.Resampling.NEAREST).save(
+        (224, 96), Image.Resampling.NEAREST).save(
         args.output / "doom_menu_logo_small_preview.png")
     (args.output / "doom_menu_art.json").write_text(json.dumps({
         "source": str(args.whx.resolve().relative_to(ROOT)),
