@@ -16,7 +16,25 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "doom/tools"))
 from fcpico import protocol, stream  # noqa: E402
-from native_status_art import bg_status_tiles, resident_art  # noqa: E402
+from native_status_art import (bg_status_tiles, episode_pair_art,
+                               menu_logo_art, resident_art)  # noqa: E402
+
+
+def status_backing(pixels: np.ndarray) -> None:
+    for y in range(192, 240):
+        for x in range(256):
+            color = 1
+            if y in (192, 193, 223, 239):
+                color = 0
+            elif y in (194, 195, 222, 224):
+                color = 2
+            elif x in (0, 8, 96, 104, 151, 160, 248, 255):
+                color = 0
+            elif x in (1, 9, 97, 105, 152, 161, 249, 254):
+                color = 2
+            elif 225 <= y <= 227 and (x < 8 or x >= 248):
+                color = 0
+            pixels[y, x] = color
 
 
 def packet(health: int, armor: int, face: int, keys: int, weapons: int,
@@ -56,7 +74,7 @@ def main() -> int:
     y, x = np.indices((184, 256))
     pixels[8:192] = ((x // 16 + y // 16) % 3 + 1).astype(np.uint8)
     if not args.no_status:
-        pixels[192:240] = 1
+        status_backing(pixels)
     mailbox = bytearray(protocol.FC_COM_BUF_SIZE_V4)
     mailbox[protocol.MBX_FLAGS] = (protocol.MBX_FLAG_V2 | protocol.MBX_FLAG_V3 |
                                    protocol.MBX_FLAG_V4 | protocol.MBX_FLAG_UI_VALID |
@@ -86,7 +104,12 @@ def main() -> int:
     oam = (run / "oam.bin").read_bytes()
     sprite_palette = (run / "sprite_pal.bin").read_bytes()
     assert sprite_palette[1] == sprite_palette[3] == 0x16
+    assert sprite_palette[2] == 0x0F
     assert sprite_palette[11] == 0x06
+    assert sprite_palette[13:16] == bytes((0x06, 0x16, 0x28))
+    sprite_chr = (run / "sprite_chr.bin").read_bytes()
+    assert sprite_chr[:len(episode_pair_art()[0])] == episode_pair_art()[0]
+    assert sprite_chr[0x600:0x600 + len(menu_logo_art())] == menu_logo_art()
     if not args.no_status:
         assert (run / "palette.bin").read_bytes()[15] == 0x16
         background_chr = (run / "background_chr.bin").read_bytes()
@@ -99,12 +122,20 @@ def main() -> int:
         if not args.no_status:
             assert all(oam[n * 4] < 0xEF for n in range(25)), "HUD vanished on Start/menu"
         else:
-            assert all(oam[n * 4] == 0xEF for n in range(35))
+            if args.menu_id == 1:
+                assert all(oam[n * 4] < 0xEF for n in range(24))
+                assert oam[:96] == bytes(value for row in range(3) for col in range(8)
+                                          for value in (15 + row * 8, 0x60 + row * 8 + col,
+                                                        3, 96 + col * 8))
+            else:
+                assert all(oam[n * 4] == 0xEF for n in range(35))
         expected_first = {1: (87, "N"), 2: (87, "E"), 3: (87, "E"),
                           4: (58, "E"), 5: (87, "E")}[args.menu_id]
+        first_tile = (episode_pair_art()[1]["KN"] if args.menu_id == 2 else
+                      ord(expected_first[1]))
         assert oam[35 * 4:35 * 4 + 4] == bytes((expected_first[0],
-            ord(expected_first[1]), 0, 80 if args.menu_id >= 4 else 92))
-        assert oam[61 * 4] == expected_first[0] + 32
+            first_tile, 0, 80 if args.menu_id >= 4 else 92))
+        assert oam[61 * 4] == expected_first[0] + (64 if args.menu_id == 2 else 32)
         assert Image.open(run / "final.png").convert("RGB").getpixel((70, 100)) != (0, 0, 0)
         print("native sprite menu and status state survive Start")
         return 0

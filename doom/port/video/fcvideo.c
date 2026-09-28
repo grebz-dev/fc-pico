@@ -214,6 +214,19 @@ void fcvideo_blank_status(fcvideo_t *video) {
            (VRAM_LINES - FCVIDEO_STATUS_START) * FCVIDEO_WIDTH);
 }
 
+static uint8_t native_status_pixel(int x, int y) {
+    /* A subdued metal frame uses one reserved BG palette: black, gray and
+     * light gray. Sprite values stay red and stand clear of the separators. */
+    if (y == 192 || y == 193 || y == 223 || y == 239) return 0;
+    if (y == 194 || y == 195 || y == 222 || y == 224) return 2;
+    if (x == 0 || x == 8 || x == 96 || x == 104 || x == 151 ||
+        x == 160 || x == 248 || x == 255) return 0;
+    if (x == 1 || x == 9 || x == 97 || x == 105 || x == 152 ||
+        x == 161 || x == 249 || x == 254) return 2;
+    if (y >= 225 && y <= 227 && (x < 8 || x >= 248)) return 0;
+    return 1;
+}
+
 void fcvideo_convert_staged(fcvideo_t *video,
                             uint8_t stream[VRAM_BUF_BYTES_V2],
                             uint8_t attr[MBX_ATTR_LEN], bool reset_hysteresis) {
@@ -237,7 +250,7 @@ void fcvideo_convert_staged(fcvideo_t *video,
                 uint8_t index = video->frame[flat];
                 uint8_t position = (uint8_t)((px & 3) | ((py & 3) << 2));
                 uint8_t pixel = video->native_status && py >= FCVIDEO_STATUS_START
-                    ? 1u
+                    ? native_status_pixel(px, py)
                     : video->tables.lut[(palette * 256 + index) * 16 + position] & 3u;
                 lo |= (pixel & 1u) << (7 - bit);
                 hi |= (pixel >> 1) << (7 - bit);

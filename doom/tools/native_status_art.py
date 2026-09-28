@@ -52,10 +52,15 @@ def tall_glyphs() -> bytes:
     for char in ORDER:
         rows = ["." + row + ".." for row in GLYPHS[char]] + ["........"]
         doubled = [line for row in rows for line in (row, row)]
-        for half in (doubled[:8], doubled[8:]):
-            result.extend(int(row.replace("#", "1").replace(".", "0"), 2)
-                          for row in half)
-            result.extend(bytes(8))
+        pixels = [[1 if value == "#" else 0 for value in row] for row in doubled]
+        for y in range(15):
+            for x in range(7):
+                if pixels[y][x] == 1 and pixels[y + 1][x + 1] == 0:
+                    pixels[y + 1][x + 1] = 2
+        for half in (pixels[:8], pixels[8:]):
+            for plane in (0, 1):
+                result.extend(sum(((pixel >> plane) & 1) << (7 - x)
+                                  for x, pixel in enumerate(row)) for row in half)
     assert len(result) == 24 * 16
     return bytes(result)
 
@@ -65,9 +70,16 @@ def bg_status_tiles() -> list[tuple[int, bytes]]:
     for char in BG_STATUS_ORDER:
         glyph = GLYPHS.get(char, (".....",) * 7)
         rows = ["." + row + ".." for row in glyph] + ["........"]
-        ink = bytes(int(row.replace("#", "1").replace(".", "0"), 2)
-                    for row in rows)
-        tiles.append((ord(char), bytes((0xFF,)) * 8 + ink))
+        pixels = [[3 if value == "#" else 1 for value in row] for row in rows]
+        for y in range(7):
+            for x in range(7):
+                if pixels[y][x] == 3 and pixels[y + 1][x + 1] == 1:
+                    pixels[y + 1][x + 1] = 0
+        tile = bytearray()
+        for plane in (0, 1):
+            tile.extend(sum(((pixel >> plane) & 1) << (7 - x)
+                            for x, pixel in enumerate(row)) for row in pixels)
+        tiles.append((ord(char), bytes(tile)))
     return tiles
 
 
@@ -84,3 +96,17 @@ def resident_art() -> bytes:
     art = tall_glyphs() + resident_face_art()
     assert len(art) == (24 + len(FACE_NAMES) * 9) * 16
     return art
+
+
+def menu_logo_art() -> bytes:
+    art = (ASSETS / "doom_menu_logo.chr").read_bytes()
+    assert len(art) == 24 * 16
+    return art
+
+
+def episode_pair_art() -> tuple[bytes, dict[str, int], tuple[tuple[str, ...], ...]]:
+    manifest = json.loads((ASSETS / "doom_menu_art.json").read_text())
+    art = (ASSETS / "doom_episode_pairs.chr").read_bytes()
+    lookup = manifest["pair_tile_ids"]
+    assert len(art) == len(lookup) * 16
+    return art, lookup, tuple(tuple(lines) for lines in manifest["episode_lines"])
