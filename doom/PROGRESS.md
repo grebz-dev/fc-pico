@@ -19,8 +19,10 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - The status backing has a native pixel metal frame and section separators.
   Tall sprite digits and the BG ammo row have dark one-pixel shadows. The
   shareware episode menu uses three actual names packed into 19 paired-glyph
-  CHR tiles and 21 OAM entries. A 64×24, 24-tile red/gold DOOM sprite logo
-  replaces the converted main-menu patch on the title screen. It is omitted
+  CHR tiles and 21 OAM entries. The first 64×24 block-letter logo was
+  rejected visually before hardware testing. A 64×32, 32-tile blue/gold
+  version now samples the actual `M_DOOM` patch at nearly its original aspect
+  ratio and replaces the converted main-menu patch on the title screen. It is omitted
   on the paused game menu because 35 status entries plus 26 menu entries and
   a cursor leave only two OAM slots.
 - `ctest --test-dir build-host --output-on-failure` passed 11/11 and
@@ -29,7 +31,7 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
   at `count=15122`, no DMA stops, and NMI exit on scanline 256. The device
   build passed flash layout and fix-bank gates, links at 289808 firmware
   bytes, and embeds ROM SHA-256
-  `ac3d04b0ba7952be6d4d7a369c00c92df8905fd4d785999323f0712710e55abb`.
+  `845b7b1c8c0a010df8b11bddaad4de3db7baabb922888e81244157698b1d34fb`.
   New lower-half sprite pattern storage and display contrast await NES-001
   validation in [HR-13](HARDWARE-REQUESTS.md#hr-13-styled-status-sprite-logo-and-episode-names-task-p3-u4-visual-follow-up).
 

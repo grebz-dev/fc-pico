@@ -100,7 +100,7 @@ def resident_art() -> bytes:
 
 def menu_logo_art() -> bytes:
     art = (ASSETS / "doom_menu_logo.chr").read_bytes()
-    assert len(art) == 24 * 16
+    assert len(art) == 32 * 16
     return art
 
 

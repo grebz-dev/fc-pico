@@ -61,14 +61,14 @@ the result. The human fills in the result section and commits; the agent then co
 ## Open requests
 
 ### HR-13 Styled status, sprite logo and episode names (task P3-U4 visual follow-up)
-- Flash: `/tmp/fcpico-styled-hud-device/artifacts/fcpico_doom_native_status_whx.uf2`,
-  SHA-256 `279b8e01fa04e65e6ebd40e6cf43478ece67202ab297ea2ce4add68c751b3d19`.
+- Flash: `/tmp/fcpico-original-logo-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `e125e2315fb9bd7ef4e6acf1a7b1c5a161f41d69945ea3add6529cb19d22a5eb`.
   Embedded ROM SHA-256
-  `ac3d04b0ba7952be6d4d7a369c00c92df8905fd4d785999323f0712710e55abb`
-  matches the passing Mesen ROM. Test stamp `20DOOM-04-9009`; the permanent
+  `845b7b1c8c0a010df8b11bddaad4de3db7baabb922888e81244157698b1d34fb`
+  matches the passing Mesen ROM. Test stamp `20DOOM-04-9010`; the permanent
   fix bank remains unchanged.
 - Steps: flash with the NES off and let the ROM update finish. At the title
-  menu, look for the small red/gold DOOM sprite logo over the transparent game
+  menu, look for the blue/gold DOOM sprite logo over the transparent game
   picture. Start New Game and inspect the episode menu: `KNEE DEEP IN / THE
   DEAD`, `SHORES OF HELL`, and `INFERNO` should replace numbered labels, with
   a cursor on the selected episode. In gameplay, inspect the gray status
@@ -82,6 +82,8 @@ the result. The human fills in the result section and commits; the agent then co
   count. The generated lower-half sprite patterns have passed Mesen but are
   the main new physical storage check.
 - Result: pending physical run.
+- The earlier `9009` block-letter logo candidate was rejected visually before
+  physical testing; this request points only to the source-derived `9010` image.
 
 ### HR-12 Transparent sprite menus, gray status, red text and special faces (task P3-U6)
 - Flash: `/tmp/fcpico-native-palette-device/artifacts/fcpico_doom_native_status_whx.uf2`,

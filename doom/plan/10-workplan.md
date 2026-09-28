@@ -413,6 +413,9 @@ or sprite UI implementation is deferred.
   v3 mailbox and OAM commit timing result while retaining the production HUD
   and physical atlas gates.
 
+- 2026-09-28: revise plan 12's logo requirement after visual review: derive
+  the sheet from `M_DOOM` and retain its silhouette and blue/gold colors.
+  The first block-letter candidate was visually rejected before hardware.
 - 2026-09-28: after HR-12 physical success, add a visual follow-up in plan 12:
   styled gray status backing, outlined red text, a sprite menu logo, native
   episode names and clearer static UI. Preserve transparent menus and require

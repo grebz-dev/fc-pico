@@ -3,9 +3,9 @@
   "logo_source_patch": "M_DOOM",
   "logo_size": [
     64,
-    24
+    32
   ],
-  "logo_tiles": 24,
+  "logo_tiles": 32,
   "episode_lines": [
     [
       "KNEE DEEP IN",

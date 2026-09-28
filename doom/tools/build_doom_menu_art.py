@@ -14,7 +14,7 @@ from PIL import Image
 
 from build_doomguy_faces import ROOT, WHDATA, Whx
 
-LOGO_SIZE = (64, 24)
+LOGO_SIZE = (64, 32)
 EPISODE_LINES = (
     (("KNEE DEEP IN", "THE DEAD"), ("SHORES OF HELL",), ("INFERNO",)),
 )
@@ -28,7 +28,6 @@ FONT = {
     "I": ("###", ".#.", ".#.", ".#.", "###"),
     "K": ("#.#", "#.#", "##.", "#.#", "#.#"),
     "L": ("#..", "#..", "#..", "#..", "###"),
-    "M": ("#...#", "##.##", "#.#.#", "#...#", "#...#", "#...#", "#...#"),
     "N": ("#.#", "###", "###", "###", "#.#"),
     "O": ("###", "#.#", "#.#", "#.#", "###"),
     "P": ("##.", "#.#", "##.", "#..", "#.."),
@@ -84,27 +83,22 @@ def logo_pixels(whx: Whx) -> np.ndarray:
     lookup = np.frombuffer(whx.named("P_START"), dtype="<u2")
     original = patch_pixels(whx.lump(int(lookup[labels.index("M_DOOM") + 1])))
     assert original.shape == (60, 123)
-    # The 123x60 patch exceeds the NES's eight-sprites-per-line limit. Redraw
-    # its four block letters as a legible 64x24 mark, retaining its red/gold
-    # palette relationship. Each column is three pixels wide.
-    logo_font = {
-        "D": ("####.", "#...#", "#...#", "#...#", "#...#", "#...#", "####."),
-        "O": (".###.", "#...#", "#...#", "#...#", "#...#", "#...#", ".###."),
-        "M": FONT["M"],
-    }
+    # The NES permits at most eight 8-pixel sprites on a scanline. A 64x32
+    # nearest-neighbor reduction keeps the actual M_DOOM letter silhouettes
+    # and nearly preserves the source patch's 123:60 aspect ratio.
+    sample = np.asarray(Image.fromarray(original).resize(
+        LOGO_SIZE, Image.Resampling.NEAREST))
+    rgb = np.frombuffer(whx.named("PLAYPAL")[:768], dtype=np.uint8).reshape(256, 3)
+    sampled_rgb = rgb[np.maximum(sample, 0)]
+    red = sampled_rgb[:, :, 0].astype(np.int16)
+    green = sampled_rgb[:, :, 1].astype(np.int16)
+    blue = sampled_rgb[:, :, 2].astype(np.int16)
+    opaque = sample >= 0
     result = np.zeros((LOGO_SIZE[1], LOGO_SIZE[0]), dtype=np.uint8)
-    for letter, char in enumerate("DOOM"):
-        for row, pattern in enumerate(logo_font[char]):
-            for col, pixel in enumerate(pattern):
-                if pixel != "#":
-                    continue
-                x0, y0 = letter * 16 + col * 3, row * 3 + 1
-                result[y0:y0 + 3, x0:x0 + 3] = 3 if row >= 5 else 2
-    opaque = result != 0
-    for y in range(LOGO_SIZE[1] - 2, -1, -1):
-        for x in range(LOGO_SIZE[0] - 2, -1, -1):
-            if opaque[y, x] and not opaque[y + 1, x + 1]:
-                result[y + 1, x + 1] = 1
+    result[opaque] = 1  # source's dark blue edges and shadows
+    result[opaque & (blue > red * 1.2) & (blue > green * 1.2) &
+           (blue > 80)] = 2
+    result[opaque & (red > 65) & (red > blue * 1.15)] = 3
     return result
 
 
@@ -139,10 +133,10 @@ def main() -> int:
     assert len(pairs) <= 32 * 16
     (args.output / "doom_menu_logo.chr").write_bytes(encode_tiles(logo))
     (args.output / "doom_episode_pairs.chr").write_bytes(pairs)
-    palette = np.array(((0, 0, 0, 0), (72, 16, 16, 255),
-                        (176, 32, 32, 255), (232, 184, 64, 255)), dtype=np.uint8)
+    palette = np.array(((0, 0, 0, 0), (20, 24, 80, 255),
+                        (80, 96, 216, 255), (232, 184, 64, 255)), dtype=np.uint8)
     preview = Image.fromarray(palette[logo], "RGBA")
-    preview.resize((256, 96), Image.Resampling.NEAREST).save(
+    preview.resize((256, 128), Image.Resampling.NEAREST).save(
         args.output / "doom_menu_logo_preview.png")
     (args.output / "doom_menu_art.json").write_text(json.dumps({
         "source": str(args.whx.resolve().relative_to(ROOT)),
