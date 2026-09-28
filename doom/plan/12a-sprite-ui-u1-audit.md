@@ -1,9 +1,49 @@
 <!-- SPDX-License-Identifier: BSD-3-Clause -->
 # P3-U1 sprite UI feasibility audit
 
-Status: **in progress, source audit only** (2026-09-25). This is working evidence
-for [plan 12](12-sprite-ui.md), not an approved layout or transport. No sprite
-UI build, emulator probe or NES-001 test has been run for this audit.
+Status: **in progress, source audit and Mesen U0 probe** (2026-09-25). This is
+working evidence for [plan 12](12-sprite-ui.md), not an approved layout or
+transport. The setup-time sprite probe passes in Mesen and its selected tiles
+are visible on NES-001 before and during the first Doom run. After two power
+cycles the `A` and diamond disappear while the rectangle placeholder and
+checker remain; they return after another power cycle. The rectangle is a
+four-tile geometry probe, not final face art. The physical persistence gate
+is therefore open, along with reverse reflash
+recovery and a complete sprite pattern alias map.
+
+The permanent fix bank's `BR_TRANS_SYS_FONT` loads 128 tiles into both `$0000`
+and `$1000`. Mesen's CHR dump confirms that the first half of the sprite table
+contains this font. The U0 probe therefore places authored sprite tiles at
+`$1800..$185F` and `$1FF0..$1FFF`, leaving `$1000..$17FF` untouched. Mesen
+returns those exact bytes and OAM/palette state. This identifies a 128-tile
+candidate sprite atlas region in the emulator, subject to physical address and
+mirroring confirmation. A 42-state 16×16 face would need 168 tiles alone, so
+the atlas must reuse a small face slot with generation-safe tile updates or
+redesign the face.
+
+## Text rendering research and scope decision
+
+The [NES PPU nametable](https://www.nesdev.org/wiki/PPU_nametables) is a 32×30
+grid of background tiles. The [sprite evaluator](https://www.nesdev.org/wiki/PPU_sprite_evaluation)
+selects only the first eight sprites on each scanline, including transparent
+ones. In the [Dragon Warrior disassembly](https://github.com/nmikstas/dragon-warrior-disassembly/blob/master/source_files/Dragon_Warrior_Defines.asm),
+dialog and window state includes nametable row offsets, PPU window addresses,
+text coordinates and a PPU transfer buffer. This is evidence that its lengthy
+dialog uses background tile updates; that conclusion is an inference from the
+reverse-engineered symbols, not a measured trace here. The [Zelda disassembly](https://github.com/aldonunez/zelda1-disassembly/blob/master/src/Z_07.asm)
+shows nametable switching and full nametable writes. The [NESdev vblank guide](https://www.nesdev.org/wiki/The_frame_and_NMIs)
+describes preparing VRAM updates outside NMI and copying a bounded buffer in
+vblank. These are relevant techniques, not proof that they fit this cartridge's
+calibrated PPU stream.
+
+The user approved native-resolution background tiles for long HUD messages and
+menu text, with compact status values, face and icons on sprites. This removes
+the impossible requirement for full-width sprite text, but adds a fetch/address
+integration task. The current nametable uses tile `$80` to select the cartridge
+stream. A local font tile in the same nametable would change the measured CS1
+read cadence. A future design must reserve explicit text regions and prove its
+new stream count, PPU timing and no torn updates before replacing legacy text.
+The old converted text is not the approved native background path.
 
 ## Baseline
 
@@ -36,6 +76,13 @@ status, save and load drawing are enabled by that configuration.
 The inventory is intentionally source based. It does not yet claim that every
 visible patch on every screen is classified. Title art, help screens, wipe and
 intermission backgrounds remain candidates for the streamed background.
+
+The later [U4 native status layout](sprite-ui-native-status-u4.json) uses a
+24×24 face from the original WHX, divided into nine NES sprites. It reserves
+three sprite slots on each face scanline and uses 35/64 OAM entries with an
+8/8 scanline peak. The seven resident representative faces plus tall digits
+occupy 87 pattern slots. The [full 42-face sheet](../assets/doomguy_faces.md)
+is available for future expression paging.
 
 The active WHX's `P_START` vpatch lookup and `whddata.h` list give these original
 patch dimensions. These are source dimensions, **not** proposed native art sizes:
@@ -80,6 +127,8 @@ native-pixel rectangle groups against 64 OAM entries, eight sprites on each
 scanline and 256×240 bounds. The tool assumes every intersecting 8×8 tile is
 present, so it is a conservative capacity gate for future layout drafts; it
 does not yet test art transparency, palette fit or actual PPU fetch behavior.
+Every allocated tile now occupies all eight scanlines even if the proposed art
+only uses the first few rows, matching the PPU evaluator's height accounting.
 Pass `--lines` to print occupancy on every used scanline. Each JSON screen has
 `name` and `groups`; each group has `name`, `x`, `y`, `width` and `height` in
 native pixels. Proposed layouts, when ready, will be checked with this tool.
@@ -102,7 +151,54 @@ generation. It would also require the streamed world to stop by native line
 191 instead of 231, or another independently validated composition geometry.
 TV overscan and actual icon/face readability remain untested.
 
+A [resident-tile status candidate](sprite-ui-status-resident-candidate.json)
+uses ordinary 8×8 digit sprites instead of three-pixel packed digits. It uses
+29 OAM entries with a peak of eight per scanline: ready ammo and health values
+on lines 192..199, armor and keys on 200..207, weapons and a 16×16 face on
+208..215, then ammo-type icons and the lower half of the face on 216..223.
+Four seven-character current/max ammo pairs occupy a reserved **native BG
+text** row on 224..231 (28 font tiles, x=16..239), with lines 232..239 clear.
+This is capacity-valid only. It requires the world to stop at line 191 and a
+constant font-tile region on line 224, changing the CS1 stream count; neither
+transition is approved by physical or Mesen timing evidence yet. Deathmatch
+frags and optional FPS still need a screen-specific placement, and the icon/
+digit/face art needs normal-viewing-distance legibility review.
+At the current two selected pattern reads per background tile per scanline,
+28 local-font cells across eight scanlines would remove about 448 CS1 reads
+from the established 15554 total, suggesting roughly 15106 for that fixed
+mode. This is a **calculation, not a new counter constant**: prefetch/scroll
+effects and mailbox alignment must be traced in Mesen and measured on the
+board before any firmware or ROM count change. Menu screens need their own
+fixed transfer mode or a deliberate full-screen transition schedule.
+
 ## Early transport bounds (not a protocol selection)
+
+The v2 `NmiHarness` measures 1034 critical / 1073 total cycles with no BG
+table writes or APU traffic, 1492 / 1531 with attributes, 1156 / 1195 with
+palette, and 1614 / 1653 with both. Its maximum 15 APU pairs add 368 total
+cycles, yielding the previously recorded 2021-cycle worst case. A 514-cycle
+worst-parity OAM DMA on a no-table-write, max-APU frame would reach at least
+1955 total cycles, leaving 245 under the 2200 limit before a new mailbox,
+DMA setup or state checks. Sixteen new mailbox bytes read with the existing
+seven-cycle unrolled pattern add 112 cycles, leaving only 133 for those other
+operations. The same DMA on an attribute-write frame reaches at least 2413
+cycles before new bytes and therefore cannot be a commit frame. Palette-only
+plus DMA reaches at least 2077 cycles before new bytes. A 32-byte extension
+would leave just 21 cycles on the no-table frame before DMA setup, so it is
+not a viable default design.
+
+A candidate successor therefore receives a constant 16-byte compact status
+descriptor, expands it into shadow OAM outside NMI, and commits by DMA only
+on a frame that does not write BG attributes or palette. The NMI must still
+read all fixed bytes, send controller heartbeat and restore `$0801`/scroll;
+the package is not accepted until exact py65 and Mesen measurements include
+version/generation checks, both DMA parities and maximum APU traffic. Staged
+face-tile uploads need two four-tile slots so the old face remains visible
+until the new generation is complete. The 128-tile candidate region can hold
+resident digits/icons and those eight face tiles, but no final allocation is
+made until HR-8 isolates the intermittent physical result and capacity is
+measured. Native background text needs a
+fixed reserved font region and a separately calibrated stream count.
 
 `PG_main.asm`'s unrolled `READ8` uses seven CPU cycles per byte (`lda $2007`,
 `sta <zp`). These are lower-bound comparisons if new bytes use the same NMI
@@ -115,11 +211,14 @@ address setup. The count follows the established zero-based convention.
 | Append 16 UI bytes | 144 | 15570 | At least 112 receive cycles; a 513/514-cycle OAM DMA would exceed the measured worst-case limits even before decode |
 | Append full OAM and 16 sprite palette bytes | 400 | 15826 | At least 1904 receive cycles plus 513/514 DMA cycles; infeasible as a single v2-style NMI |
 
-Even a compact update must separate receiving/staging from an OAM commit. A
-commit NMI may need to defer BG attribute or palette writes and hold the prior
-complete presentation; the actual schedule must be measured across both DMA
-parities, all flags and maximum audio before U3 chooses a format. The fixed
-mailbox lengths above exclude any new header and are comparison cases only.
+The isolated v3 probe now uses 144 bytes and count 15570. With full BG tables
+and 15 APU pairs, py65 measures 1742 critical / 2165 total cycles. A commit
+frame skips the BG table writes and DMA-copies a complete `$0200` OAM shadow;
+with 15 APU pairs and the other DMA parity allowed, it measures at most 1684
+critical / 2091 total cycles. Mesen receives all 16 extra bytes and remains
+in phase for 30 frames. These results validate a receive/commit schedule, but
+the real decoder, frame generations, sprite palette uploads and physical
+dynamic HUD remain open.
 
 The fixed bank's `SysBootRom.asm` writes `$0200-$02FF` in its reset RAM-clear
 loop. The read-only search of authored fixed-bank and Doom ROM assembly found

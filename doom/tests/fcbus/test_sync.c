@@ -47,6 +47,14 @@ static void test_expected_count_follows_the_protocol(void) {
     CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V2), FCBUS_ARM);
     CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V1), FCBUS_STOP);
 
+    init_core(FCBUS_PROTO_V3);
+    CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V3), FCBUS_ARM);
+    CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V2), FCBUS_STOP);
+
+    init_core(FCBUS_PROTO_V4);
+    CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V4), FCBUS_ARM);
+    CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V3), FCBUS_STOP);
+
     /* Before either side has identified itself, v1 is assumed. */
     init_core(FCBUS_PROTO_UNKNOWN);
     CHECK_EQ(fcbus_core_heartbeat(&g_c, PPU_COUNT_VAL_V1), FCBUS_ARM);

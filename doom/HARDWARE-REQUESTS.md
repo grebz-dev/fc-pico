@@ -60,6 +60,160 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Open requests
 
+### HR-12 Transparent sprite menus, gray status, red text and special faces (task P3-U6)
+- Flash: `/tmp/fcpico-native-palette-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `9b78b727cb30c381776d1332ac598deb7bec51ee9372b81f1d99172002f00520`.
+  Embedded ROM SHA-256
+  `5f79f2619203943021931c1b32522b4f4f012ad5b297b2d297fc8d0471efbd8a`
+  matches the Mesen ROM. Test stamp `20DOOM-04-9008`; the permanent fix bank
+  remains unchanged.
+- Steps: with the NES off, flash and allow the ROM update to finish. In
+  gameplay, check that the status backing is solid gray and its tall values
+  and bottom ammo row are red. Press Start and confirm the game picture shows
+  through the menu, the original menu labels and skull are absent, and the
+  native red labels, cursor and status remain visible. Open Options or New
+  Game and check that its choices are legible. If convenient, collect a pickup
+  and take damage to check for the grin and ouch expressions; either can be
+  hard to catch in a still photo.
+- Record: a full paused screen and status closeup, any original labels or
+  black menu panel still visible, whether the face changes on pickup/hit,
+  and a few heartbeat lines after play starts. Expected `proto=4`,
+  `count=15122`, and no rising stop/error count. Menu titles and dynamic
+  load/save text still use the game's converted background graphics.
+- Result: NES-001 physical run successful on 2026-09-28: red text and gray
+  status backing display and are mostly more legible; ouch and pickup grin
+  faces work. The episode menu currently reads `Episode 1/2/3`, rather than
+  the actual episode names. No serial excerpt or photos were supplied, and
+  menu transparency was not described separately in the report. See the
+  [hardware log](HARDWARE-LOG.md).
+
+### HR-11 Native pause HUD, sprite menus and idle face (task P3-U5)
+- Flash: `/tmp/fcpico-native-menu-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `f0204d307efd0da6ff3346488df4545be581ddfe6d6cd59253c551d4b32f1a7a`.
+  Embedded ROM SHA-256
+  `cfa4f4c4f2e840f125a6f45b0b8d89d611705358712c7cae6707cdd03edecaaf`
+  matches the passing Mesen ROM. Test stamp `20DOOM-04-9007`; the permanent
+  fix bank remains unchanged.
+- Steps: with the NES off, flash and allow the ROM update to finish. After
+  Doom starts, press Start once and check that the native health/armor, face,
+  weapons, keys and ammo row remain visible over a cleared status area. The
+  main menu should show crisp native `NEW`, `OPTIONS`, `LOAD`, `SAVE`, `READ`,
+  `QUIT` labels and a cursor. Move the cursor and open Options or New Game to
+  check its sprite labels and selection. Return to gameplay and watch the
+  healthy Doomguy face for its three idle straight-face variants.
+- Record: a paused full-screen photo, an options or skill menu photo, whether
+  the old status bar reappears, whether any menu text or control is covered,
+  and several `proto`, `count`, `stops`, `resyncs`, `errors`, `converted`, and
+  `dropped` heartbeat lines. Expected `proto=4`, `count=15122`, no rising
+  stop/error count. Load/save names and longer dynamic text remain background
+  tiles on this candidate.
+- Result: NES-001 keeps the native status visible with the menu open; the
+  healthy face changes while idle. The menu's dark panel and white text
+  prompted HR-12. The face shows ordinary damage levels
+  but lacks distinct hit and pickup expressions in this build.
+
+### HR-10 Native sprite status and Doomguy face (task P3-U4)
+- Flash: `/tmp/fcpico-native-status-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `1f6130e97ad5e00fa8c7ea3cec7833db5c8e4202c0618cd059fc75f1cbbcb8f4`.
+  Its embedded ROM SHA-256 is
+  `a92b37f2797fe5c010e561025cae9d62743119bb942e19cbf827706d21ad6e87`,
+  byte-identical to the passing Mesen candidate. Test stamp:
+  `20DOOM-04-9006`; permanent fix bank unchanged.
+- Steps: with the NES off, flash and let the ROM update finish. After Doom
+  starts, look for the cleared old status area, two-tile-high H/health and
+  R/armor values, a 24×24 real Doomguy face, weapon/key indicators (the
+  selected weapon is yellow), and the
+  native bottom row `B### S###        R### C###  ` with values. The ammo
+  row may take several converted frames to fill because at most two changed
+  tiles are sent per frame. Move or collect ammo if convenient to confirm a
+  number change; the resident face changes only across health pain bands,
+  god mode, or death. Check that the main scene and controls work.
+- Record: a full-screen photo after the row settles, a close view of the
+  status, whether values and face change, and serial lines after 120 stable
+  heartbeats. Expected `proto=4`, `count=15122`, and no rising error or stop
+  count. Record any row clipping or missing face tile separately.
+- Scope: this candidate holds seven representative faces resident; all 42
+  have been built into the [source sheet](assets/doomguy_faces.md). Menus and
+  animated face variants still use a reduced layout. The status region is
+  cleared only during visible gameplay, and menu text is not yet migrated.
+- Result: NES-001 shows the native status and real face during demo/playback.
+  Pressing Start hides the sprites and reveals the old converted bar; idle
+  face expressions are absent. `proto=4`, `count=15122`, no new bus errors;
+  see [hardware log](HARDWARE-LOG.md).
+
+### HR-9 Native background text and v4 status transport (task P3-U3)
+- Flash: `/tmp/fcpico-bg-text-device/artifacts/fcpico_doom_bg_text_probe_whx.uf2`,
+  SHA-256 `86f68ed099a860767c5d6a9bef2a15a10154d9813188947190f62fe6511f9fa1`.
+  Embedded ROM SHA-256
+  `e044699c30ac4b036f8a9e6bf95f9d049077bf1dd64f5471bd884575b33e733a`
+  matches the passing Mesen probe, and its test stamp is `20DOOM-04-9001`.
+  The permanent fix bank is unchanged.
+- Steps: with NES off, flash and allow the ROM update. Confirm Doom video and
+  controls still work. Near the bottom, look for `NATIVE BACKGROUND TEXT WORKS`
+  as a native text row and `H###` as health sprites. Take one photo before
+  Doom and one during play; note whether the health digits follow a health
+  change if one happens naturally. Save serial heartbeat lines after 120
+  frames, especially `proto`, `count`, `stops`, `resyncs`, and `errors`.
+- Expected: `proto=4`, `count=15122`, the complete text row, and stable video.
+  This probe intentionally overlays part of the legacy status bar and does
+  not contain the final face art or menus.
+- Record: photos, heartbeat excerpt and any differing behavior in
+  [HARDWARE-LOG.md](HARDWARE-LOG.md).
+- Result: NES-001 displays the complete text row and live `H100` over Doom
+  after the countdown. Stable v4 heartbeats report `proto=4`, `count=15122`,
+  no new stops, resyncs, timeouts or errors. See
+  [hardware log](HARDWARE-LOG.md).
+
+### HR-8 Intermittent sprite diagnosis (task P3-U2)
+- Flash: `/tmp/fcpico-sprite-diagnostic-device/artifacts/fcpico_doom_sprite_diagnostic_whx.uf2`,
+  SHA-256 `d23459faad3c7c83771473a12d0f9a22870d175a66e97fe33cdae789669442d4`.
+  Its test-only console ROM stamp is `20DOOM-02-9002`; the permanent fix bank
+  remains byte-identical to the working one. Mesen shows all copies and stable
+  count 15554.
+- Steps: flash with NES off, allow ROM update, then power cycle until the
+  original top-row `A` or diamond disappears. A second row at NES y=64 has
+  the same pattern indices in later OAM slots at x=24/40, and copied art at
+  new indices at x=72/88. Photograph both rows in one frame and note which
+  of the six A/diamond symbols remain. Capture a heartbeat excerpt if the
+  count or video changes. Do not infer a CHR failure from a missing top-row
+  sprite without checking the duplicates.
+- Record: photo, number of power cycles, which copies are visible, and any
+  heartbeat excerpt in [HARDWARE-LOG.md](HARDWARE-LOG.md).
+- Result: the first before-Doom and during-Doom photos show all six symbols.
+  This is a good-boot baseline. A boot reproducing the intermittent missing
+  original pair remains pending. See [hardware log](HARDWARE-LOG.md).
+
+### HR-7 Sprite pattern storage and visible probe (task P3-U2)
+- Flash: `/tmp/fcpico-sprite-probe-device/artifacts/fcpico_doom_sprite_probe_whx.uf2`,
+  SHA-256 `a33f2ef0780d2fa49b487225636a7989e891e3e5a791892aba0f89c0b5b3e022`.
+  Its embedded Doom ROM SHA-256 is
+  `0522ca2793f71bc83851d7d55ae588d45e8143779ecacc0c23da92785de9ccb2`,
+  byte-identical to the Mesen U0 ROM. The erasable ROM stamp is
+  `20DOOM-02-9001`, so the unchanged fix bank should reflash the console.
+- Steps: 1. With the NES off, flash the UF2 to the FC PICO, then cold boot the
+  NES-001 and allow the ROM update to finish. 2. Confirm the normal Doom scene
+  and controller still work. Look near the upper left for a white `A`, diamond,
+  16×16 face outline and checker tile. 3. Photograph the full display and a
+  close view of the probe area. 4. Record USB serial `stats` after at least
+  120 stable heartbeats: count, DMA stops/resyncs, timeouts and drops. 5. Power
+  cycle twice and confirm the symbols remain; note any mirrored, missing or
+  corrupt tile. 6. To return to normal Doom, flash the previous HR-6 UF2 and
+  allow its `20DOOM-02-0002` ROM to reflash.
+- Record: console model/region, photographs, serial lines, cold-boot and
+  recovery outcomes in [`HARDWARE-LOG.md`](HARDWARE-LOG.md), with artifact
+  hashes. This checks physical `$1800..$1FFF` pattern storage, visibility and
+  recovery; Mesen's 8 KiB CHR RAM model is insufficient proof.
+- Result: the reflash and first visible probe passed; Doom playback and controls
+  worked. After two power cycles the `A` and diamond were missing, while the
+  placeholder rectangles and checker remained. The two symbols returned after
+  another power cycle. This intermittent result leaves the storage/persistence
+  gate open. The heartbeat excerpt holds at `count=15554` with no new stops,
+  resyncs, timeouts or errors. See
+  [HR-7 in the hardware log](HARDWARE-LOG.md#2026-09-27----hr-7-sprite-probe-on-nes-001).
+  Reverse recovery to the previous UF2 remains untested; the user has not
+  reflashed it. Investigate tile contents and OAM after repeated resets before
+  assigning atlas addresses.
+
 ### HR-6 Shadow detail and pending B/video checks (task P2-T6)
 - Flash: `/tmp/fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
   `3d298001d93f028dd6a3e9f37287e8d77762704b0c1295485c8fd22275f88dbc`.

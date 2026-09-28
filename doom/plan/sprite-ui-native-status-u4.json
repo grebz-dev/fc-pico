@@ -1,0 +1,26 @@
+{
+  "screens": [
+    {
+      "name": "native-status-u4",
+      "groups": [
+        {"name": "health-tall", "x": 16, "y": 192, "width": 32, "height": 16},
+        {"name": "armor-tall", "x": 176, "y": 192, "width": 32, "height": 16},
+        {"name": "doomguy-face", "x": 116, "y": 208, "width": 24, "height": 24},
+        {"name": "weapon-1", "x": 16, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-2", "x": 32, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-3", "x": 48, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-4", "x": 64, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-5", "x": 176, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-6", "x": 192, "y": 216, "width": 8, "height": 8},
+        {"name": "weapon-7", "x": 208, "y": 216, "width": 8, "height": 8},
+        {"name": "key-1", "x": 16, "y": 216, "width": 8, "height": 8},
+        {"name": "key-2", "x": 32, "y": 216, "width": 8, "height": 8},
+        {"name": "key-3", "x": 48, "y": 216, "width": 8, "height": 8}
+      ],
+      "background_text_regions": [
+        {"name": "four-ammo-counts", "x": 16, "y": 224,
+         "width": 224, "height": 8, "characters": 28}
+      ]
+    }
+  ]
+}

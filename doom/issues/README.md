@@ -64,7 +64,7 @@ again: fix the structure rather than the schedule.
 | [I-17](I-17-fcvideo-impl.md) | The converter, on the host and on the device | A/B -- host + device | L | [I-03](I-03-fcvideo-ref-tests.md); [I-16](I-16-stage-a-composition.md) for device integration | **partial**: shadow-detail playback confirmed; precise geometry remains; 38.208 ms conversion misses 8 ms target, dynamic S2 open |
 | [I-18](I-18-licensing.md) | Licensing enquiry and LICENSES.md | C -- human | S | none | **partial**: LICENSES draft exists; enquiry remains |
 | [I-19](I-19-hw-trace.md) | Hardware trace capture and model calibration | C -- human, hardware | M | [I-10](I-10-testpattern-firmware.md) | **done**: complete trace 6 calibrates 66/64 reads and zero-based count |
-| [I-20](I-20-sprite-ui.md) | Native sprite status bar, face, HUD and menus | A/B/C -- host, Mesen and hardware | XL, staged | Current video/input baseline; I-15 dynamic integration for final gate | **open**: plan only |
+| [I-20](I-20-sprite-ui.md) | Native sprite status bar, face, HUD and menus | A/B/C -- host, Mesen and hardware | XL, staged | Current video/input baseline; I-15 dynamic integration for final gate | **partial**: U0 Mesen and initial NES-001 probe; intermittent symbols, transport and production UI pending |
 
 ## Suggested order
 

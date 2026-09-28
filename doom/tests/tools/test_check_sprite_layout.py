@@ -30,7 +30,7 @@ class SpriteLayoutBudgetTests(unittest.TestCase):
         self.assertIn("scanlines", result["errors"][0])
 
     def test_oam_boundary_across_nonoverlapping_lines(self):
-        groups = [{"name": f"row {i}", "x": 8, "y": i * 8,
+        groups = [{"name": f"row {i}", "x": 8, "y": (i + 1) * 8,
                    "width": 64, "height": 8} for i in range(8)]
         screen = {"name": "menu", "groups": groups}
         self.assertEqual(check_screen(screen)["errors"], [])
@@ -44,6 +44,33 @@ class SpriteLayoutBudgetTests(unittest.TestCase):
              "width": 16, "height": 8},
         ]}
         self.assertIn("outside", check_screen(screen)["errors"][0])
+
+    def test_partial_tile_still_occupies_full_scanline_height(self):
+        screen = {"name": "overlap", "groups": [
+            {"name": "short glyph", "x": 8, "y": 8, "width": 64, "height": 2},
+            {"name": "next row", "x": 8, "y": 10, "width": 8, "height": 8},
+        ]}
+        result = check_screen(screen)
+        self.assertEqual(result["scanlines"][10], 9)
+        self.assertIn("scanlines", result["errors"][0])
+
+    def test_first_scanline_cannot_display_a_sprite(self):
+        screen = {"name": "top", "groups": [
+            {"name": "glyph", "x": 8, "y": 0, "width": 8, "height": 8},
+        ]}
+        self.assertIn("sprite-visible lines", check_screen(screen)["errors"][0])
+
+    def test_background_text_cells_are_budgeted_without_oam(self):
+        screen = {"name": "status", "groups": [], "background_text_regions": [
+            {"name": "ammo pairs", "x": 16, "y": 224, "width": 224,
+             "height": 8, "characters": 28},
+        ]}
+        result = check_screen(screen)
+        self.assertEqual(result["entries"], 0)
+        self.assertEqual(result["background_text_tiles"], 28)
+        self.assertEqual(result["errors"], [])
+        screen["background_text_regions"][0]["characters"] = 29
+        self.assertIn("do not fit", check_screen(screen)["errors"][0])
 
 
 if __name__ == "__main__":

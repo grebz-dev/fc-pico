@@ -64,6 +64,8 @@ typedef enum {
     FCBUS_PROTO_UNKNOWN = 0,
     FCBUS_PROTO_V1 = 1,
     FCBUS_PROTO_V2 = 2,
+    FCBUS_PROTO_V3 = 3,
+    FCBUS_PROTO_V4 = 4,
 } fcbus_proto_t;
 
 typedef enum {
@@ -178,13 +180,15 @@ typedef struct fcbus_core {
     fcbus_state_t state;
     fcbus_rxwait_t rxwait;
 
-    /* --- stream buffers: rp_system::vram_buf0/vram_buf1, always sized for v2 --- */
-    uint32_t stream[2][VRAM_BUF_BYTES_V2 / sizeof(uint32_t)];
+    /* --- stream buffers: rp_system::vram_buf0/vram_buf1, sized for v3 --- */
+    uint32_t stream[2][VRAM_BUF_BYTES_V3 / sizeof(uint32_t)];
     int front;               /**< Index (0/1) of the buffer currently "streamed". */
     bool publish_pending;    /**< fcbus_core_publish() was called; swap at the next ARM. */
 
     /* --- mailbox being built for the next heartbeat: rp_system::FC_COM_BUF --- */
-    uint8_t mailbox_next[FC_COM_BUF_SIZE_V2];
+    uint8_t mailbox_next[FC_COM_BUF_SIZE_V3];
+    uint8_t ui_want[MBX_UI_LEN]; /**< Latest complete v3 snapshot, repeated until replaced. */
+    bool ui_have;
     uint8_t cmd_cursor;  /**< Next free command byte; mirrors m_FC_COM_IDX. */
     uint8_t apu_cursor;  /**< Next free APU-pair byte, at or after MBX_APU. */
     uint8_t apu_pairs;   /**< Pairs queued so far this mailbox, for the per-proto cap. */
@@ -314,6 +318,10 @@ void fcbus_core_attr_table(fcbus_core_t *c, const uint8_t attr[64]);
 
 /** As fcbus_core_attr_table(), but for the 16-byte BG palette (MBX_PAL / $3F00-$3F0F). */
 void fcbus_core_palette(fcbus_core_t *c, const uint8_t pal[16]);
+
+/** Stage one complete 16-byte HUD snapshot for the next v3 heartbeat.
+ *  Returns false under v1/v2 without changing their mailbox. */
+bool fcbus_core_ui_snapshot(fcbus_core_t *c, const uint8_t snapshot[MBX_UI_LEN]);
 
 /* ------------------------------------------------------------------------ */
 /* Receive dispatcher: rp_system::jobRcvCom() / getRcvCom().                     */

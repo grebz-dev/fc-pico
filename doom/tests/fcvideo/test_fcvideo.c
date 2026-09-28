@@ -72,10 +72,62 @@ static void test_vertical_source_rows(void) {
                              * FCVIDEO_SRC_HEIGHT / FCVIDEO_SCALED_HEIGHT);
         CHECK_EQ(video.frame[row * FCVIDEO_WIDTH], expected);
     }
+    fcvideo_blank_status(&video);
+    CHECK_EQ(video.frame[(FCVIDEO_STATUS_START - 1) * FCVIDEO_WIDTH],
+             (uint8_t)((FCVIDEO_STATUS_START - 1 - FCVIDEO_TOP_MARGIN)
+             * FCVIDEO_SRC_HEIGHT / FCVIDEO_SCALED_HEIGHT));
+    for (int row = FCVIDEO_STATUS_START; row < VRAM_LINES; row++) {
+        CHECK_EQ(video.frame[row * FCVIDEO_WIDTH], 97);
+        CHECK_EQ(video.frame[(row + 1) * FCVIDEO_WIDTH - 1], 97);
+    }
+}
+
+static void test_native_status_gray_palette(void) {
+    fcvideo_frame_begin(&video);
+    fcvideo_blank_status(&video);
+    fcvideo_set_native_status(&video, true);
+    fcvideo_convert_staged(&video, stream, attr, true);
+    for (int by = 12; by < 15; ++by) {
+        for (int bx = 0; bx < 16; ++bx) {
+            int index = (bx >> 1) + ((by >> 1) << 3);
+            int shift = ((bx & 1) + ((by & 1) << 1)) * 2;
+            CHECK_EQ((attr[index] >> shift) & 3, 3);
+        }
+    }
+    size_t first = (VRAM_HEAD_WORDS + FCVIDEO_STATUS_START * VRAM_TILE_COLS) * 2;
+    CHECK_EQ(stream[first], 0xFF);
+    CHECK_EQ(stream[first + 1], 0);
+    fcvideo_set_native_status(&video, false);
+}
+
+static void test_native_text_compaction(void) {
+    static uint8_t compact[VRAM_BUF_BYTES_V4];
+    for (size_t word = 0; word < PPU_PICTURE_COUNT / 2; word++) {
+        stream[word * 2] = (uint8_t)word;
+        stream[word * 2 + 1] = (uint8_t)(word >> 8);
+    }
+    memcpy(compact, stream, PPU_PICTURE_COUNT);
+    fcvideo_compact_native_text(compact);
+    size_t output_word = 0;
+    for (size_t input_word = 0; input_word < PPU_PICTURE_COUNT / 2; input_word++) {
+        size_t visible = input_word - VRAM_HEAD_WORDS;
+        bool text = input_word >= VRAM_HEAD_WORDS &&
+            visible / VRAM_TILE_COLS >= NATIVE_TEXT_ROW * 8 &&
+            visible / VRAM_TILE_COLS < (NATIVE_TEXT_ROW + 1) * 8 &&
+            visible % VRAM_TILE_COLS >= NATIVE_TEXT_COL &&
+            visible % VRAM_TILE_COLS < NATIVE_TEXT_COL + NATIVE_TEXT_TILES;
+        if (text) continue;
+        CHECK_EQ(compact[output_word * 2], (uint8_t)input_word);
+        CHECK_EQ(compact[output_word * 2 + 1], (uint8_t)(input_word >> 8));
+        output_word++;
+    }
+    CHECK_EQ(output_word * 2, PPU_PICTURE_COUNT_V4);
 }
 
 int main(void) {
     test_solid_frame_and_linear_stride();
     test_vertical_source_rows();
+    test_native_status_gray_palette();
+    test_native_text_compaction();
     return ctest_lite_result();
 }

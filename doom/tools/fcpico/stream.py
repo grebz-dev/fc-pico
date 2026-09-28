@@ -121,24 +121,26 @@ def unpack_run(word: int):
 
 
 def _buf_layout(mailbox_len: int):
-    """(total buffer bytes, mailbox byte offset) for a v1 (64) or v2 (128) mailbox."""
+    """(total buffer bytes, mailbox byte offset) for a v1/v2/v3 mailbox."""
     if mailbox_len == protocol.FC_COM_BUF_SIZE_V1:
         return protocol.VRAM_BUF_BYTES_V1, protocol.VRAM_MAILBOX_OFF_V1
     if mailbox_len == protocol.FC_COM_BUF_SIZE_V2:
         return protocol.VRAM_BUF_BYTES_V2, protocol.VRAM_MAILBOX_OFF_V2
+    if mailbox_len == protocol.FC_COM_BUF_SIZE_V3:
+        return protocol.VRAM_BUF_BYTES_V3, protocol.VRAM_MAILBOX_OFF_V3
     raise ValueError(
         f"mailbox must be {protocol.FC_COM_BUF_SIZE_V1} (v1) or "
-        f"{protocol.FC_COM_BUF_SIZE_V2} (v2) bytes, got {mailbox_len}"
+        f"{protocol.FC_COM_BUF_SIZE_V2} (v2) or "
+        f"{protocol.FC_COM_BUF_SIZE_V3} (v3) bytes, got {mailbox_len}"
     )
 
 
-def encode_frame(pix256x240, mailbox: bytes) -> bytearray:
+def encode_frame(pix256x240, mailbox: bytes, *, native_text: bool = False) -> bytearray:
     """Encode a 256x240 2-bit-per-pixel frame into an fcbus stream buffer.
 
     ``pix256x240`` is indexed ``[y][x]`` (row-major, matching ``numpy``'s
     default), values 0..3; anything ``numpy.asarray`` accepts works. The
-    buffer length (17,344 or 17,408 bytes) is picked from ``len(mailbox)``
-    (64 or 128); the mailbox is spliced in at byte
+    buffer length is picked from ``len(mailbox)`` (64, 128 or 144); the mailbox is spliced in at byte
     :data:`VRAM_MAILBOX_OFF` (15426), verbatim, after the picture words are
     written.
     """
@@ -147,6 +149,8 @@ def encode_frame(pix256x240, mailbox: bytes) -> bytearray:
         raise ValueError(f"pix256x240 must have shape ({VRAM_LINES}, {VRAM_WIDTH}), got {pix.shape}")
     mailbox = bytes(mailbox)
     buf_bytes, mailbox_off = _buf_layout(len(mailbox))
+    if native_text and len(mailbox) != protocol.FC_COM_BUF_SIZE_V4:
+        raise ValueError("native text needs the 144-byte v4 mailbox")
 
     # One flat canvas, row-major: hardware consumes exactly 32 words per line.
     flat = pix.reshape(-1)
@@ -167,9 +171,42 @@ def encode_frame(pix256x240, mailbox: bytes) -> bytearray:
     first = word_index(0, 0)
     word_arr[first : first + words.size] = words.reshape(-1)
 
+    if native_text:
+        picture_words = protocol.PPU_PICTURE_COUNT // 2
+        keep = np.ones(picture_words, dtype=bool)
+        for row in range(protocol.NATIVE_TEXT_ROW * 8,
+                         (protocol.NATIVE_TEXT_ROW + 1) * 8):
+            start = first + row * VRAM_TILE_COLS + protocol.NATIVE_TEXT_COL
+            keep[start:start + protocol.NATIVE_TEXT_TILES] = False
+        compact = word_arr[:picture_words][keep]
+        assert compact.nbytes == protocol.PPU_PICTURE_COUNT_V4
+        word_arr[:len(compact)] = compact
+        word_arr[len(compact):] = 0
+        mailbox_off = protocol.VRAM_MAILBOX_OFF_V4
     buf = bytearray(word_arr.tobytes())
     buf[mailbox_off : mailbox_off + len(mailbox)] = mailbox
     return buf
+
+
+def expand_native_text_stream(buf: bytes) -> bytearray:
+    """Restore skipped row words as zeroes for the BG-only image decoder."""
+    if len(buf) != protocol.VRAM_BUF_BYTES_V4:
+        raise ValueError("v4 stream length required")
+    picture_words = protocol.PPU_PICTURE_COUNT // 2
+    keep = np.ones(picture_words, dtype=bool)
+    for row in range(protocol.NATIVE_TEXT_ROW * 8,
+                     (protocol.NATIVE_TEXT_ROW + 1) * 8):
+        start = VRAM_HEAD_WORDS + row * VRAM_TILE_COLS + protocol.NATIVE_TEXT_COL
+        keep[start:start + protocol.NATIVE_TEXT_TILES] = False
+    expanded = np.zeros(protocol.VRAM_BUF_BYTES_V3 // 2, dtype="<u2")
+    expanded[:picture_words][keep] = np.frombuffer(
+        buf, dtype="<u2", count=protocol.PPU_PICTURE_COUNT_V4 // 2)
+    result = bytearray(expanded.tobytes())
+    result[protocol.VRAM_MAILBOX_OFF_V3:
+           protocol.VRAM_MAILBOX_OFF_V3 + protocol.FC_COM_BUF_SIZE_V3] = \
+        buf[protocol.VRAM_MAILBOX_OFF_V4:
+            protocol.VRAM_MAILBOX_OFF_V4 + protocol.FC_COM_BUF_SIZE_V4]
+    return result
 
 
 def decode_frame(buf) -> np.ndarray:

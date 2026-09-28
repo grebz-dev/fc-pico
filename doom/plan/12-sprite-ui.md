@@ -2,7 +2,7 @@
 
 ## Status and objective (2026-09-25)
 
-**Planned; no implementation or new validation results.** Doom loads, displays and
+**U0 setup-time sprite probe passes in Mesen and partly on NES-001; production UI remains open.** Doom loads, displays and
 accepts controller input on NES-001. Preserve that milestone while replacing the
 background-converted status text, symbols, indicators, Doomguy face and menu/HUD
 content with sharp, native-resolution sprite representations. This is required
@@ -12,8 +12,36 @@ may remain background content; foreground UI must not silently retain its old,
 dithered representation when declared migrated.
 
 This document is the specification; [10-workplan.md](10-workplan.md) schedules
-P3-U1..U6. [I-20](../issues/I-20-sprite-ui.md) tracks the work. All proposed formats,
-asset layouts and scenario names below are future work.
+P3-U1..U6. [I-20](../issues/I-20-sprite-ui.md) tracks the work. Runtime formats,
+final asset layouts and U1/U2 scenarios remain future work.
+
+## Visual follow-up after HR-12 (2026-09-28)
+
+HR-12 passed on NES-001: the native red text and gray status backing are more
+legible, the menu backdrop is transparent, and pickup/ouch faces work. The next
+art pass should keep the working v4 transport and menu transparency while:
+
+1. Replacing the flat gray status backing with a native-resolution styled panel
+   that recalls Doom's original status bar. Use a constrained gray/metal palette,
+   borders and section separators, keeping the numbers, 3×3 face, weapons and
+   ammo legible. Test contrast on real game backgrounds and respect the existing
+   background tile/palette budget.
+2. Adding contrast to red native text, preferably a dark outline or shadow in
+   the same sprite tile/palette rather than extra overlapping sprites. Check
+   OAM occupancy and the eight-sprites-per-line limit in gameplay and menus.
+3. Building a deterministic, source-attributed sprite sheet for the Doom menu
+   logo and rendering it natively where OAM and scanline capacity permit. Check
+   visible width and sprite CHR residency before choosing a logo size; preserve
+   the transparent game picture behind the menu.
+4. Sharpening other static or non-3D UI elements (menu titles, cursor, options,
+   episode choices and status decoration) when they can bypass world conversion
+   without hiding controls or duplicating the original draw. Use the actual
+   shareware episode names instead of generic `Episode 1/2/3` labels.
+
+Record generated art dimensions, tile ranges, scanline occupancy and palette
+choices; gate each change with Mesen cosimulation of title, main/episode/options
+menus and gameplay. Keep HR-12 as physical evidence for the previous candidate;
+new visual changes need their own hardware request and run.
 
 ## Findings from the current source
 
@@ -64,10 +92,14 @@ packed run can hold multiple narrow glyphs in each tile but still obeys the
 64-pixel coverage bound. A 24x24 face alone needs nine 8x8 entries and three
 slots on each of its 24 scanlines; compare it with a 16x16 face in mockups.
 
-If sprite-only layouts cannot retain all required information legibly, record
-that explicitly and present concrete layouts for a scope decision. A crisp
-post-conversion background text path is a possible exception, not fulfillment
-of the sprite goal; it needs an explicit decision before adoption. Do not use
+The 2026-09-25 scope decision permits native-resolution background tiles for
+long text and menu rows. Keep the compact status, resolved face, indicators,
+cursor and icons on sprites where capacity permits. Native text must use local
+font patterns and nametable cells, bypass the world converter, and preserve the
+stream's calibrated fetch address/count. This requires a new layout and timing
+proof: writing font tile IDs over the current `$80` stream nametable changes
+which PPU fetches hit CS1. Do not ship the old dithered foreground as this
+exception. Do not use
 unlimited-sprite emulator settings, disappearing indicators, alternating-frame
 text or raster OAM multiplexing as the default solution.
 
@@ -169,9 +201,9 @@ ROM stamp when its behavior changes.
 
 ## Validation and artifacts
 
-The following **U0/U1/U2 names are proposed scenarios**, not runnable commands yet.
-Implement runners and document exact invocation in `sim/mesen2/DOOM-FRAME.md` as
-part of U5. Mesen runs the actual NES CPU/PPU with a native host cartridge model;
+**U0 now has a setup-time sprite probe runner** in
+`sim/mesen2/DOOM-FRAME.md`; its runtime transport and NES-001 checks remain
+open. U1 and U2 are still proposed scenarios. Mesen runs the actual NES CPU/PPU with a native host cartridge model;
 it does not validate ARM instructions or physical PIO/DMA timing.
 
 | Layer | Required checks and retained artifacts |

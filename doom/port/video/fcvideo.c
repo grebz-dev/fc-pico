@@ -140,6 +140,10 @@ void fcvideo_set_palette(fcvideo_t *video, const uint8_t palette[MBX_PAL_LEN]) {
     memcpy(video->tables.palette, palette, MBX_PAL_LEN);
 }
 
+void fcvideo_set_native_status(fcvideo_t *video, bool enabled) {
+    video->native_status = enabled;
+}
+
 static uint8_t attr_get(const uint8_t attr[MBX_ATTR_LEN], int bx, int by) {
     int index = (bx >> 1) + ((by >> 1) << 3);
     int shift = ((bx & 1) + ((by & 1) << 1)) * 2;
@@ -156,6 +160,10 @@ static void choose_attributes(fcvideo_t *video, uint8_t attr[MBX_ATTR_LEN]) {
     memset(attr, 0, MBX_ATTR_LEN);
     for (int by = 0; by < VRAM_LINES / 16; by++) {
         for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++) {
+            if (video->native_status && by >= FCVIDEO_STATUS_START / 16) {
+                attr_set(attr, bx, by, 3);
+                continue;
+            }
             uint32_t costs[4] = {0};
             for (int y = by * 16; y < by * 16 + 16; y++) {
                 for (int x = bx * 16; x < bx * 16 + 16; x++) {
@@ -164,14 +172,16 @@ static void choose_attributes(fcvideo_t *video, uint8_t attr[MBX_ATTR_LEN]) {
                 }
             }
             uint8_t best = 0;
-            for (uint8_t p = 1; p < 4; p++) {
+            uint8_t choices = video->native_status ? 3 : 4;
+            for (uint8_t p = 1; p < choices; p++) {
                 if (costs[p] < costs[best]) best = p;
             }
             if (video->have_previous) {
                 uint8_t old = attr_get(video->previous_attr, bx, by);
                 /* Python reference: retain old unless best is strictly more
                  * than 12% cheaper. Integer comparison avoids floating point. */
-                if (best != old && costs[best] * 100u >= costs[old] * 88u) best = old;
+                if (old < choices && best != old &&
+                    costs[best] * 100u >= costs[old] * 88u) best = old;
             }
             attr_set(attr, bx, by, best);
         }
@@ -199,6 +209,11 @@ void fcvideo_push_line(fcvideo_t *video, int y,
     }
 }
 
+void fcvideo_blank_status(fcvideo_t *video) {
+    memset(video->frame + FCVIDEO_STATUS_START * FCVIDEO_WIDTH, 97,
+           (VRAM_LINES - FCVIDEO_STATUS_START) * FCVIDEO_WIDTH);
+}
+
 void fcvideo_convert_staged(fcvideo_t *video,
                             uint8_t stream[VRAM_BUF_BYTES_V2],
                             uint8_t attr[MBX_ATTR_LEN], bool reset_hysteresis) {
@@ -221,7 +236,9 @@ void fcvideo_convert_staged(fcvideo_t *video,
                 uint8_t palette = attr_get(attr, px / 16, py / 16);
                 uint8_t index = video->frame[flat];
                 uint8_t position = (uint8_t)((px & 3) | ((py & 3) << 2));
-                uint8_t pixel = video->tables.lut[(palette * 256 + index) * 16 + position] & 3u;
+                uint8_t pixel = video->native_status && py >= FCVIDEO_STATUS_START
+                    ? 1u
+                    : video->tables.lut[(palette * 256 + index) * 16 + position] & 3u;
                 lo |= (pixel & 1u) << (7 - bit);
                 hi |= (pixel >> 1) << (7 - bit);
             }
@@ -236,6 +253,26 @@ void fcvideo_convert_staged(fcvideo_t *video,
     mailbox[MBX_MAGIC] = PF_MAGIC_NO;
     memcpy(mailbox + MBX_PAL, video->tables.palette, MBX_PAL_LEN);
     memcpy(mailbox + MBX_ATTR, attr, MBX_ATTR_LEN);
+}
+
+void fcvideo_compact_native_text(uint8_t stream[VRAM_BUF_BYTES_V4]) {
+    size_t write_word = 0;
+    const size_t picture_words = PPU_PICTURE_COUNT / 2;
+    for (size_t read_word = 0; read_word < picture_words; read_word++) {
+        if (read_word >= VRAM_HEAD_WORDS) {
+            size_t visible = read_word - VRAM_HEAD_WORDS;
+            size_t row = visible / VRAM_TILE_COLS;
+            size_t col = visible % VRAM_TILE_COLS;
+            if (row >= NATIVE_TEXT_ROW * 8 && row < (NATIVE_TEXT_ROW + 1) * 8 &&
+                col >= NATIVE_TEXT_COL && col < NATIVE_TEXT_COL + NATIVE_TEXT_TILES) {
+                continue;
+            }
+        }
+        stream[write_word * 2] = stream[read_word * 2];
+        stream[write_word * 2 + 1] = stream[read_word * 2 + 1];
+        write_word++;
+    }
+    /* The mailbox starts here and is written by fcbus_core_heartbeat(). */
 }
 
 void fcvideo_convert(fcvideo_t *video,

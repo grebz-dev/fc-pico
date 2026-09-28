@@ -149,6 +149,22 @@ def test_encode_frame_buffer_sizes():
     assert len(stream.encode_frame(pix, bytes(128))) == 17408 == protocol.VRAM_BUF_BYTES_V2
 
 
+def test_native_text_compaction_preserves_other_pixels_and_mailbox():
+    rng = np.random.default_rng(4104)
+    pix = rng.integers(0, 4, size=(240, 256), dtype=np.uint8)
+    mailbox = bytes(rng.integers(0, 256, size=144, dtype=np.uint8))
+    encoded = stream.encode_frame(pix, mailbox, native_text=True)
+    assert len(encoded) == protocol.VRAM_BUF_BYTES_V4
+    assert encoded[protocol.VRAM_MAILBOX_OFF_V4:
+                   protocol.VRAM_MAILBOX_OFF_V4 + 144] == mailbox
+    expanded = stream.expand_native_text_stream(encoded)
+    decoded = stream.decode_frame(expanded)
+    outside = np.ones((240, 256), dtype=bool)
+    outside[224:232, 16:240] = False
+    assert np.array_equal(decoded[outside], pix[outside])
+    assert not decoded[~outside].any()
+
+
 def test_encode_frame_rejects_bad_mailbox_length():
     pix = np.zeros((stream.VRAM_LINES, stream.VRAM_WIDTH), dtype=np.uint8)
     with pytest.raises(ValueError):

@@ -14,6 +14,7 @@
 #define FCVIDEO_WIDTH (VRAM_TILE_COLS * 8)
 #define FCVIDEO_SCALED_HEIGHT 224
 #define FCVIDEO_TOP_MARGIN 8
+#define FCVIDEO_STATUS_START 192
 #define FCVIDEO_FRAME_BYTES (VRAM_LINES * FCVIDEO_WIDTH)
 #define FCVIDEO_ERR_BYTES (4 * 256)
 #define FCVIDEO_LUT_BYTES (4 * 256 * 16)
@@ -33,6 +34,7 @@ typedef struct {
     uint8_t frame[FCVIDEO_FRAME_BYTES + 16]; /* prefetch past line 239 is zero */
     uint8_t previous_attr[MBX_ATTR_LEN];
     bool have_previous;
+    bool native_status;
 } fcvideo_t;
 
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables);
@@ -50,14 +52,22 @@ void fcvideo_build_tables(const uint8_t playpal_rgb[256 * 3],
 void fcvideo_build_palette_sets(const fcvideo_preset_t *preset,
                                 uint8_t sets[FCVIDEO_PALETTE_SET_COUNT][MBX_PAL_LEN]);
 void fcvideo_set_palette(fcvideo_t *video, const uint8_t palette[MBX_PAL_LEN]);
+void fcvideo_set_native_status(fcvideo_t *video, bool enabled);
 /* Scanline staging avoids a second 320x200 frame buffer on the RP2350.
  * Call begin, then push each source line once, then convert_staged. */
 void fcvideo_frame_begin(fcvideo_t *video);
 void fcvideo_push_line(fcvideo_t *video, int y,
                        const uint8_t line[FCVIDEO_SRC_WIDTH]);
+/* Replace the converted legacy status area with a plain backing for native
+ * sprites when the v4 status screen is active. Call after all push_line calls. */
+void fcvideo_blank_status(fcvideo_t *video);
 void fcvideo_convert_staged(fcvideo_t *video,
                             uint8_t stream[VRAM_BUF_BYTES_V2],
                             uint8_t attr[MBX_ATTR_LEN], bool reset_hysteresis);
+/* Remove the selected pattern reads for native BG text row 28. Call only after
+ * convert_staged when the console negotiated v4. The v2 mailbox is discarded;
+ * the bus inserts the current mailbox at VRAM_MAILBOX_OFF_V4 on heartbeat. */
+void fcvideo_compact_native_text(uint8_t stream[VRAM_BUF_BYTES_V4]);
 /* Writes a full v2 buffer and returns the selected attribute table in attr.
  * Pass reset_hysteresis=true for the first frame after a palette preset change. */
 void fcvideo_convert(fcvideo_t *video,

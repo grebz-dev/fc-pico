@@ -37,6 +37,39 @@ static void test_reset_v2(void) {
     CHECK_EQ(m[MBX_APU], 0xFF);
 }
 
+static void test_ui_snapshot_v3_only(void) {
+    uint8_t ui[MBX_UI_LEN];
+    for (int i = 0; i < MBX_UI_LEN; ++i) ui[i] = (uint8_t)(0x80 + i);
+    fcbus_core_t c;
+    init_core(&c, FCBUS_PROTO_V2);
+    CHECK(!fcbus_core_ui_snapshot(&c, ui));
+    CHECK_EQ(c.mailbox_next[MBX_FLAGS], MBX_FLAG_V2);
+    init_core(&c, FCBUS_PROTO_V3);
+    CHECK(fcbus_core_ui_snapshot(&c, ui));
+    CHECK_EQ(c.mailbox_next[MBX_FLAGS],
+             MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_UI_VALID);
+    CHECK_MEM(c.mailbox_next + MBX_UI, ui, MBX_UI_LEN);
+    CHECK_EQ(fcbus_core_heartbeat(&c, PPU_COUNT_VAL_V3), FCBUS_ARM);
+    const uint8_t *front = (const uint8_t *)fcbus_core_stream_front(&c);
+    CHECK_MEM(front + VRAM_MAILBOX_OFF_V3 + MBX_UI, ui, MBX_UI_LEN);
+    CHECK_EQ(c.mailbox_next[MBX_FLAGS],
+             MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_UI_VALID);
+    CHECK_MEM(c.mailbox_next + MBX_UI, ui, MBX_UI_LEN);
+}
+
+static void test_ui_snapshot_v4_text_offset(void) {
+    fcbus_core_t c;
+    init_core(&c, FCBUS_PROTO_V4);
+    uint8_t ui[MBX_UI_LEN];
+    for (int i = 0; i < MBX_UI_LEN; ++i) ui[i] = (uint8_t)i;
+    CHECK(fcbus_core_ui_snapshot(&c, ui));
+    CHECK_EQ(fcbus_core_heartbeat(&c, PPU_COUNT_VAL_V4), FCBUS_ARM);
+    const uint8_t *front = (const uint8_t *)fcbus_core_stream_front(&c);
+    CHECK_EQ(front[VRAM_MAILBOX_OFF_V4 + MBX_FLAGS],
+             MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_V4 | MBX_FLAG_UI_VALID);
+    CHECK_MEM(front + VRAM_MAILBOX_OFF_V4 + MBX_UI, ui, MBX_UI_LEN);
+}
+
 static void test_cmd_append_and_overflow(void) {
     fcbus_core_t c;
     init_core(&c, FCBUS_PROTO_V1);
@@ -199,6 +232,8 @@ static void test_palette_v2_and_v1(void) {
 int main(void) {
     test_reset_v1();
     test_reset_v2();
+    test_ui_snapshot_v3_only();
+    test_ui_snapshot_v4_text_offset();
     test_cmd_append_and_overflow();
     test_cmd_vram_bytes_and_masking();
     test_cmd_vram_needs_three_bytes();

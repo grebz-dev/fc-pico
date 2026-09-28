@@ -34,7 +34,10 @@ audio and release polish. Start with sprite-capacity, pattern-memory and NMI-bud
 proofs; preserve the working video/input baseline and continue converter optimization
 and dynamic S2 validation. The staged design, limitations and Mesen/hardware gates
 are in [plan/12-sprite-ui.md](plan/12-sprite-ui.md), tracked by
-[I-20](issues/I-20-sprite-ui.md). **Planning only; no sprite UI is implemented yet.**
+[I-20](issues/I-20-sprite-ui.md). The setup-time sprite probe passes in Mesen
+and initially on NES-001; two symbols intermittently disappear after power
+cycles. An isolated v3 UI mailbox passes Mesen, while production HUD migration
+and physical pattern-storage validation remain open.
 
 Use [PROGRESS.md](PROGRESS.md) for dated verification evidence and environment notes.
 [HARDWARE-REQUESTS.md](HARDWARE-REQUESTS.md) tracks requested console checks and

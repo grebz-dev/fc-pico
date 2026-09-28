@@ -124,4 +124,32 @@
 #define NMI_CRITICAL_CYCLES_MAX 1900 // budget for the vblank-critical part of the v2 NMI
 #define NMI_TOTAL_CYCLES_MAX    2200 // budget for the whole v2 NMI (NTSC vblank = 2273)
 
+/* ------------------------------------------------------------------------ */
+/* @section v3            Versioned compact native HUD snapshot              */
+/* ------------------------------------------------------------------------ */
+#define FCBUS_PROTOCOL_V3    3
+#define FC_COM_BUF_SIZE_V3   144    // v2 mailbox plus one 16-byte HUD snapshot
+#define PPU_COUNT_VAL_V3     (PPU_PICTURE_COUNT + FC_COM_BUF_SIZE_V3)  // 15570
+#define VRAM_BUF_BYTES_V3    (36 * 2 * 240 + FC_COM_BUF_SIZE_V3)       // 17424
+#define VRAM_MAILBOX_OFF_V3  (PPU_COUNT_VAL_V3 - FC_COM_BUF_SIZE_V3)  // 15426
+#define MBX_UI              128    // bytes 128..143: immutable HUD snapshot
+#define MBX_UI_LEN          16
+#define MBX_FLAG_UI_VALID   0x08   // snapshot has a complete generation
+#define MBX_FLAG_V3         0x40   // v3 mailbox signature alongside MBX_FLAG_V2
+
+/* ------------------------------------------------------------------------ */
+/* @section v4            Fixed native BG text row, compacted picture stream */
+/* ------------------------------------------------------------------------ */
+#define FCBUS_PROTOCOL_V4    4
+#define NATIVE_TEXT_ROW      28    // BG tile row 28, NES scanlines 224..231
+#define NATIVE_TEXT_COL      2     // first native tile, x=16
+#define NATIVE_TEXT_TILES    28    // columns 2..29, x=16..239
+#define NATIVE_TEXT_BYTES    (NATIVE_TEXT_TILES * 8 * 2) // skipped CS1 reads
+#define PPU_PICTURE_COUNT_V4 (PPU_PICTURE_COUNT - NATIVE_TEXT_BYTES) // 14978
+#define FC_COM_BUF_SIZE_V4   FC_COM_BUF_SIZE_V3
+#define PPU_COUNT_VAL_V4     (PPU_PICTURE_COUNT_V4 + FC_COM_BUF_SIZE_V4) // 15122
+#define VRAM_BUF_BYTES_V4    VRAM_BUF_BYTES_V3
+#define VRAM_MAILBOX_OFF_V4  PPU_PICTURE_COUNT_V4
+#define MBX_FLAG_V4         0x20   // fixed native text geometry
+
 #endif /* FCBUS_PROTOCOL_H */

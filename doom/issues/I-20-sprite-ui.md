@@ -8,11 +8,17 @@
 | **Depends on** | Current working video/input baseline; I-15 dynamic S2 for final dynamic acceptance; P3-T2 save/load for transition coverage |
 | **Work plan tasks** | [P3-U1..U6](../plan/10-workplan.md#p3-u1-sprite-ui-feasibility-and-layout) |
 
-## Status (2026-09-25)
+## Status (2026-09-27)
 
-**open**. Codebase exploration and the plan are complete; implementation and every
-new UI acceptance gate remain open. Existing NES-001 video/controller evidence
-is the baseline, not evidence of sprite UI support.
+**partial**. The v4 native text row and live health pass on NES-001 at
+`proto=4`, count 15122. A 35-sprite native status candidate with tall health
+and armor, four background ammo counts, weapon/key indicators and a real 3×3
+Doomguy face passes Mesen and timing checks; [HR-10](../HARDWARE-REQUESTS.md)
+awaits its physical run. The full 42-face sheet is generated, with seven
+representative faces resident pending expression paging. The earlier sprite
+probe's `A` and diamond disappeared intermittently across power cycles, so
+physical atlas persistence remains open. Full menu/foreground migration,
+reverse recovery and dynamic S2 acceptance also remain open.
 
 ## Goal and specification
 
@@ -59,8 +65,9 @@ planning task. Do not edit `tutorial_project/` or the permanent fix bank.
 - Upgrade/recovery and physical NES-001 checks pass with recorded hashes and
   observations. Any background UI exception is an explicit accepted scope change.
 
-Future implementation must add exact runnable scenario commands to
-[the Mesen guide](../sim/mesen2/DOOM-FRAME.md); U0/U1/U2 are currently design names.
+U0's setup-time probe command is in
+[the Mesen guide](../sim/mesen2/DOOM-FRAME.md). Future implementation must add
+runtime U0 and exact U1/U2 scenario commands.
 Record commands/results in [PROGRESS](../PROGRESS.md), physical observations in
 [HARDWARE-LOG](../HARDWARE-LOG.md), and actionable candidate checks in
 [HARDWARE-REQUESTS](../HARDWARE-REQUESTS.md). Do not mark done on planning alone.

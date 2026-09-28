@@ -8,10 +8,14 @@ attribute table (sub-palette per 16x16 block) and a 16-byte BG palette, and
 map through the NES's NTSC colour table (``fcpico.nes_palette``) to produce
 a 256x240 RGB image. Used by the L2/L3 golden-frame PSNR gate (plan 09) and
 as a human-readable "what does this stream look like" tool.
+Optional OAM/CHR/sprite-palette dumps add the current ROM's 8x8 sprite layer
+for independent UI reference images.
 
 Usage:
     ppu_decode.py <stream.bin> [--attr attr.bin] [--pal pal.bin]
-                  [--mailbox-v2] -o out.png
+                  [--mailbox-v2]
+                  [--oam oam.bin --sprite-chr chr.bin --sprite-pal pal.bin]
+                  -o out.png
 
 ``stream.bin`` is a raw 17,344-byte (v1) or 17,408-byte (v2) buffer as
 produced by ``fcpico.stream.encode_frame`` / ``fcvideo_ref.convert``.
@@ -86,11 +90,70 @@ def decode_to_rgb(stream: bytes, attr: bytes | None = None, pal: bytes | None = 
     return nes_palette.NES_PALETTE_RGB_ARRAY[nes_index]  # (240, 256, 3)
 
 
+def decode_with_sprites(
+    stream: bytes, oam: bytes, sprite_chr: bytes, sprite_pal: bytes,
+    attr: bytes | None = None, pal: bytes | None = None,
+) -> np.ndarray:
+    """Composite 8x8 NES sprites over a decoded background frame.
+
+    ``sprite_chr`` is the 4 KiB pattern table selected by PPUCTRL=$88.
+    This reference models the current ROM's enabled left-edge rendering and
+    hardware eight-sprites-per-scanline limit. OAM Y is one less than the first
+    visible scanline. The first eight in-range entries win evaluation even if
+    their pixels are transparent or off the right edge.
+    """
+    if len(oam) != 256:
+        raise PpuDecodeError(f"OAM must be 256 bytes, got {len(oam)}")
+    if len(sprite_chr) != 4096:
+        raise PpuDecodeError(f"sprite CHR must be 4096 bytes, got {len(sprite_chr)}")
+    if len(sprite_pal) != 16:
+        raise PpuDecodeError(f"sprite palette must be 16 bytes, got {len(sprite_pal)}")
+
+    rgb = decode_to_rgb(stream, attr, pal).copy()
+    bg = stream_mod.decode_frame(stream)
+    palette = nes_palette.NES_PALETTE_RGB_ARRAY
+    for y in range(240):
+        selected = 0
+        claimed = np.zeros(256, dtype=bool)
+        # Selection precedes pixel transparency, priority and clipping.
+        for offset in range(0, 256, 4):
+            top = oam[offset] + 1
+            if top > y or y >= top + 8:
+                continue
+            selected += 1
+            if selected > 8:
+                break
+            tile, flags, x = oam[offset + 1:offset + 4]
+            row = y - top
+            if flags & 0x80:
+                row = 7 - row
+            base = tile * 16
+            low = sprite_chr[base + row]
+            high = sprite_chr[base + row + 8]
+            for dx in range(8):
+                px = x + dx
+                if px >= 256:
+                    break
+                bit = dx if flags & 0x40 else 7 - dx
+                color = ((low >> bit) & 1) | (((high >> bit) & 1) << 1)
+                if color == 0:
+                    continue
+                # Earlier OAM entries win even if the later sprite is in front
+                # of the background and the earlier one is behind it.
+                if claimed[px]:
+                    continue
+                claimed[px] = True
+                if flags & 0x20 and bg[y, px] != 0:
+                    continue
+                rgb[y, px] = palette[sprite_pal[(flags & 3) * 4 + color] & 0x3F]
+    return rgb
+
+
 def _mailbox_from_stream(buf: bytes):
     """(attr_or_None, pal_or_None) from a v2 stream's own mailbox, per its flags."""
-    if len(buf) != protocol.VRAM_BUF_BYTES_V2:
+    if len(buf) not in (protocol.VRAM_BUF_BYTES_V2, protocol.VRAM_BUF_BYTES_V3):
         raise PpuDecodeError(
-            f"--mailbox-v2 needs a {protocol.VRAM_BUF_BYTES_V2}-byte (v2) stream, got {len(buf)}"
+            f"--mailbox-v2 needs a v2/v3 stream, got {len(buf)} bytes"
         )
     off = protocol.VRAM_MAILBOX_OFF_V2
     mailbox = buf[off : off + protocol.FC_COM_BUF_SIZE_V2]
@@ -111,6 +174,9 @@ def main(argv=None) -> int:
     parser.add_argument("stream", help="path to the raw stream buffer (17344 or 17408 bytes)")
     parser.add_argument("--attr", metavar="FILE", help="64-byte attribute table ($23C0-$23FF)")
     parser.add_argument("--pal", metavar="FILE", help="16-byte BG palette ($3F00-$3F0F)")
+    parser.add_argument("--oam", metavar="FILE", help="256-byte OAM dump for sprite compositing")
+    parser.add_argument("--sprite-chr", metavar="FILE", help="4096-byte sprite pattern table ($1000-$1FFF)")
+    parser.add_argument("--sprite-pal", metavar="FILE", help="16-byte sprite palette ($3F10-$3F1F)")
     parser.add_argument(
         "--mailbox-v2",
         action="store_true",
@@ -130,7 +196,16 @@ def main(argv=None) -> int:
         if args.pal is not None:
             pal = Path(args.pal).read_bytes()
 
-        rgb = decode_to_rgb(buf, attr, pal)
+        sprite_files = (args.oam, args.sprite_chr, args.sprite_pal)
+        if any(sprite_files) and not all(sprite_files):
+            raise PpuDecodeError("--oam, --sprite-chr and --sprite-pal must be supplied together")
+        if all(sprite_files):
+            rgb = decode_with_sprites(
+                buf, Path(args.oam).read_bytes(), Path(args.sprite_chr).read_bytes(),
+                Path(args.sprite_pal).read_bytes(), attr, pal,
+            )
+        else:
+            rgb = decode_to_rgb(buf, attr, pal)
     except (OSError, PpuDecodeError, ValueError) as exc:
         print(f"error: {exc}", file=sys.stderr)
         return 2

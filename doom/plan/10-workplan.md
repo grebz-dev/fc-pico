@@ -58,7 +58,9 @@ does not waive a task's remaining acceptance criteria.
 | P2-T5 | **partial** | Palette/attribute conversion and flash tables exist; scripted damage acceptance remains. |
 | P2-T6 | **partial** | Three-scene [palette report](../assets/palette_eval.md) and improved hardware contrast confirmed; full corpus/scene checks remain. |
 | P2-T7 / P2-T8 | **open** | Dynamic S2 and full colour hardware acceptance remain. |
-| P3-U1 / P3-U2 / P3-U3 / P3-U4 / P3-U5 / P3-U6 | **open** | Sprite UI plan only; capacity/storage/timing proof, implementation, Mesen and hardware gates remain ([I-20](../issues/I-20-sprite-ui.md)). |
+| P3-U1 / P3-U2 | **partial** | Resident status capacity candidate and Mesen U0 pass; NES-001 symbols intermittently disappear, so storage proof and all-screen layout remain ([I-20](../issues/I-20-sprite-ui.md)). |
+| P3-U3 | **partial** | Isolated v3 144-byte transport passes host timing and Mesen count=15570; OAM schedule is measured, but decoder, production ROM and dynamic acceptance remain ([I-20](../issues/I-20-sprite-ui.md)). |
+| P3-U4 / P3-U5 / P3-U6 | **open** | Engine status snapshot capture exists; actual sprite/BG HUD migration and acceptance gates remain ([I-20](../issues/I-20-sprite-ui.md)). |
 | P3-T1 | **partial** | Base mapping and host `--pads` movement pass; B-use fix passes hardware; full context mappings remain. |
 | P4-T1 | **done** | Host APU sequencer tests pass; audio integration and assets are later tasks. |
 | P4-T3 | **partial** | APUS/DPCM support tools pass tests; [I-05](../issues/I-05-audio-tools.md) remains. |
@@ -407,6 +409,14 @@ or sprite UI implementation is deferred.
 
 ## Changelog
 
+- 2026-09-27: record the intermittent NES-001 A/diamond result; add an isolated
+  v3 mailbox and OAM commit timing result while retaining the production HUD
+  and physical atlas gates.
+
+- 2026-09-28: after HR-12 physical success, add a visual follow-up in plan 12:
+  styled gray status backing, outlined red text, a sprite menu logo, native
+  episode names and clearer static UI. Preserve transparent menus and require
+  Mesen plus a new physical run for the changed art.
 - 2026-09-25: promote sprite status/HUD/face/menu UI to required M3-UI; add P3-U1..U6, feasibility gates and Mesen/hardware validation; supersede optional P5-T3. Planning only.
 
 - 2026-09-24: align the execution summary with NES-001 Doom video/input, v2 ROM/reflash and measured converter cost; retain unmet acceptance gates.

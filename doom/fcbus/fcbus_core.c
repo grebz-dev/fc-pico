@@ -53,11 +53,17 @@ bool fcbus_core_pop_action(fcbus_core_t *c, fcbus_action_t *out) {
 static void reset_next_mailbox(fcbus_core_t *c) {
     memset(c->mailbox_next, 0, sizeof c->mailbox_next);
     c->mailbox_next[MBX_MAGIC] = PF_MAGIC_NO;
-    c->mailbox_next[MBX_FLAGS] = (c->proto == FCBUS_PROTO_V2) ? MBX_FLAG_V2 : 0;
+    c->mailbox_next[MBX_FLAGS] = c->proto == FCBUS_PROTO_V4 ?
+        (MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_V4) : c->proto == FCBUS_PROTO_V3 ?
+        (MBX_FLAG_V2 | MBX_FLAG_V3) : c->proto == FCBUS_PROTO_V2 ? MBX_FLAG_V2 : 0;
     c->cmd_cursor = MBX_CMD;
     c->apu_cursor = MBX_APU;
     c->apu_pairs = 0;
     c->mailbox_next[MBX_APU] = 0xFF;
+    if (c->proto >= FCBUS_PROTO_V3 && c->ui_have) {
+        memcpy(&c->mailbox_next[MBX_UI], c->ui_want, MBX_UI_LEN);
+        c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_UI_VALID;
+    }
 
     if (c->data_mode_requested && c->state != FCBUS_ST_DATA) {
         (void)fcbus_core_cmd(c, PF_COM_DMOD);
@@ -84,7 +90,7 @@ bool fcbus_core_cmd_vram(fcbus_core_t *c, uint16_t addr, uint8_t val) {
 }
 
 bool fcbus_core_apu_write(fcbus_core_t *c, uint8_t reg, uint8_t val) {
-    uint8_t max_pairs = (c->proto == FCBUS_PROTO_V2) ? APU_PAIRS_MAX_V2 : APU_PAIRS_MAX_V1;
+    uint8_t max_pairs = (c->proto >= FCBUS_PROTO_V2) ? APU_PAIRS_MAX_V2 : APU_PAIRS_MAX_V1;
     if (c->apu_pairs >= max_pairs) {
         return false;
     }
@@ -92,7 +98,7 @@ bool fcbus_core_apu_write(fcbus_core_t *c, uint8_t reg, uint8_t val) {
     c->mailbox_next[c->apu_cursor++] = val;
     c->mailbox_next[c->apu_cursor] = 0xFF;
     c->apu_pairs++;
-    if (c->proto == FCBUS_PROTO_V2) {
+    if (c->proto >= FCBUS_PROTO_V2) {
         c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_APU_VALID;
     }
     return true;
@@ -103,7 +109,7 @@ void fcbus_core_attr_table(fcbus_core_t *c, const uint8_t attr[64]) {
      * this frame: this is rp_system's m_ATR_W, and it is what data mode uploads. */
     memcpy(c->attr_want, attr, MBX_ATTR_LEN);
 
-    if (c->proto == FCBUS_PROTO_V2) {
+    if (c->proto >= FCBUS_PROTO_V2) {
         memcpy(&c->mailbox_next[MBX_ATTR], attr, MBX_ATTR_LEN);
         c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_ATTR_VALID;
         /* The whole table rides in the mailbox, so the console will hold all of it. */
@@ -126,7 +132,7 @@ void fcbus_core_attr_table(fcbus_core_t *c, const uint8_t attr[64]) {
 void fcbus_core_palette(fcbus_core_t *c, const uint8_t pal[16]) {
     memcpy(c->pal_want, pal, MBX_PAL_LEN);
 
-    if (c->proto == FCBUS_PROTO_V2) {
+    if (c->proto >= FCBUS_PROTO_V2) {
         memcpy(&c->mailbox_next[MBX_PAL], pal, MBX_PAL_LEN);
         c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_PAL_VALID;
         memcpy(c->pal_sent, pal, MBX_PAL_LEN);
@@ -140,6 +146,15 @@ void fcbus_core_palette(fcbus_core_t *c, const uint8_t pal[16]) {
             c->pal_sent[i] = c->pal_want[i];
         }
     }
+}
+
+bool fcbus_core_ui_snapshot(fcbus_core_t *c, const uint8_t snapshot[MBX_UI_LEN]) {
+    if (c->proto < FCBUS_PROTO_V3) return false;
+    memcpy(c->ui_want, snapshot, MBX_UI_LEN);
+    c->ui_have = true;
+    memcpy(&c->mailbox_next[MBX_UI], snapshot, MBX_UI_LEN);
+    c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_UI_VALID;
+    return true;
 }
 
 /* ========================================================================== */
@@ -189,7 +204,9 @@ fcbus_sync_t fcbus_core_heartbeat(fcbus_core_t *c, uint32_t count) {
         c->state = FCBUS_ST_RUN;
     }
 
-    uint32_t expected = (c->proto == FCBUS_PROTO_V2) ? PPU_COUNT_VAL_V2 : PPU_COUNT_VAL_V1;
+    uint32_t expected = c->proto == FCBUS_PROTO_V4 ? PPU_COUNT_VAL_V4 :
+        c->proto == FCBUS_PROTO_V3 ? PPU_COUNT_VAL_V3 :
+        c->proto == FCBUS_PROTO_V2 ? PPU_COUNT_VAL_V2 : PPU_COUNT_VAL_V1;
     fcbus_sync_t decision = fcbus_sync_decide(count, expected);
 
     c->stats.frames++;
@@ -218,8 +235,11 @@ fcbus_sync_t fcbus_core_heartbeat(fcbus_core_t *c, uint32_t count) {
             c->publish_pending = false;
         }
 
-        size_t mbx_len = (c->proto == FCBUS_PROTO_V2) ? FC_COM_BUF_SIZE_V2 : FC_COM_BUF_SIZE_V1;
-        size_t mbx_off = (c->proto == FCBUS_PROTO_V2) ? VRAM_MAILBOX_OFF_V2 : VRAM_MAILBOX_OFF_V1;
+        size_t mbx_len = c->proto >= FCBUS_PROTO_V3 ? FC_COM_BUF_SIZE_V3 :
+            c->proto == FCBUS_PROTO_V2 ? FC_COM_BUF_SIZE_V2 : FC_COM_BUF_SIZE_V1;
+        size_t mbx_off = c->proto == FCBUS_PROTO_V4 ? VRAM_MAILBOX_OFF_V4 :
+            c->proto == FCBUS_PROTO_V3 ? VRAM_MAILBOX_OFF_V3 :
+            c->proto == FCBUS_PROTO_V2 ? VRAM_MAILBOX_OFF_V2 : VRAM_MAILBOX_OFF_V1;
         uint8_t *front_bytes = (uint8_t *)c->stream[c->front];
         memcpy(front_bytes + mbx_off, c->mailbox_next, mbx_len);
 
@@ -362,6 +382,7 @@ static void reset_frame_state(fcbus_core_t *c) {
     c->dm_pal_pending = false;
     c->dm_attr_pending = false;
     c->dm_step = 0;
+    c->ui_have = false;
     reset_next_mailbox(c);
 }
 
@@ -377,7 +398,7 @@ bool fcbus_core_rx_will_heartbeat(const fcbus_core_t *c, uint8_t b) {
     if (c->rxwait == FCBUS_RXW_KEY_PAD2) {
         return true;
     }
-    if (c->rxwait != FCBUS_RXW_NONE || c->proto == FCBUS_PROTO_V2) {
+    if (c->rxwait != FCBUS_RXW_NONE || c->proto >= FCBUS_PROTO_V2) {
         return false;
     }
     switch (b) {
@@ -444,7 +465,13 @@ void fcbus_core_rx_byte(fcbus_core_t *c, uint8_t b) {
         return;
     case FCBUS_RXW_HELLO_VER:
         c->rxwait = FCBUS_RXW_NONE;
-        if (b == FCBUS_PROTOCOL_V2) {
+        if (b == FCBUS_PROTOCOL_V4) {
+            c->proto = FCBUS_PROTO_V4;
+            c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_V4;
+        } else if (b == FCBUS_PROTOCOL_V3) {
+            c->proto = FCBUS_PROTO_V3;
+            c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_V2 | MBX_FLAG_V3;
+        } else if (b == FCBUS_PROTOCOL_V2) {
             c->proto = FCBUS_PROTO_V2;
         } else {
             c->stats.proto_errors++;
@@ -512,7 +539,7 @@ void fcbus_core_rx_byte(fcbus_core_t *c, uint8_t b) {
         /* Any other byte is a v1 controller state byte (docs/pages/protocol.md,
          * "joypad-as-default-case") -- unless a v2 session is already established, in
          * which case the 6502 should never send one and this is a protocol error. */
-        if (c->proto == FCBUS_PROTO_V2) {
+        if (c->proto >= FCBUS_PROTO_V2) {
             c->stats.proto_errors++;
             push_action(c, FCBUS_ACT_PROTO_ERROR, b, NULL, 0);
             return;

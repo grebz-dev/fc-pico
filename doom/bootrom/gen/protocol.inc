@@ -89,5 +89,29 @@ MBX_ZP_HI	EQU	$C0	; console zero page holding mailbox bytes 64..127
 NMI_CRITICAL_CYCLES_MAX	EQU	1900	; budget for the vblank-critical part of the v2 NMI
 NMI_TOTAL_CYCLES_MAX	EQU	2200	; budget for the whole v2 NMI (NTSC vblank = 2273)
 ;
+; --- v3: Versioned compact native HUD snapshot ---
+FCBUS_PROTOCOL_V3	EQU	3
+FC_COM_BUF_SIZE_V3	EQU	144	; v2 mailbox plus one 16-byte HUD snapshot
+PPU_COUNT_VAL_V3	EQU	15570	; 15570
+VRAM_BUF_BYTES_V3	EQU	17424	; 17424
+VRAM_MAILBOX_OFF_V3	EQU	15426	; 15426
+MBX_UI	EQU	128	; bytes 128..143: immutable HUD snapshot
+MBX_UI_LEN	EQU	16
+MBX_FLAG_UI_VALID	EQU	$08	; snapshot has a complete generation
+MBX_FLAG_V3	EQU	$40	; v3 mailbox signature alongside MBX_FLAG_V2
+;
+; --- v4: Fixed native BG text row, compacted picture stream ---
+FCBUS_PROTOCOL_V4	EQU	4
+NATIVE_TEXT_ROW	EQU	28	; BG tile row 28, NES scanlines 224..231
+NATIVE_TEXT_COL	EQU	2	; first native tile, x=16
+NATIVE_TEXT_TILES	EQU	28	; columns 2..29, x=16..239
+NATIVE_TEXT_BYTES	EQU	448	; skipped CS1 reads
+PPU_PICTURE_COUNT_V4	EQU	14978	; 14978
+FC_COM_BUF_SIZE_V4	EQU	144
+PPU_COUNT_VAL_V4	EQU	15122	; 15122
+VRAM_BUF_BYTES_V4	EQU	17424
+VRAM_MAILBOX_OFF_V4	EQU	14978
+MBX_FLAG_V4	EQU	$20	; fixed native text geometry
+;
 ; --- nesasm aliases (ASM_ALIAS in gen_protocol.py) ---
 PF_MAGIC_CODE	EQU	PF_MAGIC_NO
