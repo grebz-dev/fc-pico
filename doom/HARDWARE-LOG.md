@@ -11,6 +11,21 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-09-28 -- HR-13 styled sprites, paused-menu finding
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: HR-13 `20DOOM-04-9010` candidate from the prior request;
+  console stamp was not separately transcribed.
+- Results: the physical photo shows the native red menu text and styled gray
+  status panel, but the top status values cross the panel's upper border and
+  the Doomguy face crosses the lower divider. The source-derived DOOM sprite
+  logo is absent on the paused game menu. This is consistent with the 9010
+  implementation, which only places that logo on the title menu; the photo
+  does not establish whether it appears on the title. Alignment and a compact
+  paused-menu logo are addressed in the 9011 follow-up candidate. Episode
+  labels and cold-boot CHR residency were not reported in this photo.
+- Attachments: [`STYLED_SPRITES_HW_TEST.jpg`](STYLED_SPRITES_HW_TEST.jpg),
+  observations supplied in chat.
+
 ## 2026-09-28 -- HR-12 transparent menu, gray status and special faces
 - Console: NES-001 per current session; region not reconfirmed.
 - Cartridge firmware: `fcpico_doom_native_status_whx.uf2`, SHA-256

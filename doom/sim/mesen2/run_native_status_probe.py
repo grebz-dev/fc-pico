@@ -17,7 +17,8 @@ ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "doom/tools"))
 from fcpico import protocol, stream  # noqa: E402
 from native_status_art import (bg_status_tiles, episode_pair_art,
-                               menu_logo_art, resident_art)  # noqa: E402
+                               menu_logo_art, resident_art,
+                               small_menu_logo_art)  # noqa: E402
 
 
 def status_backing(pixels: np.ndarray) -> None:
@@ -34,6 +35,15 @@ def status_backing(pixels: np.ndarray) -> None:
                 color = 2
             elif 225 <= y <= 227 and (x < 8 or x >= 248):
                 color = 0
+            if 198 <= y < 212:
+                glyph = (0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11) if x < 128 else (
+                    0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11)
+                col = x - (17 if x < 128 else 177)
+                row = (y - 198) // 2
+                if 0 <= col < 5 and glyph[row] & (1 << (4 - col)):
+                    color = 3
+                elif 0 < col < 6 and y > 198 and glyph[(y - 199) // 2] & (1 << (5 - col)):
+                    color = 0
             pixels[y, x] = color
 
 
@@ -109,6 +119,7 @@ def main() -> int:
     assert sprite_palette[13:16] == bytes((0x02, 0x12, 0x28))
     sprite_chr = (run / "sprite_chr.bin").read_bytes()
     assert sprite_chr[:len(episode_pair_art()[0])] == episode_pair_art()[0]
+    assert sprite_chr[0x1F0:0x1F0 + len(small_menu_logo_art())] == small_menu_logo_art()
     assert sprite_chr[0x600:0x600 + len(menu_logo_art())] == menu_logo_art()
     if not args.no_status:
         assert (run / "palette.bin").read_bytes()[15] == 0x16
@@ -120,7 +131,17 @@ def main() -> int:
     if args.menu:
         assert __import__("json").loads((run / "lua_result.json").read_text())["start_polls"] >= 1
         if not args.no_status:
-            assert all(oam[n * 4] < 0xEF for n in range(25)), "HUD vanished on Start/menu"
+            assert all(oam[n * 4] < 0xEF for n in range(1, 25)
+                       if n not in (4, 8, 12)), "HUD vanished on Start/menu"
+            if args.menu_id == 1:
+                small = bytes(value for row in range(3) for col in range(6)
+                              for value in (39 + row * 8, 0x1F + row * 6 + col,
+                                            3, 104 + col * 8))
+                assert oam[49 * 4:61 * 4] == small[:48]
+                assert oam[62 * 4:64 * 4] == small[48:56]
+                assert b"".join(oam[n * 4:n * 4 + 4] for n in (0, 4, 8, 12)) == small[56:]
+            else:
+                assert all(oam[n * 4] == 0xEF for n in (0, 4, 8, 12))
         else:
             if args.menu_id == 1:
                 assert all(oam[n * 4] < 0xEF for n in range(32))
@@ -131,7 +152,8 @@ def main() -> int:
                 assert all(oam[n * 4] == 0xEF for n in range(35))
         expected_first = {1: (87, "N"), 2: (87, "E"), 3: (87, "E"),
                           4: (58, "E"), 5: (87, "E")}[args.menu_id]
-        first_tile = (episode_pair_art()[1]["KN"] if args.menu_id == 2 else
+        first_tile = (episode_pair_art()[1]["NE"] if args.menu_id == 1 else
+                      episode_pair_art()[1]["KN"] if args.menu_id == 2 else
                       ord(expected_first[1]))
         assert oam[35 * 4:35 * 4 + 4] == bytes((expected_first[0],
             first_tile, 0, 80 if args.menu_id >= 4 else 92))
@@ -144,9 +166,9 @@ def main() -> int:
     assert sprite_palette[5:8] == bytes((0x07, 0x18, 0x26))
     assert (run / "ui_mailbox.bin").read_bytes() == ui
     assert (run / "text_row.bin").read_bytes()[2:30] == bytes((32,)) * 28
-    assert all(oam[n * 4] == 191 for n in range(8))
-    assert all(oam[n * 4] == 199 for n in range(8, 16))
-    assert [oam[n * 4] for n in range(16, 25)] == [207] * 3 + [215] * 3 + [223] * 3
+    assert [oam[n * 4] for n in range(8)] == [0xEF, 197, 197, 197] * 2
+    assert [oam[n * 4] for n in range(8, 16)] == [0xEF, 205, 205, 205] * 2
+    assert [oam[n * 4] for n in range(16, 25)] == [197] * 3 + [205] * 3 + [213] * 3
     assert [oam[n * 4] for n in range(25, 32)] == [207] * 5 + [215] * 2
     assert [oam[n * 4 + 2] for n in range(25, 32)] == [0, 2, 0, 0, 0, 0, 0]
     assert [oam[n * 4] for n in range(32, 35)] == [215, 0xEF, 0xEF]

@@ -11,9 +11,10 @@ import subprocess
 from build_bg_text_probe import MESSAGE, text_source
 from build_sprite_probe import ROOT, SOURCE, table
 from native_status_art import (bg_status_tiles, episode_pair_art,
-                               face_resident_index, menu_logo_art, resident_art)
+                               face_resident_index, menu_logo_art,
+                               resident_art, small_menu_logo_art)
 
-STAMP = "20DOOM-04-9010"
+STAMP = "20DOOM-04-9011"
 STATUS_OAM_COUNT = 35
 MENU_GLYPHS = 26
 OAM_COUNT = 64
@@ -53,10 +54,28 @@ def episode_menu_oam() -> bytes:
     return bytes(data)
 
 
+def main_menu_oam() -> bytes:
+    _, lookup, _ = episode_pair_art()
+    data = bytearray()
+    for row, label in enumerate(MENU_LAYOUTS[0][0]):
+        for column in range(0, len(label), 2):
+            pair = (label + " ")[column:column + 2]
+            data.extend((87 + row * 16, lookup[pair], 0, 92 + column * 4))
+    assert len(data) == 14 * 4
+    data.extend((0xEF, 0, 0, 0) * (MENU_GLYPHS - len(data) // 4))
+    return bytes(data)
+
+
 def logo_oam() -> bytes:
     return bytes(value for row in range(4) for column in range(8)
                  for value in (15 + row * 8, 0x60 + row * 8 + column,
                                3, 96 + column * 8))
+
+
+def small_logo_oam() -> bytes:
+    return bytes(value for row in range(3) for column in range(6)
+                 for value in (39 + row * 8, 0x1F + row * 6 + column,
+                               3, 104 + column * 8))
 
 
 def oam_template() -> bytes:
@@ -97,12 +116,16 @@ def status_routine() -> str:
     ]
     lines += [f"        sta $02{n * 4:02X}" for n in range(OAM_COUNT)]
     lines += ["        jsr MENU_APPLY", "        lda #1", "        sta $0310", "        rts", ".show:",
-              "        lda #191"]
-    lines += [f"        sta $02{n * 4:02X}" for n in range(8)]
-    lines += ["        lda #199"]
-    lines += [f"        sta $02{n * 4:02X}" for n in range(8, 16)]
+              "        lda #197"]
+    lines += [f"        sta $02{n * 4:02X}" for n in range(8)
+              if n not in (0, 4)]
+    lines += ["        lda #205"]
+    lines += [f"        sta $02{n * 4:02X}" for n in range(8, 16)
+              if n not in (8, 12)]
+    lines += ["        lda #$EF"]
+    lines += [f"        sta $02{n * 4:02X}" for n in (0, 4, 8, 12)]
     for row in range(3):
-        lines.append(f"        lda #{207 + row * 8}")
+        lines.append(f"        lda #{197 + row * 8}")
         lines += [f"        sta $02{n * 4:02X}"
                   for n in range(16 + row * 3, 19 + row * 3)]
     lines += [
@@ -164,11 +187,23 @@ def status_routine() -> str:
         "        lda $1A", "        clc", "        adc $18", "        sta $02F4",
         "        lda $19", "        sta $02F7",
         ".menu_done:",
-        "        lda $0301", "        and #1", "        bne .no_logo",
         "        lda $0305", "        lsr a", "        lsr a", "        lsr a", "        lsr a",
-        "        cmp #1", "        bne .no_logo", "        ldx #0",
+        "        cmp #1", "        bne .no_logo",
+        "        lda $0301", "        and #1", "        bne .small_logo",
+        "        ldx #0",
         ".copy_logo:", "        lda logo_oam_data,x", "        sta $0200,x",
         "        inx", "        cpx #128", "        bne .copy_logo",
+        "        jmp .no_logo",
+        ".small_logo:", "        ldx #0", ".small_first:",
+        "        lda small_logo_oam_data,x", "        sta $02C4,x",
+        "        inx", "        cpx #48", "        bne .small_first",
+        "        ldx #0", ".small_last:",
+        "        lda small_logo_oam_data+48,x", "        sta $02F8,x",
+        "        inx", "        cpx #8", "        bne .small_last",
+        "        ldx #0", ".small_four:",
+        "        lda small_logo_oam_data+56,x",
+        "        ldy small_logo_slot_offsets,x", "        sta $0200,y",
+        "        inx", "        cpx #16", "        bne .small_four",
         ".no_logo:", "        rts", "",
         "; X selects the health (0) or armor (16) OAM byte offset.",
         "UI_NUM3:", "        ldy #0", ".hundreds:",
@@ -221,6 +256,7 @@ def native_status_source() -> str:
             setup += [f"        cpx #{size}", f"        bne .chr_page_{page}"]
     for label, data, address in (
         ("episode", episode_pair_art()[0], 0x1000),
+        ("small_logo", small_menu_logo_art(), 0x11F0),
         ("logo", menu_logo_art(), 0x1600),
     ):
         setup += [f"        lda #${address >> 8:02X}", "        sta $2006",
@@ -301,6 +337,7 @@ def native_status_source() -> str:
     face_bases = bytes(0x98 + 9 * face_resident_index(index)
                        for index in range(42))
     menu_data = "".join(table(f"menu_oam_{index}",
+                              main_menu_oam() if index == 0 else
                               episode_menu_oam() if index == 1 else menu_oam(layout))
                         for index, layout in enumerate(MENU_LAYOUTS))
     menu_data += table("menu_ptr_lo", bytes((0,)) * len(MENU_LAYOUTS)).replace(
@@ -315,8 +352,13 @@ def native_status_source() -> str:
     source = source.replace(anchor,
         table("native_chr_data", art) + table("native_oam_data", oam_template()) +
         table("native_episode_chr_data", episode_pair_art()[0]) +
+        table("native_small_logo_chr_data", small_menu_logo_art()) +
         table("native_logo_chr_data", menu_logo_art()) +
         table("logo_oam_data", logo_oam()) +
+        table("small_logo_oam_data", small_logo_oam()) +
+        table("small_logo_slot_offsets", bytes(slot * 4 + offset
+                                               for slot in (0, 4, 8, 12)
+                                               for offset in range(4))) +
         table("native_bg_text_data", b"".join(tile for _, tile in bg_tiles)) +
         table("face_tile_base_data", face_bases) + menu_data + "\n" + anchor)
     return source

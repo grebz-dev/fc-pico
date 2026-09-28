@@ -45,6 +45,19 @@ choices; gate each change with Mesen cosimulation of title, main/episode/options
 menus and gameplay. Keep HR-12 as physical evidence for the previous candidate;
 new visual changes need their own hardware request and run.
 
+### HR-13 physical correction (2026-09-28)
+
+The paused-menu photo of the 9010 candidate shows status values over its upper
+border, Doomguy over the lower divider and no sprite logo. The last finding
+follows from the title-only 9010 OAM layout, so the 9011 follow-up adds a
+source-derived 48×24 logo to the paused main menu. Its 18 entries are funded
+by packing the six menu labels into 14 sprites and moving the static `H`/`R`
+labels into the native status background (four OAM entries saved). The paused
+main menu now consumes exactly 64 entries; retain the 64×32 source-derived
+title logo when the status is absent. Move the numeric rows and 3×3 face
+inside the panel bounds. Gate this exact-capacity layout in Mesen and on
+NES-001, including a cold boot and pause after gameplay begins.
+
 ## Findings from the current source
 
 | Source | Current behavior and consequence |

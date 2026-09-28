@@ -15,6 +15,8 @@ from PIL import Image
 from build_doomguy_faces import ROOT, WHDATA, Whx
 
 LOGO_SIZE = (64, 32)
+SMALL_LOGO_SIZE = (48, 24)
+MAIN_MENU_LABELS = ("NEW", "OPTIONS", "LOAD", "SAVE", "READ", "QUIT")
 EPISODE_LINES = (
     (("KNEE DEEP IN", "THE DEAD"), ("SHORES OF HELL",), ("INFERNO",)),
 )
@@ -31,9 +33,13 @@ FONT = {
     "N": ("#.#", "###", "###", "###", "#.#"),
     "O": ("###", "#.#", "#.#", "#.#", "###"),
     "P": ("##.", "#.#", "##.", "#..", "#.."),
+    "Q": ("###", "#.#", "#.#", "###", "..#"),
     "R": ("##.", "#.#", "##.", "#.#", "#.#"),
     "S": (".##", "#..", ".#.", "..#", "##."),
     "T": ("###", ".#.", ".#.", ".#.", ".#."),
+    "U": ("#.#", "#.#", "#.#", "#.#", "###"),
+    "V": ("#.#", "#.#", "#.#", "#.#", ".#."),
+    "W": ("#.#", "#.#", "###", "###", "#.#"),
 }
 
 
@@ -77,24 +83,23 @@ def encode_tiles(pixels: np.ndarray) -> bytes:
     return bytes(data)
 
 
-def logo_pixels(whx: Whx) -> np.ndarray:
+def logo_pixels(whx: Whx, size: tuple[int, int] = LOGO_SIZE) -> np.ndarray:
     source = WHDATA.read_text().split("#define VPATCH_LIST \\", 1)[1]
     labels = re.findall(r"VPATCH_NAME\(([^)]+)\)", source.split("\n\nenum", 1)[0])
     lookup = np.frombuffer(whx.named("P_START"), dtype="<u2")
     original = patch_pixels(whx.lump(int(lookup[labels.index("M_DOOM") + 1])))
     assert original.shape == (60, 123)
-    # The NES permits at most eight 8-pixel sprites on a scanline. A 64x32
-    # nearest-neighbor reduction keeps the actual M_DOOM letter silhouettes
-    # and nearly preserves the source patch's 123:60 aspect ratio.
+    # Both sprite layouts preserve the source patch's nearly 2:1 aspect ratio.
+    # The title uses eight sprites per line; the paused menu uses six.
     sample = np.asarray(Image.fromarray(original).resize(
-        LOGO_SIZE, Image.Resampling.NEAREST))
+        size, Image.Resampling.NEAREST))
     rgb = np.frombuffer(whx.named("PLAYPAL")[:768], dtype=np.uint8).reshape(256, 3)
     sampled_rgb = rgb[np.maximum(sample, 0)]
     red = sampled_rgb[:, :, 0].astype(np.int16)
     green = sampled_rgb[:, :, 1].astype(np.int16)
     blue = sampled_rgb[:, :, 2].astype(np.int16)
     opaque = sample >= 0
-    result = np.zeros((LOGO_SIZE[1], LOGO_SIZE[0]), dtype=np.uint8)
+    result = np.zeros((size[1], size[0]), dtype=np.uint8)
     result[opaque] = 1  # source's dark blue edges and shadows
     result[opaque & (blue > red * 1.2) & (blue > green * 1.2) &
            (blue > 80)] = 2
@@ -104,7 +109,8 @@ def logo_pixels(whx: Whx) -> np.ndarray:
 
 def episode_tiles() -> tuple[bytes, dict[str, int]]:
     pairs = sorted({(line + " ")[at:at + 2]
-                    for episode in EPISODE_LINES[0] for line in episode
+                    for line in (*MAIN_MENU_LABELS,
+                                 *(line for episode in EPISODE_LINES[0] for line in episode))
                     for at in range(0, len(line), 2)})
     data = bytearray()
     for pair in pairs:
@@ -128,23 +134,33 @@ def main() -> int:
     parser.add_argument("--output", type=Path, default=ROOT / "doom/assets")
     args = parser.parse_args()
     args.output.mkdir(parents=True, exist_ok=True)
-    logo = logo_pixels(Whx(args.whx))
+    whx = Whx(args.whx)
+    logo = logo_pixels(whx)
+    small_logo = logo_pixels(whx, SMALL_LOGO_SIZE)
     pairs, lookup = episode_tiles()
-    assert len(pairs) <= 32 * 16
+    assert len(pairs) == 31 * 16
     (args.output / "doom_menu_logo.chr").write_bytes(encode_tiles(logo))
+    (args.output / "doom_menu_logo_small.chr").write_bytes(encode_tiles(small_logo))
     (args.output / "doom_episode_pairs.chr").write_bytes(pairs)
     palette = np.array(((0, 0, 0, 0), (20, 24, 80, 255),
                         (80, 96, 216, 255), (232, 184, 64, 255)), dtype=np.uint8)
     preview = Image.fromarray(palette[logo], "RGBA")
     preview.resize((256, 128), Image.Resampling.NEAREST).save(
         args.output / "doom_menu_logo_preview.png")
+    Image.fromarray(palette[small_logo], "RGBA").resize(
+        (192, 96), Image.Resampling.NEAREST).save(
+        args.output / "doom_menu_logo_small_preview.png")
     (args.output / "doom_menu_art.json").write_text(json.dumps({
         "source": str(args.whx.resolve().relative_to(ROOT)),
         "logo_source_patch": "M_DOOM", "logo_size": list(LOGO_SIZE),
         "logo_tiles": len(encode_tiles(logo)) // 16,
+        "small_logo_size": list(SMALL_LOGO_SIZE),
+        "small_logo_tiles": len(encode_tiles(small_logo)) // 16,
+        "main_menu_labels": MAIN_MENU_LABELS,
         "episode_lines": EPISODE_LINES[0], "pair_tile_ids": lookup,
     }, indent=2) + "\n")
-    print(f"logo: {len(encode_tiles(logo)) // 16} tiles; episode pairs: {len(lookup)} tiles")
+    print(f"logos: {len(encode_tiles(logo)) // 16}+{len(encode_tiles(small_logo)) // 16}"
+          f" tiles; paired glyphs: {len(lookup)} tiles")
     return 0
 
 

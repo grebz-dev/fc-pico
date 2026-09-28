@@ -11,6 +11,27 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## P3-U4 visual follow-up -- physical alignment and paused logo (2026-09-28)
+- [HR-13](HARDWARE-REQUESTS.md#hr-13-styled-status-sprite-logo-and-episode-names-task-p3-u4-visual-follow-up)
+  photo showed top status values crossing the metal border and Doomguy
+  crossing the lower divider. The 9010 source-derived logo was limited to
+  the title, so it was absent on the photographed paused menu.
+- Moved number rows and the 3×3 face upward in OAM. Static `H` and `R` labels
+  now render directly in the native status background, freeing four sprites.
+  Paired main-menu glyphs use 14 entries. An 18-entry, 48×24 reduction of the
+  same `M_DOOM` patch fills the paused-menu capacity exactly: 31 status, 14
+  labels, 18 logo and one cursor = 64. The 64×32 original-derived title logo
+  remains. Mesen's paused and title screenshots show the corresponding logos.
+- `pytest doom/tests -q` passed 388/388; `ctest --test-dir build-host`
+  passed 11/11. Mesen paused, title, gameplay, episode, options and grin
+  probes each passed 30 stable heartbeats at `count=15122`, no DMA stops,
+  with NMI exit on scanline 256. The device build passed flash layout and
+  fix-bank gates, links at 289996 firmware bytes, and embeds the byte-identical
+  Mesen ROM SHA-256
+  `3ed0ae5f185fb9793e87333386819c7e78de0d008fe8d131376656a2cf369ebf`.
+  Physical validation of the 9011 layout and lower-half logo tiles remains
+  open in [HR-14](HARDWARE-REQUESTS.md#hr-14-aligned-status-and-paused-menu-doom-logo-task-p3-u4-visual-follow-up).
+
 ## P3-U4 visual follow-up -- styled status and native menu art (2026-09-28)
 - [HR-12](HARDWARE-REQUESTS.md#hr-12-transparent-sprite-menus-gray-status-red-text-and-special-faces-task-p3-u6)
   physically passed red text, gray status backing and hit/pickup faces; the

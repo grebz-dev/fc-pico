@@ -8,14 +8,19 @@ to the three visible colors of one sprite palette. The 64-pixel width fits
 the NES's eight-sprites-per-scanline limit. Transparent pixels leave the
 menu's game image visible. `doom_menu_logo_preview.png` is a 4× preview.
 
-`doom_episode_pairs.chr` contains 19 paired-glyph tiles for the shareware
-episode names. Each tile packs two narrow characters with a dark shadow.
+`doom_menu_logo_small.chr` is a 48×24, 18-tile reduction of the same source
+patch. It fits above the paused main menu while the status remains visible;
+`doom_menu_logo_small_preview.png` is its 4× preview.
+
+`doom_episode_pairs.chr` contains 31 paired-glyph tiles for the shareware
+episode names and main-menu labels. Each tile packs two narrow characters with a dark shadow.
 `doom_menu_art.json` records the label lines and tile IDs. The sheet is
 generated from code, so the WHX is not copied into the repository.
 
-The logo uses sprite tiles `$60..$7F` in the non-streamed `$1000` pattern
-half. It appears on the main title menu when the status HUD is absent. The
-full HUD consumes 35 OAM entries, so the paused game menu retains its status
-and native labels without the logo. The episode labels use tiles `$00..$12`
-and 21 OAM entries; these lower-half pattern addresses require physical
+The large logo uses sprite tiles `$60..$7F` and 32 OAM entries at the title.
+The small logo uses `$1F..$30` and 18 OAM entries on the paused main menu.
+Four static H/R status labels now occupy the native background stream, freeing
+OAM for the small logo. A paused main menu uses 31 status, 14 paired-label,
+18 logo and one cursor entries: all 64 OAM entries. The episode labels use
+21 OAM entries. These lower-half pattern addresses require physical
 validation even though the Mesen model passes.
