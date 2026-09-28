@@ -150,7 +150,8 @@ int fcbus_host_ppu_read(void) {
     case HOST_SERVE_STREAM: {
         g_read_count++;
         const uint8_t *front = (const uint8_t *)fcbus_core_stream_front(&g_core);
-        uint8_t byte = (g_stream_pos < VRAM_BUF_BYTES_V2) ? front[g_stream_pos] : 0xFF;
+        size_t limit = g_core.proto >= FCBUS_PROTO_V3 ? VRAM_BUF_BYTES_V3 : VRAM_BUF_BYTES_V2;
+        uint8_t byte = (g_stream_pos < limit) ? front[g_stream_pos] : 0xFF;
         g_stream_pos++;
         return byte;
     }

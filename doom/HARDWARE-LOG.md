@@ -11,6 +11,108 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-09-28 -- HR-12 transparent menu, gray status and special faces
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: `fcpico_doom_native_status_whx.uf2`, SHA-256
+  `9b78b727cb30c381776d1332ac598deb7bec51ee9372b81f1d99172002f00520`.
+  Embedded ROM stamp: `20DOOM-04-9008` (not transcribed from the console).
+- Results: physical run successful. Native text is red and mostly more legible
+  than before; the status backing is gray. The ouch and pickup grin faces both
+  work. The native episode menu uses generic `Episode 1`, `Episode 2`, and
+  `Episode 3` labels instead of the game's episode names. No new serial log or
+  photos were supplied. The transparent menu backdrop was part of this
+  candidate, but the report did not separately describe its appearance.
+- Attachments: observations supplied in chat.
+
+## 2026-09-27 -- HR-11 menu persistence and idle face
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: `fcpico_doom_native_status_whx.uf2`, SHA-256
+  `f0204d307efd0da6ff3346488df4545be581ddfe6d6cd59253c551d4b32f1a7a`.
+  Embedded ROM stamp: `20DOOM-04-9007` (not transcribed from the console).
+- Results: the native status stays active with the menu open, and the healthy
+  face changes while idle. The menu still has a black backing and white
+  native text; the panel covers the original converted labels.
+  The face lacks distinct short hit and pickup expressions. These are the
+  HR-12 changes; no new serial excerpt or photos were supplied for HR-11.
+- Attachments: observations supplied in chat.
+
+## 2026-09-27 -- HR-10 native status and face, pause finding
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: `fcpico_doom_native_status_whx.uf2`, SHA-256
+  `1f6130e97ad5e00fa8c7ea3cec7833db5c8e4202c0618cd059fc75f1cbbcb8f4`.
+  Embedded ROM stamp: `20DOOM-04-9006` (not transcribed from the console).
+- Results: native sprite status text and the real Doomguy face look good during
+  demo and playback. Pressing Start hides the native sprites and reveals the
+  original converted status bar. The face changes across damage levels but
+  does not show the idle straight-face variants. These observations led to
+  the HR-11 menu and idle-face candidate.
+- Serial: `proto=4`, `count=15122`, `raw=41114`, `init=1`, `ready=1` and
+  `pending=1` remain stable through `hb=4135`; stops/resyncs stay at 1 and
+  timeouts/errors stay at 0. `converted` rises 27 to 976. Drops start at
+  1168, rise to 1177 around frame 600, then stay flat through frame 960.
+  Conversion average/max reaches 39148/39202 us. The initial drop count is
+  startup history, not evidence of continuing bus errors.
+- Attachments: serial excerpt and gameplay observations supplied in chat.
+
+## 2026-09-27 -- HR-9 v4 text and live health on NES-001
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: `fcpico_doom_bg_text_probe_whx.uf2`, SHA-256
+  `86f68ed099a860767c5d6a9bef2a15a10154d9813188947190f62fe6511f9fa1`.
+  Embedded ROM stamp: `20DOOM-04-9001` (not transcribed from the console).
+- Results: after the startup countdown, Doom shows `NATIVE BACKGROUND TEXT
+  WORKS` in the bottom row and a live `H100` health display over the converted
+  background. The former replaces a chunk of the legacy status. Neither A nor
+  diamond is present, as this v4 ROM contains no sprite diagnostic art.
+- Serial: early `proto=2` heartbeats have count 15554 while the previous ROM
+  runs; later `proto=4` heartbeats from 7037 through 9773 hold count 15122 and
+  raw 41114. `stops=1`, `resyncs=1`, `timeouts=0`, and `errors=0` remain fixed.
+  `converted` rises 1352 to 1876; `dropped=102` remains fixed in the v4 excerpt.
+  Reported average/max conversion reaches 39141/39375 us by frame 1860.
+  The early proto=2 section is not a failed v4 negotiation; the text appears
+  only when the new Doom ROM has booted after its countdown.
+- Attachments: serial excerpt and on-screen observations supplied in chat.
+
+## 2026-09-27 -- HR-8 duplicate sprite diagnostic, good boot
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: `fcpico_doom_sprite_diagnostic_whx.uf2`, SHA-256
+  `d23459faad3c7c83771473a12d0f9a22870d175a66e97fe33cdae789669442d4`.
+  Embedded ROM stamp: `20DOOM-02-9002` (not transcribed from the console).
+- Results: before Doom and during Doom, all six A/diamond symbols are visible:
+  the original top pair, same-tile second-row pair, and copied-art second-row
+  pair. The two adjacent rectangles and checker also remain visible. These
+  photos document a good boot; they do not reproduce the intermittent missing
+  top pair and therefore cannot distinguish OAM ordering from CHR residency.
+- Attachments: [`SPRITES_BEFORE_DOOM_2_LINES.jpg`](SPRITES_BEFORE_DOOM_2_LINES.jpg),
+  [`SPRITES_DURING_DOOM_2_LINES.jpg`](SPRITES_DURING_DOOM_2_LINES.jpg) and the
+  user's six-symbol transcription supplied in chat.
+
+## 2026-09-27 -- HR-7 sprite probe on NES-001
+- Console: NES-001 per HR-7 session; region not reconfirmed in this report.
+- Cartridge firmware: `fcpico_doom_sprite_probe_whx.uf2`, SHA-256
+  `a33f2ef0780d2fa49b487225636a7989e891e3e5a791892aba0f89c0b5b3e022`.
+  Embedded ROM stamp: `20DOOM-02-9001` (not transcribed from the console).
+- Results: the reflash completed; controls and Doom video continued to work. The
+  white `A`, diamond, 16×16 outline and checker tile are visible before Doom
+  loads and over the first Doom scene. After two NES power cycles, the user
+  reports that the `A` and diamond are missing while the two side by side
+  rectangle placeholder and checker remain visible. The `A` and diamond return
+  after another power cycle, so the failure is intermittent. The rectangles
+  test a 16×16 four-tile shape; they are not final Doomguy face art. The
+  previous Doom UF2 has not yet been reflashed, so reverse recovery has not
+  been exercised. This intermittent result leaves the resident atlas gate open.
+- Serial: from `hb=10173` through `hb=12616`, every reported `count` is 15554;
+  `stops=1`, `resyncs=1`, `timeouts=0`, `errors=0`, `ready=1`, `proto=2` and
+  `dropped=1207` remain fixed. `converted` increases from 2452 to 2932.
+  `conversion_us` averages 38219 and peaks at 38307 in this excerpt.
+  Interactive `stats` was unavailable while Doom ran; these heartbeat lines
+  provide the same relevant counters. This establishes visible storage for
+  the particular `$1800..$185F` and `$1FF0..$1FFF` probe tiles, not every
+  possible atlas address or an alias map.
+- Attachments: [`SPRITES_BEFORE_DOOM.jpg`](SPRITES_BEFORE_DOOM.jpg),
+  [`SPRITES.jpg`](SPRITES.jpg), [`SPRITES_DETAIL.jpg`](SPRITES_DETAIL.jpg),
+  [`HW_PHOTO_2_POWER_CYCLES.jpg`](HW_PHOTO_2_POWER_CYCLES.jpg) and heartbeat
+  excerpt and corrected post-cycle observations supplied in chat.
+
 ## 2026-09-25 -- HR-6 shadow-detail and B-use milestone
 - Console: existing NES setup; model/region not reconfirmed in this report.
 - Cartridge firmware: `fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256

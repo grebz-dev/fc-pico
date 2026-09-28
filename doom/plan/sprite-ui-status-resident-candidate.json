@@ -1,0 +1,33 @@
+{
+  "screens": [
+    {
+      "name": "play-status-resident-candidate",
+      "groups": [
+        {"name": "ready-ammo-icon", "x": 16, "y": 192, "width": 8, "height": 8},
+        {"name": "ready-ammo-digits", "x": 24, "y": 192, "width": 24, "height": 8},
+        {"name": "health-icon", "x": 112, "y": 192, "width": 8, "height": 8},
+        {"name": "health-digits", "x": 120, "y": 192, "width": 24, "height": 8},
+        {"name": "armor-icon", "x": 16, "y": 200, "width": 8, "height": 8},
+        {"name": "armor-digits", "x": 24, "y": 200, "width": 24, "height": 8},
+        {"name": "key-card-slot", "x": 176, "y": 200, "width": 8, "height": 8},
+        {"name": "key-skull-slot", "x": 184, "y": 200, "width": 8, "height": 8},
+        {"name": "key-third-slot", "x": 192, "y": 200, "width": 8, "height": 8},
+        {"name": "weapon-2", "x": 16, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-3", "x": 32, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-4", "x": 48, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-5", "x": 176, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-6", "x": 192, "y": 208, "width": 8, "height": 8},
+        {"name": "weapon-7", "x": 208, "y": 208, "width": 8, "height": 8},
+        {"name": "face", "x": 120, "y": 208, "width": 16, "height": 16},
+        {"name": "ammo-type-0", "x": 40, "y": 216, "width": 8, "height": 8},
+        {"name": "ammo-type-1", "x": 96, "y": 216, "width": 8, "height": 8},
+        {"name": "ammo-type-2", "x": 152, "y": 216, "width": 8, "height": 8},
+        {"name": "ammo-type-3", "x": 208, "y": 216, "width": 8, "height": 8}
+      ],
+      "background_text_regions": [
+        {"name": "four-current-max-ammo-pairs", "x": 16, "y": 224,
+         "width": 224, "height": 8, "characters": 28}
+      ]
+    }
+  ]
+}

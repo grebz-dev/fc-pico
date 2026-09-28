@@ -75,10 +75,12 @@ class PpuBus:
         cs1_mask: int = 0xF800,
         bytes_per_line: int | None = None,
     ):
-        if mailbox_len not in (protocol.FC_COM_BUF_SIZE_V1, protocol.FC_COM_BUF_SIZE_V2):
+        if mailbox_len not in (protocol.FC_COM_BUF_SIZE_V1, protocol.FC_COM_BUF_SIZE_V2,
+                               protocol.FC_COM_BUF_SIZE_V3):
             raise ValueError(
                 f"mailbox_len must be {protocol.FC_COM_BUF_SIZE_V1} (v1) or "
-                f"{protocol.FC_COM_BUF_SIZE_V2} (v2), got {mailbox_len}"
+                f"{protocol.FC_COM_BUF_SIZE_V2} (v2), or "
+                f"{protocol.FC_COM_BUF_SIZE_V3} (v3), got {mailbox_len}"
             )
         if reads_per_line <= 0 or reads_per_line % 2:
             raise ValueError(f"reads_per_line must be a positive even number, got {reads_per_line}")
@@ -197,7 +199,7 @@ class PpuBus:
         return [self.run_frame(cart, heartbeat=heartbeat, **faults.get(k, {})) for k in range(n_frames)]
 
     def _write_heartbeat(self, cart, heartbeat: int) -> None:
-        if self.mailbox_len == protocol.FC_COM_BUF_SIZE_V2:
+        if self.mailbox_len >= protocol.FC_COM_BUF_SIZE_V2:
             cart.ppu_write(protocol.FP_COM_KEY)
             cart.ppu_write((heartbeat >> 8) & 0xFF)
             cart.ppu_write(heartbeat & 0xFF)

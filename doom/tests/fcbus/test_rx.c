@@ -164,10 +164,23 @@ static void test_protocol_identification(void) {
     CHECK_EQ(g_c.proto, FCBUS_PROTO_V2);
     CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 0);
 
+    /* FP_COM_HELLO 3 selects the longer native-HUD mailbox. */
+    init_core(FCBUS_PROTO_UNKNOWN);
+    fcbus_core_rx_byte(&g_c, FP_COM_HELLO);
+    fcbus_core_rx_byte(&g_c, FCBUS_PROTOCOL_V3);
+    CHECK_EQ(g_c.proto, FCBUS_PROTO_V3);
+    CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 0);
+
+    init_core(FCBUS_PROTO_UNKNOWN);
+    fcbus_core_rx_byte(&g_c, FP_COM_HELLO);
+    fcbus_core_rx_byte(&g_c, FCBUS_PROTOCOL_V4);
+    CHECK_EQ(g_c.proto, FCBUS_PROTO_V4);
+    CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 0);
+
     /* An unknown version is refused and leaves the protocol undecided. */
     init_core(FCBUS_PROTO_UNKNOWN);
     fcbus_core_rx_byte(&g_c, FP_COM_HELLO);
-    fcbus_core_rx_byte(&g_c, 3);
+    fcbus_core_rx_byte(&g_c, 5);
     CHECK_EQ(g_c.proto, FCBUS_PROTO_UNKNOWN);
     CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 1);
     CHECK_EQ(count_actions(FCBUS_ACT_PROTO_ERROR), 1);

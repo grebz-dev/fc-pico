@@ -11,6 +11,230 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## P3-U6 -- transparent menu and special face candidate (2026-09-27)
+- [HR-11](HARDWARE-REQUESTS.md#hr-11-native-pause-hud-sprite-menus-and-idle-face-task-p3-u5)
+  passed on NES-001 for persistent status and idle face animation. The game
+  now skips original label and skull patches on five native menus, and the
+  converter no longer masks their backdrop. Titles, sliders and dynamic
+  load/save screens continue to use converted game graphics.
+- The visible status region uses solid gray background palette 3; the other
+  three background palettes remain available to the game picture. Tall HUD
+  glyphs, menu labels and native ammo-row glyphs use red. Two 3×3 faces were
+  added to the resident atlas for `STFOUCH0` and `STFEVL0`. Bonus pickups now
+  request the grin, and head-on damage selects the ouch resident face.
+- Mesen validates transparent menu and both special face packets with 30
+  stable `count=15122` heartbeats each and no DMA stops. The RP2350 image
+  links at 289616 firmware bytes and embeds the byte-identical Mesen ROM
+  SHA-256 `5f79f2619203943021931c1b32522b4f4f012ad5b297b2d297fc8d0471efbd8a`.
+  All 11 host C tests and 386 Python tests pass. [HR-12](HARDWARE-REQUESTS.md#hr-12-transparent-sprite-menus-gray-status-red-text-and-special-faces-task-p3-u6)
+  physically confirms red text, gray backing, and working pickup/ouch faces.
+  Native episode labels are generic; plan 12 records a follow-up for actual
+  episode names and richer status/menu art.
+
+## P3-U5 -- persistent HUD, native menu labels and idle face (2026-09-27)
+- [HR-10](HARDWARE-REQUESTS.md#hr-10-native-sprite-status-and-doomguy-face-task-p3-u4)
+  established stable v4 transport and a good physical native HUD, but Start
+  hid the sprites and exposed the old converted bar. Mesen reproduced this
+  with a Start input poll and menu-state UI packet.
+- The status now remains visible during menus, including its native ammo row;
+  the converter clears the old status backing on paused frames. The ROM has
+  native sprite labels and a cursor for main, episode, skill, options and sound
+  menus. Menu id and selection reuse high bits of the v4 UI packet. A bounded
+  dark panel replaces legacy menu label pixels, preserving options and sound
+  controls. Load/save names and other long or dynamic screens retain their
+  background text.
+- The resident atlas now includes the three healthy straight faces, four
+  damage representatives, god and dead (nine faces, 81 tiles), plus 24 tall
+  glyph tiles. The full 42-face sheet remains available as source art.
+- Mesen Start probes cover gameplay pause, title menu without status, options,
+  and healthy face variants. Each completes 30 stable count-15122 heartbeats
+  with no new DMA stops and NMI exit at scanline 256. The permanent fix bank
+  still matches byte for byte. The RP2350 image links with 289528 firmware
+  bytes and matches the passing Mesen ROM SHA-256
+  `cfa4f4c4f2e840f125a6f45b0b8d89d611705358712c7cae6707cdd03edecaaf`.
+  All 11 host C tests and 386 Python tests pass. [HR-11](HARDWARE-REQUESTS.md#hr-11-native-pause-hud-sprite-menus-and-idle-face-task-p3-u5)
+  physical validation passed for persistent status and idle face; see HR-11.
+
+## P3-U4 -- native status sprites and authentic 3×3 face (2026-09-27)
+- [HR-9](HARDWARE-REQUESTS.md#hr-9-native-background-text-and-v4-status-transport-task-p3-u3)
+  passed on NES-001. After the countdown, native bottom text and live `H100`
+  appeared over Doom. Later heartbeats `7037..9773` held `proto=4`,
+  `count=15122`, `raw=41114`, no new stops/resyncs/timeouts/errors, and stable
+  dropped count 102. Earlier `proto=2` lines belong to the previous ROM before
+  update. See [hardware log](HARDWARE-LOG.md).
+- Generated [all 42 face variants](assets/doomguy_faces.md) from the local
+  WHX as 24×24, 3×3-tile art: 6048 CHR bytes. A seven-face representative
+  set occupies 63 tiles; 24 tall-glyph tiles plus those faces use 87 of the
+  128 pattern slots beside the system font. Mesen shows the real face art.
+- The isolated `20DOOM-04-9006` ROM displays two-tile-high health and armor,
+  a 3×3 face, seven owned-weapon indicators and three key slots. Its 35 OAM
+  entries peak at eight sprites per scanline. The converter clears the legacy
+  status backing only during visible v4 gameplay. A 28-tile BG row shows
+  bullet, shell, rocket and cell counts around the face; two changed tile
+  commands per frame update it through the v4 NMI.
+- Mesen: 30 stable count-15122 heartbeats, exact CHR/OAM/UI bytes and NMI
+  completion. A dead-face/H000/R999 variant also passes. Py65 measures the
+  two-command NMI at 1201 critical/1608 total cycles with 15 APU pairs, and
+  deferred OAM commit at 1178 critical plus 513 DMA/2098 total. Both remain
+  inside the 1900/2200 limits. All 11 host C tests pass. The RP2350 target
+  links with 289248 firmware bytes, leaving 235040 before WHX.
+- [HR-10](HARDWARE-REQUESTS.md#hr-10-native-sprite-status-and-doomguy-face-task-p3-u4)
+  candidate UF2 is ready (SHA-256
+  `1f6130e97ad5e00fa8c7ea3cec7833db5c8e4202c0618cd059fc75f1cbbcb8f4`);
+  its embedded ROM matches the passing Mesen ROM. Physical status layout and changing ammo row remain
+  unverified. The current ROM maps other expressions to a face from the same
+  pain level; full face paging, ready-ammo/current-max detail, menu rendering,
+  and final visual tuning remain.
+
+## P3-U3 -- v4 native background text and device stream compaction (2026-09-27)
+- [HR-8](HARDWARE-REQUESTS.md#hr-8-intermittent-sprite-diagnosis-task-p3-u2)
+  produced good-boot photos before and during Doom: the original A/diamond,
+  same-index duplicate pair and copied-art pair are all visible. The
+  intermittent missing-symbol state was not reproduced.
+- Added an isolated v4 ROM (`20DOOM-04-9001`) with 28 fixed native background
+  text tiles in row 28 and the v3 health sprite decoder. A compacted picture
+  stream skips the 448 pattern bytes belonging to that row, moving the
+  mailbox from byte 15426 to 14978. The expected frame count is 15122.
+- Mesen renders `NATIVE BACKGROUND TEXT WORKS` and `H200` together. It reports
+  30 stable count-15122 heartbeats, exact nametable tiles, UI bytes, OAM,
+  palette and attributes, and NMI RTI on scanline 256. The 28-tile row and
+  the picture outside that row round-trip through the Python encoder; a C
+  test checks every retained word in the RP2350 compaction path.
+- The device applies compaction only after v4 negotiation and discards a
+  converted frame if the protocol changes during conversion. The existing
+  v2 production ROM still uses its original layout. The RP2350 target links,
+  flash layout passes at 288944 firmware bytes, all 11 host C tests pass,
+  and 290 Python tools/boot-ROM tests pass.
+- Built [HR-9](HARDWARE-REQUESTS.md#hr-9-native-background-text-and-v4-status-transport-task-p3-u3)
+  candidate `/tmp/fcpico-bg-text-device/artifacts/fcpico_doom_bg_text_probe_whx.uf2`,
+  SHA-256 `86f68ed099a860767c5d6a9bef2a15a10154d9813188947190f62fe6511f9fa1`.
+  Its embedded ROM is byte-identical to the Mesen probe and its fixed bank
+  matches the tutorial image. Physical v4 validation remains pending.
+- This probe uses a fixed message and only H plus three health digits. Dynamic
+  long text, the full status bar, authentic face sprites and menu layout are
+  still to be implemented and validated.
+
+## P3-U2 / U3 -- intermittent NES sprite probe and v3 transport slice (2026-09-27)
+- [HR-7](HARDWARE-REQUESTS.md#hr-7-sprite-pattern-storage-and-visible-probe-task-p3-u2)
+  reflashed and initially displayed the `A`, diamond, two rectangle face-shape
+  placeholder tiles and checker over working Doom video. After two NES power
+  cycles the `A` and diamond were missing; they returned after another cycle.
+  Heartbeats `10173..12616` stayed at count 15554 with no new stops, resyncs,
+  timeouts or errors. [Hardware log](HARDWARE-LOG.md#2026-09-27----hr-7-sprite-probe-on-nes-001)
+  records the photos and counters. The rectangles are geometry probes, not
+  Doomguy art. This is an intermittent result, not a completed atlas gate.
+- Added an optional diagnostic ROM (`20DOOM-02-9002`) that repeats the original
+  A/diamond pattern indices in later OAM slots and copies their art to two new
+  pattern indices. `run_sprite_probe.py --diagnostic` passes in Mesen with 232
+  exact changed pixels, unchanged background, OAM/CHR/palette equality and 30
+  stable count-15554 heartbeats. The corresponding NES-001 UF2 is
+  `/tmp/fcpico-sprite-diagnostic-device/artifacts/fcpico_doom_sprite_diagnostic_whx.uf2`,
+  SHA-256 `d23459faad3c7c83771473a12d0f9a22870d175a66e97fe33cdae789669442d4`.
+  See [HR-8](HARDWARE-REQUESTS.md#hr-8-intermittent-sprite-diagnosis-task-p3-u2).
+- `run_sprite_probe.py --limit` puts nine sprites on one scanline. Mesen retains
+  all nine OAM entries but visibly drops the last, with sprite-limit removal
+  disabled; its first-eight mask matches the independent compositor.
+- Added v3 negotiation and a fixed 144-byte mailbox carrying a 16-byte UI
+  snapshot, with count 15570. V1/v2 counts and mailboxes are unchanged. The
+  isolated `20DOOM-03-9001` console ROM receives the extra bytes at `$0300`.
+  Its NMI commits a complete `$0200` OAM shadow by DMA only when `$0310` is
+  set, deferring BG palette/attributes for that frame. This is a measured
+  transport slice, not a production HUD ROM.
+- Py65: full tables plus 15 APU pairs take 1742 critical / 2165 total cycles;
+  OAM commit plus 15 pairs takes 1684 critical including the worst DMA parity /
+  2091 total. Both fit the 1900/2200 limits. Mesen: 30 stable count-15570
+  heartbeats, exact 16 UI bytes, correct BG tables, NMI RTI at scanline 256.
+  Reproduce with `DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python
+  doom/sim/mesen2/run_ui_transport_probe.py`.
+- Added a compact, checked status packet with 10-bit ammo values, an engine
+  capture of current health, armor, ammo, weapon/key state and resolved face,
+  and v3-only publication from the device frame sink. The current production
+  ROM still negotiates v2, so these bytes are not yet displayed. All 11 host C
+  tests and 289 tools/boot-ROM Python tests pass; the RP2350 Doom target links.
+- The isolated `--hud` v3 ROM verifies packet generation/XOR, decodes health
+  into native system-font sprites in a complete OAM shadow, then commits by
+  DMA on the next NMI. Mesen renders `H000`, `H200` and `H999` on a reserved
+  dark status strip with exact OAM, count 15570 and NMI RTI at scanline 256.
+  This proves a dynamic native digit path, not the complete status bar.
+- Remaining: diagnose the intermittent physical sprite symbols; expand the
+  status decoder, upload real face art, suppress the converted legacy status, provide
+  native BG text for long rows and menus, and validate dynamic scenes in Mesen
+  and on NES-001. No production HUD migration is claimed yet.
+
+## P3-U2 -- setup-time sprite probe in Mesen (2026-09-25)
+- `tools/build_sprite_probe.py` builds an isolated Doom v2 ROM with known
+  sprite patterns at `$1800..$185F` and `$1FF0..$1FFF`, seven visible OAM
+  entries and a sprite palette color. The production ROM source and permanent
+  fix bank are byte-unchanged. The boot ROM's system font occupies the first
+  128 sprite tiles (`$1000..$17FF`) in the Mesen dump; the probe uses the other
+  128 tiles as a candidate atlas region.
+- `sim/mesen2/run_sprite_probe.py` runs that ROM and the normal v2 ROM against
+  the same synthetic background stream. The Mesen probe had 30 stable
+  heartbeats at count 15554, no DMA stops, exact BG palette/attributes, and
+  NMI exits on scanline 255. OAM, authored CHR bytes and sprite palette match
+  exactly; the independent reference and Mesen agree on all 168 changed sprite
+  pixels. Every pixel outside the probe area matches the normal ROM image.
+- Verified: `DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python
+  doom/sim/mesen2/run_sprite_probe.py --output /tmp/fcpico-sprite-probe-u0`
+  -> pass. `sim/mesen2/DOOM-FRAME.md` records the runnable command and limits.
+- Device candidate: `doom/tools/build_sprite_probe_device.sh` passed the
+  tutorial MD5 gate, pinned RP2350 build and flash-layout check. Firmware uses
+  287836 bytes, leaving 236452 before WHX. The merged UF2 is
+  `/tmp/fcpico-sprite-probe-device/artifacts/fcpico_doom_sprite_probe_whx.uf2`
+  (8158 blocks), SHA-256
+  `a33f2ef0780d2fa49b487225636a7989e891e3e5a791892aba0f89c0b5b3e022`.
+  Embedded ROM SHA-256 `0522ca2793f71bc83851d7d55ae588d45e8143779ecacc0c23da92785de9ccb2`
+  equals the Mesen U0 ROM; its test-only stamp `20DOOM-02-9001` forces a
+  reversible reflash through the unchanged fix bank. [HR-7](HARDWARE-REQUESTS.md#hr-7-sprite-pattern-storage-and-visible-probe-task-p3-u2)
+  requests the physical check.
+- Remaining: physical pattern storage/mirroring and overscan proof, followed
+  by bounded atlas uploads, negotiated UI transport and actual HUD migration.
+
+## P3-U1 / U3 -- resident status and transport candidate (2026-09-25)
+- Added `plan/sprite-ui-status-resident-candidate.json`: ordinary resident
+  8×8 digits/icons plus a 16×16 face cost 29/64 OAM and peak at 8/8 sprites
+  per scanline. Four current/max ammo pairs use a reserved 28-tile native BG
+  text row. This is a capacity candidate, not a rendered HUD or accepted layout.
+- Measured v2 NMI variants with `NmiHarness`: no BG writes 1034 critical /
+  1073 total cycles; attributes 1492/1531; palette 1156/1195; both 1614/1653.
+  Fifteen APU pairs add 368 total cycles. The audit tables a candidate
+  constant 16-byte UI descriptor and a deferred OAM DMA on a no-table-write
+  frame; exact v3 decode, generation and both DMA parities remain unmeasured.
+- Verified: `python3 doom/tools/check_sprite_layout.py
+  doom/plan/sprite-ui-status-resident-candidate.json --lines` -> 29 OAM,
+  peak 8/8 and 28 reserved BG text cells. The checker now validates native
+  BG text cell geometry separately from OAM. `doom/.venv/bin/python -m pytest
+  doom/tests/tools doom/tests/mesen2 -q` -> 276 passed;
+  `python3 doom/tools/check_md_links.py doom` -> 49 files, 596 links,
+  zero broken; `doom/.venv/bin/python -m pytest doom/tests/bootrom -q`
+  -> 25 passed; `git diff --check` -> clean. No production protocol or HUD
+  migration was claimed.
+
+## P3-U1 / U2 groundwork -- native text scope and sprite reference (2026-09-25)
+- Serena project `fc-pico` activated. The user approved native background tiles
+  for long HUD messages and menu rows; compact status values, face and icons
+  remain sprite targets. [Plan 12](plan/12-sprite-ui.md) and the
+  [U1 audit](plan/12a-sprite-ui-u1-audit.md) now record the decision and the
+  calibrated stream-fetch concern. Source research cites Dragon Warrior and
+  Zelda disassemblies plus NESdev PPU/vblank documentation; game behavior
+  inferred from symbols is labeled as such.
+- `tools/ppu_decode.py` accepts optional OAM, sprite CHR and sprite palette
+  dumps for an independent 8×8 sprite composite over the current stream. It
+  models OAM selection/order, eight-per-line limit, Y offset, priority, flips,
+  transparency, clipping and palette aliases. It was subsequently compared
+  with the Mesen U0 sprite frame above.
+- Corrected `tools/check_sprite_layout.py` to count all eight scanlines of a
+  partially occupied tile and reject scanline zero, then reran the compact
+  status draft: 38/64 OAM,
+  peak 8/8 scanline sprites. This is a capacity draft, not legibility evidence.
+- Verified: `doom/.venv/bin/python -m pytest doom/tests/tools -q` -> 262 passed;
+  `python3 doom/tools/check_sprite_layout.py doom/plan/sprite-ui-status-draft.json`
+  -> 38/64, 8/8; `python3 doom/tools/check_md_links.py doom` -> 49 files,
+  591 links, zero broken; `git diff --check` -> clean.
+- Remaining: U1's all-screen layouts, atlas/RAM/flash budget and measured
+  transport schedule; U2 sprite storage/visibility probe on NES-001;
+  production sprite HUD transport, rendering, suppression and validation.
+
 ## P3-U1 -- source dimensions and sprite capacity gate (2026-09-25)
 - Added the [feasibility audit](plan/12a-sprite-ui-u1-audit.md) with active
   producer inventory, WHX metadata identity/dimensions, NMI/transport lower

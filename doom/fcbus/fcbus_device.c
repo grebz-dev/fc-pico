@@ -54,7 +54,9 @@ static void __not_in_flash_func(handle_actions)(fcbus_device_t *device) {
     while (fcbus_core_pop_action(&device->core, &action)) {
         if (action.kind == FCBUS_ACT_HEARTBEAT) {
             /* Mirrors rp_system.cpp:350-366: restart, DMA the front buffer, then nudge. */
-            start_words(device, fcbus_core_stream_front(&device->core), VRAM_BUF_BYTES_V2);
+            uint32_t bytes = device->core.proto >= FCBUS_PROTO_V3 ?
+                VRAM_BUF_BYTES_V3 : VRAM_BUF_BYTES_V2;
+            start_words(device, fcbus_core_stream_front(&device->core), bytes);
             if (action.arg == FCBUS_ARM_NUDGE2) {
                 pio_sm_exec(pio0, SM_TRAN, pio_encode_out(pio_pins, 8));
                 pio_sm_exec(pio0, SM_TRAN, pio_encode_out(pio_pins, 8));
