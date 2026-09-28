@@ -60,6 +60,25 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Open requests
 
+### HR-14 Aligned status and paused-menu DOOM logo (task P3-U4 visual follow-up)
+- Flash: `/tmp/fcpico-aligned-hud-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `9e685f2ae5e240ddd973693726a2b602abd3957dd2d9aa76200b753b52ae7fed`.
+  Embedded ROM SHA-256
+  `3ed0ae5f185fb9793e87333386819c7e78de0d008fe8d131376656a2cf369ebf`
+  matches the passing Mesen ROM. Test stamp `20DOOM-04-9011`; the permanent
+  fix bank remains unchanged.
+- Steps: flash with the NES off and let Doom start. Inspect the status at
+  normal gameplay and after pressing Start. The health/armor digits and
+  Doomguy face should stay within the metal panel; the paused main menu
+  should show a compact blue/gold DOOM logo above its red labels without a
+  black menu panel. Return to the title menu to check the larger logo. If
+  convenient, open the episode menu to check the actual episode names.
+- Record: a full paused screen, a status closeup and a title photo; note any
+  missing logo tiles after a cold boot or another power cycle, and any menu
+  flicker or clipped text. Several serial heartbeat lines should hold
+  `proto=4`, `count=15122` without rising stop/error counts.
+- Result: pending physical run.
+
 ### HR-13 Styled status, sprite logo and episode names (task P3-U4 visual follow-up)
 - Flash: `/tmp/fcpico-original-logo-device/artifacts/fcpico_doom_native_status_whx.uf2`,
   SHA-256 `e125e2315fb9bd7ef4e6acf1a7b1c5a161f41d69945ea3add6529cb19d22a5eb`.
@@ -81,7 +100,11 @@ the result. The human fills in the result section and commits; the agent then co
   heartbeat lines. Expected `proto=4`, `count=15122`, no rising stop/error
   count. The generated lower-half sprite patterns have passed Mesen but are
   the main new physical storage check.
-- Result: pending physical run.
+- Result: partial physical run on 2026-09-28. The paused-menu photo shows
+  misaligned status values and face, and no paused-menu logo. The 9010
+  implementation deliberately placed its logo only on the title, which was
+  not photographed. See [hardware log](HARDWARE-LOG.md); HR-14 covers the
+  corrected status and paused logo.
 - The earlier `9009` block-letter logo candidate was rejected visually before
   physical testing; this request points only to the source-derived `9010` image.
 

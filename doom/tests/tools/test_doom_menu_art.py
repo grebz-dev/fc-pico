@@ -9,9 +9,10 @@ import re
 import numpy as np
 from PIL import Image
 
-from build_doom_menu_art import (ROOT, WHDATA, Whx, encode_tiles,
-                                 episode_tiles, logo_pixels, patch_pixels)
-from build_native_status_probe import MENU_GLYPHS, episode_menu_oam, logo_oam
+from build_doom_menu_art import (ROOT, SMALL_LOGO_SIZE, WHDATA, Whx,
+                                 encode_tiles, episode_tiles, logo_pixels, patch_pixels)
+from build_native_status_probe import (MENU_GLYPHS, episode_menu_oam,
+                                       logo_oam, main_menu_oam, small_logo_oam)
 
 
 def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
@@ -27,6 +28,9 @@ def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
     source = patch_pixels(whx.lump(int(lookup[labels.index("M_DOOM") + 1])))
     sampled = np.asarray(Image.fromarray(source).resize((64, 32), Image.Resampling.NEAREST))
     assert np.array_equal(pixels != 0, sampled >= 0), "sprite outline must match M_DOOM"
+    small = logo_pixels(whx, SMALL_LOGO_SIZE)
+    assert encode_tiles(small) == (ROOT / "doom/assets/doom_menu_logo_small.chr").read_bytes()
+    assert len(small_logo_oam()) == 18 * 4
     oam = logo_oam()
     assert len(oam) == 32 * 4
     assert max(oam[index * 4 + 3] for index in range(32)) == 152
@@ -37,10 +41,13 @@ def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
 def test_actual_shareware_episode_names_fit_menu_slots():
     art, lookup = episode_tiles()
     assert art == (ROOT / "doom/assets/doom_episode_pairs.chr").read_bytes()
-    assert len(lookup) == 19
+    assert len(lookup) == 31
     manifest = json.loads((ROOT / "doom/assets/doom_menu_art.json").read_text())
     assert manifest["episode_lines"] == [["KNEE DEEP IN", "THE DEAD"],
                                          ["SHORES OF HELL"], ["INFERNO"]]
     oam = episode_menu_oam()
     assert len(oam) == MENU_GLYPHS * 4
     assert sum(oam[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 21
+    main = main_menu_oam()
+    assert sum(main[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 14
+    assert 31 + 14 + 18 + 1 == 64

@@ -104,6 +104,12 @@ def menu_logo_art() -> bytes:
     return art
 
 
+def small_menu_logo_art() -> bytes:
+    art = (ASSETS / "doom_menu_logo_small.chr").read_bytes()
+    assert len(art) == 18 * 16
+    return art
+
+
 def episode_pair_art() -> tuple[bytes, dict[str, int], tuple[tuple[str, ...], ...]]:
     manifest = json.loads((ASSETS / "doom_menu_art.json").read_text())
     art = (ASSETS / "doom_episode_pairs.chr").read_bytes()

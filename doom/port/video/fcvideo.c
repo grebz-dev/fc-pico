@@ -223,6 +223,19 @@ static uint8_t native_status_pixel(int x, int y) {
         x == 160 || x == 248 || x == 255) return 0;
     if (x == 1 || x == 9 || x == 97 || x == 105 || x == 152 ||
         x == 161 || x == 249 || x == 254) return 2;
+    if (y >= 198 && y < 212) {
+        static const uint8_t h[7] = {0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11};
+        static const uint8_t r[7] = {0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11};
+        const uint8_t *glyph = x < 128 ? h : r;
+        int left = x < 128 ? 17 : 177;
+        int col = x - left;
+        int row = (y - 198) / 2;
+        if (col >= 0 && col < 5 && (glyph[row] & (1u << (4 - col)))) return 3;
+        if (col > 0 && col < 6 && y > 198) {
+            int previous_row = (y - 199) / 2;
+            if (glyph[previous_row] & (1u << (5 - col))) return 0;
+        }
+    }
     if (y >= 225 && y <= 227 && (x < 8 || x >= 248)) return 0;
     return 1;
 }
