@@ -106,7 +106,7 @@ def menu_logo_art() -> bytes:
 
 def small_menu_logo_art() -> bytes:
     art = (ASSETS / "doom_menu_logo_small.chr").read_bytes()
-    assert len(art) == 18 * 16
+    assert len(art) == 21 * 16
     return art
 
 

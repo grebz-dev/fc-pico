@@ -58,6 +58,27 @@ title logo when the status is absent. Move the numeric rows and 3×3 face
 inside the panel bounds. Gate this exact-capacity layout in Mesen and on
 NES-001, including a cold boot and pause after gameplay begins.
 
+### HR-14 physical correction and Mesen iteration (2026-09-28)
+
+The 9011 physical run exposed a retained logo corner outside menus and an
+incomplete 3×3 face. Mesen reproduced both: an inactive menu packet with a
+retained menu ID still entered the logo path, and health/armor plus the face
+put nine sprites on each of the first two face rows. Keep an explicit
+menu-active gate and check all 240 scanlines with the NES eight-sprite limit
+enabled. Reposition the face and weapon/key rows in a central panel niche so
+all nine face tiles remain visible during gameplay.
+
+On the paused main menu, prioritize full-size labels and a larger, three-color
+source-derived logo. Preserve health/armor values; the face, weapons and keys
+may yield their OAM slots until the menu closes. Spell `READ ME` in full.
+Restore Doom's original difficulty-name patches instead of substituting
+abbreviations; long original names exceed the sprite-per-scanline bound and
+need a separate native background-text treatment to become fully sharp.
+Expose native-size PNG sheets and a deterministic PNG-to-CHR import so a human
+can edit the logo, faces and paired episode letters. Keep this iteration in
+Mesen and host-engine captures, with no UF2 build until the visual layout is
+accepted for physical testing.
+
 ## Findings from the current source
 
 | Source | Current behavior and consequence |

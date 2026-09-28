@@ -16,7 +16,7 @@ if [[ $native_status == 1 ]]; then
       'from pathlib import Path; from build_native_status_probe import native_status_source; import sys; Path(sys.argv[1]).write_text(native_status_source())' \
       "$probe_source"
     export BUILD_DIR=${BUILD_DIR:-/tmp/fcpico-native-status-device}
-    expected_stamp=20DOOM-04-9011
+    expected_stamp=20DOOM-04-9012
     output_name=fcpico_doom_native_status_whx.uf2
 else
     PYTHONPATH="$repo/doom/tools" python3 -c \

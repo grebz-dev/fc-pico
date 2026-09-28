@@ -14,12 +14,12 @@ from native_status_art import (bg_status_tiles, episode_pair_art,
                                face_resident_index, menu_logo_art,
                                resident_art, small_menu_logo_art)
 
-STAMP = "20DOOM-04-9011"
+STAMP = "20DOOM-04-9012"
 STATUS_OAM_COUNT = 35
-MENU_GLYPHS = 26
+MENU_GLYPHS = 28
 OAM_COUNT = 64
 MENU_LAYOUTS = (
-    (("NEW", "OPTIONS", "LOAD", "SAVE", "READ", "QUIT"), 87, 16, 92),
+    (("NEW", "OPTIONS", "LOAD", "SAVE", "READ ME", "QUIT"), 87, 16, 92),
     (("", "", ""), 87, 32, 92),
     (("EASY", "NORMAL", "HARD", "ULTRA", "NIGHT"), 87, 16, 92),
     (("END GAME", "MESSAGE", "MOUSE", "", "SOUND"), 58, 16, 80),
@@ -55,15 +55,7 @@ def episode_menu_oam() -> bytes:
 
 
 def main_menu_oam() -> bytes:
-    _, lookup, _ = episode_pair_art()
-    data = bytearray()
-    for row, label in enumerate(MENU_LAYOUTS[0][0]):
-        for column in range(0, len(label), 2):
-            pair = (label + " ")[column:column + 2]
-            data.extend((87 + row * 16, lookup[pair], 0, 92 + column * 4))
-    assert len(data) == 14 * 4
-    data.extend((0xEF, 0, 0, 0) * (MENU_GLYPHS - len(data) // 4))
-    return bytes(data)
+    return menu_oam(MENU_LAYOUTS[0])
 
 
 def logo_oam() -> bytes:
@@ -73,9 +65,9 @@ def logo_oam() -> bytes:
 
 
 def small_logo_oam() -> bytes:
-    return bytes(value for row in range(3) for column in range(6)
-                 for value in (39 + row * 8, 0x1F + row * 6 + column,
-                               3, 104 + column * 8))
+    return bytes(value for row in range(3) for column in range(7)
+                 for value in (39 + row * 8, 0x13 + row * 7 + column,
+                               3, 100 + column * 8))
 
 
 def oam_template() -> bytes:
@@ -125,7 +117,7 @@ def status_routine() -> str:
     lines += ["        lda #$EF"]
     lines += [f"        sta $02{n * 4:02X}" for n in (0, 4, 8, 12)]
     for row in range(3):
-        lines.append(f"        lda #{197 + row * 8}")
+        lines.append(f"        lda #{213 + row * 8}")
         lines += [f"        sta $02{n * 4:02X}"
                   for n in range(16 + row * 3, 19 + row * 3)]
     lines += [
@@ -142,7 +134,7 @@ def status_routine() -> str:
     for i in range(7):
         offset = (25 + i) * 4
         mask = 1 << i  # weapon 1..7 in snapshot bits 0..6
-        y = 207 if i < 5 else 215
+        y = 215 if i < 5 else 223
         lines += ["        lda $0304", f"        and #${mask:02X}",
                   f"        beq .weapon_hide_{i}", f"        lda #{y}",
                   f"        sta $02{offset:02X}",
@@ -157,7 +149,7 @@ def status_routine() -> str:
         offset = (32 + i) * 4
         mask = (1 << i) | (1 << (i + 3))
         lines += ["        lda $0303", f"        and #${mask:02X}",
-                  f"        beq .key_hide_{i}", "        lda #215",
+                  f"        beq .key_hide_{i}", "        lda #223",
                   f"        sta $02{offset:02X}", f"        jmp .key_done_{i}",
                   f".key_hide_{i}:", "        lda #$EF",
                   f"        sta $02{offset:02X}", f".key_done_{i}:"]
@@ -168,10 +160,11 @@ def status_routine() -> str:
         "MENU_APPLY:",
         "        lda #$EF", "        ldx #0", ".hide_menu:",
         "        sta $028C,x", "        inx", "        inx", "        inx", "        inx",
-        "        cpx #108", "        bne .hide_menu",
+        "        cpx #116", "        bne .hide_menu",
         "        lda $0301", "        and #$04", "        beq .menu_done",
         "        lda $0305", "        lsr a", "        lsr a", "        lsr a", "        lsr a",
         "        beq .menu_done", "        cmp #6", "        bcs .menu_done",
+        "        cmp #3", "        beq .menu_done",
         "        sec", "        sbc #1", "        tax",
         "        lda menu_ptr_lo,x", "        sta $16",
         "        lda menu_ptr_hi,x", "        sta $17",
@@ -179,14 +172,16 @@ def status_routine() -> str:
         "        lda menu_cursor_x,x", "        sta $19",
         "        ldy #0", ".copy_menu:",
         "        lda [$16],y", "        sta $028C,y", "        iny",
-        "        cpy #104", "        bne .copy_menu",
+        "        cpy #112", "        bne .copy_menu",
         "        lda $0301", "        lsr a", "        lsr a", "        lsr a", "        lsr a",
         "        and #7", "        asl a", "        asl a", "        asl a", "        asl a",
         "        sta $1A", "        lda menu_cursor_step,x", "        cmp #32",
         "        bne .cursor_base", "        asl $1A", ".cursor_base:",
-        "        lda $1A", "        clc", "        adc $18", "        sta $02F4",
-        "        lda $19", "        sta $02F7",
+        "        lda $1A", "        clc", "        adc $18", "        sta $02FC",
+        "        lda $19", "        sta $02FF",
         ".menu_done:",
+        "        lda $0301", "        and #$04", "        bne .logo_active",
+        "        rts", ".logo_active:",
         "        lda $0305", "        lsr a", "        lsr a", "        lsr a", "        lsr a",
         "        cmp #1", "        bne .no_logo",
         "        lda $0301", "        and #1", "        bne .small_logo",
@@ -194,16 +189,12 @@ def status_routine() -> str:
         ".copy_logo:", "        lda logo_oam_data,x", "        sta $0200,x",
         "        inx", "        cpx #128", "        bne .copy_logo",
         "        jmp .no_logo",
-        ".small_logo:", "        ldx #0", ".small_first:",
-        "        lda small_logo_oam_data,x", "        sta $02C4,x",
-        "        inx", "        cpx #48", "        bne .small_first",
-        "        ldx #0", ".small_last:",
-        "        lda small_logo_oam_data+48,x", "        sta $02F8,x",
-        "        inx", "        cpx #8", "        bne .small_last",
-        "        ldx #0", ".small_four:",
-        "        lda small_logo_oam_data+56,x",
+        ".small_logo:", "        lda #$EF",
+        *[f"        sta $02{n * 4:02X}" for n in range(16, 35)],
+        "        ldx #0", ".small_copy:",
+        "        lda small_logo_oam_data,x",
         "        ldy small_logo_slot_offsets,x", "        sta $0200,y",
-        "        inx", "        cpx #16", "        bne .small_four",
+        "        inx", "        cpx #84", "        bne .small_copy",
         ".no_logo:", "        rts", "",
         "; X selects the health (0) or armor (16) OAM byte offset.",
         "UI_NUM3:", "        ldy #0", ".hundreds:",
@@ -256,7 +247,7 @@ def native_status_source() -> str:
             setup += [f"        cpx #{size}", f"        bne .chr_page_{page}"]
     for label, data, address in (
         ("episode", episode_pair_art()[0], 0x1000),
-        ("small_logo", small_menu_logo_art(), 0x11F0),
+        ("small_logo", small_menu_logo_art(), 0x1130),
         ("logo", menu_logo_art(), 0x1600),
     ):
         setup += [f"        lda #${address >> 8:02X}", "        sta $2006",
@@ -291,8 +282,8 @@ def native_status_source() -> str:
         "        lda #$06", "        sta $2007",
         "        lda #$3F", "        sta $2006",
         "        lda #$1D", "        sta $2006",
-        "        lda #$02", "        sta $2007",
         "        lda #$12", "        sta $2007",
+        "        lda #$21", "        sta $2007",
         "        lda #$28", "        sta $2007",
     ]
     source = source.replace(setup_anchor, setup_anchor + "\n".join(setup) + "\n")
@@ -357,7 +348,7 @@ def native_status_source() -> str:
         table("logo_oam_data", logo_oam()) +
         table("small_logo_oam_data", small_logo_oam()) +
         table("small_logo_slot_offsets", bytes(slot * 4 + offset
-                                               for slot in (0, 4, 8, 12)
+                                               for slot in (0, 4, *range(16, 35))
                                                for offset in range(4))) +
         table("native_bg_text_data", b"".join(tile for _, tile in bg_tiles)) +
         table("face_tile_base_data", face_bases) + menu_data + "\n" + anchor)

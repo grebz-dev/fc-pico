@@ -217,8 +217,10 @@ void fcvideo_blank_status(fcvideo_t *video) {
 static uint8_t native_status_pixel(int x, int y) {
     /* A subdued metal frame uses one reserved BG palette: black, gray and
      * light gray. Sprite values stay red and stand clear of the separators. */
-    if (y == 192 || y == 193 || y == 223 || y == 239) return 0;
-    if (y == 194 || y == 195 || y == 222 || y == 224) return 2;
+    if (y == 192 || y == 193 || y == 239 ||
+        (y == 214 && (x < 106 || x > 150))) return 0;
+    if (y == 194 || y == 195 ||
+        ((y == 213 || y == 215) && (x < 106 || x > 150))) return 2;
     if (x == 0 || x == 8 || x == 96 || x == 104 || x == 151 ||
         x == 160 || x == 248 || x == 255) return 0;
     if (x == 1 || x == 9 || x == 97 || x == 105 || x == 152 ||

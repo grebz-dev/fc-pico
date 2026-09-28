@@ -13,9 +13,17 @@ The source patches are 24×29 or 24×31. The generator scales all rows into
 to reproduce the sheet from the local WHX.
 
 All 42 faces need 378 tiles, beyond the 128-tile region available beside the
-system font. The native status probe loads seven representative faces: five
-straight faces, god, and dead (63 tiles). It maps the other 35 face indices
-to the matching pain-level representative until face-art paging is added.
-The 24 tall number tiles plus 63 face tiles occupy 87 of those 128 slots.
-The face uses three sprites on each of its 24 scanlines; the status layout
-keeps the total at or below eight on every scanline.
+system font. The native status probe loads eleven representative faces: three
+healthy idle, four damage, god, dead, ouch and grin (99 tiles). It maps the
+remaining face indices to a resident expression until face-art paging is
+added. The 24 tall number tiles plus 99 face tiles occupy 123 of the 128
+available slots. The face uses three sprites on each of its 24 scanlines.
+Its lower panel niche places it away from the health/armor rows; the weapon
+and key rows peak at eight sprites per scanline.
+
+Edit [`doomguy_faces_edit.png`](doomguy_faces_edit.png) at its native 168×144
+size to change any of the 42 faces. Keep the existing four-color palette and
+transparent pixels. Run
+`doom/.venv/bin/python doom/tools/edit_sprite_sheets.py import faces` to
+update the CHR file. Running `build_doomguy_faces.py` again restores WHX-derived
+art and overwrites manual CHR edits.

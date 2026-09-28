@@ -13,14 +13,13 @@ from build_doom_menu_art import (ROOT, SMALL_LOGO_SIZE, WHDATA, Whx,
                                  encode_tiles, episode_tiles, logo_pixels, patch_pixels)
 from build_native_status_probe import (MENU_GLYPHS, episode_menu_oam,
                                        logo_oam, main_menu_oam, small_logo_oam)
+from edit_sprite_sheets import SHEETS, decode_tiles, encode_sheet, rgba_to_indices
 
 
 def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
     whx = Whx(ROOT / "doom/rp2040-doom/doom1.whx")
     pixels = logo_pixels(whx)
-    art = encode_tiles(pixels)
-    assert art == (ROOT / "doom/assets/doom_menu_logo.chr").read_bytes()
-    assert len(art) == 32 * 16
+    assert len(encode_tiles(pixels)) == 32 * 16
     labels = re.findall(r"VPATCH_NAME\(([^)]+)\)",
                         WHDATA.read_text().split("#define VPATCH_LIST \\", 1)[1]
                         .split("\n\nenum", 1)[0])
@@ -29,8 +28,8 @@ def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
     sampled = np.asarray(Image.fromarray(source).resize((64, 32), Image.Resampling.NEAREST))
     assert np.array_equal(pixels != 0, sampled >= 0), "sprite outline must match M_DOOM"
     small = logo_pixels(whx, SMALL_LOGO_SIZE)
-    assert encode_tiles(small) == (ROOT / "doom/assets/doom_menu_logo_small.chr").read_bytes()
-    assert len(small_logo_oam()) == 18 * 4
+    assert len(encode_tiles(small)) == 21 * 16
+    assert len(small_logo_oam()) == 21 * 4
     oam = logo_oam()
     assert len(oam) == 32 * 4
     assert max(oam[index * 4 + 3] for index in range(32)) == 152
@@ -40,8 +39,8 @@ def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
 
 def test_actual_shareware_episode_names_fit_menu_slots():
     art, lookup = episode_tiles()
-    assert art == (ROOT / "doom/assets/doom_episode_pairs.chr").read_bytes()
-    assert len(lookup) == 31
+    assert len(art) == 19 * 16
+    assert len(lookup) == 19
     manifest = json.loads((ROOT / "doom/assets/doom_menu_art.json").read_text())
     assert manifest["episode_lines"] == [["KNEE DEEP IN", "THE DEAD"],
                                          ["SHORES OF HELL"], ["INFERNO"]]
@@ -49,5 +48,14 @@ def test_actual_shareware_episode_names_fit_menu_slots():
     assert len(oam) == MENU_GLYPHS * 4
     assert sum(oam[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 21
     main = main_menu_oam()
-    assert sum(main[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 14
-    assert 31 + 14 + 18 + 1 == 64
+    assert sum(main[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 28
+    assert 12 + 28 + 21 + 1 <= 64
+
+
+def test_editable_png_sheets_round_trip_to_the_rom_chr():
+    for name, (stem, columns, rows, width, height, count, palette) in SHEETS.items():
+        data = (ROOT / "doom/assets" / f"{stem}.chr").read_bytes()
+        pixels = decode_tiles(data, columns, rows, width, height)
+        image = Image.open(ROOT / "doom/assets" / f"{stem}_edit.png")
+        assert np.array_equal(rgba_to_indices(image, palette), pixels), name
+        assert encode_sheet(pixels, columns, rows, width, height, count) == data

@@ -77,7 +77,12 @@ the result. The human fills in the result section and commits; the agent then co
   missing logo tiles after a cold boot or another power cycle, and any menu
   flicker or clipped text. Several serial heartbeat lines should hold
   `proto=4`, `count=15122` without rising stop/error counts.
-- Result: pending physical run.
+- Result: partial physical run on 2026-09-28. User reports a persistent
+  yellow logo corner outside menus, missing right-side face sprites,
+  abbreviated difficulty labels, undersized main labels and a logo that
+  needs more color separation. No photo or serial excerpt was supplied for
+  this run. See [hardware log](HARDWARE-LOG.md). Further visual iteration is
+  Mesen-only at the user's request; the listed 9011 UF2 is superseded.
 
 ### HR-13 Styled status, sprite logo and episode names (task P3-U4 visual follow-up)
 - Flash: `/tmp/fcpico-original-logo-device/artifacts/fcpico_doom_native_status_whx.uf2`,

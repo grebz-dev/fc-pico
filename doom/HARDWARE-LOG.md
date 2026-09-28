@@ -11,6 +11,20 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-09-28 -- HR-14 paused UI and face findings
+- Console: NES-001 per current session; region not reconfirmed.
+- Cartridge firmware: HR-14 `20DOOM-04-9011` candidate from the prior request;
+  console stamp was not separately transcribed.
+- Results: outside menus, a small yellow corner of the paused DOOM logo
+  remains visible. Doomguy's upper-right and middle-right face sprites are
+  missing. The difficulty menu displays abbreviated `EASY`, `NORMAL`, `HARD`,
+  `ULTRA`, `NIGHT` instead of Doom's original difficulty patches. Main labels
+  are too small and read `READ` rather than `READ ME`. The paused logo could
+  be larger and needs more visible color separation. No serial excerpt or
+  additional photo was supplied. The follow-up is being validated in Mesen
+  without a new UF2 while the visuals are iterated.
+- Attachments: observations supplied in chat.
+
 ## 2026-09-28 -- HR-13 styled sprites, paused-menu finding
 - Console: NES-001 per current session; region not reconfirmed.
 - Cartridge firmware: HR-13 `20DOOM-04-9010` candidate from the prior request;
