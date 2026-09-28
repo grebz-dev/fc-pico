@@ -13,7 +13,7 @@ from build_sprite_probe import ROOT, SOURCE, table
 from native_status_art import (bg_status_tiles, episode_pair_art,
                                face_resident_index, menu_logo_art, resident_art)
 
-STAMP = "20DOOM-04-9009"
+STAMP = "20DOOM-04-9010"
 STATUS_OAM_COUNT = 35
 MENU_GLYPHS = 26
 OAM_COUNT = 64
@@ -54,7 +54,7 @@ def episode_menu_oam() -> bytes:
 
 
 def logo_oam() -> bytes:
-    return bytes(value for row in range(3) for column in range(8)
+    return bytes(value for row in range(4) for column in range(8)
                  for value in (15 + row * 8, 0x60 + row * 8 + column,
                                3, 96 + column * 8))
 
@@ -168,7 +168,7 @@ def status_routine() -> str:
         "        lda $0305", "        lsr a", "        lsr a", "        lsr a", "        lsr a",
         "        cmp #1", "        bne .no_logo", "        ldx #0",
         ".copy_logo:", "        lda logo_oam_data,x", "        sta $0200,x",
-        "        inx", "        cpx #96", "        bne .copy_logo",
+        "        inx", "        cpx #128", "        bne .copy_logo",
         ".no_logo:", "        rts", "",
         "; X selects the health (0) or armor (16) OAM byte offset.",
         "UI_NUM3:", "        ldy #0", ".hundreds:",
@@ -255,8 +255,8 @@ def native_status_source() -> str:
         "        lda #$06", "        sta $2007",
         "        lda #$3F", "        sta $2006",
         "        lda #$1D", "        sta $2006",
-        "        lda #$06", "        sta $2007",
-        "        lda #$16", "        sta $2007",
+        "        lda #$02", "        sta $2007",
+        "        lda #$12", "        sta $2007",
         "        lda #$28", "        sta $2007",
     ]
     source = source.replace(setup_anchor, setup_anchor + "\n".join(setup) + "\n")

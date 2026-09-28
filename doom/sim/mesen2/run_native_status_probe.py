@@ -106,7 +106,7 @@ def main() -> int:
     assert sprite_palette[1] == sprite_palette[3] == 0x16
     assert sprite_palette[2] == 0x0F
     assert sprite_palette[11] == 0x06
-    assert sprite_palette[13:16] == bytes((0x06, 0x16, 0x28))
+    assert sprite_palette[13:16] == bytes((0x02, 0x12, 0x28))
     sprite_chr = (run / "sprite_chr.bin").read_bytes()
     assert sprite_chr[:len(episode_pair_art()[0])] == episode_pair_art()[0]
     assert sprite_chr[0x600:0x600 + len(menu_logo_art())] == menu_logo_art()
@@ -123,8 +123,8 @@ def main() -> int:
             assert all(oam[n * 4] < 0xEF for n in range(25)), "HUD vanished on Start/menu"
         else:
             if args.menu_id == 1:
-                assert all(oam[n * 4] < 0xEF for n in range(24))
-                assert oam[:96] == bytes(value for row in range(3) for col in range(8)
+                assert all(oam[n * 4] < 0xEF for n in range(32))
+                assert oam[:128] == bytes(value for row in range(4) for col in range(8)
                                           for value in (15 + row * 8, 0x60 + row * 8 + col,
                                                         3, 96 + col * 8))
             else:

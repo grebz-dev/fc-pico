@@ -32,7 +32,9 @@ art pass should keep the working v4 transport and menu transparency while:
 3. Building a deterministic, source-attributed sprite sheet for the Doom menu
    logo and rendering it natively where OAM and scanline capacity permit. Check
    visible width and sprite CHR residency before choosing a logo size; preserve
-   the transparent game picture behind the menu.
+   the transparent game picture behind the menu. Preserve the source `M_DOOM`
+   silhouette and blue/gold treatment in the reduced sheet; a generic redraw
+   does not meet the visual goal.
 4. Sharpening other static or non-3D UI elements (menu titles, cursor, options,
    episode choices and status decoration) when they can bypass world conversion
    without hiding controls or duplicating the original draw. Use the actual
