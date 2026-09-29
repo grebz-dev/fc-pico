@@ -49,10 +49,10 @@ static void test_ammo_row(void) {
     };
     uint8_t row[NATIVE_TEXT_TILES];
     fcui_format_ammo_row(row, &state);
-    CHECK_MEM(row, "B050 S008        R004 C300  ", NATIVE_TEXT_TILES);
+    CHECK_MEM(row, "            ####            ", NATIVE_TEXT_TILES);
     state.flags |= FCUI_FLAG_MENU;
     fcui_format_ammo_row(row, &state);
-    CHECK_MEM(row, "B050 S008        R004 C300  ", NATIVE_TEXT_TILES);
+    CHECK_MEM(row, "            ####            ", NATIVE_TEXT_TILES);
 }
 
 int main(void) {

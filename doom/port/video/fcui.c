@@ -57,23 +57,10 @@ bool fcui_unpack_status(fcui_status_t *status, const uint8_t data[MBX_UI_LEN]) {
     return true;
 }
 
-static void dec3(uint8_t out[3], uint16_t value) {
-    value = cap999(value);
-    out[0] = (uint8_t)('0' + value / 100);
-    out[1] = (uint8_t)('0' + (value / 10) % 10);
-    out[2] = (uint8_t)('0' + value % 10);
-}
-
 void fcui_format_ammo_row(uint8_t out[NATIVE_TEXT_TILES],
                           const fcui_status_t *status) {
     memset(out, ' ', NATIVE_TEXT_TILES);
     if (!(status->flags & FCUI_FLAG_STATUS_VISIBLE)) return;
-    out[0] = 'B';
-    dec3(out + 1, status->ammo[0]);
-    out[5] = 'S';
-    dec3(out + 6, status->ammo[1]);
-    out[17] = 'R';
-    dec3(out + 18, status->ammo[3]);
-    out[22] = 'C';
-    dec3(out + 23, status->ammo[2]);
+    (void)status;
+    memset(out + 12, '#', 4); /* Black backing beneath the face. */
 }

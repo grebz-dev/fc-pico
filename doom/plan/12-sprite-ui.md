@@ -79,6 +79,205 @@ can edit the logo, faces and paired episode letters. Keep this iteration in
 Mesen and host-engine captures, with no UF2 build until the visual layout is
 accepted for physical testing.
 
+## Concrete status bar and sprite multiplexing study (2026-09-28)
+
+**Planning only; production implementation and UF2 generation are not authorized
+by this planning request.** The user asks to explore cycling, paging and ordering
+before settling on background text. Research is in
+[12b-sprite-multiplexing-research.md](12b-sprite-multiplexing-research.md).
+
+### Visual target
+
+Use `doom/StatusBar.png` as the supplied reference. Recreate gray concrete with
+subtle mottling, recessed divisions and quiet areas under text, replacing the
+bright metallic rails. Preserve this left-to-right order: AMMO, HEALTH, ARMS,
+Doomguy, ARMOR, vertical keys, four-row ammunition inventory. Large ammo/health/
+armor values are red with in-art dark contrast; health/armor use trailing `%`.
+Small labels are white; arms and inventory counts preferably yellow, with white
+inventory counts acceptable if required by palette constraints. Menus remain
+transparent and difficulty patches retain their accepted current treatment.
+
+Initial width allocation at 256 pixels: ammo 32, health 48, arms 32, face 32,
+armor 40, keys 8, inventory 64. Test both a 32-pixel (four tile rows) bar and the
+existing 48-pixel region. The former matches the requested compactness; the
+latter gives label baselines and TV-safe padding. Neither height is final until
+the native-resolution preview establishes legibility. A 32-pixel face needs
+additional exterior space if an outer border is desired in a 32-pixel-high bar.
+
+Use a 32x32, 4x4-tile face canvas, re-extracted from source patches with correct
+proportions and a black backing; transparent canvas pixels reveal black. Preserve
+idle, damage, pickup, god and death selection from engine state. Canonicalize
+identical tiles under horizontal/vertical flips and keep per-placement flags;
+never force symmetry onto lighting, injuries or directional expressions. Flips
+save CHR, not OAM entries or per-line capacity. Eleven uncompressed faces alone
+need 176 tiles, exceeding the current 128-tile resident region. Measure exact
+savings and atlas allocation before selecting residency or bounded uploads.
+
+### What the proposed techniques can and cannot buy
+
+- **8x16 sprites:** a four-tile-high face needs eight OAM entries rather than
+  sixteen; each line still uses four of the eight sprite slots. Tall numeric
+  glyphs similarly need fewer entries. Larger vertical sprites do not widen the
+  horizontal budget and transparent rows still participate in evaluation. Sprite
+  size is a PPU-wide setting, so audit menus, logo, keys, paired tile alignment,
+  flips and table selection. Odd tile indices select the $1000 table in this
+  mode; do not accidentally fetch patterns from the streamed background table.
+- **Packed glyph runs:** two small glyphs can share an 8-pixel tile when their
+  advances permit. Tight crop/repacking and removal of wholly empty tiles can
+  reduce real demand. Transparent pixels inside a present sprite do not release
+  its slot. The inventory's 64-pixel-wide four rows are already estimated as
+  packed runs, not one sprite per character. Compare readable source-derived
+  fonts and actual masks; the numerical example below is not a universal lower
+  bound on every possible font.
+- **OAM rotation / temporal pages:** distribute omissions over successive PPU
+  frames instead of permanently losing rightmost tiles. Schedule whole glyphs
+  or field segments deliberately; naive rotation can show only half a numeral
+  or face. All pages still obey eight per scanline and 64 total. This provides
+  temporal visibility, not a complete image in each refresh. Fixed priorities
+  can keep critical fields stable only by making other fields less frequent.
+- **CHR paging / flipping / deduplication:** expand the available art and face
+  repertoire; they do not create additional sprite shifters. The cartridge has
+  no demonstrated arbitrary bank-switching or scanline IRQ interface. Prefer
+  resident deduplicated art; any CHR upload path needs measured deadlines and
+  coherent face replacement. Swapping CHR tiles at frame boundaries does not
+  leave previous sprite pixels displayed underneath the new frame.
+- **Draw order and priority:** select which eight eligible sprites win and how
+  their pixels overlap the background. Behind-background priority, transparent
+  masks and offscreen-X tricks cannot give a ninth sprite a rendering slot.
+  A native BG layer can supply stable outlines/labels while sprites supply
+  color or emphasis; that is a deliberate hybrid, not extra sprite capacity.
+- **Mid-frame OAM reuse:** can replace the set for a later vertical band, helping
+  the 64-total limit for tall scenes. It cannot add a ninth sprite on the same
+  scanline. OAM writes during rendering are unsafe; forced blanking plus a full
+  513/514-cycle DMA alone takes roughly 4.5 NTSC scanlines, before setup and
+  recovery. This is costly inside a four-row bar and disrupts the calibrated
+  stream. Exclude from the normal implementation unless a separate timing
+  experiment establishes a useful, artifact-free benefit.
+
+### Reproducible capacity calculation
+
+`python3 doom/tools/check_sprite_layout.py doom/plan/sprite-ui-dense-feasibility.json`
+checks deliberately overfull sprite-only sketches and a stable hybrid allocation.
+A nonzero exit is expected for the two overfull sketches. These are conservative
+rectangle allocations, not final artwork or Mesen results.
+
+| Sketch | 8x8 entries | Peak per scanline | Overfull lines |
+|---|---:|---:|---:|
+| Dense original order, 48-pixel allocation | 89 | 27 | 40 |
+| Same content in four tile rows | 89 | 27 | 32 |
+| Continuous face + arms + keys, other fields native BG | 25 | 8 | 0 |
+
+The dense peak comprises 11 large-number columns, four face columns, three arms
+columns, one key and eight inventory columns. Equal four-page cycling can divide
+27 entries into legal pages at a nominal 60 Hz refresh, giving each page 15 Hz
+visibility and 25% duty. Pinning four face columns leaves four slots for the other
+23 columns: at least six equal pages, or 10 Hz and about 17% duty. These are
+optimistic equal-page examples, not a proven schedule; field grouping can cost
+more. Irregular fair rotation changes the duty distribution but not capacity.
+At nominal 50 Hz, four/six-page visibility is 12.5/8.3 Hz respectively.
+
+The current UI_APPLY returns early for unchanged generations, and OAM DMA occurs
+only when a new shadow is published. Text-update frames may defer OAM entirely.
+Any flicker experiment must advance pages at PPU refresh cadence independently
+of the roughly 25 Hz converted picture cadence and repeated UI generations.
+Measure DMA cadence, scheduling fairness and worst-case NMI budget rather than
+assuming every heartbeat can commit a new page. No production change is made by
+this study.
+
+### Proposed experiments before choosing the renderer
+
+1. Build a source-art layout/atlas report for 8x8 and 8x16 variants, including
+   exact flip deduplication, tile-table ownership, palette regions, OAM and all
+   scanlines. Compare 32- and 48-pixel bar heights and packed-font legibility.
+2. In an isolated Mesen probe, compare (A) stable native BG values/labels with
+   sprite face/arms/keys, (B) a narrow two-page treatment for secondary fields
+   with important values stable, and (C) the full sprite-only four-or-more-page
+   layout as an explicit quality comparison. Candidate B still needs a valid
+   allocation; it is not assumed to fit all requested content.
+3. Include unchanged UI generations and slow/repeated picture frames. Disable
+   sprite-limit removal. Capture consecutive individual frames, effective field
+   duty, skipped-page counts and a real-time clip. Include page transitions
+   during health/ammo/face changes. Do not present a temporal union or averaged
+   PNG as an image the hardware displays in a single frame.
+4. Provide full-screen PNGs, nearest-neighbor HUD crops and the source reference,
+   plus the clip for any cycling candidate. A static PNG approves artwork and
+   placement only; flicker needs motion inspection. Let the visual comparison
+   determine whether any secondary-field cycling is acceptable. Do not silently
+   adopt flicker for health/ammo or animation-sensitive face tiles.
+
+### Implementation sequence after design review
+
+Capture selected-weapon ammo and actual per-type maxima from the engine; support
+backpacks, values over 100%, empty ammo for melee weapons, slots 2..7 in a 3x2
+arms grid and card/skull semantics. Keep BULL/SHEL/RCKT/CELL in display order,
+which differs from the current internal ammo-array order.
+
+For a hybrid, compose text directly at native resolution, bypassing world
+scaling/dithering. Audit 16x16 BG attribute boundaries; inventory begins at x=192
+so a dedicated palette is plausible. Audit the existing omitted 28-tile native
+text row and its calibrated read count before replacing its mechanism. Keep
+background and sprite state coherent by generation and preserve legacy modes
+and the permanent fix bank. The approved renderer choice determines transport
+changes, not the other way around.
+
+Validate native background texture, percentages, max capacities, all face states,
+weapons/keys, death, automap, pause/menu open-close, stale menu IDs and reset in
+host tests and Mesen. Maintain the accepted simplified paused HUD and transparent
+menus; explicitly clear vacated OAM entries. Check cycles, CHR, read counts and
+palette aliases. Expose editable concrete/font/key/face PNGs. Deliver the actual
+Mesen output PNG (and cycling clip if relevant) for review before generating any
+UF2. Research and capacity calculations do not establish physical flicker quality
+or physical bus timing; hardware validation remains a later gate.
+
+## Background-first follow-up and 8x16 evaluation (2026-09-29)
+
+The 9013 candidate moves the cement panel, current ammo, health/armor
+percentages, white labels, and four current/max inventory rows into the native
+background conversion path. It uses the semantic UI snapshot before conversion,
+so those glyphs bypass Doom's 320x200 scaling and dithering. The 28-tile v4
+omitted row stays static and reserves a black face backing. The face is a 28x32
+source-derived image in a 32x32 canvas, with tile sharing and PPU flip flags;
+the arms grid and key icons remain sprites. This keeps the busiest scanline at
+eight sprites. The supplied `StatusBar.png` is the visual reference. The
+candidate is for physical validation; the Mesen output alone does not prove
+color, overscan or readability on the user's display.
+
+The next native graphics pass should treat **static content as background
+composition** where possible. Build a host-side native overlay stage after
+the Doom picture is scaled but before it is encoded for the PPU. It may combine
+glyph pixels with the world pixels in each streamed pattern, preserving a
+visible world under the menu without requiring a black menu rectangle. First
+prototype main menu labels, then episode/options/save strings, then the logo.
+Keep the Doom source patch silhouette for logo artwork. An ordinary NES
+background glyph replaces its tile's world image; it cannot be transparent
+over the world by itself. Pixel composition into the streamed tile is required
+for the user's transparent-menu preference. Prove this in Mesen against a
+moving world frame and assess readability at actual size.
+
+Background palettes are shared by 16x16 attribute regions. Measure menu text
+contrast and world-color loss where native red/white glyphs demand a reserved
+palette. Do not assume a palette change can affect only glyph pixels. For
+status content, retain a fixed concrete palette and generation-matched semantic
+snapshot. Keep text out of the v4 skipped picture row unless its fixed native
+tile path is changed and the calibrated transfer count is recalculated.
+
+Evaluate 8x16 sprites on a separate Mesen branch after the background overlay
+removes menu glyph pressure. Each 8x16 entry covers twice the vertical area
+of an 8x8 entry, but the eight-per-scanline bound is unchanged. PPUCTRL sprite
+size is global, so all remaining sprites, including menu logo, face and keys,
+must be repacked as aligned tile pairs. Verify pattern-table selection from
+tile bit zero, OAM counts, every status scanline, CHR residency, and a real
+face/menu transition before selecting the mode. Retain 8x8 if the global
+repacking costs more than it saves. Consider putting even the face into the
+background only when a black square can be updated atomically with its state
+and without lengthening the read schedule or causing one-frame expression lag.
+
+Compare screenshot crops and 30 consecutive Mesen frames for text contrast,
+face changes, transparent menus, and zero leftover sprites after menu close.
+Capture NMI cycles, v4 read count, and 64-entry/8-per-line limits. Generate a
+review PNG and motion clip before any successor hardware build. Maintain the
+9013 UF2 as a tested checkpoint while this redesign is explored.
+
 ## Findings from the current source
 
 | Source | Current behavior and consequence |

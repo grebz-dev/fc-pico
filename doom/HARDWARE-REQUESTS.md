@@ -60,6 +60,23 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Open requests
 
+### HR-15 Concrete native HUD and enlarged face (task P3-U4)
+- Flash: `/tmp/fcpico-native-status-device/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `871b65ac1ceaab462d0ffa09c3358493fa78546615af684565138187bd0b1ab8`.
+  Embedded ROM SHA-256 `8b25b45ebdd1fabdfb0163c5295a6a93aae44a2e26e8e49e3adf42d823b31d97`;
+  stamp `20DOOM-04-9013`. The permanent fix bank is byte-identical.
+- Steps: with the NES off, flash the UF2, then power on and let Doom start.
+  Check current ammo, health/armor percentages, the four current/max ammo rows,
+  the ARMS 2–7 grid, keys, and the 4×4 face in its black square. Change weapon,
+  take damage, collect health/ammo, and open/close the menu. Check that the title
+  has no stray black face tile or logo corner. The black face backing may settle
+  over the first two converted frames after status activation.
+- Record: one full-screen and one close status photo, any missing/clipped text
+  or face tiles, and several `[DEBUG-hr3]` lines with `count`, `stops`, and
+  `resyncs`. Put results in `doom/HARDWARE-LOG.md`.
+- Result: pending physical run. Mesen and host tests are recorded in
+  `doom/PROGRESS.md`.
+
 ### HR-14 Aligned status and paused-menu DOOM logo (task P3-U4 visual follow-up)
 - Flash: `/tmp/fcpico-aligned-hud-device/artifacts/fcpico_doom_native_status_whx.uf2`,
   SHA-256 `9e685f2ae5e240ddd973693726a2b602abd3957dd2d9aa76200b753b52ae7fed`.

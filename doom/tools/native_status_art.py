@@ -28,22 +28,24 @@ GLYPHS = {
     "C": (".####", "#....", "#....", "#....", "#....", "#....", ".####"),
 }
 ORDER = "0123456789HR"
-BG_STATUS_ORDER = " 0123456789BSRC"
+BG_STATUS_ORDER = " 0123456789BSRC#"
 FACE_NAMES = ["STFST00", "STFST01", "STFST02",
-              *(f"STFST{i}0" for i in range(1, 5)),
+              *(f"STFST{i}0" for i in range(1, 4)),
               "STFGOD0", "STFDEAD0", "STFOUCH0", "STFEVL0"]
 
 
 def face_resident_index(index: int) -> int:
     if index >= 40:
-        return index - 33
+        return index - 34
     expression = index % 8
     if expression == 6:
-        return 10
-    if expression in (3, 4, 5):
         return 9
+    if expression in (3, 4, 5):
+        return 8
     if index < 3:
         return index
+    if index >= 32:
+        return 5
     return index // 8 + 2 if index >= 8 else 0
 
 
@@ -71,6 +73,8 @@ def bg_status_tiles() -> list[tuple[int, bytes]]:
         glyph = GLYPHS.get(char, (".....",) * 7)
         rows = ["." + row + ".." for row in glyph] + ["........"]
         pixels = [[3 if value == "#" else 1 for value in row] for row in rows]
+        if char == "#":
+            pixels = [[0] * 8 for _ in range(8)]
         for y in range(7):
             for x in range(7):
                 if pixels[y][x] == 3 and pixels[y + 1][x + 1] == 1:
@@ -93,9 +97,34 @@ def resident_face_art() -> bytes:
 
 
 def resident_art() -> bytes:
-    art = tall_glyphs() + resident_face_art()
-    assert len(art) == (24 + len(FACE_NAMES) * 9) * 16
-    return art
+    art = (ASSETS / "doomguy_faces_large.chr").read_bytes()
+    assert len(art) <= 128 * 16
+    return art + bytes(128 * 16 - len(art))
+
+
+def resident_face_overflow() -> bytes:
+    return (ASSETS / "doomguy_faces_large.chr").read_bytes()[128 * 16:]
+
+
+def resident_face_map() -> tuple[bytes, bytes]:
+    numbers = (ASSETS / "doomguy_faces_large_tiles.bin").read_bytes()
+    flips = (ASSETS / "doomguy_faces_large_flips.bin").read_bytes()
+    assert len(numbers) == len(flips) == len(FACE_NAMES) * 16
+    return numbers, flips
+
+
+def key_icon_art() -> bytes:
+    # A recessed card and a notched skull key; palette picks the key color.
+    card = ("........", ".######.", ".#....#.", ".#.##.#.",
+            ".#.##.#.", ".#....#.", ".######.", "........")
+    skull = ("..####..", ".######.", ".##..##.", ".######.",
+             "..####..", "..#..#..", "..####..", "........")
+    result = bytearray()
+    for icon in (card, skull):
+        rows = bytes(sum((1 << (7 - x)) for x, pixel in enumerate(row)
+                         if pixel == "#") for row in icon)
+        result.extend(rows * 2)  # Index 3 uses both pattern planes.
+    return bytes(result)
 
 
 def menu_logo_art() -> bytes:

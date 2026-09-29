@@ -1,5 +1,6 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 #include "fcvideo.h"
+#include "native_status_font.h"
 
 #include <math.h>
 #include <string.h>
@@ -144,6 +145,10 @@ void fcvideo_set_native_status(fcvideo_t *video, bool enabled) {
     video->native_status = enabled;
 }
 
+void fcvideo_set_status_snapshot(fcvideo_t *video, const fcui_status_t *status) {
+    video->status = *status;
+}
+
 static uint8_t attr_get(const uint8_t attr[MBX_ATTR_LEN], int bx, int by) {
     int index = (bx >> 1) + ((by >> 1) << 3);
     int shift = ((bx & 1) + ((by & 1) << 1)) * 2;
@@ -209,37 +214,104 @@ void fcvideo_push_line(fcvideo_t *video, int y,
     }
 }
 
-void fcvideo_blank_status(fcvideo_t *video) {
-    memset(video->frame + FCVIDEO_STATUS_START * FCVIDEO_WIDTH, 97,
-           (VRAM_LINES - FCVIDEO_STATUS_START) * FCVIDEO_WIDTH);
-}
-
-static uint8_t native_status_pixel(int x, int y) {
-    /* A subdued metal frame uses one reserved BG palette: black, gray and
-     * light gray. Sprite values stay red and stand clear of the separators. */
-    if (y == 192 || y == 193 || y == 239 ||
-        (y == 214 && (x < 106 || x > 150))) return 0;
-    if (y == 194 || y == 195 ||
-        ((y == 213 || y == 215) && (x < 106 || x > 150))) return 2;
-    if (x == 0 || x == 8 || x == 96 || x == 104 || x == 151 ||
-        x == 160 || x == 248 || x == 255) return 0;
-    if (x == 1 || x == 9 || x == 97 || x == 105 || x == 152 ||
-        x == 161 || x == 249 || x == 254) return 2;
-    if (y >= 198 && y < 212) {
-        static const uint8_t h[7] = {0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11};
-        static const uint8_t r[7] = {0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11};
-        const uint8_t *glyph = x < 128 ? h : r;
-        int left = x < 128 ? 17 : 177;
-        int col = x - left;
-        int row = (y - 198) / 2;
-        if (col >= 0 && col < 5 && (glyph[row] & (1u << (4 - col)))) return 3;
-        if (col > 0 && col < 6 && y > 198) {
-            int previous_row = (y - 199) / 2;
-            if (glyph[previous_row] & (1u << (5 - col))) return 0;
+static void panel_glyph(fcvideo_t *video, int x, int y, char c,
+                        int advance, int height_scale, uint8_t color) {
+    const uint8_t *rows = native_font_rows(c);
+    if (!rows) return;
+    for (int row = 0; row < 7; ++row) {
+        for (int repeat = 0; repeat < height_scale; ++repeat) {
+            int py = y + row * height_scale + repeat;
+            if (py < FCVIDEO_STATUS_START || py >= VRAM_LINES ||
+                (py >= 224 && py < 232 && x >= 16 && x < 240)) continue;
+            for (int col = 0; col < 5; ++col) {
+                int px = x + col;
+                if (px >= 0 && px < FCVIDEO_WIDTH &&
+                    (rows[row] & (1u << (4 - col)))) {
+                    video->frame[py * FCVIDEO_WIDTH + px] = color;
+                }
+            }
         }
     }
-    if (y >= 225 && y <= 227 && (x < 8 || x >= 248)) return 0;
-    return 1;
+    (void)advance;
+}
+
+static void panel_text(fcvideo_t *video, int x, int y, const char *text,
+                       int advance, int height_scale, uint8_t color) {
+    while (*text) {
+        panel_glyph(video, x, y, *text++, advance, height_scale, color);
+        x += advance;
+    }
+}
+
+static int panel_decimal(char out[4], uint16_t value) {
+    if (value > 999) value = 999;
+    int count = 0;
+    if (value >= 100) out[count++] = (char)('0' + value / 100);
+    if (value >= 10) out[count++] = (char)('0' + value / 10 % 10);
+    out[count++] = (char)('0' + value % 10);
+    out[count] = 0;
+    return count;
+}
+
+static void panel_inventory(fcvideo_t *video, int y, const char *name,
+                            uint16_t current, uint16_t maximum) {
+    char left[4], right[4], count[9];
+    int used = panel_decimal(left, current);
+    int max_used = panel_decimal(right, maximum);
+    int pos = 0;
+    for (int i = 0; i < used; ++i) count[pos++] = left[i];
+    count[pos++] = '/';
+    for (int i = 0; i < max_used; ++i) count[pos++] = right[i];
+    count[pos] = 0;
+    panel_text(video, 194, y, name, 5, 1, 2);
+    panel_text(video, 254 - pos * 5, y, count, 5, 1, 2);
+}
+
+void fcvideo_blank_status(fcvideo_t *video) {
+    if (!video->native_status) {
+        memset(video->frame + FCVIDEO_STATUS_START * FCVIDEO_WIDTH, 97,
+               (VRAM_LINES - FCVIDEO_STATUS_START) * FCVIDEO_WIDTH);
+        return;
+    }
+    for (int y = FCVIDEO_STATUS_START; y < VRAM_LINES; ++y) {
+        for (int x = 0; x < FCVIDEO_WIDTH; ++x) {
+            unsigned grain = ((unsigned)(x >> 2) * 13u ^
+                              (unsigned)(y >> 1) * 7u ^
+                              (unsigned)(x * y) >> 5) & 63u;
+            uint8_t color = grain == 0 ? 0 : grain == 1 ? 2 : 1;
+            if (x == 0 || x == 255 || y == 192 || y == 239) color = 0;
+            if (y == 193 || y == 238) color = 2;
+            if (x == 31 || x == 79 || x == 109 || x == 146 ||
+                x == 182 || x == 191) color = 0;
+            if (x >= 110 && x <= 145 && y >= 196 && y <= 237) color = 0;
+            video->frame[y * FCVIDEO_WIDTH + x] = color;
+        }
+    }
+    char number[4];
+    unsigned weapon = video->status.ready_weapon & 15u;
+    int ammo_type = -1;
+    if (weapon == 1 || weapon == 3) ammo_type = 0;
+    if (weapon == 2 || weapon == 8) ammo_type = 1;
+    if (weapon == 4) ammo_type = 3;
+    if (weapon == 5 || weapon == 6) ammo_type = 2;
+    if (ammo_type >= 0) {
+        panel_decimal(number, video->status.ammo[ammo_type]);
+        panel_text(video, 4, 198, number, 8, 2, 3);
+    }
+    panel_decimal(number, video->status.health);
+    panel_text(video, 36, 198, number, 8, 2, 3);
+    panel_text(video, 36 + (int)strlen(number) * 8, 198, "%", 8, 2, 3);
+    panel_decimal(number, video->status.armor);
+    panel_text(video, 149, 198, number, 8, 2, 3);
+    panel_text(video, 149 + (int)strlen(number) * 8, 198, "%", 8, 2, 3);
+    panel_text(video, 4, 232, "AMMO", 6, 1, 2);
+    panel_text(video, 36, 232, "HEALTH", 6, 1, 2);
+    panel_text(video, 81, 232, "ARMS", 6, 1, 2);
+    panel_text(video, 149, 232, "ARMOR", 6, 1, 2);
+    panel_inventory(video, 196, "BULL", video->status.ammo[0], video->status.maxammo[0]);
+    panel_inventory(video, 203, "SHEL", video->status.ammo[1], video->status.maxammo[1]);
+    panel_inventory(video, 210, "RCKT", video->status.ammo[3], video->status.maxammo[3]);
+    panel_inventory(video, 217, "CELL", video->status.ammo[2], video->status.maxammo[2]);
 }
 
 void fcvideo_convert_staged(fcvideo_t *video,
@@ -265,7 +337,7 @@ void fcvideo_convert_staged(fcvideo_t *video,
                 uint8_t index = video->frame[flat];
                 uint8_t position = (uint8_t)((px & 3) | ((py & 3) << 2));
                 uint8_t pixel = video->native_status && py >= FCVIDEO_STATUS_START
-                    ? native_status_pixel(px, py)
+                    ? video->frame[flat]
                     : video->tables.lut[(palette * 256 + index) * 16 + position] & 3u;
                 lo |= (pixel & 1u) << (7 - bit);
                 hi |= (pixel >> 1) << (7 - bit);
