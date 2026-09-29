@@ -55,7 +55,18 @@ def test_actual_shareware_episode_names_fit_menu_slots():
 def test_editable_png_sheets_round_trip_to_the_rom_chr():
     for name, (stem, columns, rows, width, height, count, palette) in SHEETS.items():
         data = (ROOT / "doom/assets" / f"{stem}.chr").read_bytes()
-        pixels = decode_tiles(data, columns, rows, width, height)
         image = Image.open(ROOT / "doom/assets" / f"{stem}_edit.png")
+        if name == "large_faces":
+            from build_large_face_art import pack
+            sheet = rgba_to_indices(image, palette)
+            faces = np.stack([sheet[(i // 4) * 32:(i // 4 + 1) * 32,
+                                    (i % 4) * 32:(i % 4 + 1) * 32]
+                              for i in range(10)])
+            packed, tile_map, flips = pack(faces)
+            assert packed == data
+            assert tile_map == (ROOT / "doom/assets/doomguy_faces_large_tiles.bin").read_bytes()
+            assert flips == (ROOT / "doom/assets/doomguy_faces_large_flips.bin").read_bytes()
+            continue
+        pixels = decode_tiles(data, columns, rows, width, height)
         assert np.array_equal(rgba_to_indices(image, palette), pixels), name
         assert encode_sheet(pixels, columns, rows, width, height, count) == data

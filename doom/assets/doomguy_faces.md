@@ -13,13 +13,21 @@ The source patches are 24×29 or 24×31. The generator scales all rows into
 to reproduce the sheet from the local WHX.
 
 All 42 faces need 378 tiles, beyond the 128-tile region available beside the
-system font. The native status probe loads eleven representative faces: three
+system font. The earlier 9012 native status probe loaded eleven representative faces: three
 healthy idle, four damage, god, dead, ouch and grin (99 tiles). It maps the
 remaining face indices to a resident expression until face-art paging is
 added. The 24 tall number tiles plus 99 face tiles occupy 123 of the 128
 available slots. The face uses three sprites on each of its 24 scanlines.
 Its lower panel niche places it away from the health/armor rows; the weapon
 and key rows peak at eight sprites per scanline.
+
+The 9013 candidate uses [the editable 4×4 face sheet](doomguy_faces_large_edit.png)
+generated directly from the WHX patches. It keeps ten resident expressions,
+each 28×32 within a 32×32 black panel square. Flip-aware deduplication packs
+160 face tile placements into 119 CHR tiles. The most damaged ordinary state
+reuses the previous damage expression to fit. Face tiles use four sprites per
+scanline; the ARMS grid and vertical keys bring the status peak to eight.
+Edit with `edit_sprite_sheets.py import large_faces`; see [EDITING.md](EDITING.md).
 
 Edit [`doomguy_faces_edit.png`](doomguy_faces_edit.png) at its native 168×144
 size to change any of the 42 faces. Keep the existing four-color palette and

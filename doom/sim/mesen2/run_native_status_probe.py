@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
-"""Check native tall status and 3x3 face with a compact v4 Doom frame."""
+"""Check the native concrete status and 4x4 face with a v4 Doom frame."""
 
 from __future__ import annotations
 
@@ -18,33 +18,8 @@ sys.path.insert(0, str(ROOT / "doom/tools"))
 from fcpico import protocol, stream  # noqa: E402
 from native_status_art import (bg_status_tiles, episode_pair_art,
                                menu_logo_art, resident_art,
+                               resident_face_map,
                                small_menu_logo_art)  # noqa: E402
-
-
-def status_backing(pixels: np.ndarray) -> None:
-    for y in range(192, 240):
-        for x in range(256):
-            color = 1
-            if y in (192, 193, 239) or (y == 214 and (x < 106 or x > 150)):
-                color = 0
-            elif y in (194, 195) or (y in (213, 215) and (x < 106 or x > 150)):
-                color = 2
-            elif x in (0, 8, 96, 104, 151, 160, 248, 255):
-                color = 0
-            elif x in (1, 9, 97, 105, 152, 161, 249, 254):
-                color = 2
-            elif 225 <= y <= 227 and (x < 8 or x >= 248):
-                color = 0
-            if 198 <= y < 212:
-                glyph = (0x11, 0x11, 0x11, 0x1F, 0x11, 0x11, 0x11) if x < 128 else (
-                    0x1E, 0x11, 0x11, 0x1E, 0x14, 0x12, 0x11)
-                col = x - (17 if x < 128 else 177)
-                row = (y - 198) // 2
-                if 0 <= col < 5 and glyph[row] & (1 << (4 - col)):
-                    color = 3
-                elif 0 < col < 6 and y > 198 and glyph[(y - 199) // 2] & (1 << (5 - col)):
-                    color = 0
-            pixels[y, x] = color
 
 
 def packet(health: int, armor: int, face: int, keys: int, weapons: int,
@@ -91,7 +66,18 @@ def main() -> int:
         y, x = np.indices((184, 256))
         pixels[8:192] = ((x // 16 + y // 16) % 3 + 1).astype(np.uint8)
     if not args.no_status:
-        status_backing(pixels)
+        panel_tool = output / "render_native_status_panel"
+        subprocess.run(["cc", "-O2", "-I", str(ROOT / "doom/port/video"),
+                        "-I", str(ROOT / "doom/fcbus"),
+                        str(ROOT / "doom/tools/render_native_status_panel.c"),
+                        str(ROOT / "doom/port/video/fcvideo.c"),
+                        str(ROOT / "doom/port/video/fcui.c"), "-lm",
+                        "-o", str(panel_tool)], check=True)
+        panel_file = output / "panel_pixels.bin"
+        subprocess.run([str(panel_tool), str(panel_file), str(args.health),
+                        str(args.armor), "20"], check=True)
+        panel = np.frombuffer(panel_file.read_bytes(), dtype=np.uint8).reshape(240, 256)
+        pixels[192:] = panel[192:]
     mailbox = bytearray(protocol.FC_COM_BUF_SIZE_V4)
     mailbox[protocol.MBX_FLAGS] = (protocol.MBX_FLAG_V2 | protocol.MBX_FLAG_V3 |
                                    protocol.MBX_FLAG_V4 | protocol.MBX_FLAG_UI_VALID |
@@ -107,7 +93,7 @@ def main() -> int:
              protocol.VRAM_MAILBOX_OFF_V2 + protocol.MBX_ATTR + 64]
         if host else bytes(64))
     if not args.no_status:
-        mailbox[protocol.MBX_PAL + 12:protocol.MBX_PAL + 16] = bytes((15, 0, 16, 22))
+        mailbox[protocol.MBX_PAL + 12:protocol.MBX_PAL + 16] = bytes((15, 0, 48, 22))
         for by in range(12, 15):
             for bx in range(16):
                 stream.attr_set(attributes, bx, by, 3)
@@ -149,22 +135,20 @@ def main() -> int:
         for char, tile in bg_status_tiles():
             assert background_chr[char * 16:char * 16 + 16] == tile
         picture = Image.open(run / "final.png").convert("RGB")
-        assert picture.getpixel((100, 230)) == picture.getpixel((10, 230))
+        assert picture.getpixel((120, 210)) != picture.getpixel((100, 210))
     if args.menu:
         assert __import__("json").loads((run / "lua_result.json").read_text())["start_polls"] >= 1
         if not args.no_status:
-            assert all(oam[n * 4] < 0xEF for n in (1, 2, 3, 5, 6, 7,
-                                                   9, 10, 11, 13, 14, 15)), \
-                "health/armor vanished on Start/menu"
+            assert all(oam[n * 4] == 0xEF for n in range(21, 35)), \
+                "paused menu should yield status sprite slots"
             if args.menu_id == 1:
                 small = bytes(value for row in range(3) for col in range(7)
                               for value in (39 + row * 8, 0x13 + row * 7 + col,
                                             3, 100 + col * 8))
-                assert b"".join(oam[n * 4:n * 4 + 4]
-                                for n in (0, 4, *range(16, 35))) == small
+                assert oam[:84] == small
             else:
                 assert all(oam[n * 4] == 0xEF for n in (0, 4, 8, 12))
-                assert all(oam[n * 4] < 0xEF for n in range(16, 25))
+                assert all(oam[n * 4] < 0xEF for n in range(16))
         else:
             if args.menu_id == 1:
                 assert all(oam[n * 4] < 0xEF for n in range(32))
@@ -192,27 +176,24 @@ def main() -> int:
     assert (run / "sprite_chr.bin").read_bytes()[0x800:0x800 + len(art)] == art
     assert sprite_palette[5:8] == bytes((0x07, 0x18, 0x26))
     assert (run / "ui_mailbox.bin").read_bytes() == ui
-    assert (run / "text_row.bin").read_bytes()[2:30] == bytes((32,)) * 28
-    assert [oam[n * 4] for n in range(8)] == [0xEF, 197, 197, 197] * 2
-    assert [oam[n * 4] for n in range(8, 16)] == [0xEF, 205, 205, 205] * 2
-    assert [oam[n * 4] for n in range(16, 25)] == [213] * 3 + [221] * 3 + [229] * 3
-    assert [oam[n * 4] for n in range(25, 32)] == [215] * 5 + [223] * 2
-    assert [oam[n * 4 + 2] for n in range(25, 32)] == [0, 2, 0, 0, 0, 0, 0]
-    assert [oam[n * 4] for n in range(32, 35)] == [223, 0xEF, 0xEF]
-    for group, value in ((0, args.health), (4, args.armor)):
-        digits = f"{min(value, 999):03d}"
-        for i, char in enumerate(digits):
-            tile = 0x80 + int(char) * 2
-            assert oam[(group + 1 + i) * 4 + 1] == tile
-            assert oam[(group + 9 + i) * 4 + 1] == tile + 1
-    face_group = (args.face - 33 if args.face >= 40 else
-                  10 if args.face % 8 == 6 else
-                  9 if args.face % 8 in (3, 4, 5) else
+    # This fixed-frame fixture has no host-side follow-up VRAM commands.
+    # The device queues the four black face-backing tiles over two conversions.
+    assert (run / "text_row.bin").read_bytes()[2:30] == b" " * 28
+    assert [oam[n * 4] for n in range(16)] == [199] * 4 + [207] * 4 + [215] * 4 + [223] * 4
+    assert [oam[n * 4] for n in range(16, 22)] == [203] * 3 + [215] * 3
+    assert [oam[n * 4] for n in range(22, 25)] == [199, 0xEF, 0xEF]
+    face_group = (args.face - 34 if args.face >= 40 else
+                  9 if args.face % 8 == 6 else
+                  8 if args.face % 8 in (3, 4, 5) else
                   args.face if args.face < 3 else
+                  5 if args.face >= 32 else
                   args.face // 8 + 2 if args.face >= 8 else 0)
-    assert [oam[n * 4 + 1] for n in range(16, 25)] == [
-        0x98 + face_group * 9 + n for n in range(9)]
-    print("native status: tall values, face, keys/weapons, v4 count=15122")
+    tile_map, flips = resident_face_map()
+    assert [oam[n * 4 + 1] for n in range(16)] == list(
+        tile_map[face_group * 16:face_group * 16 + 16])
+    assert [oam[n * 4 + 2] for n in range(16)] == [
+        value | 1 for value in flips[face_group * 16:face_group * 16 + 16]]
+    print("native concrete status: percentages, 4x4 face, v4 count=15122")
     return 0
 
 

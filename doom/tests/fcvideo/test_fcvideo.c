@@ -84,8 +84,8 @@ static void test_vertical_source_rows(void) {
 
 static void test_native_status_gray_palette(void) {
     fcvideo_frame_begin(&video);
-    fcvideo_blank_status(&video);
     fcvideo_set_native_status(&video, true);
+    fcvideo_blank_status(&video);
     fcvideo_convert_staged(&video, stream, attr, true);
     for (int by = 12; by < 15; ++by) {
         for (int bx = 0; bx < 16; ++bx) {
@@ -97,6 +97,38 @@ static void test_native_status_gray_palette(void) {
     size_t first = (VRAM_HEAD_WORDS + FCVIDEO_STATUS_START * VRAM_TILE_COLS) * 2;
     CHECK_EQ(stream[first], 0);
     CHECK_EQ(stream[first + 1], 0);
+    fcvideo_set_native_status(&video, false);
+}
+
+static void test_native_status_uses_live_values_and_max_ammo(void) {
+    fcui_status_t status = {.flags = FCUI_FLAG_STATUS_VISIBLE,
+                            .health = 100, .armor = 75, .ready_weapon = 1,
+                            .ammo = {60, 20, 100, 4},
+                            .maxammo = {200, 50, 300, 50}};
+    fcvideo_set_native_status(&video, true);
+    fcvideo_set_status_snapshot(&video, &status);
+    fcvideo_blank_status(&video);
+    uint8_t health_before[16 * 48];
+    uint8_t max_before[7 * 40];
+    for (int y = 0; y < 16; ++y)
+        memcpy(health_before + y * 48,
+               video.frame + (198 + y) * FCVIDEO_WIDTH + 32, 48);
+    for (int y = 0; y < 7; ++y)
+        memcpy(max_before + y * 40,
+               video.frame + (196 + y) * FCVIDEO_WIDTH + 216, 40);
+    status.health = 200;
+    status.maxammo[0] = 400;
+    fcvideo_set_status_snapshot(&video, &status);
+    fcvideo_blank_status(&video);
+    bool health_changed = false, max_changed = false;
+    for (int y = 0; y < 16; ++y)
+        health_changed |= memcmp(health_before + y * 48,
+                                 video.frame + (198 + y) * FCVIDEO_WIDTH + 32, 48) != 0;
+    for (int y = 0; y < 7; ++y)
+        max_changed |= memcmp(max_before + y * 40,
+                              video.frame + (196 + y) * FCVIDEO_WIDTH + 216, 40) != 0;
+    CHECK(health_changed);
+    CHECK(max_changed);
     fcvideo_set_native_status(&video, false);
 }
 
@@ -128,6 +160,7 @@ int main(void) {
     test_solid_frame_and_linear_stride();
     test_vertical_source_rows();
     test_native_status_gray_palette();
+    test_native_status_uses_live_values_and_max_ammo();
     test_native_text_compaction();
     return ctest_lite_result();
 }

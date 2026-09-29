@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # SPDX-License-Identifier: BSD-3-Clause
-"""Build a v4 ROM with tall sprite values and a 3x3 authentic Doomguy face."""
+"""Build a v4 ROM with a 4x4 Doomguy face and compact status sprites."""
 
 from __future__ import annotations
 
@@ -11,10 +11,12 @@ import subprocess
 from build_bg_text_probe import MESSAGE, text_source
 from build_sprite_probe import ROOT, SOURCE, table
 from native_status_art import (bg_status_tiles, episode_pair_art,
-                               face_resident_index, menu_logo_art,
-                               resident_art, small_menu_logo_art)
+                               face_resident_index, key_icon_art,
+                               menu_logo_art, resident_art,
+                               resident_face_map, resident_face_overflow,
+                               small_menu_logo_art)
 
-STAMP = "20DOOM-04-9012"
+STAMP = "20DOOM-04-9013"
 STATUS_OAM_COUNT = 35
 MENU_GLYPHS = 28
 OAM_COUNT = 64
@@ -72,18 +74,14 @@ def small_logo_oam() -> bytes:
 
 def oam_template() -> bytes:
     data = bytearray()
-    # Eight tall glyphs on each of two scanline bands.
-    for half in (0, 1):
-        for char, x in zip("H000R000", (16, 24, 32, 40, 176, 184, 192, 200)):
-            glyph = "0123456789HR".index(char)
-            data.extend((0xEF, 0x80 + glyph * 2 + half, 0, x))
-    for row in range(3):
-        for col in range(3):
-            data.extend((0xEF, 0x98 + row * 3 + col, 1, 116 + col * 8))
-    for char, x in zip("1234567", (16, 32, 48, 64, 176, 192, 208)):
-        data.extend((0xEF, ord(char), 0, x))
-    for char, x in zip("123", (16, 32, 48)):
-        data.extend((0xEF, ord(char), 0, x))
+    for row in range(4):
+        for col in range(4):
+            data.extend((0xEF, 0x80, 1, 112 + col * 8))
+    for index in range(6):
+        data.extend((0xEF, ord("2") + index, 3, 80 + index % 3 * 8))
+    for _ in range(3):
+        data.extend((0xEF, 0x2E, 3, 184))
+    data.extend((0xEF, 0, 0, 0) * (STATUS_OAM_COUNT - len(data) // 4))
     data.extend((0xEF, 0x20, 0, 0) * MENU_GLYPHS)
     data.extend((0xEF, ord(">"), 0, 76))
     data.extend((0xEF, 0, 0, 0) * (OAM_COUNT - STATUS_OAM_COUNT - MENU_GLYPHS - 1))
@@ -93,7 +91,7 @@ def oam_template() -> bytes:
 
 def status_routine() -> str:
     lines = [
-        "; Checked snapshot to 8x16 health/armor and a 3x3 face.",
+        "; Publish a complete, checked UI snapshot to OAM shadow.",
         "UI_APPLY:",
         "        lda <MBX_ZP_LO+MBX_FLAGS", "        and #MBX_FLAG_UI_VALID",
         "        bne .packet", "        rts", ".packet:",
@@ -102,61 +100,57 @@ def status_routine() -> str:
         "        eor $0300,x", "        inx", "        cpx #16", "        bne .checksum",
         "        cmp #0", "        beq .checked", "        rts", ".checked:",
         "        lda #0", "        sta $0310", "        lda $0300", "        sta $0311",
-        "        lda $0301", "        and #$01", "        cmp #1", "        bne .hide",
-        "        jmp .show", ".hide:",
-        "        lda #$EF",
+        "        lda $0301", "        and #$01", "        beq .hide",
+        "        jmp .show", ".hide:", "        lda #$EF",
     ]
     lines += [f"        sta $02{n * 4:02X}" for n in range(OAM_COUNT)]
-    lines += ["        jsr MENU_APPLY", "        lda #1", "        sta $0310", "        rts", ".show:",
-              "        lda #197"]
-    lines += [f"        sta $02{n * 4:02X}" for n in range(8)
-              if n not in (0, 4)]
-    lines += ["        lda #205"]
-    lines += [f"        sta $02{n * 4:02X}" for n in range(8, 16)
-              if n not in (8, 12)]
-    lines += ["        lda #$EF"]
-    lines += [f"        sta $02{n * 4:02X}" for n in (0, 4, 8, 12)]
-    for row in range(3):
-        lines.append(f"        lda #{213 + row * 8}")
+    lines += ["        jsr MENU_APPLY", "        lda #1", "        sta $0310",
+              "        rts", ".show:"]
+    for row in range(4):
+        lines.append(f"        lda #{199 + row * 8}")
         lines += [f"        sta $02{n * 4:02X}"
-                  for n in range(16 + row * 3, 19 + row * 3)]
+                  for n in range(row * 4, row * 4 + 4)]
     lines += [
-        "        lda $0306", "        sta $12", "        lda $0307", "        sta $13",
-        "        ldx #0", "        jsr UI_NUM3", "        lda $0308", "        sta $12",
-        "        lda $0309", "        sta $13", "        ldx #16", "        jsr UI_NUM3",
         "        ldx $0302", "        cpx #42", "        bcc .face_valid",
         "        ldx #0", ".face_valid:",
-        "        lda face_tile_base_data,x", "        sta $14",
+        "        lda face_group_data,x", "        asl a", "        asl a",
+        "        asl a", "        asl a", "        tax",
     ]
-    for index in range(9):
-        lines += ["        lda $14", "        clc", f"        adc #{index}",
-                  f"        sta $02{(16 + index) * 4 + 1:02X}"]
-    for i in range(7):
-        offset = (25 + i) * 4
-        mask = 1 << i  # weapon 1..7 in snapshot bits 0..6
-        y = 215 if i < 5 else 223
+    for index in range(16):
+        lines += [f"        lda face_tile_data+{index},x",
+                  f"        sta $02{index * 4 + 1:02X}",
+                  f"        lda face_flip_data+{index},x", "        ora #1",
+                  f"        sta $02{index * 4 + 2:02X}"]
+    for i in range(6):
+        offset = (16 + i) * 4
+        mask = 1 << i  # ARMS 2..7 map to owned weapon bits 0..5.
+        y = 203 if i < 3 else 215
         lines += ["        lda $0304", f"        and #${mask:02X}",
                   f"        beq .weapon_hide_{i}", f"        lda #{y}",
                   f"        sta $02{offset:02X}",
                   "        lda $0305", "        and #$0F", f"        cmp #{i + 1}",
-                  f"        bne .weapon_normal_{i}", "        lda #2",
-                  f"        sta $02{offset + 2:02X}", f"        jmp .weapon_done_{i}",
-                  f".weapon_normal_{i}:", "        lda #0",
+                  f"        bne .weapon_done_{i}", "        lda #0",
                   f"        sta $02{offset + 2:02X}", f"        jmp .weapon_done_{i}",
                   f".weapon_hide_{i}:", "        lda #$EF",
                   f"        sta $02{offset:02X}", f".weapon_done_{i}:"]
     for i in range(3):
-        offset = (32 + i) * 4
+        offset = (22 + i) * 4
         mask = (1 << i) | (1 << (i + 3))
         lines += ["        lda $0303", f"        and #${mask:02X}",
-                  f"        beq .key_hide_{i}", "        lda #223",
-                  f"        sta $02{offset:02X}", f"        jmp .key_done_{i}",
-                  f".key_hide_{i}:", "        lda #$EF",
-                  f"        sta $02{offset:02X}", f".key_done_{i}:"]
+                  f"        beq .key_hide_{i}",
+                  f"        lda #{199 + i * 11}",
+                  f"        sta $02{offset:02X}",
+                  "        lda $0303", f"        and #${1 << (i + 3):02X}",
+                  f"        beq .key_card_{i}",
+                  "        lda #$2F", f"        sta $02{offset + 1:02X}",
+                  f"        jmp .key_done_{i}", f".key_card_{i}:",
+                  "        lda #$2E", f"        sta $02{offset + 1:02X}",
+                  f"        jmp .key_done_{i}", f".key_hide_{i}:",
+                  "        lda #$EF", f"        sta $02{offset:02X}",
+                  f".key_done_{i}:"]
     lines += [
-        "        jsr MENU_APPLY",
-        "        lda #1", "        sta $0310", "        rts", "",
-        "; Copy up to 26 menu glyphs from resident ROM, then place cursor.",
+        "        jsr MENU_APPLY", "        lda #1", "        sta $0310",
+        "        rts", "",
         "MENU_APPLY:",
         "        lda #$EF", "        ldx #0", ".hide_menu:",
         "        sta $028C,x", "        inx", "        inx", "        inx", "        inx",
@@ -189,30 +183,14 @@ def status_routine() -> str:
         ".copy_logo:", "        lda logo_oam_data,x", "        sta $0200,x",
         "        inx", "        cpx #128", "        bne .copy_logo",
         "        jmp .no_logo",
-        ".small_logo:", "        lda #$EF",
-        *[f"        sta $02{n * 4:02X}" for n in range(16, 35)],
+        ".small_logo:", "        lda #$EF", "        ldx #0",
+        ".small_hide:", "        sta $0200,x", "        inx", "        inx",
+        "        inx", "        inx", "        cpx #140", "        bne .small_hide",
         "        ldx #0", ".small_copy:",
         "        lda small_logo_oam_data,x",
-        "        ldy small_logo_slot_offsets,x", "        sta $0200,y",
+        "        sta $0200,x",
         "        inx", "        cpx #84", "        bne .small_copy",
         ".no_logo:", "        rts", "",
-        "; X selects the health (0) or armor (16) OAM byte offset.",
-        "UI_NUM3:", "        ldy #0", ".hundreds:",
-        "        lda $13", "        bne .subtract100", "        lda $12",
-        "        cmp #100", "        bcc .tens", ".subtract100:",
-        "        sec", "        lda $12", "        sbc #100", "        sta $12",
-        "        lda $13", "        sbc #0", "        sta $13", "        iny",
-        "        cpy #10", "        bne .hundreds", ".tens:",
-        "        tya", "        asl a", "        clc", "        adc #$80",
-        "        sta $0205,x", "        clc", "        adc #1", "        sta $0225,x",
-        "        ldy #0", ".tenloop:", "        lda $12", "        cmp #10",
-        "        bcc .ones", "        sec", "        sbc #10", "        sta $12",
-        "        iny", "        bne .tenloop", ".ones:",
-        "        tya", "        asl a", "        clc", "        adc #$80",
-        "        sta $0209,x", "        clc", "        adc #1", "        sta $0229,x",
-        "        lda $12", "        asl a", "        clc", "        adc #$80",
-        "        sta $020D,x", "        clc", "        adc #1", "        sta $022D,x",
-        "        rts", "",
     ]
     return "\n".join(lines) + "\n"
 
@@ -223,8 +201,10 @@ def native_status_source() -> str:
     if source.count(old_message) != 1 or source.count("20DOOM-04-9001") != 1:
         raise ValueError("v4 text source changed")
     source = source.replace("20DOOM-04-9001", STAMP)
+    backing_row = bytearray(b" " * len(MESSAGE))
     source = source.replace(old_message,
-                            "native_text_data:\n        db " + ",".join("$20" for _ in MESSAGE))
+                            "native_text_data:\n        db " + ",".join(
+                                f"${value:02X}" for value in backing_row))
     start = source.index("; A minimal dynamic HUD slice:")
     end = source.index("native_text_data:\n", start)
     source = source[:start] + status_routine() + source[end:]
@@ -232,7 +212,7 @@ def native_status_source() -> str:
     if source.count(setup_anchor) != 1:
         raise ValueError("no unique HUD setup point")
     setup = [
-        "        ; Resident tall digits and eleven 3x3 face states.",
+        "        ; Deduplicated and flipped 4x4 face states.",
         "        lda #$18", "        sta $2006", "        lda #0", "        sta $2006",
     ]
     art = resident_art()
@@ -245,6 +225,18 @@ def native_status_source() -> str:
             setup += [f"        bne .chr_page_{page}"]
         else:
             setup += [f"        cpx #{size}", f"        bne .chr_page_{page}"]
+    overflow = resident_face_overflow()
+    for label, data, address in (
+        ("face_overflow", overflow, 0x1280),
+        ("key", key_icon_art(), 0x12E0),
+    ):
+        if not data:
+            continue
+        setup += [f"        lda #${address >> 8:02X}", "        sta $2006",
+                  f"        lda #${address & 0xFF:02X}", "        sta $2006",
+                  "        ldx #0", f".{label}_art:",
+                  f"        lda native_{label}_chr_data,x", "        sta $2007",
+                  "        inx", f"        cpx #{len(data)}", f"        bne .{label}_art"]
     for label, data, address in (
         ("episode", episode_pair_art()[0], 0x1000),
         ("small_logo", small_menu_logo_art(), 0x1130),
@@ -325,8 +317,8 @@ def native_status_source() -> str:
     anchor = "native_text_data:\n"
     if source.count(anchor) != 1:
         raise ValueError("no unique data point")
-    face_bases = bytes(0x98 + 9 * face_resident_index(index)
-                       for index in range(42))
+    face_groups = bytes(face_resident_index(index) for index in range(42))
+    face_tiles, face_flips = resident_face_map()
     menu_data = "".join(table(f"menu_oam_{index}",
                               main_menu_oam() if index == 0 else
                               episode_menu_oam() if index == 1 else menu_oam(layout))
@@ -341,17 +333,20 @@ def native_status_source() -> str:
     menu_data += table("menu_cursor_step", bytes(layout[2] for layout in MENU_LAYOUTS))
     menu_data += table("menu_cursor_x", bytes((76, 76, 76, 60, 60)))
     source = source.replace(anchor,
-        table("native_chr_data", art) + table("native_oam_data", oam_template()) +
+        "        .bank 1\n        org $A000\n" +
+        table("native_chr_data", art) +
+        table("native_face_overflow_chr_data", overflow) +
+        table("native_key_chr_data", key_icon_art()) +
+        table("native_oam_data", oam_template()) +
         table("native_episode_chr_data", episode_pair_art()[0]) +
         table("native_small_logo_chr_data", small_menu_logo_art()) +
         table("native_logo_chr_data", menu_logo_art()) +
         table("logo_oam_data", logo_oam()) +
         table("small_logo_oam_data", small_logo_oam()) +
-        table("small_logo_slot_offsets", bytes(slot * 4 + offset
-                                               for slot in (0, 4, *range(16, 35))
-                                               for offset in range(4))) +
         table("native_bg_text_data", b"".join(tile for _, tile in bg_tiles)) +
-        table("face_tile_base_data", face_bases) + menu_data + "\n" + anchor)
+        table("face_group_data", face_groups) +
+        table("face_tile_data", face_tiles) +
+        table("face_flip_data", face_flips) + menu_data + "\n" + anchor)
     return source
 
 

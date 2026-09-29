@@ -17,6 +17,8 @@ LOGO_PALETTE = ((0, 0, 0, 0), (20, 24, 80, 255),
                 (80, 96, 216, 255), (232, 184, 64, 255))
 FACE_PALETTE = ((0, 0, 0, 0), (135, 87, 51, 255),
                 (207, 131, 83, 255), (131, 31, 31, 255))
+LARGE_FACE_PALETTE = ((0, 0, 0, 0), (131, 31, 31, 255),
+                      (135, 87, 51, 255), (207, 131, 83, 255))
 TEXT_PALETTE = ((0, 0, 0, 0), (184, 40, 32, 255),
                 (48, 16, 16, 255), (240, 176, 120, 255))
 SHEETS = {
@@ -24,6 +26,7 @@ SHEETS = {
     "pause_logo": ("doom_menu_logo_small", 7, 3, 1, 1, 21, LOGO_PALETTE),
     "faces": ("doomguy_faces", 7, 6, 3, 3, 378, FACE_PALETTE),
     "paired_text": ("doom_episode_pairs", 8, 3, 1, 1, 19, TEXT_PALETTE),
+    "large_faces": ("doomguy_faces_large", 4, 3, 4, 4, 160, LARGE_FACE_PALETTE),
 }
 
 
@@ -76,6 +79,9 @@ def rgba_to_indices(image: Image.Image, palette: tuple[tuple[int, ...], ...]) ->
 
 
 def process(sheet: str, operation: str) -> None:
+    if sheet == "large_faces":
+        process_large_faces(operation)
+        return
     name, columns, rows, group_width, group_height, tile_count, palette = SHEETS[sheet]
     chr_path = ASSETS / f"{name}.chr"
     png_path = ASSETS / f"{name}_edit.png"
@@ -95,6 +101,62 @@ def process(sheet: str, operation: str) -> None:
         chr_path.write_bytes(encode_sheet(pixels, columns, rows,
                                           group_width, group_height, tile_count))
         print(f"updated CHR: {chr_path}")
+
+
+def process_large_faces(operation: str) -> None:
+    from build_large_face_art import pack
+
+    stem = ASSETS / "doomguy_faces_large"
+    png_path = stem.with_name(stem.name + "_edit.png")
+    chr_path = stem.with_suffix(".chr")
+    tiles_path = stem.with_name(stem.name + "_tiles.bin")
+    flips_path = stem.with_name(stem.name + "_flips.bin")
+    if operation == "import":
+        image = Image.open(png_path)
+        if image.size != (128, 96):
+            raise ValueError(f"{png_path}: expected 128x96 pixels")
+        pixels = rgba_to_indices(image, LARGE_FACE_PALETTE)
+        faces = np.stack([pixels[(i // 4) * 32:(i // 4 + 1) * 32,
+                                 (i % 4) * 32:(i % 4 + 1) * 32]
+                          for i in range(10)])
+        art, numbers, flips = pack(faces)
+        if len(art) > 128 * 16:
+            raise ValueError(f"large face edit requires {len(art) // 16} tiles; "
+                             "128 resident tiles are available")
+        chr_path.write_bytes(art)
+        tiles_path.write_bytes(numbers)
+        flips_path.write_bytes(flips)
+        print(f"updated large face atlas: {len(art) // 16} tiles")
+        return
+    art = chr_path.read_bytes()
+    numbers = tiles_path.read_bytes()
+    flips = flips_path.read_bytes()
+    pixels = np.zeros((96, 128), dtype=np.uint8)
+    for i in range(10):
+        for tile_y in range(4):
+            for tile_x in range(4):
+                at = i * 16 + tile_y * 4 + tile_x
+                tile_id = numbers[at]
+                if tile_id < 128:
+                    raise ValueError("large face atlas map uses an unexpected spare tile")
+                offset = (tile_id - 128) * 16
+                tile = art[offset:offset + 16]
+                block = np.zeros((8, 8), dtype=np.uint8)
+                for y in range(8):
+                    for x in range(8):
+                        bit = 7 - x
+                        block[y, x] = ((tile[y] >> bit) & 1) | \
+                                      (((tile[y + 8] >> bit) & 1) << 1)
+                if flips[at] & 0x80:
+                    block = block[::-1]
+                if flips[at] & 0x40:
+                    block = block[:, ::-1]
+                y = i // 4 * 32 + tile_y * 8
+                x = i % 4 * 32 + tile_x * 8
+                pixels[y:y + 8, x:x + 8] = block
+    Image.fromarray(np.asarray(LARGE_FACE_PALETTE, dtype=np.uint8)[pixels],
+                    "RGBA").save(png_path)
+    print(f"editable sheet: {png_path} (128x96)")
 
 
 def main() -> int:

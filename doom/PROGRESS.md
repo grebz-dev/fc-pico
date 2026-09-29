@@ -3,6 +3,7 @@
 One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest first. Format:
 
 ```
+
 ## <task id> -- <title>
 - Commits: <range or list>
 - Verified: <command> -> <result summary>
@@ -10,6 +11,25 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Left out: <what and why>
 - Plan changes: <documents touched>
 ```
+
+## P3-U4 concrete HUD candidate 9013 (2026-09-29)
+- Built a flashable WHX UF2 with the unchanged permanent fix bank. The
+  renderer now paints concrete and native-resolution status text from the
+  semantic snapshot: current ammo, health/armor percentages and all four
+  current/max ammunition rows. Host-only max ammo follows backpack capacity.
+  ARMS 2–7 and key icons remain sprites. A 28×32 source-derived face sits in a
+  32×32 square; ten resident expressions deduplicate to 119 flipped tiles.
+- Verified: Python `doom/tests` 389 passed; host C `test_fcvideo` and `test_fcui`
+  passed; Mesen status, title, pause, stale menu and special-face probes passed
+  with 30 stable heartbeats, `count=15122`, no DMA stops and NMI exit at
+  scanline 256. The status OAM peaks at eight sprites per scanline. Firmware
+  flash layout uses 290,984 of 524,288 bytes before WHX; the ROM fix bank
+  matches exactly. The Mesen fixed-frame status preview omits the two dynamic
+  host commands that darken four face-backing tiles in the skipped row.
+- Visual preview: `/tmp/fcpico-native-ui-status/mesen/run/final.png`; physical
+  validation pending [HR-15](HARDWARE-REQUESTS.md#hr-15-concrete-native-hud-and-enlarged-face-task-p3-u4).
+- Next: [background-first plan](plan/12-sprite-ui.md#background-first-follow-up-and-8x16-evaluation-2026-09-29)
+  for static menu art and possible 8×16 sprites.
 
 ## P3-U4 visual follow-up -- Mesen iteration after HR-14 (2026-09-28)
 - [HR-14](HARDWARE-REQUESTS.md#hr-14-aligned-status-and-paused-menu-doom-logo-task-p3-u4-visual-follow-up)

@@ -8,6 +8,7 @@
 
 #include "fcbus_protocol.h"
 #include "fcvideo_presets.h"
+#include "fcui.h"
 
 #define FCVIDEO_SRC_WIDTH 320
 #define FCVIDEO_SRC_HEIGHT 200
@@ -35,6 +36,7 @@ typedef struct {
     uint8_t previous_attr[MBX_ATTR_LEN];
     bool have_previous;
     bool native_status;
+    fcui_status_t status;
 } fcvideo_t;
 
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables);
@@ -53,13 +55,14 @@ void fcvideo_build_palette_sets(const fcvideo_preset_t *preset,
                                 uint8_t sets[FCVIDEO_PALETTE_SET_COUNT][MBX_PAL_LEN]);
 void fcvideo_set_palette(fcvideo_t *video, const uint8_t palette[MBX_PAL_LEN]);
 void fcvideo_set_native_status(fcvideo_t *video, bool enabled);
+void fcvideo_set_status_snapshot(fcvideo_t *video, const fcui_status_t *status);
 /* Scanline staging avoids a second 320x200 frame buffer on the RP2350.
  * Call begin, then push each source line once, then convert_staged. */
 void fcvideo_frame_begin(fcvideo_t *video);
 void fcvideo_push_line(fcvideo_t *video, int y,
                        const uint8_t line[FCVIDEO_SRC_WIDTH]);
-/* Replace the converted legacy status area with a plain backing for native
- * sprites when the v4 status screen is active. Call after all push_line calls. */
+/* Replace the converted legacy status area with a concrete backing and native
+ * pixel text when the v4 status screen is active. Call after push_line. */
 void fcvideo_blank_status(fcvideo_t *video);
 void fcvideo_convert_staged(fcvideo_t *video,
                             uint8_t stream[VRAM_BUF_BYTES_V2],

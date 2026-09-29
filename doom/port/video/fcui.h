@@ -21,6 +21,8 @@ typedef struct {
     uint16_t health;
     uint16_t armor;
     uint16_t ammo[4];
+    /* Host renderer only; the 16-byte v4 packet retains current values. */
+    uint16_t maxammo[4];
 } fcui_status_t;
 
 #define FCUI_FLAG_STATUS_VISIBLE 0x01
@@ -29,8 +31,8 @@ typedef struct {
 
 void fcui_pack_status(uint8_t out[MBX_UI_LEN], const fcui_status_t *status);
 bool fcui_unpack_status(fcui_status_t *status, const uint8_t data[MBX_UI_LEN]);
-/* Fixed v4 background row: B/S on the left, R/C on the right. Eight blank
- * columns leave room for the 3x3 face. Returns spaces outside gameplay. */
+/* Fixed v4 background row: four black backing tiles under the face while the
+ * status is visible. Returns spaces outside gameplay. */
 void fcui_format_ammo_row(uint8_t out[NATIVE_TEXT_TILES],
                           const fcui_status_t *status);
 
