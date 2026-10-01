@@ -24,10 +24,10 @@ def text_source() -> str:
     for token in (old_hello, old_stamp, anchor, table_anchor):
         if source.count(token) != 1:
             raise ValueError(f"no unique text probe insertion point: {token!r}")
-    setup = '''        ; Row 28, columns 2..29 use the locally stored BG font.
+    setup = '''        ; Row 29, columns 2..29 use the locally stored BG font.
         lda #$23
         sta $2006
-        lda #$82
+        lda #$A2
         sta $2006
         ldx #0
 .native_text:

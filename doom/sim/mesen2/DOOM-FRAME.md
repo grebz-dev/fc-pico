@@ -111,7 +111,7 @@ DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python \
   doom/sim/mesen2/run_bg_text_probe.py --output /tmp/fcpico-bg-text-u0
 ```
 
-The v4 probe ROM (`20DOOM-04-9001`) holds 28 font tiles in nametable row 28,
+The v4 probe ROM (`20DOOM-04-9001`) holds 28 font tiles in nametable row 29,
 columns 2 through 29. It renders `NATIVE BACKGROUND TEXT WORKS` beneath the
 health sprite slice. Removing those 448 selected pattern reads from the
 picture stream moves the mailbox to byte 14978 and makes the frame count
@@ -132,17 +132,18 @@ DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python \
   doom/sim/mesen2/run_native_status_probe.py --output /tmp/fcpico-native-status-u0
 ```
 
-This v4 ROM (`20DOOM-04-9006`) draws 8×16 health/armor glyphs, a 3×3 face
-derived from Doom's own status patches, owned-weapon numbers and key slots.
-The 28 native BG tiles beneath it carry four ammo counts. The status occupies
-35 OAM entries and at most eight sprite slots on any scanline. The runner
-checks the exact resident CHR, OAM tiles and positions, status packet, empty
-initial text row, 30 stable count-15122 heartbeats and NMI completion. Use
-`--health 0 --armor 999 --face 41` to check the dead-face layout.
+This v4 ROM (`20DOOM-04-9014`) draws a 4×4 Doomguy face, one selected ARMS
+yellow plate, and up to three matching colored keycards. The host converts
+the edited concrete panel and red value font to native background pixels;
+the fixed 28-tile row is now scanlines 232–239, leaving the fourth inventory
+row and the labels visible in the stream. The runner checks CHR, OAM, palette,
+CELL label, selected plate, status packet, initial fixed row, 30 stable
+count-15122 heartbeats and NMI completion. Use `--health 0 --armor 999
+--face 41` to check the dead-face layout.
 
 `doom/tools/build_bg_text_probe_device.sh --native-status` builds the merged
 NES-001 candidate. Its embedded ROM must match the Mesen ROM byte for byte.
-The [face sheet](../../assets/doomguy_faces.md) documents the 42 source
-expressions and the seven currently resident representatives. A py65 test
+The [face sheet](../../assets/doomguy_faces.md) documents the source
+expressions and the resident representatives. A py65 test
 checks that two native text tile writes defer OAM DMA and keep both NMI paths
 inside the vblank timing limits.

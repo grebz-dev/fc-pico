@@ -141,7 +141,7 @@
 /* @section v4            Fixed native BG text row, compacted picture stream */
 /* ------------------------------------------------------------------------ */
 #define FCBUS_PROTOCOL_V4    4
-#define NATIVE_TEXT_ROW      28    // BG tile row 28, NES scanlines 224..231
+#define NATIVE_TEXT_ROW      29    // BG tile row 29, NES scanlines 232..239
 #define NATIVE_TEXT_COL      2     // first native tile, x=16
 #define NATIVE_TEXT_TILES    28    // columns 2..29, x=16..239
 #define NATIVE_TEXT_BYTES    (NATIVE_TEXT_TILES * 8 * 2) // skipped CS1 reads

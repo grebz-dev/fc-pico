@@ -24,14 +24,15 @@ from native_status_art import (bg_status_tiles, episode_pair_art,
 
 def packet(health: int, armor: int, face: int, keys: int, weapons: int,
            visible: bool = True, menu: bool = False, selection: int = 0,
-           menu_id: int = 1, stale_menu_id: bool = False) -> bytes:
+           menu_id: int = 1, stale_menu_id: bool = False,
+           ready_weapon: int = 2) -> bytes:
     ui = bytearray(16)
     ui[0] = 1
     ui[1] = int(visible) | (4 if menu else 0) | (selection << 4)
     ui[2] = face
     ui[3] = keys
     ui[4] = weapons
-    ui[5] = 2 | (menu_id << 4 if menu or stale_menu_id else 0)
+    ui[5] = ready_weapon | (menu_id << 4 if menu or stale_menu_id else 0)
     ui[6:8] = health.to_bytes(2, "little")
     ui[8:10] = armor.to_bytes(2, "little")
     check = 0xA5
@@ -47,6 +48,12 @@ def main() -> int:
     parser.add_argument("--health", type=int, default=100)
     parser.add_argument("--armor", type=int, default=75)
     parser.add_argument("--face", type=int, default=0)
+    parser.add_argument("--keys", type=lambda value: int(value, 0), default=0x09)
+    parser.add_argument("--ready-weapon", type=int, default=2)
+    parser.add_argument("--shells", type=int, default=20)
+    parser.add_argument("--bullets", type=int, default=60)
+    parser.add_argument("--cells", type=int, default=100)
+    parser.add_argument("--rockets", type=int, default=4)
     parser.add_argument("--menu", action="store_true")
     parser.add_argument("--menu-id", type=int, default=1)
     parser.add_argument("--no-status", action="store_true")
@@ -75,7 +82,8 @@ def main() -> int:
                         "-o", str(panel_tool)], check=True)
         panel_file = output / "panel_pixels.bin"
         subprocess.run([str(panel_tool), str(panel_file), str(args.health),
-                        str(args.armor), "20"], check=True)
+                        str(args.armor), str(args.shells), str(args.ready_weapon),
+                        str(args.bullets), str(args.cells), str(args.rockets)], check=True)
         panel = np.frombuffer(panel_file.read_bytes(), dtype=np.uint8).reshape(240, 256)
         pixels[192:] = panel[192:]
     mailbox = bytearray(protocol.FC_COM_BUF_SIZE_V4)
@@ -98,10 +106,11 @@ def main() -> int:
             for bx in range(16):
                 stream.attr_set(attributes, bx, by, 3)
     mailbox[protocol.MBX_ATTR:protocol.MBX_ATTR + 64] = attributes
-    ui = packet(args.health, args.armor, args.face, 0x09, 0x7F,
+    ui = packet(args.health, args.armor, args.face, args.keys, 0x7F,
                 visible=not args.no_status, menu=args.menu,
                 selection=2 if args.menu else 0, menu_id=args.menu_id,
-                stale_menu_id=args.stale_menu_id)
+                stale_menu_id=args.stale_menu_id,
+                ready_weapon=args.ready_weapon)
     mailbox[protocol.MBX_UI:protocol.MBX_UI + 16] = ui
     frame = output / "frame.bin"
     frame.write_bytes(stream.encode_frame(pixels, mailbox, native_text=True))
@@ -124,7 +133,7 @@ def main() -> int:
     assert sprite_palette[1] == sprite_palette[3] == 0x16
     assert sprite_palette[2] == 0x0F
     assert sprite_palette[11] == 0x06
-    assert sprite_palette[13:16] == bytes((0x12, 0x21, 0x28))
+    assert sprite_palette[13:16] == bytes((0x12, 0x38, 0x16))
     sprite_chr = (run / "sprite_chr.bin").read_bytes()
     assert sprite_chr[:len(episode_pair_art()[0])] == episode_pair_art()[0]
     assert sprite_chr[0x130:0x130 + len(small_menu_logo_art())] == small_menu_logo_art()
@@ -136,6 +145,13 @@ def main() -> int:
             assert background_chr[char * 16:char * 16 + 16] == tile
         picture = Image.open(run / "final.png").convert("RGB")
         assert picture.getpixel((120, 210)) != picture.getpixel((100, 210))
+        rgb = np.asarray(picture)
+        cell = rgb[225:232, 195:220]
+        assert np.count_nonzero(np.all(cell > 180, axis=2)) >= 40, "CELL label missing"
+        plate = rgb[199:221, 76:108]
+        assert np.count_nonzero((plate[:, :, 0] > 180) &
+                                (plate[:, :, 1] > 180) &
+                                (plate[:, :, 2] < 180)) >= 15, "yellow ARMS plate missing"
     if args.menu:
         assert __import__("json").loads((run / "lua_result.json").read_text())["start_polls"] >= 1
         if not args.no_status:
@@ -180,8 +196,12 @@ def main() -> int:
     # The device queues the four black face-backing tiles over two conversions.
     assert (run / "text_row.bin").read_bytes()[2:30] == b" " * 28
     assert [oam[n * 4] for n in range(16)] == [199] * 4 + [207] * 4 + [215] * 4 + [223] * 4
-    assert [oam[n * 4] for n in range(16, 22)] == [203] * 3 + [215] * 3
-    assert [oam[n * 4] for n in range(22, 25)] == [199, 0xEF, 0xEF]
+    assert [oam[n * 4] for n in range(16, 22)] == [
+        (200 if i < 3 else 212) if args.ready_weapon == i + 1 else 0xEF
+        for i in range(6)]
+    assert [oam[n * 4] for n in range(22, 25)] == [
+        200 + i * 12 if args.keys & ((1 << i) | (1 << (i + 3))) else 0xEF
+        for i in range(3)]
     face_group = (args.face - 34 if args.face >= 40 else
                   9 if args.face % 8 == 6 else
                   8 if args.face % 8 in (3, 4, 5) else

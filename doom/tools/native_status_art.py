@@ -114,16 +114,30 @@ def resident_face_map() -> tuple[bytes, bytes]:
 
 
 def key_icon_art() -> bytes:
-    # A recessed card and a notched skull key; palette picks the key color.
-    card = ("........", ".######.", ".#....#.", ".#.##.#.",
-            ".#.##.#.", ".#....#.", ".######.", "........")
-    skull = ("..####..", ".######.", ".##..##.", ".######.",
-             "..####..", "..#..#..", "..####..", "........")
+    # Identical wide card silhouette for all three colors and key types.
+    card = ("........", ".######.", "##.#.#..", "#######.",
+            "#######.", "..#####.", "........", "........")
     result = bytearray()
-    for icon in (card, skull):
-        rows = bytes(sum((1 << (7 - x)) for x, pixel in enumerate(row)
-                         if pixel == "#") for row in icon)
-        result.extend(rows * 2)  # Index 3 uses both pattern planes.
+    rows = bytes(sum((1 << (7 - x)) for x, pixel in enumerate(row)
+                     if pixel == "#") for row in card)
+    for color in (1, 2, 3):
+        result.extend(rows if color & 1 else bytes(8))
+        result.extend(rows if color & 2 else bytes(8))
+    return bytes(result)
+
+
+def selected_plate_art() -> bytes:
+    """Yellow inset plate with a transparent numeral cutout (weapons 2–7)."""
+    result = bytearray()
+    for char in "234567":
+        pixels = [[2] * 8 for _ in range(8)]
+        for y, row in enumerate(GLYPHS[char]):
+            for x, bit in enumerate(row):
+                if bit == "#":
+                    pixels[y][x] = 0
+        for plane in (0, 1):
+            result.extend(sum(((pixel >> plane) & 1) << (7 - x)
+                              for x, pixel in enumerate(row)) for row in pixels)
     return bytes(result)
 
 
