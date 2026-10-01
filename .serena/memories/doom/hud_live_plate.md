@@ -1,0 +1,11 @@
+# Live yellow-plate HUD integration (2026-10-01)
+
+The user selected the yellow `plate` ARMS prototype and approved the refined red value font. The live host renderer now uses `doom/tools/build_live_hud_art.py` to generate `doom/port/video/native_status_panel.h` from `doom/assets/hud_edit_reference/full-frame-reference-edited.png`. Static concrete, labels, and well borders are packed into 3072 bytes (2 bpp, 256×48); large glyphs are 15 pixels high, derived from edited 0/1/2/5/7/% plus original DOOM STTNUM patches for missing digits. `fcvideo_blank_status` composites live ammo/health/armor/current-max counts and ARMS digits into that panel.
+
+The v4 skipped BG tile row moved from row28 (y224..231) to row29 (y232..239) while preserving PPU count15122 and mailbox offset14978. This allows user reference labels and CELL totals to stream. The fixed bottom row still receives black face-backing tiles via two native text commands. Constants: `doom/fcbus/fcbus_protocol.h`, `doom/tools/fcpico/protocol.py`; device command address `0x23A2+i` in the rp2040-doom submodule. `build_bg_text_probe.py` and Mesen Lua now use row29.
+
+The ROM `build_native_status_probe.py` stamp is `20DOOM-04-9014`. Selected ARMS uses one yellow plate sprite from `selected_plate_art()` at CHR $1320; all three keycards share one silhouette at CHR $12E0 with sprite palette indices1 blue,2 yellow ($38),3 red ($16). Only selected weapon uses an ARMS sprite; unselected numerals are background pixels. The large 4×4 face still uses resident sprites. Full-frame Mesen captures are `doom/assets/hud_live_plate/{healthy,hurt,pickup}.png`.
+
+Validated: 30 Python tests, host C `test_fcvideo` and `test_fcui`, v4 BG text probe, live native status probe (default, hurt, pickup, keys and weapon variants), paused menu probe. Mesen reports 30 stable heartbeats, count15122, no DMA stops, and visual correlation ~0.97. RP2350 merged UF2 builds at `/tmp/fcpico-live-hud-device/artifacts/fcpico_doom_native_status_whx.uf2` (SHA-256 `7ae6af6abdfc291a56564ca1f4a84eb3aa180177e60559fe2a60e0ab056a87dc`). Physical NES validation remains.
+
+The older `mem:doom/hud_layout_variants` describes prototypes; its statement that v4 skips y224..231 and that every prototype glyph is resident is superseded by this integration and the updated prototype README.
