@@ -24,14 +24,15 @@ assembly, CHR, three nametables, three OAM pages, palettes, and metrics. The
 | `plate` | Yellow inset with a black cutout numeral | `plate/frame-01.png` | `plate/frame-02.png` | `plate/frame-03.png` |
 | `border` | Yellow inset outline around a white numeral | `border/frame-01.png` | `border/frame-02.png` | `border/frame-03.png` |
 
-The three key graphics use exactly the same 8x8 pixel mask and differ only in
+The three keycards use the same rectangular 8x8 pixel mask and differ only in
 their blue, yellow, or red sprite palette entry. The editable source preview is
 `keys-same-shape.png`. The selected ARMS masks use one consistent five-pixel
-wide number font and a 9x10 well. `numeric-font.png` exposes all ten digits,
-percent and slash in the candidate palettes. The generated background CHR also
-reserves tile patterns for every one of these characters, including digits not
-visible in the three sampled states. All six selected-weapon sprite numeral
-masks (2–7) are present.
+wide number font and a 9x10 well. `numeric-font.png` contains the larger red
+status-value glyphs and the small inventory font. The edited reference provides
+the 0, 1, 2, 5, 7, and percent shapes; remaining large digits are derived from
+the original DOOM `STTNUM` patches. The healthy values preserve the user's
+exact red/black pixel shapes. The CELL label remains in the fourth inventory
+row. All six selected-weapon sprite numeral masks (2–7) are present.
 
 | Captured state | AMMO | HEALTH | ARMOR | Selected ARMS | Face | Keys | BULL | SHEL | RCKT | CELL |
 |---|---:|---:|---:|---:|---|---|---|---|---|---|
@@ -44,9 +45,13 @@ from the user's `doomguy_faces.png`, stretched per cell from 24x24 to 32x40
 with nearest-neighbor sampling. The face remains 20 8x8 sprites. Yellow ARMS
 selection is one sprite, and acquired keys are one sprite each. OAM use is
 24/22/23 across the three scenes, with a measured peak of **six sprites per
-visible scanline**. The generated BG atlas uses 232 tiles for `digit` and
-`plate`, or 227 for `border`; the sprite atlases use 66/66/61 tiles. All are
-within one 4 KiB background and one 4 KiB sprite pattern table.
+visible scanline**. The generated BG atlas uses all 256 available tiles for
+each candidate; the sprite atlases use 66/66/61 tiles. `metrics.json` lists
+each numeric glyph's resident pattern indices, or `null` where it cannot fit
+in this NROM capture bank. All glyph artwork remains available in
+`numeric-font.png`. A live implementation needs CHR RAM updates or a bank
+change to make all large glyphs available at once, and must compose glyphs
+across tile boundaries.
 
 `digit` keeps the most of the user's original gray/black boxed ARMS grid and
 has the least visual noise. `plate` is the strongest highlight. `border` keeps

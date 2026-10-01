@@ -11,6 +11,7 @@ from __future__ import annotations
 import json
 import os
 from pathlib import Path
+import re
 import shutil
 import subprocess
 import sys
@@ -22,6 +23,7 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "doom/tools"))
 
+from build_doomguy_faces import WHDATA, Whx  # noqa: E402
 from native_status_art import GLYPHS  # noqa: E402
 from hud_reference_variants import (ARMS, FACE, KEYS, MESEN, NESASM, PANEL,
                                     REF, RGB, SKIN, SpriteAtlas, encode_tile,
@@ -60,15 +62,51 @@ STATES = [
 ]
 
 KEY_SHAPE = np.asarray([
-    [0, 0, 1, 1, 1, 1, 0, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 1, 1, 1, 1, 1, 1, 0],
-    [0, 1, 1, 1, 1, 1, 1, 0],
-    [0, 0, 0, 1, 1, 0, 0, 0],
-    [0, 0, 1, 1, 1, 1, 0, 0],
-    [0, 0, 0, 1, 1, 0, 0, 0],
-    [0, 0, 0, 1, 1, 0, 0, 0],
+    [1, 1, 0, 1, 0, 1, 0, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [1, 1, 1, 1, 1, 1, 1, 0],
+    [0, 0, 1, 1, 1, 1, 1, 0],
+    [0, 0, 0, 0, 0, 0, 0, 0],
     [0, 0, 0, 0, 0, 0, 0, 0],
 ], dtype=np.uint8)
+
+
+def value_glyphs(target: np.ndarray) -> dict[str, np.ndarray]:
+    """Use the edited lettering where present and the original Doom patches for gaps."""
+    whx = Whx(ROOT / "doom/rp2040-doom/doom1.whx")
+    lookup = np.frombuffer(whx.named("P_START"), dtype="<u2")
+    labels = re.findall(r"VPATCH_NAME\(([^)]+)\)",
+                        WHDATA.read_text().split("#define VPATCH_LIST \\", 1)[1]
+                        .split("\n\nenum", 1)[0])
+    shared = whx.lump(int(lookup[labels.index("STCFN033") + 1]))
+    palette = np.frombuffer(shared[6:22], dtype=np.uint8)
+    playpal = np.frombuffer(whx.named("PLAYPAL")[:768], dtype=np.uint8).reshape(256, 3)
+    result = {}
+    for ch in "0123456789%":
+        name = "STTPRCNT" if ch == "%" else f"STTNUM{ch}"
+        patch = whx.lump(int(lookup[labels.index(name) + 1]))
+        width, height = patch[:2]
+        assert height == 16 and patch[3] >> 2 == 2 and patch[3] & 1
+        data = patch[7:]
+        indexed = np.ones((height, width), dtype=np.uint8)
+        for y in range(height):
+            for x in range(width):
+                packed = data[y * ((width + 1) // 2) + x // 2]
+                shade = (packed >> (4 * (x & 1))) & 15
+                if shade:
+                    r, g, b = map(int, playpal[palette[shade]])
+                    indexed[y, x] = 3 if r >= 120 and r > g * 1.3 and r > b * 1.3 else 0
+        resized = Image.fromarray(indexed).resize((11, 15), Image.Resampling.NEAREST)
+        result[ch] = np.asarray(resized)
+    # These edited glyphs are the user's requested shapes. Preserve their
+    # pixel silhouettes exactly; source patches fill only the missing digits.
+    crops = {"0": (44, 54), "1": (35, 44), "2": (7, 19),
+             "5": (163, 173), "7": (152, 163), "%": (173, 182)}
+    for ch, (left, right) in crops.items():
+        result[ch] = nearest(target[198:213, left:right], PANEL)
+    return result
 
 
 def glyph(ch: str) -> np.ndarray:
@@ -89,16 +127,36 @@ def face(name: str) -> np.ndarray:
     return np.asarray(Image.fromarray(indexed).resize((32, 40), Image.Resampling.NEAREST))
 
 
-def draw_big(bg: np.ndarray, text: str, x: int, y: int) -> None:
-    for i, ch in enumerate(text):
-        g = glyph(ch)
-        for yy in range(7):
-            for xx in range(5):
-                if g[yy, xx]:
-                    px, py = x + i * 8 + xx, y + yy * 2
-                    if px + 1 < 256 and py + 2 < 240:
-                        bg[py + 1:py + 3, px + 1] = 0  # lower-right outline
-                    bg[py:py + 2, px] = 3
+def draw_big(bg: np.ndarray, text: str, x: int, width: int,
+             glyphs: dict[str, np.ndarray]) -> None:
+    templates = [glyphs[ch] for ch in text]
+    total = sum(tile.shape[1] for tile in templates)
+    if total > width:
+        # Three-digit ammo must fit the 27-pixel compartment. Keep the 15-pixel
+        # edited height while compressing only the horizontal dimension.
+        sizes = [max(1, tile.shape[1] * width // total) for tile in templates]
+        for i in range(width - sum(sizes)):
+            sizes[i % len(sizes)] += 1
+    else:
+        sizes = [tile.shape[1] for tile in templates]
+    for tile, size in zip(templates, sizes):
+        if size != tile.shape[1]:
+            tile = np.asarray(Image.fromarray(tile).resize(
+                (size, 15), Image.Resampling.NEAREST))
+        bg[198:213, x:x + size] = tile
+        x += size
+
+
+def draw_status_values(bg: np.ndarray, target: np.ndarray, state: dict,
+                       glyphs: dict[str, np.ndarray]) -> None:
+    fields = ((str(state["ammo"]), 7, 23, "20", 4, 31),
+              (f'{state["health"]}%', 36, 37, "100%", 35, 74),
+              (f'{state["armor"]}%', 152, 30, "75%", 148, 182))
+    for text, x, width, original, left, right in fields:
+        if text == original:
+            bg[198:213, left:right] = nearest(target[198:213, left:right], PANEL)
+        else:
+            draw_big(bg, text, x, width, glyphs)
 
 
 def draw_inventory(bg: np.ndarray, pair: tuple[int, int], y: int) -> None:
@@ -148,7 +206,8 @@ def draw_arms(bg: np.ndarray, atlas: SpriteAtlas, selected: int,
 
 
 def build_state(target: np.ndarray, atlas: SpriteAtlas,
-                state: dict, style: str) -> tuple[np.ndarray, np.ndarray]:
+                state: dict, style: str,
+                glyphs: dict[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
     bg = nearest(target, PANEL)
     yy, xx = np.indices((192, 256))
     bg[:192] = np.where(((xx // 16 + yy // 16) & 1) == 0, 2, 1)
@@ -158,12 +217,9 @@ def build_state(target: np.ndarray, atlas: SpriteAtlas,
     bg[196:237, 112:144] = 0
     bg[198:221, 76:107] = 1
     bg[198:238, 183:194] = 1
-    bg[193:228, 220:255] = 1
-    bg[225:238, 195:255] = 1
-    draw_big(bg, str(state["ammo"]), 5, 199)
-    draw_big(bg, f'{state["health"]}%', 36, 199)
-    draw_big(bg, f'{state["armor"]}%', 149, 199)
-    for y, values in zip((196, 203, 210, 217), state["inventory"]):
+    bg[193:238, 220:255] = 1
+    draw_status_values(bg, target, state, glyphs)
+    for y, values in zip((198, 207, 216, 225), state["inventory"]):
         draw_inventory(bg, values, y)
     draw_arms(bg, atlas, state["weapon"], style)
     atlas.add(face(state["face"]), 112, 196, 1)
@@ -182,7 +238,8 @@ def build_state(target: np.ndarray, atlas: SpriteAtlas,
     return bg, attributes
 
 
-def pack_backgrounds(frames: list[np.ndarray], attrs: np.ndarray) -> tuple[bytes, list[bytes], int, dict]:
+def pack_backgrounds(frames: list[np.ndarray], attrs: np.ndarray,
+                     glyphs: dict[str, np.ndarray]) -> tuple[bytes, list[bytes], int, dict]:
     tiles = [bytes(16)]
     known = {bytes(16): 0}
     tables: list[bytes] = []
@@ -197,32 +254,36 @@ def pack_backgrounds(frames: list[np.ndarray], attrs: np.ndarray) -> tuple[bytes
                     tiles.append(key)
                 names[ty * 32 + tx] = known[key]
         tables.append(bytes(names + attribute_data))
-    # Keep every numeric glyph resident, including values absent from the
-    # three screenshots. The prototype's streamed nametable may still need to
-    # compose boundary-crossing glyph tiles for arbitrary live values.
-    font_tiles: dict[str, list[int]] = {}
-    for ch in "0123456789%/":
-        stamp = np.ones((16, 8), dtype=np.uint8)
-        draw_big(stamp, ch, 0, 0)
-        indices = []
-        for half in (stamp[:8], stamp[8:]):
-            key = encode_tile(half)
-            if key not in known:
-                known[key] = len(tiles)
-                tiles.append(key)
-            indices.append(known[key])
-        font_tiles[f"large:{ch}"] = indices
+    frame_tile_count = len(tiles)
+    # A 4 KiB NROM pattern table fits 256 tiles. All glyph sources are exported
+    # below; reserve whole glyphs here only while there is room. The live
+    # mapper may stream the rest into CHR RAM between frames.
+    font_tiles: dict[str, list[int] | None] = {}
+    def reserve(name: str, keys: list[bytes]) -> None:
+        missing = list(dict.fromkeys(key for key in keys if key not in known))
+        if len(tiles) + len(missing) > 256:
+            font_tiles[name] = None
+            return
+        for key in missing:
+            known[key] = len(tiles)
+            tiles.append(key)
+        font_tiles[name] = [known[key] for key in keys]
+
     for ch in "0123456789/":
         tile = np.ones((8, 8), dtype=np.uint8)
         small = np.asarray([[v == "#" for v in row] for row in SMALL[ch]])
         tile[:5, :3][small] = 3 if ch == "/" else 2
-        key = encode_tile(tile)
-        if key not in known:
-            known[key] = len(tiles)
-            tiles.append(key)
-        font_tiles[f"small:{ch}"] = [known[key]]
-    if len(tiles) > 256:
-        raise ValueError(f"background needs {len(tiles)} CHR tiles")
+        reserve(f"small:{ch}", [encode_tile(tile)])
+    for ch in "0123456789%":
+        stamp = np.ones((16, 16), dtype=np.uint8)
+        source = glyphs[ch]
+        stamp[:source.shape[0], :source.shape[1]] = source
+        keys = []
+        for y in (0, 8):
+            for x in (0, 8):
+                keys.append(encode_tile(stamp[y:y + 8, x:x + 8]))
+        reserve(f"large:{ch}", keys)
+    assert frame_tile_count <= 256
     return b"".join(tiles).ljust(4096, b"\0"), tables, len(tiles), font_tiles
 
 
@@ -449,28 +510,29 @@ def comparison() -> None:
     sheet.save(OUT / "comparison.png")
 
 
-def export_editable_art() -> None:
+def export_editable_art(glyphs: dict[str, np.ndarray]) -> None:
     key_sheet = np.zeros((8, 24, 3), dtype=np.uint8)
     for i, color in enumerate(KEYS[1:]):
         key_sheet[:, i * 8:(i + 1) * 8][KEY_SHAPE != 0] = RGB[color]
     Image.fromarray(key_sheet).save(OUT / "keys-same-shape.png")
-    font = np.zeros((24, 12 * 8, 3), dtype=np.uint8)
+    font = np.zeros((24, 12 * 16, 3), dtype=np.uint8)
+    rgb = np.asarray([RGB[c] for c in PANEL], dtype=np.uint8)
     for i, ch in enumerate("0123456789%/"):
-        tall = np.ones((16, 8), dtype=np.uint8)
-        draw_big(tall, ch, 0, 0)
-        rgb = np.asarray([RGB[c] for c in PANEL], dtype=np.uint8)
-        font[:16, i * 8:(i + 1) * 8] = rgb[tall]
+        if ch in glyphs:
+            source = glyphs[ch]
+            font[:source.shape[0], i * 16:i * 16 + source.shape[1]] = rgb[source]
         if ch in SMALL:
             small = np.ones((8, 8), dtype=np.uint8)
             pixels = np.asarray([[v == "#" for v in row] for row in SMALL[ch]])
             small[:5, :3][pixels] = 3 if ch == "/" else 2
-            font[16:, i * 8:(i + 1) * 8] = rgb[small]
+            font[16:, i * 16:i * 16 + 8] = rgb[small]
     Image.fromarray(font).save(OUT / "numeric-font.png")
 
 
 def main() -> None:
     OUT.mkdir(parents=True, exist_ok=True)
     target = np.asarray(Image.open(REF).convert("RGB"))
+    glyphs = value_glyphs(target)
     staging = Path("/tmp/fcpico-hud-playback-mesen-runtime")
     shutil.copytree(MESEN.parent, staging, dirs_exist_ok=True)
     settings = {"Nes": {"Region": "Ntsc", "DisableGameDatabase": True,
@@ -482,7 +544,7 @@ def main() -> None:
                                 "DisableOsd": True},
                 "Debug": {"ScriptWindow": {"AllowIoOsAccess": True}}}
     (staging / "settings.json").write_text(json.dumps(settings, indent=2))
-    export_editable_art()
+    export_editable_art(glyphs)
     (OUT / "capture.lua").write_text('''local output = assert(os.getenv("HUD_PLAYBACK_OUTPUT"))
 local frames = 0
 emu.addEventCallback(function()
@@ -517,7 +579,7 @@ end, emu.eventType.endFrame)
         frames, oams, measured = [], [], []
         for state in STATES:
             atlas.oam.clear()
-            bg, attrs = build_state(target, atlas, state, style)
+            bg, attrs = build_state(target, atlas, state, style, glyphs)
             frames.append(bg)
             _, oam, metrics = atlas.bytes()
             oams.append(oam)
@@ -536,7 +598,7 @@ end, emu.eventType.endFrame)
                 sprite[0, :] = sprite[7, :] = 3
                 sprite[:, 0] = sprite[:, 7] = 3
             atlas.tile(sprite)
-        bg_chr, tables, tile_count, font_tiles = pack_backgrounds(frames, attrs)
+        bg_chr, tables, tile_count, font_tiles = pack_backgrounds(frames, attrs, glyphs)
         sprite_chr, _, _ = atlas.bytes()
         rom = write_rom(folder, bg_chr + sprite_chr, tables, oams)
         capture(rom, folder, staging)
