@@ -247,7 +247,12 @@ with uniform 9x10 weapon wells and three candidate selected-number treatments:
 yellow or red sprite palette indices. Each candidate ROM plays three distinct
 health/ammo/armor/inventory, selected-weapon, key and face states, captured in
 Mesen at frames 30/90/150. See `doom/assets/hud_playback_candidates/README.md`
-and its nine original-resolution Mesen PNGs. Generated CHR reserves all digits,
-percent, slash and selection glyphs 2–7; the three active face expressions fit,
-while all 42 stretched expressions do not fit in one sprite pattern table.
+and its nine original-resolution Mesen PNGs. A follow-up corrected the large
+value glyphs against the edited reference, replaced the key stems with one
+consistent keycard mask, and restored the CELL label. The 256-tile NROM BG bank
+holds the three demonstrated states and a subset of unused glyphs;
+`metrics.json` marks glyphs that require a later CHR RAM update or bank switch.
+All large digit sources are exported in `numeric-font.png`, and selection
+glyphs 2–7 are resident. The three active face expressions fit, while all 42
+stretched expressions do not fit in one sprite pattern table.
 This remains a visual playback fixture; fc-pico protocol integration is open.
