@@ -237,3 +237,17 @@ shifts its lower ARMS row. D needs a wider attribute-aligned key band. These
 are real Mesen captures from static ROM fixtures; fc-pico stream integration,
 dynamic values/expressions, moving-world palette impact and hardware checks
 remain open for the selected design.
+
+## ARMS/key refinement and playback fixtures (2026-10-01)
+
+The first A fixture's ARMS accents were copied from color fragments in the
+edited PNG. `doom/tools/prototypes/hud_playback_candidates.py` replaces these
+with uniform 9x10 weapon wells and three candidate selected-number treatments:
+`digit`, `plate`, and `border`. All three keys now use one 8x8 mask with blue,
+yellow or red sprite palette indices. Each candidate ROM plays three distinct
+health/ammo/armor/inventory, selected-weapon, key and face states, captured in
+Mesen at frames 30/90/150. See `doom/assets/hud_playback_candidates/README.md`
+and its nine original-resolution Mesen PNGs. Generated CHR reserves all digits,
+percent, slash and selection glyphs 2–7; the three active face expressions fit,
+while all 42 stretched expressions do not fit in one sprite pattern table.
+This remains a visual playback fixture; fc-pico protocol integration is open.
