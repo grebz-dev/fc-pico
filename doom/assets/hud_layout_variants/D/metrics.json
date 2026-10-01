@@ -1,0 +1,64 @@
+{
+  "oam": 0,
+  "peak_scanline_sprites": 0,
+  "peak_scanlines": [],
+  "sprite_chr_tiles": 1,
+  "variant": "D",
+  "sprite_mode": "8x8",
+  "bg_chr_tiles": 160,
+  "bg_palettes": [
+    [
+      15,
+      0,
+      48,
+      22
+    ],
+    [
+      15,
+      6,
+      23,
+      38
+    ],
+    [
+      15,
+      0,
+      48,
+      56
+    ],
+    [
+      15,
+      18,
+      56,
+      22
+    ]
+  ],
+  "sprite_palettes": [
+    [
+      15,
+      0,
+      48,
+      22
+    ],
+    [
+      15,
+      6,
+      23,
+      38
+    ],
+    [
+      15,
+      0,
+      48,
+      56
+    ],
+    [
+      15,
+      18,
+      56,
+      22
+    ]
+  ],
+  "mapper": "NROM static fixture",
+  "capture_frame": 30,
+  "sprite_limit_removed": false
+}
