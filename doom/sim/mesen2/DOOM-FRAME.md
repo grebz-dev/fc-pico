@@ -132,7 +132,7 @@ DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python \
   doom/sim/mesen2/run_native_status_probe.py --output /tmp/fcpico-native-status-u0
 ```
 
-This v4 ROM (`20DOOM-04-9014`) draws a 4×4 Doomguy face, one selected ARMS
+This v4 ROM (`20DOOM-04-9015`) draws a 4×4 Doomguy face, one selected ARMS
 yellow plate, and up to three matching colored keycards. The host converts
 the edited concrete panel and red value font to native background pixels;
 the fixed 28-tile row is now scanlines 232–239, leaving the fourth inventory
@@ -147,3 +147,15 @@ The [face sheet](../../assets/doomguy_faces.md) documents the source
 expressions and the resident representatives. A py65 test
 checks that two native text tile writes defer OAM DMA and keep both NMI paths
 inside the vblank timing limits.
+
+To check the paused-menu transition and its OAM restoration, run:
+
+```sh
+doom/.venv/bin/python doom/sim/mesen2/run_native_status_probe.py \
+  --output /tmp/fcpico-menu-close --menu --close-menu-frame 165
+```
+
+The runner captures the enlarged blue/yellow paused logo, then checks every
+face row's X positions and the returned yellow ARMS plate after dismissal.
+`doom/tools/reproduce_native_hud.sh --verify-twice` runs this along with the
+test suites and two independent merged UF2 builds.

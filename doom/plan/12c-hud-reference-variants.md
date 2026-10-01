@@ -263,3 +263,16 @@ keycards share one silhouette with distinct palette colors. Moving the fixed
 v4 tile row from scanlines 224–231 to 232–239 lets the edited labels and CELL
 row stream without raising the 15,122-byte frame count. Mesen captures of the
 live path are in `doom/assets/hud_live_plate/`. Hardware validation remains.
+
+## Menu-close regression and reproducible 9015 build (2026-10-01)
+
+Mesen exposed that the paused logo rewrote X/tile/attribute bytes in OAM
+slots reused by the face and yellow ARMS plate. The menu-close path now
+restores the full static gameplay OAM template before updating dynamic UI
+sprites. The paused menu displays the full 64×32 logo in dark blue, bright
+blue and yellow. `doom/assets/hud_live_plate/menu_close_trace/` contains the
+before, paused, and restored captures with OAM dumps and a bus trace.
+`doom/tools/reproduce_native_hud.sh --verify-twice` regenerates the artwork,
+runs the tests and Mesen transitions, builds two independent device images,
+and compares both ROM and UF2 bytes. The 9015 revision passes these gates;
+physical console validation remains open.
