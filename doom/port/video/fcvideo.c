@@ -2,6 +2,7 @@
 #include "fcvideo.h"
 #include "native_status_font.h"
 #include "native_status_panel.h"
+#include "native_menu_font.h"
 
 #include <math.h>
 #include <string.h>
@@ -394,6 +395,45 @@ void fcvideo_compact_native_text(uint8_t stream[VRAM_BUF_BYTES_V4]) {
         write_word++;
     }
     /* The mailbox starts here and is written by fcbus_core_heartbeat(). */
+}
+
+static void episode_pixel(uint8_t stream[VRAM_BUF_BYTES_V4], int x, int y,
+                          unsigned color) {
+    size_t offset = (size_t)(VRAM_HEAD_WORDS + y * VRAM_TILE_COLS + x / 8) * 2;
+    uint8_t bit = (uint8_t)(0x80u >> (x & 7));
+    stream[offset] = (uint8_t)((stream[offset] & ~bit) | ((color & 1u) ? bit : 0));
+    stream[offset + 1] = (uint8_t)((stream[offset + 1] & ~bit) |
+                                   ((color & 2u) ? bit : 0));
+}
+
+void fcvideo_overlay_episode_menu(uint8_t stream[VRAM_BUF_BYTES_V4],
+                                  uint8_t attr[MBX_ATTR_LEN],
+                                  uint8_t palette[MBX_PAL_LEN]) {
+    static const char *const names[3] = {
+        "KNEE DEEP IN THE DEAD", "THE SHORES OF HELL", "INFERNO"
+    };
+    static const uint8_t top[3] = {88, 120, 152};
+    palette[12] = 0x0F; palette[13] = 0x00;
+    palette[14] = 0x30; palette[15] = 0x16;
+    for (int row = 0; row < 3; ++row) {
+        const char *name = names[row];
+        int left = (FCVIDEO_WIDTH - (int)strlen(name) * 8) / 2;
+        int right = left + (int)strlen(name) * 8;
+        for (int by = top[row] / 16; by <= (top[row] + 8) / 16; ++by)
+            for (int bx = left / 16; bx <= right / 16; ++bx)
+                attr_set(attr, bx, by, 3);
+        /* Write the black offset first, then the red glyph on top. */
+        for (int shadow = 1; shadow >= 0; --shadow)
+            for (int letter = 0; name[letter]; ++letter) {
+                if (name[letter] == ' ') continue;
+                const uint8_t *glyph = native_menu_font[name[letter] - 'A'];
+                for (int y = 0; y < 8; ++y)
+                    for (int x = 0; x < 8; ++x)
+                        if (glyph[y] & (0x80u >> x))
+                            episode_pixel(stream, left + letter * 8 + x + shadow,
+                                          top[row] + y + shadow, shadow ? 0 : 3);
+            }
+    }
 }
 
 void fcvideo_convert(fcvideo_t *video,

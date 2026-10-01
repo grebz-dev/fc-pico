@@ -276,3 +276,23 @@ before, paused, and restored captures with OAM dumps and a bus trace.
 runs the tests and Mesen transitions, builds two independent device images,
 and compares both ROM and UF2 bytes. The 9015 revision passes these gates;
 physical console validation remains open.
+
+## Full-width episode text and options alignment (2026-10-01)
+
+The original two-line episode sprite sheet used narrow paired glyphs. The
+full first episode title requires 21 regular characters, beyond eight NES
+sprites on one scanline. Revision 9016 uses the installed menu font in the
+v4 background stream instead. It centers all three full names on one line,
+with an offset black shadow and palette 3 assigned to only the 16×16 cells
+covering each row. The world stays visible but its color mapping changes in
+those cells; see `doom/assets/menu_native_9016/`. The old paired sprite sheet
+remains editable prototype art and is no longer loaded into CHR.
+
+The native options overlay previously showed `MOUSE` at index 2 and `SOUND`
+at index 4, while this build compiles Doom with `NO_USE_MOUSE=1` and its real
+OptionsMenu has indices 0 End Game, 1 Messages, 2 Sound. The overlay now has
+those same three rows, retaining engine selection indices. The entry is an
+engine menu item conditional on compilation, not a WAD label. Mesen checked
+the Sound row at selection 2. The reproducible pipeline now covers these two
+menus, 34 Python tests, two host C tests, and two byte-identical device builds.
+Physical console validation remains open.

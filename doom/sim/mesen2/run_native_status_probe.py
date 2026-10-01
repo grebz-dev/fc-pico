@@ -16,10 +16,9 @@ HERE = Path(__file__).resolve().parent
 ROOT = HERE.parents[2]
 sys.path.insert(0, str(ROOT / "doom/tools"))
 from fcpico import protocol, stream  # noqa: E402
-from native_status_art import (bg_status_tiles, episode_pair_art,
+from native_status_art import (bg_status_tiles,
                                menu_logo_art, resident_art,
-                               resident_face_map,
-                               small_menu_logo_art)  # noqa: E402
+                               resident_face_map)  # noqa: E402
 
 
 def packet(health: int, armor: int, face: int, keys: int, weapons: int,
@@ -116,6 +115,15 @@ def main() -> int:
     mailbox[protocol.MBX_UI:protocol.MBX_UI + 16] = ui
     frame = output / "frame.bin"
     frame.write_bytes(stream.encode_frame(pixels, mailbox, native_text=True))
+    if args.menu and args.menu_id == 2:
+        overlay = output / "overlay_native_episode"
+        subprocess.run(["cc", "-O2", "-I", str(ROOT / "doom/port/video"),
+                        "-I", str(ROOT / "doom/fcbus"),
+                        str(ROOT / "doom/tools/overlay_native_episode.c"),
+                        str(ROOT / "doom/port/video/fcvideo.c"),
+                        str(ROOT / "doom/port/video/fcui.c"), "-lm",
+                        "-o", str(overlay)], check=True)
+        subprocess.run([str(overlay), str(frame)], check=True)
     closed = bytearray(packet(args.health, args.armor, args.face, args.keys, 0x7F,
                               ready_weapon=args.ready_weapon))
     closed[0] = 2
@@ -144,8 +152,6 @@ def main() -> int:
     assert sprite_palette[9:12] == bytes((0x12, 0x22, 0x38))
     assert sprite_palette[13:16] == bytes((0x12, 0x38, 0x16))
     sprite_chr = (run / "sprite_chr.bin").read_bytes()
-    assert sprite_chr[:len(episode_pair_art()[0])] == episode_pair_art()[0]
-    assert sprite_chr[0x130:0x130 + len(small_menu_logo_art())] == small_menu_logo_art()
     assert sprite_chr[0x600:0x600 + len(menu_logo_art())] == menu_logo_art()
     if not args.no_status:
         assert (run / "palette.bin").read_bytes()[15] == 0x16
@@ -172,7 +178,6 @@ def main() -> int:
                                             2, 96 + col * 8))
                 assert oam[:128] == large
             else:
-                assert all(oam[n * 4] == 0xEF for n in (0, 4, 8, 12))
                 assert all(oam[n * 4] < 0xEF for n in range(16))
         else:
             if args.menu_id == 1:
@@ -189,10 +194,19 @@ def main() -> int:
             return 0
         expected_first = {1: (87, "N"), 2: (87, "E"), 3: (87, "E"),
                           4: (58, "E"), 5: (87, "E")}[args.menu_id]
-        first_tile = (episode_pair_art()[1]["KN"] if args.menu_id == 2 else
-                      ord(expected_first[1]))
-        assert oam[35 * 4:35 * 4 + 4] == bytes((expected_first[0],
-            first_tile, 0, 80 if args.menu_id >= 4 else 92))
+        first_tile = ord(expected_first[1])
+        if args.menu_id == 2:
+            assert all(oam[n * 4] == 0xEF for n in range(35, 63))
+            picture = np.asarray(Image.open(run / "final.png").convert("RGB"))
+            for y in (88, 120, 152):
+                band = picture[y:y + 9, 40:216]
+                assert np.count_nonzero((band[:, :, 0] > 110) &
+                                        (band[:, :, 0] > band[:, :, 1] * 1.25)) > 80
+        else:
+            assert oam[35 * 4:35 * 4 + 4] == bytes((expected_first[0],
+                first_tile, 0, 80 if args.menu_id >= 4 else 92))
+        if args.menu_id == 4:
+            assert [oam[(35 + i) * 4] for i in range(19)] == [58] * 7 + [74] * 7 + [90] * 5
         assert oam[63 * 4] == expected_first[0] + (64 if args.menu_id == 2 else 32)
         assert Image.open(run / "final.png").convert("RGB").getpixel((70, 100)) != (0, 0, 0)
         print("native sprite menu and status state survive Start")

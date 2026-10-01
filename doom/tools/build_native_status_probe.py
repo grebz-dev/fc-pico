@@ -10,13 +10,13 @@ import subprocess
 
 from build_bg_text_probe import MESSAGE, text_source
 from build_sprite_probe import ROOT, SOURCE, table
-from native_status_art import (bg_status_tiles, episode_pair_art,
+from native_status_art import (bg_status_tiles,
                                face_resident_index, key_icon_art,
                                menu_logo_art, resident_art,
                                resident_face_map, resident_face_overflow,
-                               selected_plate_art, small_menu_logo_art)
+                               selected_plate_art)
 
-STAMP = "20DOOM-04-9015"
+STAMP = "20DOOM-04-9016"
 STATUS_OAM_COUNT = 35
 MENU_GLYPHS = 28
 OAM_COUNT = 64
@@ -24,7 +24,7 @@ MENU_LAYOUTS = (
     (("NEW", "OPTIONS", "LOAD", "SAVE", "READ ME", "QUIT"), 87, 16, 92),
     (("", "", ""), 87, 32, 92),
     (("EASY", "NORMAL", "HARD", "ULTRA", "NIGHT"), 87, 16, 92),
-    (("END GAME", "MESSAGE", "MOUSE", "", "SOUND"), 58, 16, 80),
+    (("END GAME", "MESSAGE", "SOUND"), 58, 16, 80),
     (("EFFECTS", "", "MUSIC"), 87, 16, 80),
 )
 
@@ -43,17 +43,9 @@ def menu_oam(layout: tuple[tuple[str, ...], int, int, int]) -> bytes:
 
 
 def episode_menu_oam() -> bytes:
-    _, lookup, episodes = episode_pair_art()
-    data = bytearray()
-    for episode, lines in enumerate(episodes):
-        for line_index, line in enumerate(lines):
-            for column in range(0, len(line), 2):
-                pair = (line + " ")[column:column + 2]
-                data.extend((87 + episode * 32 + line_index * 8,
-                             lookup[pair], 0, 92 + column * 4))
-    assert len(data) <= MENU_GLYPHS * 4
-    data.extend((0xEF, 0, 0, 0) * (MENU_GLYPHS - len(data) // 4))
-    return bytes(data)
+    # The three full names are composited into the background stream by
+    # fcvideo_overlay_episode_menu(). Only the native cursor uses OAM here.
+    return bytes((0xEF, 0, 0, 0)) * MENU_GLYPHS
 
 
 def main_menu_oam() -> bytes:
@@ -237,11 +229,7 @@ def native_status_source() -> str:
                   "        ldx #0", f".{label}_art:",
                   f"        lda native_{label}_chr_data,x", "        sta $2007",
                   "        inx", f"        cpx #{len(data)}", f"        bne .{label}_art"]
-    for label, data, address in (
-        ("episode", episode_pair_art()[0], 0x1000),
-        ("small_logo", small_menu_logo_art(), 0x1130),
-        ("logo", menu_logo_art(), 0x1600),
-    ):
+    for label, data, address in (("logo", menu_logo_art(), 0x1600),):
         setup += [f"        lda #${address >> 8:02X}", "        sta $2006",
                   f"        lda #${address & 0xFF:02X}", "        sta $2006"]
         for page in range((len(data) + 255) // 256):
@@ -334,7 +322,7 @@ def native_status_source() -> str:
         "        db " + ",".join(f"HIGH(menu_oam_{i})" for i in range(len(MENU_LAYOUTS))))
     menu_data += table("menu_first_y", bytes(layout[1] for layout in MENU_LAYOUTS))
     menu_data += table("menu_cursor_step", bytes(layout[2] for layout in MENU_LAYOUTS))
-    menu_data += table("menu_cursor_x", bytes((76, 76, 76, 60, 60)))
+    menu_data += table("menu_cursor_x", bytes((76, 32, 76, 60, 60)))
     source = source.replace(anchor,
         "        .bank 1\n        org $A000\n" +
         table("native_chr_data", art) +
@@ -342,8 +330,6 @@ def native_status_source() -> str:
         table("native_key_chr_data", key_icon_art()) +
         table("native_plate_chr_data", selected_plate_art()) +
         table("native_oam_data", oam_template()) +
-        table("native_episode_chr_data", episode_pair_art()[0]) +
-        table("native_small_logo_chr_data", small_menu_logo_art()) +
         table("native_logo_chr_data", menu_logo_art()) +
         table("logo_oam_data", logo_oam()) +
         table("small_logo_oam_data", small_logo_oam()) +

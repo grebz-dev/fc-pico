@@ -11,8 +11,9 @@ from PIL import Image
 
 from build_doom_menu_art import (ROOT, SMALL_LOGO_SIZE, WHDATA, Whx,
                                  encode_tiles, episode_tiles, logo_pixels, patch_pixels)
-from build_native_status_probe import (MENU_GLYPHS, episode_menu_oam,
-                                       logo_oam, main_menu_oam, small_logo_oam)
+from build_native_status_probe import (MENU_GLYPHS, MENU_LAYOUTS,
+                                       episode_menu_oam, logo_oam,
+                                       main_menu_oam, menu_oam, small_logo_oam)
 from edit_sprite_sheets import SHEETS, decode_tiles, encode_sheet, rgba_to_indices
 
 
@@ -37,19 +38,26 @@ def test_logo_sheet_is_reproducible_and_eight_sprites_wide():
                for y in (15, 23, 31, 39))
 
 
-def test_actual_shareware_episode_names_fit_menu_slots():
+def test_episode_labels_yield_to_centered_background_text():
     art, lookup = episode_tiles()
     assert len(art) == 19 * 16
-    assert len(lookup) == 19
     manifest = json.loads((ROOT / "doom/assets/doom_menu_art.json").read_text())
     assert manifest["episode_lines"] == [["KNEE DEEP IN", "THE DEAD"],
                                          ["SHORES OF HELL"], ["INFERNO"]]
     oam = episode_menu_oam()
     assert len(oam) == MENU_GLYPHS * 4
-    assert sum(oam[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 21
+    assert all(oam[index * 4] == 0xEF for index in range(MENU_GLYPHS))
     main = main_menu_oam()
     assert sum(main[index * 4] < 0xEF for index in range(MENU_GLYPHS)) == 28
-    assert 12 + 28 + 21 + 1 <= 64
+    assert 24 + 1 <= 64
+
+
+def test_options_labels_follow_the_compiled_mouse_free_menu():
+    labels = MENU_LAYOUTS[3][0]
+    assert labels == ("END GAME", "MESSAGE", "SOUND")
+    oam = menu_oam(MENU_LAYOUTS[3])
+    assert {oam[index * 4] for index in range(MENU_GLYPHS)
+            if oam[index * 4] != 0xEF} == {58, 74, 90}
 
 
 def test_editable_png_sheets_round_trip_to_the_rom_chr():

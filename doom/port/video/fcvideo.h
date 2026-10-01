@@ -71,6 +71,11 @@ void fcvideo_convert_staged(fcvideo_t *video,
  * convert_staged when the console negotiated v4. The v2 mailbox is discarded;
  * the bus inserts the current mailbox at VRAM_MAILBOX_OFF_V4 on heartbeat. */
 void fcvideo_compact_native_text(uint8_t stream[VRAM_BUF_BYTES_V4]);
+/* Replace converted episode names with three centered rows of the permanent
+ * NES menu font. Call after v4 compaction, only while episode menu 2 is open. */
+void fcvideo_overlay_episode_menu(uint8_t stream[VRAM_BUF_BYTES_V4],
+                                  uint8_t attr[MBX_ATTR_LEN],
+                                  uint8_t palette[MBX_PAL_LEN]);
 /* Writes a full v2 buffer and returns the selected attribute table in attr.
  * Pass reset_hysteresis=true for the first frame after a palette preset change. */
 void fcvideo_convert(fcvideo_t *video,

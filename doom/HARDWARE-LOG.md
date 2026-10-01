@@ -11,6 +11,21 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-10-01 -- 9016 native episode and options candidate
+- Console: no physical run yet.
+- Cartridge firmware: unflashed candidate at
+  `/tmp/fcpico-native-menus-9016/device-first/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `44228ccb98282e2f35decfea7123cdd35e8e7044910cea258f5b4037d73e6667`.
+  Embedded ROM stamp `20DOOM-04-9016`.
+- Finding: the native options overlay had a MOUSE row absent from the
+  `NO_USE_MOUSE=1` compiled engine menu; selecting its index activated Sound.
+  Mesen now shows End Game, Message, Sound at their matching selection slots.
+  Episode names render in full-width, centered, single-line background font.
+- Validation: [episode/options captures](assets/menu_native_9016/README.md),
+  34 Python tests, two host C tests, five Mesen scenes, 30 stable heartbeats
+  at count 15122, and byte-identical ROM/UF2 builds in two independent trees.
+  Physical NES result remains pending.
+
 ## 2026-10-01 -- HUD menu-close regression, Mesen 9015 candidate
 - Console: no new physical run; the user's latest issue report did not identify
   the display source.
