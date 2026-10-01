@@ -8,6 +8,21 @@ local nmi_max_scanline = -1
 local nmi_min_scanline = 1000
 local start_frame = tonumber(os.getenv("FCPICO_PRESS_START_FRAME"))
 local start_polls = 0
+local ui_apply = os.getenv("FCPICO_UI_APPLY")
+local transition_frame = tonumber(os.getenv("FCPICO_UI_TRANSITION_FRAME"))
+local transition_hex = os.getenv("FCPICO_UI_TRANSITION_PACKET")
+
+if ui_apply then
+    assert(transition_frame and transition_hex and #transition_hex == 32)
+    emu.addMemoryCallback(function()
+        if frames >= transition_frame then
+            for index = 0, 15 do
+                local value = tonumber(transition_hex:sub(index * 2 + 1, index * 2 + 2), 16)
+                emu.write(0x0300 + index, value, emu.memType.nesDebug)
+            end
+        end
+    end, emu.callbackType.exec, tonumber(ui_apply, 16))
+end
 
 if start_frame then
     emu.addEventCallback(function()
@@ -54,6 +69,12 @@ end
 
 emu.addEventCallback(function()
     frames = frames + 1
+    if transition_frame and frames == transition_frame then
+        local png = assert(io.open(output .. "/menu-open.png", "wb"))
+        png:write(emu.takeScreenshot())
+        png:close()
+        save_oam_bytes("menu-open-oam.bin")
+    end
     if frames == limit then
         local png = assert(io.open(output .. "/final.png", "wb"))
         png:write(emu.takeScreenshot())

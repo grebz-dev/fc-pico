@@ -11,6 +11,23 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-10-01 -- HUD menu-close regression, Mesen 9015 candidate
+- Console: no new physical run; the user's latest issue report did not identify
+  the display source.
+- Cartridge firmware: unflashed 9015 candidate,
+  `/tmp/fcpico-native-hud-repro-9015/device-first/artifacts/fcpico_doom_native_status_whx.uf2`,
+  SHA-256 `ee303541dbbbc89d1b644e3105a86f027035bdb3b8b74d027249ae1b9cb248ba`.
+  Embedded ROM stamp `20DOOM-04-9015`.
+- Finding: Mesen reproduced alternating face-row offsets and a missing selected
+  yellow ARMS plate after the paused menu closed. Logo OAM X/tile/attribute
+  bytes survived the transition. Restoring the gameplay OAM template fixes
+  both defects. The paused logo is now 64×32 and blue/blue/yellow.
+- Validation: Mesen before/open/after captures and OAM dumps in
+  [`assets/hud_live_plate/menu_close_trace/`](assets/hud_live_plate/menu_close_trace/README.md).
+  Thirty stable heartbeats at count 15122, no additional DMA stop; 30 Python
+  tests and two host C tests pass. Two independent builds produced identical
+  ROM and merged UF2 bytes. Physical NES output for 9015 is pending.
+
 ## 2026-09-28 -- HR-14 paused UI and face findings
 - Console: NES-001 per current session; region not reconfirmed.
 - Cartridge firmware: HR-14 `20DOOM-04-9011` candidate from the prior request;

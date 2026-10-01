@@ -69,6 +69,10 @@ def main() -> int:
                         help="frames to run; checks sample the last 30")
     parser.add_argument("--press-start-frame", type=int,
                         help="press Start for three input polls at this frame")
+    parser.add_argument("--ui-transition-frame", type=int,
+                        help="frame after which UI_APPLY receives a replacement status packet")
+    parser.add_argument("--ui-transition-packet", type=str,
+                        help="16-byte status packet as 32 hex digits")
     parser.add_argument("--min-correlation", type=float, default=0.90,
                         help="minimum luminance match; sprite overlays lower this score")
     parser.add_argument("--output", type=Path, default=HERE / "results/D0")
@@ -132,6 +136,15 @@ def main() -> int:
         env["DOTNET_ROOT"] = str(local_dotnet)
     if nmi_rti:
         env["FCPICO_NMI_RTI"] = nmi_rti
+    if args.ui_transition_frame is not None:
+        if not doom_v4 or not args.ui_transition_packet or len(args.ui_transition_packet) != 32:
+            parser.error("UI transition needs a v4 ROM and a 32-digit packet")
+        ui_match = re.search(r"^\$([0-9A-Fa-f]+)#UI_APPLY#", symbols, re.MULTILINE)
+        if ui_match is None:
+            raise AssertionError("Doom ROM has no UI_APPLY assembler symbol")
+        env["FCPICO_UI_APPLY"] = ui_match.group(1)
+        env["FCPICO_UI_TRANSITION_FRAME"] = str(args.ui_transition_frame)
+        env["FCPICO_UI_TRANSITION_PACKET"] = args.ui_transition_packet
     if args.press_start_frame is not None:
         env["FCPICO_PRESS_START_FRAME"] = str(args.press_start_frame)
     if args.serve_rom:
@@ -184,6 +197,9 @@ def main() -> int:
             expected_mailbox[protocol.MBX_APU] = 0xFF
         if doom_v3 or doom_v4:
             actual_mailbox += (run / "ui_mailbox.bin").read_bytes()
+        if args.ui_transition_frame is not None:
+            expected_mailbox[protocol.MBX_UI:protocol.MBX_UI + 16] = \
+                bytes.fromhex(args.ui_transition_packet)
         if actual_mailbox != expected_mailbox:
             raise AssertionError("Doom console mailbox differs from the stream")
         timing = json.loads((run / "lua_result.json").read_text())

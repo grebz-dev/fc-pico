@@ -58,6 +58,8 @@ def main() -> int:
     parser.add_argument("--menu-id", type=int, default=1)
     parser.add_argument("--no-status", action="store_true")
     parser.add_argument("--stale-menu-id", action="store_true")
+    parser.add_argument("--close-menu-frame", type=int,
+                        help="capture menu open, then force a checked gameplay packet")
     parser.add_argument("--host-frame", type=Path,
                         help="use a real host Doom v2 picture under the native UI")
     args = parser.parse_args()
@@ -114,11 +116,18 @@ def main() -> int:
     mailbox[protocol.MBX_UI:protocol.MBX_UI + 16] = ui
     frame = output / "frame.bin"
     frame.write_bytes(stream.encode_frame(pixels, mailbox, native_text=True))
+    closed = bytearray(packet(args.health, args.armor, args.face, args.keys, 0x7F,
+                              ready_weapon=args.ready_weapon))
+    closed[0] = 2
+    closed[15] ^= 3  # XOR checksum includes generation (1 -> 2).
     subprocess.run([sys.executable, str(HERE / "run_doom_frame.py"), str(frame),
                     "--rom", str(output / "probe.nes"),
                     "--output", str(output / "mesen"),
                     *(["--min-correlation", "0.85"] if args.menu else []),
-                    *(["--press-start-frame", "155"] if args.menu else [])], check=True)
+                    *(["--press-start-frame", "155"] if args.menu else []),
+                    *(["--ui-transition-frame", str(args.close_menu_frame),
+                       "--ui-transition-packet", closed.hex()]
+                      if args.close_menu_frame is not None else [])], check=True)
     run = output / "mesen/run"
     oam = (run / "oam.bin").read_bytes()
     if args.stale_menu_id and not args.menu:
@@ -132,7 +141,7 @@ def main() -> int:
     sprite_palette = (run / "sprite_pal.bin").read_bytes()
     assert sprite_palette[1] == sprite_palette[3] == 0x16
     assert sprite_palette[2] == 0x0F
-    assert sprite_palette[11] == 0x06
+    assert sprite_palette[9:12] == bytes((0x12, 0x22, 0x38))
     assert sprite_palette[13:16] == bytes((0x12, 0x38, 0x16))
     sprite_chr = (run / "sprite_chr.bin").read_bytes()
     assert sprite_chr[:len(episode_pair_art()[0])] == episode_pair_art()[0]
@@ -152,16 +161,16 @@ def main() -> int:
         assert np.count_nonzero((plate[:, :, 0] > 180) &
                                 (plate[:, :, 1] > 180) &
                                 (plate[:, :, 2] < 180)) >= 15, "yellow ARMS plate missing"
-    if args.menu:
+    if args.menu and args.close_menu_frame is None:
         assert __import__("json").loads((run / "lua_result.json").read_text())["start_polls"] >= 1
         if not args.no_status:
-            assert all(oam[n * 4] == 0xEF for n in range(21, 35)), \
+            assert all(oam[n * 4] == 0xEF for n in range(32, 35)), \
                 "paused menu should yield status sprite slots"
             if args.menu_id == 1:
-                small = bytes(value for row in range(3) for col in range(7)
-                              for value in (39 + row * 8, 0x13 + row * 7 + col,
-                                            3, 100 + col * 8))
-                assert oam[:84] == small
+                large = bytes(value for row in range(4) for col in range(8)
+                              for value in (15 + row * 8, 0x60 + row * 8 + col,
+                                            2, 96 + col * 8))
+                assert oam[:128] == large
             else:
                 assert all(oam[n * 4] == 0xEF for n in (0, 4, 8, 12))
                 assert all(oam[n * 4] < 0xEF for n in range(16))
@@ -170,7 +179,7 @@ def main() -> int:
                 assert all(oam[n * 4] < 0xEF for n in range(32))
                 assert oam[:128] == bytes(value for row in range(4) for col in range(8)
                                           for value in (15 + row * 8, 0x60 + row * 8 + col,
-                                                        3, 96 + col * 8))
+                                                        2, 96 + col * 8))
             else:
                 assert all(oam[n * 4] == 0xEF for n in range(35))
         if args.menu_id == 3:
@@ -191,14 +200,19 @@ def main() -> int:
     art = resident_art()
     assert (run / "sprite_chr.bin").read_bytes()[0x800:0x800 + len(art)] == art
     assert sprite_palette[5:8] == bytes((0x07, 0x18, 0x26))
-    assert (run / "ui_mailbox.bin").read_bytes() == ui
+    assert (run / "ui_mailbox.bin").read_bytes() == (closed if args.close_menu_frame else ui)
     # This fixed-frame fixture has no host-side follow-up VRAM commands.
     # The device queues the four black face-backing tiles over two conversions.
     assert (run / "text_row.bin").read_bytes()[2:30] == b" " * 28
     assert [oam[n * 4] for n in range(16)] == [199] * 4 + [207] * 4 + [215] * 4 + [223] * 4
+    assert [oam[n * 4 + 3] for n in range(16)] == [112, 120, 128, 136] * 4
     assert [oam[n * 4] for n in range(16, 22)] == [
         (200 if i < 3 else 212) if args.ready_weapon == i + 1 else 0xEF
         for i in range(6)]
+    selected = args.ready_weapon - 1
+    if 0 <= selected < 6:
+        assert oam[(16 + selected) * 4 + 1:(16 + selected) * 4 + 4] == bytes(
+            (0x32 + selected, 3, 78 + selected % 3 * 10))
     assert [oam[n * 4] for n in range(22, 25)] == [
         200 + i * 12 if args.keys & ((1 << i) | (1 << (i + 3))) else 0xEF
         for i in range(3)]
@@ -213,6 +227,24 @@ def main() -> int:
         tile_map[face_group * 16:face_group * 16 + 16])
     assert [oam[n * 4 + 2] for n in range(16)] == [
         value | 1 for value in flips[face_group * 16:face_group * 16 + 16]]
+    if args.close_menu_frame is not None:
+        open_oam = (run / "menu-open-oam.bin").read_bytes()
+        assert open_oam[:128] == bytes(value for row in range(4) for col in range(8)
+                                        for value in (15 + row * 8,
+                                                      0x60 + row * 8 + col,
+                                                      2, 96 + col * 8))
+        assert open_oam[35 * 4] == 87
+        logo = np.asarray(Image.open(run / "menu-open.png").convert("RGB"))[16:48, 96:160]
+        assert np.count_nonzero((logo[:, :, 0] > 170) &
+                                (logo[:, :, 1] > 170) &
+                                (logo[:, :, 2] < 180)) > 500, "logo lost yellow art"
+        assert np.count_nonzero((logo[:, :, 2] > logo[:, :, 0] * 1.3) &
+                                (logo[:, :, 2] > 100)) > 500, "logo lost blue art"
+        assert not np.count_nonzero((logo[:, :, 0] > 120) &
+                                    (logo[:, :, 0] > logo[:, :, 1] * 1.4) &
+                                    (logo[:, :, 0] > logo[:, :, 2] * 1.4)), \
+            "logo still uses red"
+        print("menu close restores face geometry and yellow ARMS plate")
     print("native concrete status: percentages, 4x4 face, v4 count=15122")
     return 0
 

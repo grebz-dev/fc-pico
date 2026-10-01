@@ -4,10 +4,10 @@ The editable PNGs are the exact native pixel grids used by the CHR importer:
 
 | Sheet | Size | Tile layout | ROM use |
 |---|---:|---|---|
-| `doom_menu_logo_edit.png` | 64×32 | 8×4 | Title logo |
-| `doom_menu_logo_small_edit.png` | 56×24 | 7×3 | Paused main-menu logo |
+| `doom_menu_logo_edit.png` | 64×32 | 8×4 | Title and paused main-menu logo |
+| `doom_menu_logo_small_edit.png` | 56×24 | 7×3 | Unused alternate logo |
 | `doomguy_faces_edit.png` | 168×144 | 7×6 faces, each 3×3 tiles | Face source sheet |
-| `doomguy_faces_large_edit.png` | 128×96 | 10 resident faces, each 4×4 tiles | Current 9013 status face |
+| `doomguy_faces_large_edit.png` | 128×96 | 10 resident faces, each 4×4 tiles | Current 9015 status face |
 | `doom_episode_pairs_edit.png` | 64×24 | 8×3 tile cells | Episode letters |
 
 Use an RGBA PNG pixel editor at 100% image size, with nearest-neighbor zoom.
@@ -20,7 +20,7 @@ this workspace. The existing `doom/.venv` supplies Python, Pillow and NumPy.
 After editing, from the repository root run:
 
 ```sh
-doom/.venv/bin/python doom/tools/edit_sprite_sheets.py import pause_logo
+doom/.venv/bin/python doom/tools/edit_sprite_sheets.py import logo
 bash doom/tools/preview_native_ui.sh pause
 ```
 
@@ -49,4 +49,4 @@ For the current 4×4 status face, edit `doomguy_faces_large_edit.png` and run
 The importer deduplicates equal or flipped 8×8 tiles and rejects edits that
 need more than 128 resident tiles. Running `build_large_face_art.py` overwrites
 the edited PNG and its atlas. The 24×24 `faces` sheet remains a separate older
-source asset and does not drive the 9013 resident face.
+source asset and does not drive the 9015 resident face.

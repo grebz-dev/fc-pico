@@ -16,7 +16,7 @@ from native_status_art import (bg_status_tiles, episode_pair_art,
                                resident_face_map, resident_face_overflow,
                                selected_plate_art, small_menu_logo_art)
 
-STAMP = "20DOOM-04-9014"
+STAMP = "20DOOM-04-9015"
 STATUS_OAM_COUNT = 35
 MENU_GLYPHS = 28
 OAM_COUNT = 64
@@ -63,7 +63,7 @@ def main_menu_oam() -> bytes:
 def logo_oam() -> bytes:
     return bytes(value for row in range(4) for column in range(8)
                  for value in (15 + row * 8, 0x60 + row * 8 + column,
-                               3, 96 + column * 8))
+                               2, 96 + column * 8))
 
 
 def small_logo_oam() -> bytes:
@@ -105,7 +105,12 @@ def status_routine() -> str:
     ]
     lines += [f"        sta $02{n * 4:02X}" for n in range(OAM_COUNT)]
     lines += ["        jsr MENU_APPLY", "        lda #1", "        sta $0310",
-              "        rts", ".show:"]
+              "        rts", ".show:",
+              "        ; Menu logo sprites replace status slots 0..31.",
+              "        ; Restore Y, tile, attributes and X before face updates.",
+              "        ldx #0", ".restore_status:",
+              "        lda native_oam_data,x", "        sta $0200,x", "        inx",
+              "        cpx #140", "        bne .restore_status"]
     for row in range(4):
         lines.append(f"        lda #{199 + row * 8}")
         lines += [f"        sta $02{n * 4:02X}"
@@ -181,10 +186,9 @@ def status_routine() -> str:
         ".small_logo:", "        lda #$EF", "        ldx #0",
         ".small_hide:", "        sta $0200,x", "        inx", "        inx",
         "        inx", "        inx", "        cpx #140", "        bne .small_hide",
-        "        ldx #0", ".small_copy:",
-        "        lda small_logo_oam_data,x",
-        "        sta $0200,x",
-        "        inx", "        cpx #84", "        bne .small_copy",
+        "        ldx #0", ".pause_logo_copy:",
+        "        lda logo_oam_data,x", "        sta $0200,x",
+        "        inx", "        cpx #128", "        bne .pause_logo_copy",
         ".no_logo:", "        rts", "",
     ]
     return "\n".join(lines) + "\n"
@@ -266,8 +270,11 @@ def native_status_source() -> str:
         "        lda #$3F", "        sta $2006", "        lda #$15", "        sta $2006",
         "        lda #$07", "        sta $2007", "        lda #$18", "        sta $2007",
         "        lda #$26", "        sta $2007",
-        "        lda #$3F", "        sta $2006", "        lda #$1B", "        sta $2006",
-        "        lda #$06", "        sta $2007",
+        "        ; Dedicated logo palette: dark blue, bright blue, yellow.",
+        "        lda #$3F", "        sta $2006", "        lda #$19", "        sta $2006",
+        "        lda #$12", "        sta $2007",
+        "        lda #$22", "        sta $2007",
+        "        lda #$38", "        sta $2007",
         "        lda #$3F", "        sta $2006",
         "        lda #$1D", "        sta $2006",
         "        lda #$12", "        sta $2007",
