@@ -255,4 +255,11 @@ holds the three demonstrated states and a subset of unused glyphs;
 All large digit sources are exported in `numeric-font.png`, and selection
 glyphs 2–7 are resident. The three active face expressions fit, while all 42
 stretched expressions do not fit in one sprite pattern table.
-This remains a visual playback fixture; fc-pico protocol integration is open.
+The playback fixture remains useful for visual alternatives. The selected
+`plate` treatment has now been integrated into the v4 ROM and host renderer:
+the approved red value glyphs and concrete layout are packed in
+`native_status_panel.h`, selected ARMS use yellow plate sprites, and all three
+keycards share one silhouette with distinct palette colors. Moving the fixed
+v4 tile row from scanlines 224–231 to 232–239 lets the edited labels and CELL
+row stream without raising the 15,122-byte frame count. Mesen captures of the
+live path are in `doom/assets/hud_live_plate/`. Hardware validation remains.

@@ -26,7 +26,7 @@ def test_native_text_commands_defer_oam_and_fit_vblank(tmp_path: Path) -> None:
                                    protocol.MBX_FLAG_PAL_VALID |
                                    protocol.MBX_FLAG_APU_VALID)
     payload[protocol.MBX_CMD:protocol.MBX_CMD + 6] = bytes(
-        (0xE3, 0x82, ord('B'), 0xE3, 0x83, ord('0')))
+        (0xE3, 0xA2, ord('B'), 0xE3, 0xA3, ord('0')))
     text_frame = NmiHarness(rom).run_nmi(bytes(payload), {0x0310: 1})
     writes = [(address, value) for _, address, value in text_frame.writes]
     assert text_frame.reads_2007 == 1 + protocol.FC_COM_BUF_SIZE_V4

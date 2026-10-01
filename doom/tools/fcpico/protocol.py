@@ -103,7 +103,7 @@ MBX_FLAG_V3 = 0x40  # v3 mailbox signature alongside MBX_FLAG_V2
 
 # --- v4: Fixed native BG text row, compacted picture stream ---
 FCBUS_PROTOCOL_V4 = 4
-NATIVE_TEXT_ROW = 28  # BG tile row 28, NES scanlines 224..231
+NATIVE_TEXT_ROW = 29  # BG tile row 29, NES scanlines 232..239
 NATIVE_TEXT_COL = 2  # first native tile, x=16
 NATIVE_TEXT_TILES = 28  # columns 2..29, x=16..239
 NATIVE_TEXT_BYTES = 448  # skipped CS1 reads

@@ -160,7 +160,8 @@ def test_native_text_compaction_preserves_other_pixels_and_mailbox():
     expanded = stream.expand_native_text_stream(encoded)
     decoded = stream.decode_frame(expanded)
     outside = np.ones((240, 256), dtype=bool)
-    outside[224:232, 16:240] = False
+    outside[protocol.NATIVE_TEXT_ROW * 8:(protocol.NATIVE_TEXT_ROW + 1) * 8,
+            16:240] = False
     assert np.array_equal(decoded[outside], pix[outside])
     assert not decoded[~outside].any()
 

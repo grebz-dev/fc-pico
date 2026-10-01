@@ -14,9 +14,9 @@ from native_status_art import (bg_status_tiles, episode_pair_art,
                                face_resident_index, key_icon_art,
                                menu_logo_art, resident_art,
                                resident_face_map, resident_face_overflow,
-                               small_menu_logo_art)
+                               selected_plate_art, small_menu_logo_art)
 
-STAMP = "20DOOM-04-9013"
+STAMP = "20DOOM-04-9014"
 STATUS_OAM_COUNT = 35
 MENU_GLYPHS = 28
 OAM_COUNT = 64
@@ -78,7 +78,7 @@ def oam_template() -> bytes:
         for col in range(4):
             data.extend((0xEF, 0x80, 1, 112 + col * 8))
     for index in range(6):
-        data.extend((0xEF, ord("2") + index, 3, 80 + index % 3 * 8))
+        data.extend((0xEF, 0x32 + index, 3, 78 + index % 3 * 10))
     for _ in range(3):
         data.extend((0xEF, 0x2E, 3, 184))
     data.extend((0xEF, 0, 0, 0) * (STATUS_OAM_COUNT - len(data) // 4))
@@ -124,13 +124,12 @@ def status_routine() -> str:
     for i in range(6):
         offset = (16 + i) * 4
         mask = 1 << i  # ARMS 2..7 map to owned weapon bits 0..5.
-        y = 203 if i < 3 else 215
+        y = 200 if i < 3 else 212
         lines += ["        lda $0304", f"        and #${mask:02X}",
                   f"        beq .weapon_hide_{i}", f"        lda #{y}",
                   f"        sta $02{offset:02X}",
                   "        lda $0305", "        and #$0F", f"        cmp #{i + 1}",
-                  f"        bne .weapon_done_{i}", "        lda #0",
-                  f"        sta $02{offset + 2:02X}", f"        jmp .weapon_done_{i}",
+                  f"        beq .weapon_done_{i}",
                   f".weapon_hide_{i}:", "        lda #$EF",
                   f"        sta $02{offset:02X}", f".weapon_done_{i}:"]
     for i in range(3):
@@ -138,13 +137,9 @@ def status_routine() -> str:
         mask = (1 << i) | (1 << (i + 3))
         lines += ["        lda $0303", f"        and #${mask:02X}",
                   f"        beq .key_hide_{i}",
-                  f"        lda #{199 + i * 11}",
+                  f"        lda #{200 + i * 12}",
                   f"        sta $02{offset:02X}",
-                  "        lda $0303", f"        and #${1 << (i + 3):02X}",
-                  f"        beq .key_card_{i}",
-                  "        lda #$2F", f"        sta $02{offset + 1:02X}",
-                  f"        jmp .key_done_{i}", f".key_card_{i}:",
-                  "        lda #$2E", f"        sta $02{offset + 1:02X}",
+                  f"        lda #${0x2E + i:02X}", f"        sta $02{offset + 1:02X}",
                   f"        jmp .key_done_{i}", f".key_hide_{i}:",
                   "        lda #$EF", f"        sta $02{offset:02X}",
                   f".key_done_{i}:"]
@@ -229,6 +224,7 @@ def native_status_source() -> str:
     for label, data, address in (
         ("face_overflow", overflow, 0x1280),
         ("key", key_icon_art(), 0x12E0),
+        ("plate", selected_plate_art(), 0x1320),
     ):
         if not data:
             continue
@@ -275,8 +271,8 @@ def native_status_source() -> str:
         "        lda #$3F", "        sta $2006",
         "        lda #$1D", "        sta $2006",
         "        lda #$12", "        sta $2007",
-        "        lda #$21", "        sta $2007",
-        "        lda #$28", "        sta $2007",
+        "        lda #$38", "        sta $2007",
+        "        lda #$16", "        sta $2007",
     ]
     source = source.replace(setup_anchor, setup_anchor + "\n".join(setup) + "\n")
     font_palette = ("        lda #$13\n        sta $2006\n"
@@ -337,6 +333,7 @@ def native_status_source() -> str:
         table("native_chr_data", art) +
         table("native_face_overflow_chr_data", overflow) +
         table("native_key_chr_data", key_icon_art()) +
+        table("native_plate_chr_data", selected_plate_art()) +
         table("native_oam_data", oam_template()) +
         table("native_episode_chr_data", episode_pair_art()[0]) +
         table("native_small_logo_chr_data", small_menu_logo_art()) +

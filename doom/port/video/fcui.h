@@ -31,7 +31,7 @@ typedef struct {
 
 void fcui_pack_status(uint8_t out[MBX_UI_LEN], const fcui_status_t *status);
 bool fcui_unpack_status(fcui_status_t *status, const uint8_t data[MBX_UI_LEN]);
-/* Fixed v4 background row: four black backing tiles under the face while the
+/* Fixed v4 bottom row: four black backing tiles under the face while the
  * status is visible. Returns spaces outside gameplay. */
 void fcui_format_ammo_row(uint8_t out[NATIVE_TEXT_TILES],
                           const fcui_status_t *status);
