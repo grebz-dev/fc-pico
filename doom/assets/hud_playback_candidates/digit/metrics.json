@@ -1,0 +1,289 @@
+{
+  "style": "digit",
+  "states": [
+    {
+      "label": "healthy",
+      "ammo": 20,
+      "health": 100,
+      "armor": 75,
+      "weapon": 2,
+      "keys": [
+        true,
+        true,
+        true
+      ],
+      "face": "STFST00",
+      "inventory": [
+        [
+          20,
+          200
+        ],
+        [
+          18,
+          50
+        ],
+        [
+          4,
+          50
+        ],
+        [
+          100,
+          300
+        ]
+      ]
+    },
+    {
+      "label": "hurt",
+      "ammo": 7,
+      "health": 67,
+      "armor": 46,
+      "weapon": 3,
+      "keys": [
+        true,
+        false,
+        false
+      ],
+      "face": "STFOUCH2",
+      "inventory": [
+        [
+          63,
+          200
+        ],
+        [
+          7,
+          50
+        ],
+        [
+          5,
+          50
+        ],
+        [
+          40,
+          300
+        ]
+      ]
+    },
+    {
+      "label": "pickup",
+      "ammo": 124,
+      "health": 23,
+      "armor": 12,
+      "weapon": 6,
+      "keys": [
+        true,
+        true,
+        false
+      ],
+      "face": "STFEVL3",
+      "inventory": [
+        [
+          153,
+          400
+        ],
+        [
+          0,
+          100
+        ],
+        [
+          18,
+          100
+        ],
+        [
+          124,
+          600
+        ]
+      ]
+    }
+  ],
+  "capture_frames": [
+    30,
+    90,
+    150
+  ],
+  "bg_tiles": 232,
+  "sprite_tiles": 66,
+  "state_metrics": [
+    {
+      "oam": 24,
+      "peak_scanline_sprites": 6,
+      "peak_scanlines": [
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207
+      ],
+      "sprite_chr_tiles": 25
+    },
+    {
+      "oam": 22,
+      "peak_scanline_sprites": 6,
+      "peak_scanlines": [
+        200,
+        201,
+        202,
+        203,
+        204,
+        205,
+        206,
+        207
+      ],
+      "sprite_chr_tiles": 46
+    },
+    {
+      "oam": 23,
+      "peak_scanline_sprites": 6,
+      "peak_scanlines": [
+        212,
+        213,
+        214,
+        215,
+        216,
+        217,
+        218,
+        219
+      ],
+      "sprite_chr_tiles": 63
+    }
+  ],
+  "font_tiles": {
+    "large:0": [
+      197,
+      198
+    ],
+    "large:1": [
+      199,
+      200
+    ],
+    "large:2": [
+      201,
+      202
+    ],
+    "large:3": [
+      203,
+      204
+    ],
+    "large:4": [
+      205,
+      206
+    ],
+    "large:5": [
+      207,
+      208
+    ],
+    "large:6": [
+      209,
+      210
+    ],
+    "large:7": [
+      211,
+      212
+    ],
+    "large:8": [
+      213,
+      214
+    ],
+    "large:9": [
+      215,
+      216
+    ],
+    "large:%": [
+      217,
+      218
+    ],
+    "large:/": [
+      219,
+      220
+    ],
+    "small:0": [
+      221
+    ],
+    "small:1": [
+      222
+    ],
+    "small:2": [
+      223
+    ],
+    "small:3": [
+      224
+    ],
+    "small:4": [
+      225
+    ],
+    "small:5": [
+      226
+    ],
+    "small:6": [
+      227
+    ],
+    "small:7": [
+      228
+    ],
+    "small:8": [
+      229
+    ],
+    "small:9": [
+      230
+    ],
+    "small:/": [
+      231
+    ]
+  },
+  "bg_palettes": [
+    [
+      15,
+      0,
+      48,
+      22
+    ],
+    [
+      15,
+      6,
+      23,
+      38
+    ],
+    [
+      15,
+      0,
+      48,
+      56
+    ],
+    [
+      15,
+      18,
+      56,
+      22
+    ]
+  ],
+  "sprite_palettes": [
+    [
+      15,
+      0,
+      48,
+      22
+    ],
+    [
+      15,
+      6,
+      23,
+      38
+    ],
+    [
+      15,
+      0,
+      48,
+      56
+    ],
+    [
+      15,
+      18,
+      56,
+      22
+    ]
+  ],
+  "sprite_limit_removed": false,
+  "mapper": "NROM playback fixture"
+}
