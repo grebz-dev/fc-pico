@@ -156,11 +156,37 @@ static void test_native_text_compaction(void) {
     CHECK_EQ(output_word * 2, PPU_PICTURE_COUNT_V4);
 }
 
+static void test_episode_menu_uses_full_width_font_without_sprite_rows(void) {
+    static uint8_t compact[VRAM_BUF_BYTES_V4];
+    uint8_t attributes[MBX_ATTR_LEN] = {0};
+    uint8_t palette[MBX_PAL_LEN] = {0};
+    memset(compact, 0, sizeof compact);
+    fcvideo_overlay_episode_menu(compact, attributes, palette);
+    CHECK_EQ(palette[15], 0x16);
+    CHECK_EQ(palette[14], 0x30);
+    /* First K, second T, third I occupy full-size centered rows. */
+    for (int row = 0; row < 3; ++row) {
+        int y = 88 + row * 32;
+        int first_x = row == 0 ? 44 : row == 1 ? 56 : 100;
+        int colored = 0;
+        for (int scan = y; scan < y + 8; ++scan)
+            for (int x = first_x; x < 216; ++x) {
+                size_t offset = (size_t)(VRAM_HEAD_WORDS + scan * VRAM_TILE_COLS + x / 8) * 2;
+                uint8_t bit = (uint8_t)(0x80u >> (x & 7));
+                colored += !!(compact[offset] & bit) && !!(compact[offset + 1] & bit);
+            }
+        CHECK(colored > 80);
+    }
+    CHECK_EQ(compact[(VRAM_HEAD_WORDS + 100 * VRAM_TILE_COLS + 16) * 2], 0);
+    CHECK_EQ((attributes[(5 / 2) * 8 + 2 / 2] >> (2 * ((2 & 1) + 2 * (5 & 1)))) & 3, 3);
+}
+
 int main(void) {
     test_solid_frame_and_linear_stride();
     test_vertical_source_rows();
     test_native_status_gray_palette();
     test_native_status_uses_live_values_and_max_ammo();
     test_native_text_compaction();
+    test_episode_menu_uses_full_width_font_without_sprite_rows();
     return ctest_lite_result();
 }

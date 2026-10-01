@@ -8,7 +8,7 @@ The editable PNGs are the exact native pixel grids used by the CHR importer:
 | `doom_menu_logo_small_edit.png` | 56×24 | 7×3 | Unused alternate logo |
 | `doomguy_faces_edit.png` | 168×144 | 7×6 faces, each 3×3 tiles | Face source sheet |
 | `doomguy_faces_large_edit.png` | 128×96 | 10 resident faces, each 4×4 tiles | Current 9015 status face |
-| `doom_episode_pairs_edit.png` | 64×24 | 8×3 tile cells | Episode letters |
+| `doom_episode_pairs_edit.png` | 64×24 | 8×3 tile cells | Unused compact episode prototype |
 
 Use an RGBA PNG pixel editor at 100% image size, with nearest-neighbor zoom.
 Transparent pixels and the three opaque colors already in each PNG are the
@@ -36,6 +36,11 @@ builds the host engine and captures Doom's actual styled difficulty patches,
 then passes that frame through the v4 Mesen probe. It needs the Pico SDK at
 `$PICO_SDK_PATH` or `~/.local/fcpico/pico-sdk`; it does not build a UF2.
 Set `FCPICO_UI_HOST_FRAME` to reuse a different captured v2 stream.
+
+The current episode names come from the permanent NES font and are placed on
+the background stream. Edit their text/positions in `fcvideo_overlay_episode_menu`
+in `doom/port/video/fcvideo.c`; run `build_native_menu_font.py` if the source
+font changes. The old `paired_text` sheet no longer affects the episode menu.
 
 The `export` operation recreates the editable PNGs from `.chr` and overwrites
 PNG edits. The WHX source generators also overwrite their derived `.chr`

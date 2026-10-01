@@ -132,7 +132,7 @@ DOTNET_ROOT=/home/josh/.dotnet doom/.venv/bin/python \
   doom/sim/mesen2/run_native_status_probe.py --output /tmp/fcpico-native-status-u0
 ```
 
-This v4 ROM (`20DOOM-04-9015`) draws a 4×4 Doomguy face, one selected ARMS
+This v4 ROM (`20DOOM-04-9016`) draws a 4×4 Doomguy face, one selected ARMS
 yellow plate, and up to three matching colored keycards. The host converts
 the edited concrete panel and red value font to native background pixels;
 the fixed 28-tile row is now scanlines 232–239, leaving the fourth inventory
@@ -159,3 +159,10 @@ The runner captures the enlarged blue/yellow paused logo, then checks every
 face row's X positions and the returned yellow ARMS plate after dismissal.
 `doom/tools/reproduce_native_hud.sh --verify-twice` runs this along with the
 test suites and two independent merged UF2 builds.
+
+Episode selection now draws its full names in one centered row each by
+compositing the resident NES menu font into the v4 background stream. The
+three lines consume no OAM slots; the cursor remains a sprite. Run
+`run_native_status_probe.py --menu --menu-id 2` to capture the episode page,
+or `--menu --menu-id 4` to check the mouse-free options menu. The options
+labels follow the compiled Doom menu: End Game, Message, and Sound.

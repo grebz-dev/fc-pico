@@ -12,22 +12,26 @@ menu's game image visible. `doom_menu_logo_preview.png` is a 4× preview.
 patch. It remains editable for comparisons, but the current paused menu uses
 the full logo; `doom_menu_logo_small_preview.png` is its 4× preview.
 
-`doom_episode_pairs.chr` contains 19 paired-glyph tiles for the shareware
-episode names. Each tile packs two narrow characters with a dark shadow.
-`doom_menu_art.json` records the label lines and tile IDs. The sheet is
-generated from code, so the WHX is not copied into the repository.
+`doom_episode_pairs.chr` and `doom_episode_pairs_edit.png` remain editable
+prototype art. The current episode menu uses full-width letters from the
+permanent NES system font, overlaid on the streamed background at y=88, 120,
+and 152. Each full episode name occupies one centered row. Its 16×16 NES
+attribute cells use the gray/white/red menu palette, so the world beneath
+those cells changes color while the text is present; it remains visible.
+`doom/tools/build_native_menu_font.py` extracts the font into the generated
+`doom/port/video/native_menu_font.h` header.
 
 The large logo uses 32 OAM entries at both the title and paused main menu,
 with a dedicated dark-blue/bright-blue/yellow sprite palette. Main-menu labels
 use the full-size 8×8 sprite font, including `READ ME`. The paused menu uses
 32 logo sprites, 28 label sprites and one cursor, leaving three OAM slots.
 The status face, weapon and key sprites return when gameplay resumes. Four static
-H/R labels occupy the native status background. The episode labels use 21 OAM
-entries. These lower-half pattern addresses require physical validation even
+H/R labels occupy the native status background. Episode labels use no OAM
+entries; the cursor uses one. These lower-half pattern addresses require physical validation even
 though the Mesen model passes.
 
 The editable sources are `doom_menu_logo_edit.png`,
-`doom_menu_logo_small_edit.png` and `doom_episode_pairs_edit.png`, all at
+`doom_menu_logo_small_edit.png` and the older `doom_episode_pairs_edit.png`, all at
 native pixel size. Edit them in Aseprite, GIMP or another pixel editor with
 nearest-neighbor scaling and no new colors or semi-transparent pixels. Run
 `doom/.venv/bin/python doom/tools/edit_sprite_sheets.py import` to convert
