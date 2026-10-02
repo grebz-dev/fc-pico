@@ -4,6 +4,49 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## P4-T2 -- generated bank installation and flash image (2026-10-02)
+
+- Engine commit `f7abee22` installs the optional generated default bank and adds
+  host `--dump-apu FILE` capture plus sequencer counters. Explicit caller banks
+  still take precedence; missing/mismatched archive identity disables the bank.
+- Added `tools/audio/build_bank.py` and `port/audio`: all 13 shareware songs and
+  55 synthesized effects are generated locally from `FCPICO_AUDIO_WAD`, with
+  priorities read from engine `sounds.c` and a documented initial voice mapping.
+  Archive and generated C/JSON remain build outputs, with no game assets in git.
+- Placement: 227,280-byte archive at `FLASH_ASSETS_ADDR` (`0x10300000`), leaving
+  297,008 bytes before saves. Device C tables use XIP pointers; host builds embed
+  identical bytes. A content identity prefix pairs archive and firmware tables;
+  it is not a runtime payload checksum.
+- Extended `whx2uf2.py --audio` to merge archive blocks with firmware/WHX and
+  reject reserved-region overflow and WHX overlap. `fcpico_doom_audio_uf2` builds
+  a complete image. `build_shadow_detail.sh` supports `FCPICO_AUDIO_WAD`, includes
+  matching archive/manifest checksums, and explicitly clears audio when omitted.
+- Verified: `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad doom/.venv/bin/python
+  -m pytest doom/tests/tools -q`: 378 pass, including ASan/UBSan generated-table
+  replay of every real and synthetic song/effect, identity mismatch and UF2 bounds.
+  `ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/fcpico-audio-asan
+  --output-on-failure`: 13/13 pass after rebuilding. Focused engine CTest
+  `engine_audio_bank|engine_input_walk|host_shim_test`: 3/3 pass.
+- Two independent 600-frame demo runs emit identical APU captures: 1,777 writes,
+  max 12 per frame, zero sequencer drops. Capture SHA-256:
+  `c72ca910a39ded3377435c0be3c3091a9e01cf382523523a6dc27fcbf2631616`.
+  All indexed frames and NES streams still match the untouched pre-adapter
+  baseline; artifacts: `/tmp/fcpico-audio-engine-compare/{bank-first,bank-repeat}`.
+  The two previously documented baseline golden failures remain unrelated.
+- Verified pinned device build via `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad
+  doom/tools/build_shadow_detail.sh`. Tutorial MD5 and permanent fix-bank checks
+  pass; firmware flash check passes: 301,064 bytes, 223,224 bytes free before WHX.
+  Decoded merged UF2 archive bytes exactly match host/device `audio.bin`, and
+  every block ends before saves. Archive SHA-256:
+  `53b832ba1132c77def125e12b44330cd4d9bb6f0b5dfba73c6c1e5817312b9e8`.
+- Complete flashable candidate:
+  `.build/doom-shadow/artifacts/fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
+  `bf12fcbb1a4c2092e0552ee14a5e2a3400be1a711703bf6b5d42d2a75f5add9d`.
+  Build log: `/tmp/fcpico-audio-bank-device-build.log`. No device was flashed.
+- Markdown links, shell syntax and whitespace checks pass. P4-T2 stays partial:
+  rendering-stall tempo, combined UI/APU mailbox/NMI timing, S4/Mesen and physical
+  listening remain. DPCM and human arrangements are separate unfinished tasks.
+
 ## P4-T2 -- engine audio adapters (2026-10-02)
 
 - Committed converters in root `fb016e2`, then continued with engine commit

@@ -161,7 +161,7 @@ and running deterministic host engine tests, including scripted `--pads` input.
 |--------|------|----------|
 | `0x10000000` | <= 512 KB | firmware (`fcpico_doom.uf2`): code, boot ROM image, music, SFX scripts, DPCM originals not needed |
 | `0x10080000` | 1,800,344 B (`doom1.whx`) | WHX, loaded separately: `picotool load -v -t bin doom1.whx -o 0x10080000` |
-| `0x10300000` | <= 512 KB | optional asset archive (reserved; empty in v1) |
+| `0x10300000` | <= 512 KB | optional generated audio archive (`FCPICO_AUDIO_WAD`); 227,280 B for the verified shareware bank |
 | `0x10380000` - `0x10400000` | 512 KB | save slots (RP2040 Doom's `get_end_of_flash()` scheme, 7 slots x 64 KB max) |
 
 The `flash_get_size()` result is printed at boot and compared with the layout; a mismatch
