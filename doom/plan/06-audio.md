@@ -35,9 +35,10 @@ during frame N are replayed in the NMI that follows frame N+1's picture -- about
 
 ## Decision D5: a register sequencer, not a 6502 emulator
 
-`fcapu` (C, host-testable, no allocation) runs on the cartridge, called from `I_UpdateSound()`
-(already polled from the game loop and from core 1's wait loops) but doing its real work once
-per heartbeat (`fcbus_frame_no` changed): it advances the music stream one frame, advances the
+`fcapu` (C, host-testable, no allocation) runs on the cartridge, pumped from core 0's
+bus heartbeat IRQ after DMA re-arm. Engine `I_UpdateSound()` polls at the same
+heartbeat do not advance it again; core 1 polls are ignored. Once per accepted
+heartbeat (`fcbus_frame_no` changed), it advances the music stream one frame, advances the
 active SFX scripts one frame, resolves channel ownership, and emits writes into the back
 mailbox through `fcbus_apu_write(reg, val)` in priority order until the cap is reached.
 
@@ -134,9 +135,12 @@ without caching raw MUSX bytes. Effects resolve linked aliases and use opaque
 sequencer handles; stale handles cannot stop replacement voices. Synthesized
 volume changes apply even during silent script frames; DPCM amplitude is fixed.
 
-Device updates run on core 0 with local interrupts disabled, advancing once per
-`bus.core.frame_no` and writing through `fcbus_core_apu_write()`. Core 1 polls do
-not touch sequencer state. The host runner uses its rendered-frame counter and
+Device bus IRQ updates run after DMA re-arm, advancing once per
+`bus.core.frame_no` and writing through `fcbus_core_apu_write()` into the next
+mailbox. Engine sequencer operations and pumps exclude local interrupts, so
+rendering stalls cannot stop accepted-heartbeat advancement. Core 1 polls do
+not touch sequencer state. Serial `[audio]` diagnostics report installed-bank
+status, music state, frames, maximum pairs, deferred/dropped writes and IRQ time. The host runner uses its rendered-frame counter and
 discards APU writes; it does not provide audible playback or a real 60 Hz clock.
 Builds without `FCPICO_AUDIO_WAD` remain silent; configured builds install the
 generated bank described below.
@@ -183,9 +187,10 @@ pairing check, not a runtime checksum of every payload byte.
 The UF2 packer rejects archive overflow and WHX/archive overlap. Generated C table
 replay covers missing/mismatched archives and all songs/effects under ASan/UBSan.
 Firmware size is 301,064 bytes with 223,224 bytes free before WHX; the asset region
-has 297,008 bytes free. Engine polls still advance one observed heartbeat at a
-time: realtime tempo under rendering stalls, combined UI/APU reception and NMI
-budget require S4/Mesen and console validation.
+has 297,008 bytes free. Device IRQ pumping now advances during rendering stalls;
+actual IRQ duration and audible realtime tempo still require physical validation.
+The native ROM replays 15 writes with either two text updates or OAM DMA within
+its NMI budgets. End-to-end S4 audio reception and listening remain open.
 
 ## Offline pipeline (`doom/tools/audio/`)
 

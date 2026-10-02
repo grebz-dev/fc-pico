@@ -15,6 +15,8 @@ typedef struct {
     uint8_t pad_frames[32];
     uint8_t pad_read;
     uint8_t pad_write;
+    void (*heartbeat_callback)(void *user, uint32_t frame);
+    void *heartbeat_user;
 #if FCPICO_DIAGNOSTIC_ENGINE_DELAY
     uint32_t diag_raw_read_count;
 #endif
@@ -32,5 +34,9 @@ const uint8_t *fcbus_device_palette(const fcbus_device_t *device);
 const uint8_t *fcbus_device_mailbox(const fcbus_device_t *device);
 /** Pop one pad-1 snapshot captured at a console heartbeat. */
 bool fcbus_device_pop_pad_frame(fcbus_device_t *device, uint8_t *pad1);
+/** Runs on core 0's bus IRQ after DMA re-arm, with a fresh next mailbox.
+ * Keep bounded and protect shared application state against IRQ interruption. */
+void fcbus_device_set_heartbeat_callback(fcbus_device_t *device,
+    void (*callback)(void *user, uint32_t frame), void *user);
 
 #endif

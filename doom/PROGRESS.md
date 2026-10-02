@@ -4,6 +4,45 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## HR-16 / P4-T2 -- native HUD audio UF2 candidate (2026-10-02)
+
+- Engine `0e18c993` moves device audio advancement to core 0's accepted heartbeat
+  IRQ, after DMA re-arm. All engine sequencer operations, initialization and
+  pumps exclude local interrupts. Same-heartbeat polls are no-ops. A callback in
+  `fcbus_device` prepares the next mailbox while the engine renders.
+- Added `[audio]` serial diagnostics: installed bank, music state, sequencer
+  frames, maximum pairs, deferred/dropped writes and maximum IRQ duration.
+- Added a host interrupt-mask model test compiling the device guard path, and
+  120 simulated heartbeat pumps without engine polling. All 14 CTests pass in
+  `/tmp/fcpico-audio-asan` with ASan/UBSan and `ASAN_OPTIONS=detect_leaks=0`.
+  Focused engine CTest (`engine_audio_bank|engine_input_walk|host_shim_test`) passes
+  3/3 after rebuilding `/tmp/fcpico-native-ui-host-engine`.
+- Built native ROM `20DOOM-04-9016` with audio twice using
+  `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad BUILD_DIR=/tmp/fcpico-audio-candidate-first
+  doom/tools/build_bg_text_probe_device.sh --native-status`, then with
+  `BUILD_DIR=/tmp/fcpico-audio-candidate-second`. Complete UF2, ROM and archive
+  match byte-for-byte. Logs: `/tmp/fcpico-audio-candidate-{first,second}.log`.
+- Candidate copied to
+  `.build/doom-audio-test/artifacts/fcpico_doom_audio_native_9016.uf2`; SHA-256
+  `f5cc51d8ab2698d448971520983c0a07ddd7245b2d9b5445c07fd4f10dbb105a`.
+  Its directory contains ROM, ELF, archive/manifest, checksums, `TESTING.md` and
+  `nmi-budget.json`. UF2 payload decoding verifies exact archive bytes and no
+  block reaches saves. Firmware: 301,552 bytes; 222,736 bytes free before WHX.
+- Strengthened native ROM NMI test to check all 15 register writes, including
+  `$4015/$4017`, with text updates and OAM DMA. Focused Python test passes.
+  Replayed the packaged ROM itself: text path total 1608 / critical 1201 cycles;
+  OAM path total 2098 / critical 1178 + 513 stall cycles. Both satisfy the
+  2200 total / 1900 critical limits, including worst-case DMA parity.
+- Native status Mesen probe passes with 30 stable heartbeats, count=15122,
+  no DMA stops and NMI exits at scanline 256. Artifacts:
+  `/tmp/fcpico-audio-candidate-mesen`; log:
+  `/tmp/fcpico-audio-candidate-mesen.log`. This validates the console UI path,
+  not ARM IRQ execution or audible output.
+- Added [HR-16](HARDWARE-REQUESTS.md#hr-16-native-hud-audio-test-candidate-tasks-p4-t2--p4-t6)
+  with exact artifact/hash, reproduction, listening steps and serial measurements.
+  No hardware flashed. Actual IRQ duration, realtime tempo, sound quality and
+  controller behavior under simultaneous audio remain physical checks.
+
 ## P4-T2 -- generated bank installation and flash image (2026-10-02)
 
 - Engine commit `f7abee22` installs the optional generated default bank and adds
