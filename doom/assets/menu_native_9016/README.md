@@ -15,7 +15,10 @@ a temporarily changed color mapping. This is visible as gray/red bands on the
 checker fixture. The settings menu follows the compiled mouse-free Doom
 menu: `END GAME`, `MESSAGE`, `SOUND`; row 2 activates Sound.
 
-Recreate both captures with `doom/tools/reproduce_native_hud.sh`. The
+Recreate the tested ROM, captures and manifest with
+`doom/tools/reproduce_native_hud.sh --verify-twice` from the repository root.
+The default output directory is `/tmp/fcpico-native-hud-repro/`; set
+`OUTPUT_DIR=/some/path` to choose another location. The
 `20DOOM-04-9016` merged UF2 produced by the two-build run has SHA-256
 `44228ccb98282e2f35decfea7123cdd35e8e7044910cea258f5b4037d73e6667`.
 This revision has Mesen and build validation only; physical NES validation

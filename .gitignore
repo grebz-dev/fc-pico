@@ -23,3 +23,6 @@ doom/bootrom/out/
 
 # Reproducible device builds and locally provisioned build tools
 .build/
+
+# Local host-test build products
+/build-host/

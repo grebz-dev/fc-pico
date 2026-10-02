@@ -4,6 +4,23 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## P3-U4 -- reproducible native HUD and NAW dump (2026-10-01)
+- Commits: root `006413b` plus the 9016 HUD commits; engine submodule
+  `84ecd1de`.
+- Verified: `OUTPUT_DIR=/tmp/fcpico-native-menus-9016-committed
+  doom/tools/reproduce_native_hud.sh` -> 34 Python tests, two host C tests,
+  five Mesen scenes, and successful 9016 device build. A separate
+  `--verify-twice` run built byte-identical ROMs and UF2s; post-commit ROM and
+  UF2 matched the recorded hashes. UF2 SHA-256 is
+  `44228ccb98282e2f35decfea7123cdd35e8e7044910cea258f5b4037d73e6667`.
+- Artifacts: default script output is under `/tmp/fcpico-native-hud-repro/`;
+  the flashable file is `device-first/artifacts/fcpico_doom_native_status_whx.uf2`.
+  NAW import files (`doom-hud.ppu`, `.oam`, captures and archive) are tracked
+  under `assets/hud_edit_reference/` and reproducible with
+  `tools/export_hud_ppu_dump.py` from the Mesen capture.
+- Physical validation: 9016 remains pending. The output manifest records root
+  and engine commits plus source, ROM and UF2 hashes.
+
 ## <task id> -- <title>
 - Commits: <range or list>
 - Verified: <command> -> <result summary>
