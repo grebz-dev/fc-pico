@@ -18,8 +18,10 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
   NAW import files (`doom-hud.ppu`, `.oam`, captures and archive) are tracked
   under `assets/hud_edit_reference/` and reproducible with
   `tools/export_hud_ppu_dump.py` from the Mesen capture.
-- Physical validation: 9016 remains pending. The output manifest records root
-  and engine commits plus source, ROM and UF2 hashes.
+- Physical validation: user reports the 9016 build works as intended. Console
+  model, region, serial excerpt, photos and individual interaction sequence
+  were not restated. The hardware log records the confirmation. The output
+  manifest records root and engine commits plus source, ROM and UF2 hashes.
 
 ## <task id> -- <title>
 - Commits: <range or list>

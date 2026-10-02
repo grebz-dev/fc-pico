@@ -11,8 +11,22 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-10-01 -- 9016 native HUD and menus, physical validation
+- Console: physical validation completed by user; model and region not
+  restated.
+- Cartridge firmware: `fcpico_doom_native_status_whx.uf2` from the 9016
+  reproducible build, SHA-256
+  `44228ccb98282e2f35decfea7123cdd35e8e7044910cea258f5b4037d73e6667`.
+  Embedded ROM stamp `20DOOM-04-9016`.
+- Results: user reports that physical validation is complete and everything
+  works as intended. This validates the 9016 native episode names and options
+  menu alignment, along with the current native HUD and menu presentation.
+  No serial excerpt, photo, or individual interaction sequence accompanied
+  this confirmation.
+- Attachments: none supplied.
+
 ## 2026-10-01 -- 9016 native episode and options candidate
-- Console: no physical run yet.
+- Console: see the completed physical validation entry above.
 - Cartridge firmware: unflashed candidate at
   `/tmp/fcpico-native-menus-9016/device-first/artifacts/fcpico_doom_native_status_whx.uf2`,
   SHA-256 `44228ccb98282e2f35decfea7123cdd35e8e7044910cea258f5b4037d73e6667`.
@@ -24,7 +38,7 @@ Appended by whoever runs a console session. Newest first.
 - Validation: [episode/options captures](assets/menu_native_9016/README.md),
   34 Python tests, two host C tests, five Mesen scenes, 30 stable heartbeats
   at count 15122, and byte-identical ROM/UF2 builds in two independent trees.
-  Physical NES result remains pending.
+  Physical result is recorded in the completed validation entry above.
 
 ## 2026-10-01 -- HUD menu-close regression, Mesen 9015 candidate
 - Console: no new physical run; the user's latest issue report did not identify
