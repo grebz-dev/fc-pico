@@ -11,9 +11,23 @@ static uint32_t heartbeat;
 static uint8_t registers[32], values[32];
 static unsigned count;
 
+#if FCPICO_AUDIO_IRQ_GUARD
+static uint32_t interrupt_mask;
+uint32_t save_and_disable_interrupts(void)
+{
+    uint32_t saved = interrupt_mask;
+    interrupt_mask = 1;
+    return saved;
+}
+void restore_interrupts(uint32_t saved) { interrupt_mask = saved; }
+#endif
+
 bool fcpico_audio_write(void *user, uint8_t reg, uint8_t value)
 {
     (void)user;
+#if FCPICO_AUDIO_IRQ_GUARD
+    CHECK_EQ(interrupt_mask, 1);
+#endif
     CHECK(count < 15);
     if (count < 32) {
         registers[count] = reg;
@@ -35,6 +49,9 @@ static void tick(void)
     count = 0;
     heartbeat++;
     sound_fcpico_module.Update();
+#if FCPICO_AUDIO_IRQ_GUARD
+    CHECK_EQ(interrupt_mask, 0);
+#endif
     CHECK(count <= 15);
     CHECK_EQ(fcapu_stats()->dropped, 0);
 }
@@ -77,6 +94,7 @@ int main(int argc, char **argv)
         CHECK(I_FCPicoRegisterSongLump(123) == NULL);
         CHECK(music->RegisterSong("MUSX", 4) == NULL);
         CHECK(!music->MusicIsPlaying());
+        CHECK(!I_FCPicoAudioHasBank());
         tick();
         CHECK_EQ(count, 0);
         return ctest_lite_result();
@@ -102,6 +120,7 @@ int main(int argc, char **argv)
     CHECK(I_FCPicoAudioSetBank(&config));
     CHECK(sound->Init(true));
     CHECK(I_PicoSoundIsInitialized());
+    CHECK(I_FCPicoAudioHasBank());
     CHECK(music->Init());
     CHECK(!I_FCPicoAudioSetBank(&config));
     CHECK_EQ(sound->GetSfxLumpNum(&pistol), 0);
@@ -175,6 +194,16 @@ int main(int argc, char **argv)
     CHECK(!sound->SoundIsPlaying(opening));
     for (unsigned i = 0; i < 6; i++) tick();
     CHECK(!sound->SoundIsPlaying(rocket));
+    /* Simulate IRQ heartbeats while the engine does no render/update polling. */
+    music->PlaySong(handle, true);
+    uint32_t paused_engine_frames = fcapu_stats()->frames;
+    for (unsigned i = 0; i < 120; i++) {
+        count = 0;
+        I_FCPicoAudioPump(++heartbeat);
+    }
+    CHECK_EQ(fcapu_stats()->frames, paused_engine_frames + 120);
+    CHECK(music->MusicIsPlaying());
+    music->StopSong();
     CHECK(sound->StartSound(&pistol, 0, 127, 128, 127) > 0);
     music->PlaySong(handle, true);
     tick();
