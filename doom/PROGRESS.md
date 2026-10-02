@@ -4,6 +4,150 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## HR-16 -- hardware audio pass and merge handoff (2026-10-02)
+
+- User confirms the supplied native audio candidate works on hardware and things
+  behave as expected. Recorded the result in `HARDWARE-LOG.md` and moved HR-16
+  to completed requests; candidate root `7b63586` / engine `0e18c993`, UF2 SHA-256
+  `f5cc51d8ab2698d448971520983c0a07ddd7245b2d9b5445c07fd4f10dbb105a`.
+- Implementation findings retained: full music/effect bytes exceed the space
+  before WHX, so the archive uses the reserved asset region with matching XIP
+  lookup tables and a content-identity check; polls during rendering stalls
+  stretched tempo, so device advancement now runs after bus IRQ DMA re-arm,
+  protected against engine-side state mutation by local interrupt guards.
+- P4-T2 is done: engine modules and optional bank installation are implemented,
+  host/sanitizer/flash checks pass, and physical audio works. P4-T6 stays partial:
+  scripted end-to-end S4 and extended timing/listening evidence remain. Human
+  arrangements, DPCM and the full M4 release gate are not closed by this pass.
+- “Traces” in the user's request meant implementation findings and validation
+  evidence, not new raw serial/execution captures. No hardware metrics were
+  invented or inferred; no new waveform/serial files supplied. Existing host,
+  NMI and Mesen evidence is linked in the prior candidate entry.
+- Rechecked the 600-frame host audio capture twice while preparing the handoff:
+  byte-identical 1,777 writes, maximum 12 pairs per rendered frame, zero drops;
+  527 sequencer frames (initialization starts after rendering begins). These
+  remain synthetic host measurements, not physical serial readings.
+- Hardware evidence, README/audio plan/workplan and completion tracking updated;
+  Markdown links and whitespace checks pass. This evidence entry supports the
+  requested merge into `doom`; unrelated upstream-contribution edits are preserved.
+
+## HR-16 / P4-T2 -- native HUD audio UF2 candidate (2026-10-02)
+
+- Engine `0e18c993` moves device audio advancement to core 0's accepted heartbeat
+  IRQ, after DMA re-arm. All engine sequencer operations, initialization and
+  pumps exclude local interrupts. Same-heartbeat polls are no-ops. A callback in
+  `fcbus_device` prepares the next mailbox while the engine renders.
+- Added `[audio]` serial diagnostics: installed bank, music state, sequencer
+  frames, maximum pairs, deferred/dropped writes and maximum IRQ duration.
+- Added a host interrupt-mask model test compiling the device guard path, and
+  120 simulated heartbeat pumps without engine polling. All 14 CTests pass in
+  `/tmp/fcpico-audio-asan` with ASan/UBSan and `ASAN_OPTIONS=detect_leaks=0`.
+  Focused engine CTest (`engine_audio_bank|engine_input_walk|host_shim_test`) passes
+  3/3 after rebuilding `/tmp/fcpico-native-ui-host-engine`.
+- Built native ROM `20DOOM-04-9016` with audio twice using
+  `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad BUILD_DIR=/tmp/fcpico-audio-candidate-first
+  doom/tools/build_bg_text_probe_device.sh --native-status`, then with
+  `BUILD_DIR=/tmp/fcpico-audio-candidate-second`. Complete UF2, ROM and archive
+  match byte-for-byte. Logs: `/tmp/fcpico-audio-candidate-{first,second}.log`.
+- Candidate copied to
+  `.build/doom-audio-test/artifacts/fcpico_doom_audio_native_9016.uf2`; SHA-256
+  `f5cc51d8ab2698d448971520983c0a07ddd7245b2d9b5445c07fd4f10dbb105a`.
+  Its directory contains ROM, ELF, archive/manifest, checksums, `TESTING.md` and
+  `nmi-budget.json`. UF2 payload decoding verifies exact archive bytes and no
+  block reaches saves. Firmware: 301,552 bytes; 222,736 bytes free before WHX.
+- Strengthened native ROM NMI test to check all 15 register writes, including
+  `$4015/$4017`, with text updates and OAM DMA. Focused Python test passes.
+  Replayed the packaged ROM itself: text path total 1608 / critical 1201 cycles;
+  OAM path total 2098 / critical 1178 + 513 stall cycles. Both satisfy the
+  2200 total / 1900 critical limits, including worst-case DMA parity.
+- Native status Mesen probe passes with 30 stable heartbeats, count=15122,
+  no DMA stops and NMI exits at scanline 256. Artifacts:
+  `/tmp/fcpico-audio-candidate-mesen`; log:
+  `/tmp/fcpico-audio-candidate-mesen.log`. This validates the console UI path,
+  not ARM IRQ execution or audible output.
+- Added [HR-16](HARDWARE-REQUESTS.md#hr-16-native-hud-audio-test-candidate-tasks-p4-t2--p4-t6)
+  with exact artifact/hash, reproduction, listening steps and serial measurements.
+  No hardware flashed. Actual IRQ duration, realtime tempo, sound quality and
+  controller behavior under simultaneous audio remain physical checks.
+
+## P4-T2 -- generated bank installation and flash image (2026-10-02)
+
+- Engine commit `f7abee22` installs the optional generated default bank and adds
+  host `--dump-apu FILE` capture plus sequencer counters. Explicit caller banks
+  still take precedence; missing/mismatched archive identity disables the bank.
+- Added `tools/audio/build_bank.py` and `port/audio`: all 13 shareware songs and
+  55 synthesized effects are generated locally from `FCPICO_AUDIO_WAD`, with
+  priorities read from engine `sounds.c` and a documented initial voice mapping.
+  Archive and generated C/JSON remain build outputs, with no game assets in git.
+- Placement: 227,280-byte archive at `FLASH_ASSETS_ADDR` (`0x10300000`), leaving
+  297,008 bytes before saves. Device C tables use XIP pointers; host builds embed
+  identical bytes. A content identity prefix pairs archive and firmware tables;
+  it is not a runtime payload checksum.
+- Extended `whx2uf2.py --audio` to merge archive blocks with firmware/WHX and
+  reject reserved-region overflow and WHX overlap. `fcpico_doom_audio_uf2` builds
+  a complete image. `build_shadow_detail.sh` supports `FCPICO_AUDIO_WAD`, includes
+  matching archive/manifest checksums, and explicitly clears audio when omitted.
+- Verified: `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad doom/.venv/bin/python
+  -m pytest doom/tests/tools -q`: 378 pass, including ASan/UBSan generated-table
+  replay of every real and synthetic song/effect, identity mismatch and UF2 bounds.
+  `ASAN_OPTIONS=detect_leaks=0 ctest --test-dir /tmp/fcpico-audio-asan
+  --output-on-failure`: 13/13 pass after rebuilding. Focused engine CTest
+  `engine_audio_bank|engine_input_walk|host_shim_test`: 3/3 pass.
+- Two independent 600-frame demo runs emit identical APU captures: 1,777 writes,
+  max 12 per frame, zero sequencer drops. Capture SHA-256:
+  `c72ca910a39ded3377435c0be3c3091a9e01cf382523523a6dc27fcbf2631616`.
+  All indexed frames and NES streams still match the untouched pre-adapter
+  baseline; artifacts: `/tmp/fcpico-audio-engine-compare/{bank-first,bank-repeat}`.
+  The two previously documented baseline golden failures remain unrelated.
+- Verified pinned device build via `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad
+  doom/tools/build_shadow_detail.sh`. Tutorial MD5 and permanent fix-bank checks
+  pass; firmware flash check passes: 301,064 bytes, 223,224 bytes free before WHX.
+  Decoded merged UF2 archive bytes exactly match host/device `audio.bin`, and
+  every block ends before saves. Archive SHA-256:
+  `53b832ba1132c77def125e12b44330cd4d9bb6f0b5dfba73c6c1e5817312b9e8`.
+- Complete flashable candidate:
+  `.build/doom-shadow/artifacts/fcpico_doom_shadow_detail_delay_whx.uf2`, SHA-256
+  `bf12fcbb1a4c2092e0552ee14a5e2a3400be1a711703bf6b5d42d2a75f5add9d`.
+  Build log: `/tmp/fcpico-audio-bank-device-build.log`. No device was flashed.
+- Markdown links, shell syntax and whitespace checks pass. P4-T2 stays partial:
+  rendering-stall tempo, combined UI/APU mailbox/NMI timing, S4/Mesen and physical
+  listening remain. DPCM and human arrangements are separate unfinished tasks.
+
+## P4-T2 -- engine audio adapters (2026-10-02)
+
+- Committed converters in root `fb016e2`, then continued with engine commit
+  `ff1b39bc`. Sound/music modules now use `fcapu`, resolve WHX music names and
+  SFX aliases, and support stable handles, pause/resume, stop/query and volume.
+- Added sequencer music status and synthesized volume updates during silent
+  frames. Added `tests/audio_engine` against the actual engine adapter, covering
+  synthetic and empty banks, priority steals, stale handles and deferred stops.
+- Device delivery runs on core 0 once per bus heartbeat under an interrupt
+  guard. Host delivery uses rendered frames and discards writes. No generated
+  bank is installed: default builds remain silent and P4-T2 stays partial.
+- Verified host-only configure/build and CTest in
+  `/tmp/fcpico-audio-host-unit`: 13/13 pass. ASan/UBSan build in
+  `/tmp/fcpico-audio-asan`: 13/13 pass with `ASAN_OPTIONS=detect_leaks=0`
+  (LeakSanitizer cannot run under the environment's ptrace).
+- Verified `doom_tiny_fcpico` host build in
+  `/tmp/fcpico-native-ui-host-engine`; `engine_input_walk` and `host_shim_test`
+  pass. Two golden checks (`engine_host_determinism`,
+  `engine_title_menu_golden`) fail identically on untouched root `fb016e2` /
+  engine `84ecd1de`, built separately in `/tmp/fcpico-audio-baseline-build`.
+  Independent 600-frame demo runs of baseline and two updated runs have identical
+  indexed frames and NES streams; dumps are in
+  `/tmp/fcpico-audio-engine-compare/{baseline,guard-updated,guard-repeat}`.
+- Verified pinned device build:
+  `NESASM_BIN=/home/josh/Github/fc-pico/.build/tools/nesasm/nesasm cmake --build
+  .build/doom-shadow/device --target doom_tiny_fcpico -j4`.
+  Permanent fix-bank check passes. `python3 doom/tools/flash_layout_check.py
+  .build/doom-shadow/device/rp2040-doom/src/fcpico_doom.elf --whx
+  doom/rp2040-doom/doom1.whx` passes: firmware 299,000 bytes, 225,288 bytes free
+  before the WHX region. The 213,777-byte generated music bank would leave only
+  11,511 bytes there before effects/metadata; placement still needs proof.
+- Markdown links and both repository whitespace checks pass. Remaining work:
+  install the generated bank, prove flash placement, then validate audible
+  playback and combined UI/APU timing on the console. No hardware claim made.
+
 ## P3-U4 -- reproducible native HUD and NAW dump (2026-10-01)
 - Commits: root `006413b` plus the 9016 HUD commits; engine submodule
   `84ecd1de`.
@@ -30,6 +174,83 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Left out: <what and why>
 - Plan changes: <documents touched>
 ```
+
+## I-05 / P4-T3 -- automatic music and synthesized effects complete (2026-10-01)
+
+- Commits: uncommitted working-tree changes based on root `ce221d4`;
+  engine submodule remains `84ecd1de`.
+- Added `tools/audio/mus2apus.py`: direct MUS parser, MIDI type 0/1 parser
+  with rational tempo timing and running status, deterministic pulse/pulse/
+  triangle/noise arrangement, sustain/volume/expression, finite/looping playback
+  and a whole-shareware-WAD CLI. A setup frame and empty retrigger frame keep
+  the first note audible on later loop iterations under `fcapu`'s own thinning.
+- Added `tools/audio/sfx2apu.py`: DMX/WAV RMS envelope with pulse pitch or
+  noise brightness tracking, voice-restricted APUS effects, final muting, and
+  hand-authored `.sfx` overrides. Nonperiodic PCM with negative correlation
+  peaks exposed a pitch-estimation exception; fixed and covered with a small
+  synthetic regression fixture.
+- Verified: `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad
+  doom/.venv/bin/python -m pytest doom/tests/tools -q` -> 369 passed,
+  including the opt-in real-WAD acceptance test. The ordinary suite uses
+  synthetic fixtures and skips only the external-WAD test.
+- Real input: Doom95 shareware archive downloaded from the
+  [idgames mirror](https://ftp.fu-berlin.de/pc/games/idgames/idstuff/doom/win95/doom95.zip)
+  into `/tmp/fcpico-audio-shareware.zip`, with only `DOOM1.WAD` extracted to
+  `/tmp/fcpico-audio-doom1.wad`; no game assets added to git. WAD MD5:
+  `f0cefca49926d00903cf57551d901abe`; SHA-256:
+  `1d7d43be501e67d927e415e0b8f3e29c3bf33075e859721816f652a526cac771`.
+- Verified twice: `doom/.venv/bin/python doom/tools/audio/mus2apus.py
+  /tmp/fcpico-audio-doom1.wad --auto -o /tmp/fcpico-audio-music-first`
+  and the same command with `-o /tmp/fcpico-audio-music-second`. All 13
+  outputs match byte for byte and decode under the 12-pair music cap.
+  Individual sizes, frame counts, pair maxima and SHA-256 hashes are in
+  `/tmp/fcpico-audio-metrics.json`. Music totals 213,777 bytes, with sizes
+  from 318 (`D_INTROA`) to 36,794 (`D_INTER`), exceeding the original
+  2-6 KB estimate. Flash placement remains an integration gate.
+- Verified: all 55 real DMX lumps converted twice to both pulse/noise
+  (110 scripts) with identical bytes, no loop and final muted channel state;
+  at most four pairs per frame. Outputs are in `/tmp/fcpico-audio-effects/`.
+  The optional WAD test reproduces these checks without storing sample bytes.
+- Additional integration probe: `/tmp/fcpico-audio-replay.c` compiled with
+  `gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -g
+  -Idoom/port/apu -Idoom/fcbus /tmp/fcpico-audio-replay.c
+  doom/port/apu/fcapu.c -o /tmp/fcpico-audio-replay`. Running
+  `ASAN_OPTIONS=detect_leaks=0 /tmp/fcpico-audio-replay
+  /tmp/fcpico-audio-loop-test.apus /tmp/fcpico-audio-music-first/*.apus`
+  replayed two loops of every song through the unmodified C sequencer with
+  no drops, at most 12 writes per frame and channel disable on stop. The
+  one-note synthetic stream asserted the length reload on both iterations.
+  LeakSanitizer alone cannot run under this environment's ptrace; ASan and
+  UBSan passed with leak detection disabled.
+- Verified: `python3 doom/tools/check_md_links.py doom` and `git diff --check`.
+- Plan correction: shareware has 13 songs; remove episode-3 `D_BUNNY` from
+  its list (the real WAD omits it and `src/doom/f_finale.c` uses it for episode 3).
+  Record measured sizes instead of asserting the old flash estimate, and
+  correct the stated SFX headroom to three pairs under the 15-pair mailbox cap.
+- I-05 and P4-T3 are done for host tooling. FamiStudio arrangements, listening,
+  the engine audio adapter, resource placement, DPCM bank and combined
+  console/controller timing remain later work; no audible-console claim.
+
+## I-05 / P4-T3 -- WAD extraction and VGM music conversion (2026-10-01)
+
+- Commits: uncommitted working-tree changes; no engine submodule changes.
+- Added `tools/audio/wadextract.py`: validated IWAD/PWAD lump extraction,
+  case-insensitive names/globs, last-entry duplicate resolution and deterministic
+  filenames. Synthetic fixtures cover ranges, unsafe names and missing selections.
+- Added `tools/audio/vgm2apus.py`: VGM/VGZ NES register writes, sample waits,
+  NTSC/PAL timing, shared retrigger thinning and a 12-pair music cap. Loops retain
+  their initial writes; unrepresentable loops and unsupported chips/DPCM fail
+  explicitly. CLI fixtures round-trip through the existing APUS reader and
+  compare two outputs byte for byte.
+- Verified: `doom/.venv/bin/python -m pytest doom/tests/tools/test_audio_convert.py -q`
+  -> 48 passed. `doom/.venv/bin/python -m pytest doom/tests/tools -q`
+  -> 318 passed. System `python3` has no pytest; use the existing repository venv.
+- Verified: `python3 doom/tools/check_md_links.py doom` and `git diff --check`.
+- Limits: synthetic inputs only; no FamiStudio arrangement export or hardware
+  listening claim. Automatic MUS/MIDI conversion, synthesised-effect conversion,
+  all-shareware-song acceptance and engine/console integration remain open.
+- Updated I-05/index, P4-T3 status, audio plan and README; no firmware, bus
+  protocol, permanent fix bank or tutorial changes.
 
 ## P3-U4 concrete HUD candidate 9013 (2026-09-29)
 - Built a flashable WHX UF2 with the unchanged permanent fix bank. The

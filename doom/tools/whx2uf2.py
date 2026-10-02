@@ -15,6 +15,8 @@ from pathlib import Path
 import struct
 import sys
 
+from flash_layout_check import FLASH_LAYOUT_H, parse_flash_layout
+
 UF2_MAGIC0 = 0x0A324655
 UF2_MAGIC1 = 0x9E5D5157
 UF2_MAGIC_END = 0x0AB16F30
@@ -59,7 +61,8 @@ def write_blocks(blocks: list[tuple[int, int, int, bytes]]) -> bytes:
     return bytes(out)
 
 
-def build(whx: bytes, firmware: bytes | None, address: int = WHX_ADDR) -> bytes:
+def build(whx: bytes, firmware: bytes | None, address: int = WHX_ADDR,
+          audio: bytes | None = None) -> bytes:
     if address % 4096 or not FLASH_BASE <= address < FLASH_BASE + FLASH_BYTES:
         raise ValueError("WHX address must be sector-aligned inside the 4 MiB flash")
     if address + len(whx) > FLASH_BASE + FLASH_BYTES:
@@ -73,7 +76,17 @@ def build(whx: bytes, firmware: bytes | None, address: int = WHX_ADDR) -> bytes:
         if block_addr + len(payload) > address:
             raise ValueError(f"firmware reaches 0x{block_addr + len(payload):08x}, "
                              f"overlapping the WHX at 0x{address:08x}")
-    return write_blocks(blocks + binary_blocks(whx, address, family))
+    merged = blocks + binary_blocks(whx, address, family)
+    if audio is not None:
+        layout = parse_flash_layout(FLASH_LAYOUT_H)
+        assets = layout['FLASH_ASSETS_ADDR']
+        cap = min(layout['FLASH_ASSETS_MAX'], layout['FLASH_SAVES_ADDR'] - assets)
+        if not audio or len(audio) > cap:
+            raise ValueError("audio archive is empty or exceeds its reserved flash region")
+        if address + len(whx) > assets:
+            raise ValueError("WHX overlaps audio assets")
+        merged += binary_blocks(audio, assets, family)
+    return write_blocks(merged)
 
 
 def main(argv: list[str] | None = None) -> int:
@@ -81,11 +94,13 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("whx", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--firmware", type=Path, help="firmware UF2 to merge in front")
+    parser.add_argument("--audio", type=Path, help="generated audio.bin at FLASH_ASSETS_ADDR")
     parser.add_argument("--address", type=lambda v: int(v, 0), default=WHX_ADDR)
     args = parser.parse_args(argv)
     firmware = args.firmware.read_bytes() if args.firmware else None
     try:
-        data = build(args.whx.read_bytes(), firmware, args.address)
+        data = build(args.whx.read_bytes(), firmware, args.address,
+                     args.audio.read_bytes() if args.audio else None)
     except ValueError as error:
         parser.error(str(error))
     args.output.write_bytes(data)

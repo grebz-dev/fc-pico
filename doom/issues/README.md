@@ -49,7 +49,7 @@ again: fix the structure rather than the schedule.
 | [I-02](I-02-ppu-decode-tests.md) | Tests for the stream decoder | A -- host only, actionable now | S | none | **done** |
 | [I-03](I-03-fcvideo-ref-tests.md) | Tests for the reference video pipeline | A -- host only, actionable now | M | [I-02](I-02-ppu-decode-tests.md) (soft) | **done** |
 | [I-04](I-04-fcapu-core.md) | APU register sequencer | A -- host only | L | none | **done** |
-| [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only | L | [I-04](I-04-fcapu-core.md) (soft) | **partial**: support tools pass; conversion pipeline remains |
+| [I-05](I-05-audio-tools.md) | Music and effect conversion tools | A -- host only | L | [I-04](I-04-fcapu-core.md) (soft) | **done**: host converters pass; all 13 shareware songs and 55 effects verified |
 | [I-06](I-06-ci-host-lane.md) | Activate the CI host lane | A -- host only, actionable now | M | none | **done** |
 | [I-07](I-07-input-mapper.md) | Controller mapping as a host-testable module | A -- host + hardware | M | none | **partial**: B tap/use passes host Doom and hardware; full context mapping remains |
 | [I-08](I-08-device-superbuild.md) | Device configuration of the superbuild | B -- device tooling + CI | M | [I-06](I-06-ci-host-lane.md) | **done**: builds clean on 13.2.Rel1; lane active |

@@ -7,8 +7,12 @@
 > revalidate controller reads under their combined worst case.
 
 
-The host `fcapu` sequencer and APUS/DPCM support tools are implemented and tested.
-Music conversion, engine sound integration and console audio remain open; see
+The host `fcapu` sequencer and audio conversion tools are implemented and tested,
+including automatic MUS/MIDI music and synthesised pulse/noise effects. Engine
+sound/music adapters and optional generated-bank installation are implemented
+and host-tested. Reserved-region placement passes build/UF2 checks; arrangements,
+extended combined UI/APU timing and detailed listening remain open. HR-16
+confirms this candidate works as expected on the physical console; see
 [`../issues/I-05-audio-tools.md`](../issues/I-05-audio-tools.md) and
 [`../issues/README.md`](../issues/README.md).
 
@@ -32,9 +36,10 @@ during frame N are replayed in the NMI that follows frame N+1's picture -- about
 
 ## Decision D5: a register sequencer, not a 6502 emulator
 
-`fcapu` (C, host-testable, no allocation) runs on the cartridge, called from `I_UpdateSound()`
-(already polled from the game loop and from core 1's wait loops) but doing its real work once
-per heartbeat (`fcbus_frame_no` changed): it advances the music stream one frame, advances the
+`fcapu` (C, host-testable, no allocation) runs on the cartridge, pumped from core 0's
+bus heartbeat IRQ after DMA re-arm. Engine `I_UpdateSound()` polls at the same
+heartbeat do not advance it again; core 1 polls are ignored. Once per accepted
+heartbeat (`fcbus_frame_no` changed), it advances the music stream one frame, advances the
 active SFX scripts one frame, resolves channel ownership, and emits writes into the back
 mailbox through `fcbus_apu_write(reg, val)` in priority order until the cap is reached.
 
@@ -53,7 +58,7 @@ body:   sequence of frames; each frame = count byte (0..15) then count x (reg, v
 ```
 
 Register semantics are raw APU (`reg` in 0..0x13). The offline tool guarantees `count <= 12`
-so that up to 4 pairs remain for SFX in every frame.
+so that 3 pairs remain for SFX in every frame under the v2 cap of 15.
 
 ### SFX
 
@@ -110,16 +115,85 @@ step 4-5 rarely exceed 10.
 
 | `sound_module_t` / `music_module_t` entry | fcpico |
 |---|---|
-| `Init` | `fcapu_init()`; parse the sfx table |
+| `Init` | Initialize the configured `fcapu` bank once across both modules |
 | `GetSfxLumpNum` | table lookup by name (no lump needed unless synthesising at runtime) |
 | `StartSound(sfx, ch, vol, sep, pitch)` | `fcapu_sfx_start(id, vol)`; `sep` and `pitch` ignored (mono, fixed pitch) |
 | `StopSound`, `SoundIsPlaying`, `UpdateSoundParams` | sequencer state |
-| `PlaySong(handle, looping)` | `fcapu_music_play(stream_for(handle), looping)`; `handle` is the music lump index (`USE_DIRECT_MIDI_LUMP`/`USE_MUSX` paths bypassed) |
-| `StopSong`, `PauseSong`, `ResumeSong`, `SetMusicVolume` | sequencer; volume scales the envelope nibbles (4 levels: off, low, mid, full) |
+| `PlaySong(handle, looping)` | `fcapu_music_play(id, looping)`; stable song handle from configured bank (`USE_DIRECT_MIDI_LUMP`/`USE_MUSX` paths bypassed) |
+| `StopSong`, `PauseSong`, `ResumeSong`, `SetMusicVolume` | sequencer; volume scales envelope nibbles from 0 to 15 |
 | `UpdateSound` | `fcapu_pump()` -- no-op unless a new heartbeat has happened |
 
 `I_PicoSoundSetMusicGenerator`, the ADPCM decoder, `emu8950` and `pico_audio_i2s` are not linked
 in the fcpico target.
+
+### Implemented engine adapter (2026-10-02)
+
+`src/fcpico/i_audio_fcpico.h` defines `I_FCPicoAudioSetBank()`: install a
+caller-owned, persistent `fcpico_audio_bank_t` before either module initializes.
+It supplies sequencer streams, full music lump names (`D_E1M1`) and bare SFX names
+(`pistol`). Doom music registration resolves WHX lump numbers against these names
+without caching raw MUSX bytes. Effects resolve linked aliases and use opaque
+sequencer handles; stale handles cannot stop replacement voices. Synthesized
+volume changes apply even during silent script frames; DPCM amplitude is fixed.
+
+Device bus IRQ updates run after DMA re-arm, advancing once per
+`bus.core.frame_no` and writing through `fcbus_core_apu_write()` into the next
+mailbox. Engine sequencer operations and pumps exclude local interrupts, so
+rendering stalls cannot stop accepted-heartbeat advancement. Core 1 polls do
+not touch sequencer state. Serial `[audio]` diagnostics report installed-bank
+status, music state, frames, maximum pairs, deferred/dropped writes and IRQ time. The host runner uses its rendered-frame counter and
+discards APU writes; it does not provide audible playback or a real 60 Hz clock.
+Builds without `FCPICO_AUDIO_WAD` remain silent; configured builds install the
+generated bank described below.
+
+`tests/audio_engine` exercises the real engine module with a small synthetic bank
+and an empty bank. Physical playback and combined UI/APU timing remain
+extended validation gates. HR-16 now records a physical audio smoke-test pass;
+it does not supply raw IRQ timing or individual sound-quality measurements.
+
+### Generated bank installation (2026-10-02)
+
+Supply a local shareware WAD; no game assets are committed. The existing pinned
+hardware build script generates music and effects, compiles lookup tables and
+merges firmware, WHX and the archive into one UF2:
+
+```sh
+FCPICO_AUDIO_WAD=/path/to/doom1.wad doom/tools/build_shadow_detail.sh
+```
+
+Use `.build/doom-shadow/artifacts/fcpico_doom_shadow_detail_delay_whx.uf2` as the
+complete image. `fcpico_doom.uf2` contains firmware only. The artifact directory
+also contains `audio.bin`, `audio.json` (names, offsets, priorities, hashes) and
+`SHA256SUMS`. Omitting the environment variable explicitly disables audio, even
+when reusing an audio-enabled CMake cache. Audio conversion requires the project
+`doom/.venv` with numpy.
+
+For an existing CMake engine build, configure `-DFCPICO_AUDIO_WAD=/path/to/doom1.wad`
+and `-DPython3_EXECUTABLE=/absolute/path/to/doom/.venv/bin/python`, then build
+`fcpico_doom_audio_uf2`. Its complete image is
+`<build>/port/audio/fcpico_doom_audio_whx.uf2`. A host build embeds the same archive;
+`--dump-apu /tmp/apu.csv` records `rendered_frame,reg_hex,value_hex`, and CTest
+`engine_audio_bank` verifies advancing, deterministic, capped output with no drops.
+The host does not synthesize sound.
+
+`tools/audio/build_bank.py` converts all 13 songs and all available `DS*` lumps.
+SFX priorities come from the engine's `sounds.c`. An initial named preference set
+uses pulse 2 for pickups, switches, sights and movement; other effects use noise.
+These are fallback arrangements awaiting listening, with no DPCM dependency.
+The archive is 227,280 bytes for the verified WAD and lives at `0x10300000`, within
+`FLASH_ASSETS_MAX` and below saves. Only metadata enters the firmware's 512 KB
+region. A 32-byte content identity prefix is checked against the compiled table;
+unflashed or differently generated archives disable the default bank. This is a
+pairing check, not a runtime checksum of every payload byte.
+
+The UF2 packer rejects archive overflow and WHX/archive overlap. Generated C table
+replay covers missing/mismatched archives and all songs/effects under ASan/UBSan.
+Firmware size is 301,064 bytes with 223,224 bytes free before WHX; the asset region
+has 297,008 bytes free. Device IRQ pumping now advances during rendering stalls;
+actual IRQ duration and audible realtime tempo still require physical validation.
+The native ROM replays 15 writes with either two text updates or OAM DMA within
+its NMI budgets. HR-16 confirms hardware audio works as expected. Scripted end-to-end S4 and
+extended listening/timing evidence remain open.
 
 ## Offline pipeline (`doom/tools/audio/`)
 
@@ -154,8 +228,59 @@ in the fcpico target.
 - `respack.py` packs `.apus` streams and SFX scripts into one `const` archive with an index
   (replacing the Windows-only `binlink`/`Bin2C`).
 
-Music needed for the shareware episode: `D_E1M1`-`D_E1M9`, `D_INTER`, `D_INTRO`, `D_INTROA`,
-`D_VICTOR`, `D_BUNNY` (13 streams). At ~2-6 KB each after thinning they fit in firmware flash.
+Music needed for the shareware episode: `D_E1M1`-`D_E1M9`, `D_INTER`, `D_INTRO`,
+`D_INTROA`, `D_VICTOR` (13 streams). `D_BUNNY` is episode-3 finale music and is
+absent from shareware `DOOM1.WAD`; it can be converted separately from a
+registered WAD. The original 2-6 KB per-song estimate is a polish target,
+not a measured bound. The automatic converter produces 318-36,794 bytes per
+song and 213,777 bytes total on the v1.9 shareware WAD. Firmware placement
+must be checked before embedding this bank; see [the progress log](../PROGRESS.md).
+
+### Implemented extraction and VGM commands (2026-10-01)
+
+```sh
+python3 doom/tools/audio/wadextract.py /path/to/doom1.wad 'D_*' 'DS*' -o /tmp/doom-lumps
+python3 doom/tools/audio/vgm2apus.py /path/to/song.vgm -o /tmp/song.apus
+doom/.venv/bin/python doom/tools/audio/mus2apus.py /path/to/doom1.wad --auto -o /tmp/doom-music
+doom/.venv/bin/python doom/tools/audio/sfx2apu.py /tmp/doom-lumps/DSPISTOL.lmp --auto --kind noise -o /tmp/pistol.apus
+```
+
+The extractor validates IWAD/PWAD directories and lump ranges, accepts
+case-insensitive names/globs, and selects the last entry for duplicate names.
+Music lumps use `.mus`; other lumps use `.lmp`. Unmatched patterns fail before
+writing files.
+
+The VGM converter follows the [VGM 1.71 specification](https://github.com/vgmrips/vgmplay-legacy/blob/master/VGMPlay/vgmspec171.txt)
+for single-2A03 writes, sample waits, wait overrides and relative offsets.
+It accepts raw VGM or gzip-compressed VGZ, uses 60 Hz NTSC or 50 Hz PAL timing
+from the recording-rate header (zero defaults to NTSC), merges same-frame
+writes and applies `apus.thin_register_writes`. It reports the frame number
+if the thinned result exceeds 12 pairs. Loop offsets must identify commands
+on frame boundaries, without preceding intro writes in that same frame;
+thinning restarts at the loop point to retain writes needed on later passes.
+DPCM writes/data blocks, FDS, a second APU and other chip commands are rejected.
+This path produces music register streams; DPCM effects still require the
+separate bank pipeline. Real FamiStudio export and listening checks remain open.
+
+`mus2apus.py --auto` reads MUS directly at 140 ticks/second or MIDI type 0/1
+with PPQN timing, running status and tempo changes. It tracks note velocity,
+channel volume, expression, sustain and channel-off controllers. Highest and
+second-highest active notes use pulse 1/2; the lowest uses octave-folded triangle;
+percussion uses kick/snare/hat noise presets. It emits NTSC streams with a setup
+frame, one empty frame for loop retriggering, and a final mute frame. Looping
+defaults to frame zero; `--no-loop` produces a finite stream. Program changes,
+pan, pitch bends and pressure are parsed but ignored in this fixed-timbre
+fallback; MIDI type 2 and SMPTE timing are rejected. This is a host-tested
+automatic arrangement, with listening quality still to be assessed.
+
+`sfx2apu.py --auto` tracks the PCM RMS envelope and pulse pitch or noise
+brightness, strips DMX's 16 padding samples at each end, and writes a non-looping
+APUS stream restricted to pulse 2 or noise. `--kind pulse` is the default;
+`--kind noise` selects noise. It never writes `$4015`. A `.sfx` override uses one
+frame per non-comment line with hexadecimal `reg=value` pairs, such as
+`04=bf 05=08 06=fd 07=08`; `-` represents a silent frame and `#` starts a comment.
+A final mute frame ends the effect. WAV input is also accepted. These generated
+effects are approximations, with human overrides available for important sounds.
 
 ## Existing arrangements to start from
 
@@ -163,7 +288,8 @@ Music needed for the shareware episode: `D_E1M1`-`D_E1M9`, `D_INTER`, `D_INTRO`,
 arranged for the 2A03: **Intro, Inter, E1M1, E1M2, E1M3, E1M4, E2M1, E3M1** (plus `DOOM.nsf`
 and a `famitone`-style driver on the NES side). FamiStudio imports `.ftm`, so [P4-T4](10-workplan.md#p4-t4-arrangements----size-l-human-assisted-depends-p4-t3-acceptance-famistudio-projects-for-d_e1m1-d_intro-d_introa-d_inter-committed-vgm-export-reproducible-via-cli-others-auto) starts by
 importing that module, exporting VGM per song and converting with `vgm2apus.py`; only
-`D_E1M5`-`D_E1M9`, `D_VICTOR` and `D_BUNNY` need new arrangements (auto or human). Licensing:
+`D_E1M5`-`D_E1M9` and `D_VICTOR` need new shareware arrangements (auto or human).
+`D_BUNNY` is outside shareware scope. Licensing:
 the module is distributed under the repository's GPL; reusing it in this GPLv2/GPLv3-mixed
 firmware is compatible, with attribution to Andrew Tait in [`LICENSES.md`](../LICENSES.md) (decision H6 still
 applies to taste). Verify the songs' completeness by listening once in FamiStudio.
@@ -202,7 +328,10 @@ via `respack.py`; the sequencer reads them with a byte cursor and no decompressi
 - `tests/apu/test_sequencer.c`: never more than the cap per frame; DPCM trigger ordering;
   steal/restore of pulse 2 and noise around a sound effect; pause/resume leaves no stuck
   notes (`$4015` and volume registers verified); the deferred queue never laps.
-- `tests/tools/test_vgm2apus.py`, `test_sfx2dpcm.py`: round trips on fixtures.
+- `tests/tools/test_audio_convert.py`: synthetic WAD/VGM/MUS/MIDI/PCM round
+  trips, timing, retriggering, caps, malformed inputs and byte-identical CLI
+  outputs. Set `FCPICO_AUDIO_WAD=/path/to/doom1.wad` to also verify all shareware
+  music and DMX effects. `test_apus.py` and `test_dpcm.py` cover support tools.
 - Co-simulation: a Mesen2 Lua script logs every `$40xx` write with its frame number and
   compares against the sequencer's own log for a scripted 10-second scenario (title music,
   one pistol shot, one door).

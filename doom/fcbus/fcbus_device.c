@@ -63,6 +63,9 @@ static void __not_in_flash_func(handle_actions)(fcbus_device_t *device) {
             } else if (action.arg == FCBUS_ARM_NUDGE1) {
                 pio_sm_exec(pio0, SM_TRAN, pio_encode_out(pio_pins, 8));
             }
+            if (device->heartbeat_callback) {
+                device->heartbeat_callback(device->heartbeat_user, device->core.frame_no);
+            }
         } else if (action.kind == FCBUS_ACT_STOP_DMA) {
             stop_dma(device);
         } else if (action.kind == FCBUS_ACT_STREAM_RESPONSE) {
@@ -175,6 +178,14 @@ bool fcbus_device_init(fcbus_device_t *device, const fcbus_config_t *config) {
     fcbus_core_rx_byte(&device->core, FP_COM_VER);
     handle_actions(device);
     return true;
+}
+
+void fcbus_device_set_heartbeat_callback(fcbus_device_t *device,
+    void (*callback)(void *user, uint32_t frame), void *user) {
+    uint32_t saved = save_and_disable_interrupts();
+    device->heartbeat_user = user;
+    device->heartbeat_callback = callback;
+    restore_interrupts(saved);
 }
 
 void fcbus_device_deinit(fcbus_device_t *device) {

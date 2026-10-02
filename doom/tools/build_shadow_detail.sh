@@ -16,7 +16,8 @@ Builds firmware, embedded console ROM and merged WHX UF2 under .build/doom-shado
 Requires the project-local Arm GCC 13.2 toolchain and Pico SDK 2.1.1.
 
 Overrides: BUILD_DIR, TOOLS_DIR, ARM_TOOLCHAIN_PATH, PICO_SDK_PATH,
-           PICOTOOL_DIR (CMake package directory), NESASM_BIN, JOBS.
+           PICOTOOL_DIR (CMake package directory), NESASM_BIN, JOBS,
+           FCPICO_AUDIO_WAD (optional local shareware WAD; enables audio).
 See doom/plan/08-build.md for prerequisites and hardware validation history.
 EOF
         exit 0 ;;
@@ -32,6 +33,13 @@ export PICO_SDK_PATH=${PICO_SDK_PATH:-$HOME/.local/fcpico/pico-sdk}
 picotool_dir=${PICOTOOL_DIR:-$tools_dir/picotool-install/lib/cmake/picotool}
 export NESASM_BIN=${NESASM_BIN:-$tools_dir/nesasm/nesasm}
 jobs=${JOBS:-4}
+audio_wad=${FCPICO_AUDIO_WAD:-}
+python_args=()
+if [[ -n $audio_wad ]]; then
+    [[ -f $audio_wad ]] || fail "Missing audio WAD: $audio_wad"
+    [[ -x $repo/doom/.venv/bin/python ]] || fail 'Audio conversion requires doom/.venv with numpy'
+    python_args=(-DPython3_EXECUTABLE="$repo/doom/.venv/bin/python")
+fi
 for command in cmake ninja python3 git make; do
     command -v "$command" >/dev/null || fail "Missing command: $command"
 done
@@ -78,7 +86,8 @@ cmake -S "$repo/doom" -B "$build/device" -G Ninja \
     -DPICO_TOOLCHAIN_PATH="$arm" -DPICO_NO_FLASH=OFF -DPICO_COPY_TO_RAM=OFF \
     -DPICO_SDK_PATH="$PICO_SDK_PATH" -Dpicotool_DIR="$picotool_dir" \
     -DFCPICO_HOST_ONLY=OFF -DFCPICO_BUILD_ENGINE=ON -DFCPICO_DIAGNOSTIC_NO_ENGINE=OFF \
-    -DFCPICO_DIAGNOSTIC_ENGINE_DELAY=ON -DPICO_NO_PICOTOOL=OFF -DPICO_NO_UF2=OFF
+    -DFCPICO_DIAGNOSTIC_ENGINE_DELAY=ON -DPICO_NO_PICOTOOL=OFF -DPICO_NO_UF2=OFF \
+    -DFCPICO_AUDIO_WAD="$audio_wad" "${python_args[@]}"
 cmake --build "$build/device" --target doom_tiny_fcpico -j "$jobs"
 firmware=$build/device/rp2040-doom/src
 python3 "$repo/doom/tools/flash_layout_check.py" "$firmware/fcpico_doom.elf"
@@ -86,8 +95,13 @@ output=$build/artifacts
 mkdir -p "$output"
 cp "$firmware/fcpico_doom.elf" "$firmware/fcpico_doom.uf2" "$output/"
 cp "$firmware/fcpico/doom_bootrom/doom.nes" "$output/"
+audio_args=()
+if [[ -n $audio_wad ]]; then
+    cp "$build/device/port/audio/audio.bin" "$build/device/port/audio/audio.json" "$output/"
+    audio_args=(--audio "$output/audio.bin")
+fi
 python3 "$repo/doom/tools/whx2uf2.py" "$repo/doom/rp2040-doom/doom1.whx" \
-    "$output/fcpico_doom_shadow_detail_delay_whx.uf2" --firmware "$output/fcpico_doom.uf2"
+    "$output/fcpico_doom_shadow_detail_delay_whx.uf2" --firmware "$output/fcpico_doom.uf2" "${audio_args[@]}"
 {
     printf 'Profile: shadow detail, MinSizeRel, RP2350 ARM Secure, engine delay ON\n'
     printf 'Repository: '; git -C "$repo" rev-parse HEAD
@@ -95,11 +109,15 @@ python3 "$repo/doom/tools/whx2uf2.py" "$repo/doom/rp2040-doom/doom1.whx" \
     printf 'SDK: '; git -C "$PICO_SDK_PATH" rev-parse HEAD
     "$arm/bin/arm-none-eabi-gcc" --version
     printf 'picotool_DIR=%s\nNESASM_BIN=%s\n' "$picotool_dir" "$NESASM_BIN"
+    printf 'FCPICO_AUDIO_WAD=%s\n' "$audio_wad"
     git -C "$repo" status --short
 } > "$output/build-info.txt"
 cp "$build/device/CMakeCache.txt" "$output/"
 git -C "$repo" diff --binary HEAD > "$output/source.patch"
 (cd "$output" && sha256sum fcpico_doom.elf fcpico_doom.uf2 doom.nes \
     fcpico_doom_shadow_detail_delay_whx.uf2 > SHA256SUMS)
+if [[ -n $audio_wad ]]; then
+    (cd "$output" && sha256sum audio.bin audio.json >> SHA256SUMS)
+fi
 printf '\nFlash image: %s/fcpico_doom_shadow_detail_delay_whx.uf2\n' "$output"
 cat "$output/SHA256SUMS"

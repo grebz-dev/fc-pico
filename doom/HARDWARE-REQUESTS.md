@@ -17,6 +17,46 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Completed requests
 
+### HR-16 Native HUD audio test candidate (tasks P4-T2 / P4-T6)
+
+- Flash: `.build/doom-audio-test/artifacts/fcpico_doom_audio_native_9016.uf2`
+  (complete firmware + WHX + generated audio archive), SHA-256
+  `f5cc51d8ab2698d448971520983c0a07ddd7245b2d9b5445c07fd4f10dbb105a`.
+- Console ROM expected: `20DOOM-04-9016`; permanent fix bank unchanged. Candidate
+  retains the current native HUD/menu ROM and uses synthesized pulse/noise SFX,
+  with no DPCM bank. Cartridge audio is now pumped by accepted bus heartbeat IRQs
+  while rendering; engine sequencer mutations exclude those interrupts.
+- Build reproduction:
+  `FCPICO_AUDIO_WAD=/path/to/doom1.wad BUILD_DIR=/tmp/fcpico-audio-candidate-first
+  doom/tools/build_bg_text_probe_device.sh --native-status`.
+  Output is `.../artifacts/fcpico_doom_native_status_whx.uf2` (the same complete
+  candidate under its builder's filename). Prerequisites are the pinned native
+  toolchain and `doom/.venv`; see [audio build instructions](plan/06-audio.md#generated-bank-installation-2026-10-02).
+- Steps: 1. Use the existing BOOTSEL/UF2 update flow and wait for the console's
+  normal ROM update if needed. Confirm title/menu and native HUD still work.
+  2. Listen to title music, then E1M1 for at least 60 seconds. Try pistol,
+  shotgun, pickups, doors, switches and damage; confirm an effect briefly steals
+  its voice and music returns. 3. Move/look, open/close menus and change scenes;
+  note slowdown, repeated notes, stuck tones or pad problems. 4. Power-cycle and
+  repeat. These fallback sounds are approximations; record quality separately
+  from missing/stuck audio or timing failures.
+- Record: USB serial at 115200 for 60 seconds, including `[audio]` and
+  `[DEBUG-hr3]`. Expect `bank=1`, advancing `frames`, `pairs_max<=15`, and no growing
+  audio `drops` or new bus stops/errors after startup. Capture `irq_max_us`,
+  deferred counts, whether music keeps tempo under rendering load, and a short
+  audio/video clip if practical. Add results to [HARDWARE-LOG.md](HARDWARE-LOG.md)
+  under HR-16 with console model, date and flashed hash.
+- Evidence: two independent builds are byte-identical; reserved regions and UF2
+  payloads verified; 14 sanitizer CTests and focused engine tests pass. Native
+  ROM NMI replays 15 APU writes including `$4015/$4017`: text path 1608 cycles,
+  OAM path 2098 cycles (2200-cycle total cap). Native UI Mesen probe passes;
+  it does not execute ARM IRQ code or prove audible output.
+- Result: **done -- hardware audio smoke test passed (2026-10-02).** User reports
+  the candidate works on hardware and behaves as expected; see
+  [the hardware log](HARDWARE-LOG.md#2026-10-02----hr-16-audio-works-on-hardware).
+  Raw timing measurements and individual checklist results were not supplied;
+  retain these as extended validation rather than blocking the reported pass.
+
 ### HR-1 Phase 0 trace capture and board facts (task P0-T9)
 - Flash: `/tmp/fcpico-doom-device-resume/port/fcpico_testpattern.uf2` from the current
   [P0-T5](plan/10-workplan.md#p0-t5-fcbus-device-backend-and-test-pattern-firmware)/[P0-T9](plan/10-workplan.md#p0-t9-hardware-trace-capture-hw) build (SHA-256 `be283708ba21e4ffa75ad4dec665461cd52db9220888d86888096f8051389cbf`).

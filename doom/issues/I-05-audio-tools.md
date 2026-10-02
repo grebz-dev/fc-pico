@@ -8,10 +8,14 @@
 | **Depends on** | [I-04](I-04-fcapu-core.md) (soft) |
 | **Work plan task** | [P4-T3](../plan/10-workplan.md#p4-t3-audio-tools----spec-06-pipeline-size-l-depends----acceptance-teststools-round-trips-mus2apuspy---auto-produces-all-13-streams-from-doom1wad-under-the-cap) |
 
-## Status (2026-09-24)
+## Status (2026-10-01)
 
-**partial**. APUS/DPCM support tools exist and have tests; the music and effect
-conversion pipeline in this issue remains. See [`../PROGRESS.md`](../PROGRESS.md).
+**done**. WAD extraction, VGM/VGZ conversion, automatic MUS/MIDI arrangements,
+and pulse/noise effect conversion with hand-authored overrides pass host tests.
+All 13 shareware music lumps convert deterministically under the 12-pair cap;
+all 55 DMX effects convert to both voice types. Generated music totals 213,777
+bytes, above the original estimate; firmware placement and listening remain
+integration/arrangement checks. See [`../PROGRESS.md`](../PROGRESS.md).
 
 ## Goal
 
@@ -55,6 +59,17 @@ Every command must pass from the repository root.
 ```
 python3 -m pytest doom/tests/tools -q
 ```
+
+The existing repository venv supplies pytest and numpy on this machine:
+
+```sh
+doom/.venv/bin/python -m pytest doom/tests/tools -q
+FCPICO_AUDIO_WAD=/path/to/doom1.wad doom/.venv/bin/python -m pytest doom/tests/tools/test_audio_convert.py -q
+doom/.venv/bin/python doom/tools/audio/mus2apus.py /path/to/doom1.wad --auto -o /tmp/doom-music
+```
+
+The WAD-dependent test is optional in ordinary host runs. It verifies every
+required music lump and every DMX sound without committing game assets.
 
 ## Traps
 
