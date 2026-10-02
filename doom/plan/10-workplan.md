@@ -63,7 +63,7 @@ does not waive a task's remaining acceptance criteria.
 | P3-U4 / P3-U5 / P3-U6 | **open** | Engine status snapshot capture exists; actual sprite/BG HUD migration and acceptance gates remain ([I-20](../issues/I-20-sprite-ui.md)). |
 | P3-T1 | **partial** | Base mapping and host `--pads` movement pass; B-use fix passes hardware; full context mappings remain. |
 | P4-T1 | **done** | Host APU sequencer tests pass; audio integration and assets are later tasks. |
-| P4-T2 | **partial** | Engine sound/music adapters, heartbeat delivery and host sanitizer tests pass. Asset-bank installation and console playback remain; builds currently use an empty bank. |
+| P4-T2 | **partial** | Engine modules and optional generated-bank installation pass host, sanitizer and flash-region checks. Console playback and combined heartbeat/UI/APU timing remain; builds without FCPICO_AUDIO_WAD use an empty bank. |
 | P4-T3 | **done** | Host converters pass; all 13 shareware music streams stay under 12 pairs and all 55 effects convert. See [I-05](../issues/I-05-audio-tools.md); placement/listening remain integration gates. |
 
 The task bodies below retain the original deliverables and acceptance checks. Use

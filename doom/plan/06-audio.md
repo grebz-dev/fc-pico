@@ -9,8 +9,9 @@
 
 The host `fcapu` sequencer and audio conversion tools are implemented and tested,
 including automatic MUS/MIDI music and synthesised pulse/noise effects. Engine
-sound/music adapters are implemented and host-tested. Asset-bank installation,
-firmware asset placement, arrangements and console audio remain open; see
+sound/music adapters and optional generated-bank installation are implemented
+and host-tested. Reserved-region placement passes build/UF2 checks; arrangements,
+combined UI/APU timing and console audio remain open; see
 [`../issues/I-05-audio-tools.md`](../issues/I-05-audio-tools.md) and
 [`../issues/README.md`](../issues/README.md).
 
@@ -137,11 +138,54 @@ Device updates run on core 0 with local interrupts disabled, advancing once per
 `bus.core.frame_no` and writing through `fcbus_core_apu_write()`. Core 1 polls do
 not touch sequencer state. The host runner uses its rendered-frame counter and
 discards APU writes; it does not provide audible playback or a real 60 Hz clock.
-No bank is installed by the firmware yet, so default builds remain silent.
+Builds without `FCPICO_AUDIO_WAD` remain silent; configured builds install the
+generated bank described below.
 
 `tests/audio_engine` exercises the real engine module with a small synthetic bank
-and an empty bank. Physical playback, combined UI/APU timing and generated bank
-placement remain acceptance gates.
+and an empty bank. Physical playback and combined UI/APU timing remain
+acceptance gates.
+
+### Generated bank installation (2026-10-02)
+
+Supply a local shareware WAD; no game assets are committed. The existing pinned
+hardware build script generates music and effects, compiles lookup tables and
+merges firmware, WHX and the archive into one UF2:
+
+```sh
+FCPICO_AUDIO_WAD=/path/to/doom1.wad doom/tools/build_shadow_detail.sh
+```
+
+Use `.build/doom-shadow/artifacts/fcpico_doom_shadow_detail_delay_whx.uf2` as the
+complete image. `fcpico_doom.uf2` contains firmware only. The artifact directory
+also contains `audio.bin`, `audio.json` (names, offsets, priorities, hashes) and
+`SHA256SUMS`. Omitting the environment variable explicitly disables audio, even
+when reusing an audio-enabled CMake cache. Audio conversion requires the project
+`doom/.venv` with numpy.
+
+For an existing CMake engine build, configure `-DFCPICO_AUDIO_WAD=/path/to/doom1.wad`
+and `-DPython3_EXECUTABLE=/absolute/path/to/doom/.venv/bin/python`, then build
+`fcpico_doom_audio_uf2`. Its complete image is
+`<build>/port/audio/fcpico_doom_audio_whx.uf2`. A host build embeds the same archive;
+`--dump-apu /tmp/apu.csv` records `rendered_frame,reg_hex,value_hex`, and CTest
+`engine_audio_bank` verifies advancing, deterministic, capped output with no drops.
+The host does not synthesize sound.
+
+`tools/audio/build_bank.py` converts all 13 songs and all available `DS*` lumps.
+SFX priorities come from the engine's `sounds.c`. An initial named preference set
+uses pulse 2 for pickups, switches, sights and movement; other effects use noise.
+These are fallback arrangements awaiting listening, with no DPCM dependency.
+The archive is 227,280 bytes for the verified WAD and lives at `0x10300000`, within
+`FLASH_ASSETS_MAX` and below saves. Only metadata enters the firmware's 512 KB
+region. A 32-byte content identity prefix is checked against the compiled table;
+unflashed or differently generated archives disable the default bank. This is a
+pairing check, not a runtime checksum of every payload byte.
+
+The UF2 packer rejects archive overflow and WHX/archive overlap. Generated C table
+replay covers missing/mismatched archives and all songs/effects under ASan/UBSan.
+Firmware size is 301,064 bytes with 223,224 bytes free before WHX; the asset region
+has 297,008 bytes free. Engine polls still advance one observed heartbeat at a
+time: realtime tempo under rendering stalls, combined UI/APU reception and NMI
+budget require S4/Mesen and console validation.
 
 ## Offline pipeline (`doom/tools/audio/`)
 
