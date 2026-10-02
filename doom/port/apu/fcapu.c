@@ -24,6 +24,8 @@ typedef struct {
     int handle, id;
     uint32_t elapsed, duration;
     uint8_t volume;
+    uint8_t envelope;
+    bool envelope_valid, volume_dirty;
     bool active;
 } voice_t;
 
@@ -259,6 +261,24 @@ static int voice_index(fcapu_sfx_kind_t kind) {
     return -1;
 }
 
+bool fcapu_music_playing(void) {
+    return a.music_on;
+}
+
+void fcapu_sfx_volume(int handle, int vol_0_127) {
+    if (vol_0_127 < 0) vol_0_127 = 0;
+    if (vol_0_127 > 127) vol_0_127 = 127;
+    for (int i = 0; i < 3; i++) {
+        voice_t *voice = &a.voices[i];
+        if (!voice->active || voice->handle != handle) continue;
+        if (voice->volume != vol_0_127) {
+            voice->volume = (uint8_t)vol_0_127;
+            voice->volume_dirty = true;
+        }
+        return;
+    }
+}
+
 int fcapu_sfx_start(int sfx_id, int vol_0_127) {
     if (!a.bank || !a.bank->sfx || sfx_id < 0 || (size_t)sfx_id >= a.bank->sfx_count) return -1;
     const fcapu_sfx_t *sfx = &a.bank->sfx[sfx_id];
@@ -369,10 +389,19 @@ static void sfx_frames(void) {
                 if (reg < first || reg >= first + 4) { a.stats.dropped++; continue; }
                 uint8_t value = frame.pairs[j].value;
                 if (reg == first) {
+                    voice->envelope = value;
+                    voice->envelope_valid = true;
+                    voice->volume_dirty = false;
                     value = (uint8_t)((value & 0xf0) |
                                       (((value & 0x0f) * voice->volume + 63) / 127));
                 }
                 enqueue(reg, value, ORDER_SFX);
+            }
+            if (voice->volume_dirty && voice->envelope_valid) {
+                uint8_t value = (uint8_t)((voice->envelope & 0xf0) |
+                    (((voice->envelope & 0x0f) * voice->volume + 63) / 127));
+                enqueue(first, value, ORDER_SFX);
+                voice->volume_dirty = false;
             }
         }
         voice->elapsed++;
