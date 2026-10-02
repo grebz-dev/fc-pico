@@ -1,5 +1,27 @@
 # FC PICO Doom
 
+## Current native HUD candidate (2026-10-01)
+
+The current Mesen-validated ROM is `20DOOM-04-9016`. Rebuild the flashable
+firmware plus embedded ROM, regenerate the native HUD fonts, run the focused
+Python and host C tests, and capture the Mesen status/title/menu scenes with:
+
+```sh
+doom/tools/reproduce_native_hud.sh --verify-twice
+```
+
+The script requires the repository's `doom/.venv`, MesenCE/NESASM tool cache,
+Pico SDK and ARM toolchain. It writes the two independent builds, captures,
+trace and hash manifest under `/tmp/fcpico-native-hud-repro/`. The flashable
+UF2 is at
+`/tmp/fcpico-native-hud-repro/device-first/artifacts/fcpico_doom_native_status_whx.uf2`.
+The verified 9016 UF2 SHA-256 is
+`44228ccb98282e2f35decfea7123cdd35e8e7044910cea258f5b4037d73e6667`.
+The build is emulator validated; physical validation of 9016 is pending.
+
+The NAW-importable HUD PPU/OAM dump and its exporter are documented in
+[`assets/hud_edit_reference/README.md`](assets/hud_edit_reference/README.md).
+
 Doom -- the shareware `DOOM1.WAD`, via [RP2040 Doom](https://github.com/kilograham/rp2040-doom)
 (itself a Chocolate Doom derivative) -- running on the RP2350 inside an
 [FC PICO](../README.md) cartridge, displayed by, and played from, an unmodified Famicom or NES.
