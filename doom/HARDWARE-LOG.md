@@ -11,6 +11,31 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-10-02 -- HR-16 audio works on hardware
+
+- Console: physical console tested by user; model and region not restated.
+- Cartridge firmware: HR-16 `fcpico_doom_audio_native_9016.uf2`, provided from
+  root `7b63586` / engine `0e18c993`, SHA-256
+  `f5cc51d8ab2698d448971520983c0a07ddd7245b2d9b5445c07fd4f10dbb105a`.
+  Embedded ROM stamp `20DOOM-04-9016`.
+- Results: user reports “it works on hardware” and confirms things work as
+  expected. Record this as the hardware audio smoke-test pass for the supplied
+  candidate: generated-bank installation and heartbeat-driven audio work on
+  the physical console with the current native HUD/menus.
+- Implementation findings: engine polling stretched audio when rendering stalled.
+  Pumping after bus IRQ DMA re-arm removes that dependency; engine sequencer
+  mutations use a local interrupt guard. The complete UF2 carries firmware,
+  WHX and the matching 227,280-byte archive in separate reserved regions.
+- Validation evidence: two independent complete UF2 builds match byte-for-byte;
+  14 sanitizer CTests and three focused engine checks pass. The packaged native
+  NMI replays 15 APU writes in 1608 cycles with text updates or 2098 cycles with
+  OAM DMA, within the 2200-cycle cap. Native UI Mesen checks pass. Exact commands,
+  artifact hashes and limitations are in [PROGRESS.md](PROGRESS.md).
+- Attachments: user confirmation in this session; no serial capture or recording
+  supplied. Detailed IRQ duration, extended-session counters, individual sound
+  quality and power-cycle results were not separately transcribed. Scripted
+  end-to-end S4, human arrangements and DPCM remain separate open gates.
+
 ## 2026-10-01 -- 9016 native HUD and menus, physical validation
 - Console: physical validation completed by user; model and region not
   restated.

@@ -4,6 +4,33 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## HR-16 -- hardware audio pass and merge handoff (2026-10-02)
+
+- User confirms the supplied native audio candidate works on hardware and things
+  behave as expected. Recorded the result in `HARDWARE-LOG.md` and moved HR-16
+  to completed requests; candidate root `7b63586` / engine `0e18c993`, UF2 SHA-256
+  `f5cc51d8ab2698d448971520983c0a07ddd7245b2d9b5445c07fd4f10dbb105a`.
+- Implementation findings retained: full music/effect bytes exceed the space
+  before WHX, so the archive uses the reserved asset region with matching XIP
+  lookup tables and a content-identity check; polls during rendering stalls
+  stretched tempo, so device advancement now runs after bus IRQ DMA re-arm,
+  protected against engine-side state mutation by local interrupt guards.
+- P4-T2 is done: engine modules and optional bank installation are implemented,
+  host/sanitizer/flash checks pass, and physical audio works. P4-T6 stays partial:
+  scripted end-to-end S4 and extended timing/listening evidence remain. Human
+  arrangements, DPCM and the full M4 release gate are not closed by this pass.
+- “Traces” in the user's request meant implementation findings and validation
+  evidence, not new raw serial/execution captures. No hardware metrics were
+  invented or inferred; no new waveform/serial files supplied. Existing host,
+  NMI and Mesen evidence is linked in the prior candidate entry.
+- Rechecked the 600-frame host audio capture twice while preparing the handoff:
+  byte-identical 1,777 writes, maximum 12 pairs per rendered frame, zero drops;
+  527 sequencer frames (initialization starts after rendering begins). These
+  remain synthetic host measurements, not physical serial readings.
+- Hardware evidence, README/audio plan/workplan and completion tracking updated;
+  Markdown links and whitespace checks pass. This evidence entry supports the
+  requested merge into `doom`; unrelated upstream-contribution edits are preserved.
+
 ## HR-16 / P4-T2 -- native HUD audio UF2 candidate (2026-10-02)
 
 - Engine `0e18c993` moves device audio advancement to core 0's accepted heartbeat
