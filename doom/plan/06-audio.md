@@ -11,7 +11,8 @@ The host `fcapu` sequencer and audio conversion tools are implemented and tested
 including automatic MUS/MIDI music and synthesised pulse/noise effects. Engine
 sound/music adapters and optional generated-bank installation are implemented
 and host-tested. Reserved-region placement passes build/UF2 checks; arrangements,
-combined UI/APU timing and console audio remain open; see
+extended combined UI/APU timing and detailed listening remain open. HR-16
+confirms this candidate works as expected on the physical console; see
 [`../issues/I-05-audio-tools.md`](../issues/I-05-audio-tools.md) and
 [`../issues/README.md`](../issues/README.md).
 
@@ -147,7 +148,8 @@ generated bank described below.
 
 `tests/audio_engine` exercises the real engine module with a small synthetic bank
 and an empty bank. Physical playback and combined UI/APU timing remain
-acceptance gates.
+extended validation gates. HR-16 now records a physical audio smoke-test pass;
+it does not supply raw IRQ timing or individual sound-quality measurements.
 
 ### Generated bank installation (2026-10-02)
 
@@ -190,7 +192,8 @@ Firmware size is 301,064 bytes with 223,224 bytes free before WHX; the asset reg
 has 297,008 bytes free. Device IRQ pumping now advances during rendering stalls;
 actual IRQ duration and audible realtime tempo still require physical validation.
 The native ROM replays 15 writes with either two text updates or OAM DMA within
-its NMI budgets. End-to-end S4 audio reception and listening remain open.
+its NMI budgets. HR-16 confirms hardware audio works as expected. Scripted end-to-end S4 and
+extended listening/timing evidence remain open.
 
 ## Offline pipeline (`doom/tools/audio/`)
 

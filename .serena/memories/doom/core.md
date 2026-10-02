@@ -7,4 +7,5 @@
 - For pico-sdk host shim limitations, PIO emulator limits, and confidence of simulation versus hardware, read `mem:doom/host_simulation`.
 - For Python stream conventions, stage A composition, and golden generation, read `mem:doom/video_tools`.
 - For v4 native status/menu art boundaries, resident tile limits, and current Mesen coverage, read `mem:doom/native_ui`.
+- For optional audio bank packaging, XIP placement, heartbeat IRQ ownership and capture limits, read `mem:doom/audio`.
 - Build pins and commands are in `mem:tech_stack` and `mem:suggested_commands`; code/branch constraints and acceptance discipline are in `mem:conventions` and `mem:task_completion`.

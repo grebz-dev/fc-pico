@@ -53,13 +53,14 @@ Audio conversion tooling is complete: WAD extraction, VGM/VGZ and automatic
 MUS/MIDI music conversion, and pulse/noise effect scripts pass host checks on all
 13 shareware songs and 55 effects. Engine sound/music adapters pass host tests;
 optional `FCPICO_AUDIO_WAD` builds install all 13 songs and 55 synthesized effects
-in the reserved asset region. Console playback and combined UI/APU timing remain
-open; build commands are in [the bank installation guide](plan/06-audio.md#generated-bank-installation-2026-10-02), and converter commands are in [the audio plan](plan/06-audio.md#implemented-extraction-and-vgm-commands-2026-10-01).
+in the reserved asset region. Audio works on hardware (HR-16, 2026-10-02);
+extended listening and combined timing measurements remain open; build commands are in [the bank installation guide](plan/06-audio.md#generated-bank-installation-2026-10-02), and converter commands are in [the audio plan](plan/06-audio.md#implemented-extraction-and-vgm-commands-2026-10-01).
 
 The audio test candidate is
 `.build/doom-audio-test/artifacts/fcpico_doom_audio_native_9016.uf2`, including
 firmware, WHX and the audio bank. It retains native HUD ROM `20DOOM-04-9016` and
-uses heartbeat IRQ audio. The checksum and listening checklist are in
+uses heartbeat IRQ audio. The user confirms it works on hardware as expected.
+The checksum, listening checklist and result are in
 [HR-16](HARDWARE-REQUESTS.md#hr-16-native-hud-audio-test-candidate-tasks-p4-t2--p4-t6).
 
 **Next feature goal: native-resolution sprite UI.** Move status-bar text, symbols,
