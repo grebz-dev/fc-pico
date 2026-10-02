@@ -51,8 +51,9 @@ release milestone; see [issues/README.md](issues/README.md) for current work and
 
 Audio conversion tooling is complete: WAD extraction, VGM/VGZ and automatic
 MUS/MIDI music conversion, and pulse/noise effect scripts pass host checks on all
-13 shareware songs and 55 effects. Engine integration, firmware asset placement
-and console audio validation remain open; commands are in [the audio plan](plan/06-audio.md#implemented-extraction-and-vgm-commands-2026-10-01).
+13 shareware songs and 55 effects. Engine sound/music adapters pass host tests;
+installing the asset bank, firmware asset placement and console audio validation
+remain open; commands are in [the audio plan](plan/06-audio.md#implemented-extraction-and-vgm-commands-2026-10-01).
 
 **Next feature goal: native-resolution sprite UI.** Move status-bar text, symbols,
 indicators, Doomguy's face, HUD messages and menus out of the dithered background

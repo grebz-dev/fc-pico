@@ -56,9 +56,13 @@ bool fcapu_music_play(int mus_id, bool loop);
 void fcapu_music_stop(void);
 void fcapu_music_pause(bool paused);
 void fcapu_music_volume(int vol_0_15);
+bool fcapu_music_playing(void);
 int fcapu_sfx_start(int sfx_id, int vol_0_127);
 void fcapu_sfx_stop(int handle);
 bool fcapu_sfx_playing(int handle);
+/* Synth envelope volume changes apply on the next pump, including silent
+ * script frames. DPCM retains its fixed sample amplitude. */
+void fcapu_sfx_volume(int handle, int vol_0_127);
 /* Call freely; the sequencer advances once for each new heartbeat number. */
 void fcapu_pump(uint32_t frame_no);
 const fcapu_stats_t *fcapu_stats(void);

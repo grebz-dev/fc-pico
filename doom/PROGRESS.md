@@ -4,6 +4,41 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## P4-T2 -- engine audio adapters (2026-10-02)
+
+- Committed converters in root `fb016e2`, then continued with engine commit
+  `ff1b39bc`. Sound/music modules now use `fcapu`, resolve WHX music names and
+  SFX aliases, and support stable handles, pause/resume, stop/query and volume.
+- Added sequencer music status and synthesized volume updates during silent
+  frames. Added `tests/audio_engine` against the actual engine adapter, covering
+  synthetic and empty banks, priority steals, stale handles and deferred stops.
+- Device delivery runs on core 0 once per bus heartbeat under an interrupt
+  guard. Host delivery uses rendered frames and discards writes. No generated
+  bank is installed: default builds remain silent and P4-T2 stays partial.
+- Verified host-only configure/build and CTest in
+  `/tmp/fcpico-audio-host-unit`: 13/13 pass. ASan/UBSan build in
+  `/tmp/fcpico-audio-asan`: 13/13 pass with `ASAN_OPTIONS=detect_leaks=0`
+  (LeakSanitizer cannot run under the environment's ptrace).
+- Verified `doom_tiny_fcpico` host build in
+  `/tmp/fcpico-native-ui-host-engine`; `engine_input_walk` and `host_shim_test`
+  pass. Two golden checks (`engine_host_determinism`,
+  `engine_title_menu_golden`) fail identically on untouched root `fb016e2` /
+  engine `84ecd1de`, built separately in `/tmp/fcpico-audio-baseline-build`.
+  Independent 600-frame demo runs of baseline and two updated runs have identical
+  indexed frames and NES streams; dumps are in
+  `/tmp/fcpico-audio-engine-compare/{baseline,guard-updated,guard-repeat}`.
+- Verified pinned device build:
+  `NESASM_BIN=/home/josh/Github/fc-pico/.build/tools/nesasm/nesasm cmake --build
+  .build/doom-shadow/device --target doom_tiny_fcpico -j4`.
+  Permanent fix-bank check passes. `python3 doom/tools/flash_layout_check.py
+  .build/doom-shadow/device/rp2040-doom/src/fcpico_doom.elf --whx
+  doom/rp2040-doom/doom1.whx` passes: firmware 299,000 bytes, 225,288 bytes free
+  before the WHX region. The 213,777-byte generated music bank would leave only
+  11,511 bytes there before effects/metadata; placement still needs proof.
+- Markdown links and both repository whitespace checks pass. Remaining work:
+  install the generated bank, prove flash placement, then validate audible
+  playback and combined UI/APU timing on the console. No hardware claim made.
+
 ## P3-U4 -- reproducible native HUD and NAW dump (2026-10-01)
 - Commits: root `006413b` plus the 9016 HUD commits; engine submodule
   `84ecd1de`.

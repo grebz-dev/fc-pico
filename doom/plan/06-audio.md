@@ -9,8 +9,8 @@
 
 The host `fcapu` sequencer and audio conversion tools are implemented and tested,
 including automatic MUS/MIDI music and synthesised pulse/noise effects. Engine
-sound integration, firmware asset placement, arrangements and console audio
-remain open; see
+sound/music adapters are implemented and host-tested. Asset-bank installation,
+firmware asset placement, arrangements and console audio remain open; see
 [`../issues/I-05-audio-tools.md`](../issues/I-05-audio-tools.md) and
 [`../issues/README.md`](../issues/README.md).
 
@@ -112,16 +112,36 @@ step 4-5 rarely exceed 10.
 
 | `sound_module_t` / `music_module_t` entry | fcpico |
 |---|---|
-| `Init` | `fcapu_init()`; parse the sfx table |
+| `Init` | Initialize the configured `fcapu` bank once across both modules |
 | `GetSfxLumpNum` | table lookup by name (no lump needed unless synthesising at runtime) |
 | `StartSound(sfx, ch, vol, sep, pitch)` | `fcapu_sfx_start(id, vol)`; `sep` and `pitch` ignored (mono, fixed pitch) |
 | `StopSound`, `SoundIsPlaying`, `UpdateSoundParams` | sequencer state |
-| `PlaySong(handle, looping)` | `fcapu_music_play(stream_for(handle), looping)`; `handle` is the music lump index (`USE_DIRECT_MIDI_LUMP`/`USE_MUSX` paths bypassed) |
-| `StopSong`, `PauseSong`, `ResumeSong`, `SetMusicVolume` | sequencer; volume scales the envelope nibbles (4 levels: off, low, mid, full) |
+| `PlaySong(handle, looping)` | `fcapu_music_play(id, looping)`; stable song handle from configured bank (`USE_DIRECT_MIDI_LUMP`/`USE_MUSX` paths bypassed) |
+| `StopSong`, `PauseSong`, `ResumeSong`, `SetMusicVolume` | sequencer; volume scales envelope nibbles from 0 to 15 |
 | `UpdateSound` | `fcapu_pump()` -- no-op unless a new heartbeat has happened |
 
 `I_PicoSoundSetMusicGenerator`, the ADPCM decoder, `emu8950` and `pico_audio_i2s` are not linked
 in the fcpico target.
+
+### Implemented engine adapter (2026-10-02)
+
+`src/fcpico/i_audio_fcpico.h` defines `I_FCPicoAudioSetBank()`: install a
+caller-owned, persistent `fcpico_audio_bank_t` before either module initializes.
+It supplies sequencer streams, full music lump names (`D_E1M1`) and bare SFX names
+(`pistol`). Doom music registration resolves WHX lump numbers against these names
+without caching raw MUSX bytes. Effects resolve linked aliases and use opaque
+sequencer handles; stale handles cannot stop replacement voices. Synthesized
+volume changes apply even during silent script frames; DPCM amplitude is fixed.
+
+Device updates run on core 0 with local interrupts disabled, advancing once per
+`bus.core.frame_no` and writing through `fcbus_core_apu_write()`. Core 1 polls do
+not touch sequencer state. The host runner uses its rendered-frame counter and
+discards APU writes; it does not provide audible playback or a real 60 Hz clock.
+No bank is installed by the firmware yet, so default builds remain silent.
+
+`tests/audio_engine` exercises the real engine module with a small synthetic bank
+and an empty bank. Physical playback, combined UI/APU timing and generated bank
+placement remain acceptance gates.
 
 ## Offline pipeline (`doom/tools/audio/`)
 
