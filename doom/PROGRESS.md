@@ -31,6 +31,83 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 - Plan changes: <documents touched>
 ```
 
+## I-05 / P4-T3 -- automatic music and synthesized effects complete (2026-10-01)
+
+- Commits: uncommitted working-tree changes based on root `ce221d4`;
+  engine submodule remains `84ecd1de`.
+- Added `tools/audio/mus2apus.py`: direct MUS parser, MIDI type 0/1 parser
+  with rational tempo timing and running status, deterministic pulse/pulse/
+  triangle/noise arrangement, sustain/volume/expression, finite/looping playback
+  and a whole-shareware-WAD CLI. A setup frame and empty retrigger frame keep
+  the first note audible on later loop iterations under `fcapu`'s own thinning.
+- Added `tools/audio/sfx2apu.py`: DMX/WAV RMS envelope with pulse pitch or
+  noise brightness tracking, voice-restricted APUS effects, final muting, and
+  hand-authored `.sfx` overrides. Nonperiodic PCM with negative correlation
+  peaks exposed a pitch-estimation exception; fixed and covered with a small
+  synthetic regression fixture.
+- Verified: `FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad
+  doom/.venv/bin/python -m pytest doom/tests/tools -q` -> 369 passed,
+  including the opt-in real-WAD acceptance test. The ordinary suite uses
+  synthetic fixtures and skips only the external-WAD test.
+- Real input: Doom95 shareware archive downloaded from the
+  [idgames mirror](https://ftp.fu-berlin.de/pc/games/idgames/idstuff/doom/win95/doom95.zip)
+  into `/tmp/fcpico-audio-shareware.zip`, with only `DOOM1.WAD` extracted to
+  `/tmp/fcpico-audio-doom1.wad`; no game assets added to git. WAD MD5:
+  `f0cefca49926d00903cf57551d901abe`; SHA-256:
+  `1d7d43be501e67d927e415e0b8f3e29c3bf33075e859721816f652a526cac771`.
+- Verified twice: `doom/.venv/bin/python doom/tools/audio/mus2apus.py
+  /tmp/fcpico-audio-doom1.wad --auto -o /tmp/fcpico-audio-music-first`
+  and the same command with `-o /tmp/fcpico-audio-music-second`. All 13
+  outputs match byte for byte and decode under the 12-pair music cap.
+  Individual sizes, frame counts, pair maxima and SHA-256 hashes are in
+  `/tmp/fcpico-audio-metrics.json`. Music totals 213,777 bytes, with sizes
+  from 318 (`D_INTROA`) to 36,794 (`D_INTER`), exceeding the original
+  2-6 KB estimate. Flash placement remains an integration gate.
+- Verified: all 55 real DMX lumps converted twice to both pulse/noise
+  (110 scripts) with identical bytes, no loop and final muted channel state;
+  at most four pairs per frame. Outputs are in `/tmp/fcpico-audio-effects/`.
+  The optional WAD test reproduces these checks without storing sample bytes.
+- Additional integration probe: `/tmp/fcpico-audio-replay.c` compiled with
+  `gcc -std=c11 -Wall -Wextra -Werror -fsanitize=address,undefined -g
+  -Idoom/port/apu -Idoom/fcbus /tmp/fcpico-audio-replay.c
+  doom/port/apu/fcapu.c -o /tmp/fcpico-audio-replay`. Running
+  `ASAN_OPTIONS=detect_leaks=0 /tmp/fcpico-audio-replay
+  /tmp/fcpico-audio-loop-test.apus /tmp/fcpico-audio-music-first/*.apus`
+  replayed two loops of every song through the unmodified C sequencer with
+  no drops, at most 12 writes per frame and channel disable on stop. The
+  one-note synthetic stream asserted the length reload on both iterations.
+  LeakSanitizer alone cannot run under this environment's ptrace; ASan and
+  UBSan passed with leak detection disabled.
+- Verified: `python3 doom/tools/check_md_links.py doom` and `git diff --check`.
+- Plan correction: shareware has 13 songs; remove episode-3 `D_BUNNY` from
+  its list (the real WAD omits it and `src/doom/f_finale.c` uses it for episode 3).
+  Record measured sizes instead of asserting the old flash estimate, and
+  correct the stated SFX headroom to three pairs under the 15-pair mailbox cap.
+- I-05 and P4-T3 are done for host tooling. FamiStudio arrangements, listening,
+  the engine audio adapter, resource placement, DPCM bank and combined
+  console/controller timing remain later work; no audible-console claim.
+
+## I-05 / P4-T3 -- WAD extraction and VGM music conversion (2026-10-01)
+
+- Commits: uncommitted working-tree changes; no engine submodule changes.
+- Added `tools/audio/wadextract.py`: validated IWAD/PWAD lump extraction,
+  case-insensitive names/globs, last-entry duplicate resolution and deterministic
+  filenames. Synthetic fixtures cover ranges, unsafe names and missing selections.
+- Added `tools/audio/vgm2apus.py`: VGM/VGZ NES register writes, sample waits,
+  NTSC/PAL timing, shared retrigger thinning and a 12-pair music cap. Loops retain
+  their initial writes; unrepresentable loops and unsupported chips/DPCM fail
+  explicitly. CLI fixtures round-trip through the existing APUS reader and
+  compare two outputs byte for byte.
+- Verified: `doom/.venv/bin/python -m pytest doom/tests/tools/test_audio_convert.py -q`
+  -> 48 passed. `doom/.venv/bin/python -m pytest doom/tests/tools -q`
+  -> 318 passed. System `python3` has no pytest; use the existing repository venv.
+- Verified: `python3 doom/tools/check_md_links.py doom` and `git diff --check`.
+- Limits: synthetic inputs only; no FamiStudio arrangement export or hardware
+  listening claim. Automatic MUS/MIDI conversion, synthesised-effect conversion,
+  all-shareware-song acceptance and engine/console integration remain open.
+- Updated I-05/index, P4-T3 status, audio plan and README; no firmware, bus
+  protocol, permanent fix bank or tutorial changes.
+
 ## P3-U4 concrete HUD candidate 9013 (2026-09-29)
 - Built a flashable WHX UF2 with the unchanged permanent fix bank. The
   renderer now paints concrete and native-resolution status text from the

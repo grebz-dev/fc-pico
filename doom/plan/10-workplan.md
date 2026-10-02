@@ -63,7 +63,7 @@ does not waive a task's remaining acceptance criteria.
 | P3-U4 / P3-U5 / P3-U6 | **open** | Engine status snapshot capture exists; actual sprite/BG HUD migration and acceptance gates remain ([I-20](../issues/I-20-sprite-ui.md)). |
 | P3-T1 | **partial** | Base mapping and host `--pads` movement pass; B-use fix passes hardware; full context mappings remain. |
 | P4-T1 | **done** | Host APU sequencer tests pass; audio integration and assets are later tasks. |
-| P4-T3 | **partial** | APUS/DPCM support tools pass tests; [I-05](../issues/I-05-audio-tools.md) remains. |
+| P4-T3 | **done** | Host converters pass; all 13 shareware music streams stay under 12 pairs and all 55 effects convert. See [I-05](../issues/I-05-audio-tools.md); placement/listening remain integration gates. |
 
 The task bodies below retain the original deliverables and acceptance checks. Use
 the status table and implemented sources for the current commands and toolchain.
@@ -408,6 +408,8 @@ or sprite UI implementation is deferred.
 | M5 | [P5-T1](10-workplan.md#p5-t1-overclock-evaluation----spec-01-rp2040-doomsrci_mainc-size-m-depends-p1-t9-steps-200250270-mhz-with-vreg-and-qmi-timing-pio-bus-validation-trace--stats-at-each-fps-gain-table-acceptance-chosen-clock-documented-hw-1-h-soak-at-that-clock), T5, T6 (+ optional); soak 1 h; release artifacts |
 
 ## Changelog
+
+- 2026-10-01: complete P4-T3 host converters and real-shareware acceptance; correct the music list to exclude episode-3 `D_BUNNY`, and record the larger measured stream sizes in plan 06. Firmware placement and listening remain later gates.
 
 - 2026-09-27: record the intermittent NES-001 A/diamond result; add an isolated
   v3 mailbox and OAM commit timing result while retaining the production HUD
