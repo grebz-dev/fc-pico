@@ -29,7 +29,10 @@ into the PPU byte stream, an attribute table and a palette, and ships them to th
   alongside the firmware. The build must not preclude larger flash parts later.
 - Network play. The cartridge has no second bus.
 - Faithful OPL2 music. The console's APU has five channels; music is *arranged* for it.
-- World-object NES sprites: the 3D scene remains a streamed background. Foreground UI sprites are now required; see [12](12-sprite-ui.md).
+- Unbounded world-object NES sprite coverage. Enemy/pickup sprite development
+  is now planned in [14](14-world-sprites.md), with a feasibility gate and streamed
+  fallback for capacity overflow. Geometry remains a streamed background.
+  Foreground UI sprites are required; see [12](12-sprite-ui.md).
 - Clone-console compatibility beyond what the stock FC PICO firmware achieves.
 - PAL consoles. Should work in principle (see [11](11-risks.md)), untested.
 

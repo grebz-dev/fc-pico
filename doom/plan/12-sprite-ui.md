@@ -11,6 +11,12 @@ The world remains a streamed background. Decorative panels and full-screen artwo
 may remain background content; foreground UI must not silently retain its old,
 dithered representation when declared migrated.
 
+[14 -- World sprites](14-world-sprites.md) now plans a separate enemy/pickup
+sprite path over the streamed geometry. Its allocator, CHR, palettes and timing
+must share this UI's budget; it may not assume 64 spare OAM entries or unused
+sprite palettes. P3-W1..W5 preserve UI acceptance and provide streamed actor
+fallback where world-sprite capacity is insufficient.
+
 This document is the specification; [10-workplan.md](10-workplan.md) schedules
 P3-U1..U6. [I-20](../issues/I-20-sprite-ui.md) tracks the work. Runtime formats,
 final asset layouts and U1/U2 scenarios remain future work.

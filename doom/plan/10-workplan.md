@@ -34,6 +34,17 @@ Execute in this order, preserving task IDs and unfinished acceptance gates:
 
 Sprite work does not waive the <=8 ms converter target, dynamic S2, or M1/M2 gates.
 
+### World-sprite addition (2026-10-02)
+
+Develop native enemy and pickup sprites through **P3-W1..W5**, specified in
+[14-world-sprites.md](14-world-sprites.md). Start the extraction, LUT-scaling,
+combined UI/world budget and occlusion study alongside the remaining UI work.
+W1 determines feasible coverage and transport before migration; W3 reuses a
+proven UI schedule and storage path. Keep streamed actor fallback for capacity
+overflow. Physical mapper extensions require their own feasibility proof.
+This adds development work without declaring it landed or changing existing
+milestone gates before feasibility is established.
+
 ## Status
 
 Use **open**, **partial**, and **done** as in the [issue index](../issues/README.md).
@@ -52,6 +63,7 @@ does not waive a task's remaining acceptance criteria.
 | P1-T6 | **partial** | Merged firmware/WHX UF2 boots; complete loading and layout acceptance remains. |
 | P1-T7 / P1-T8 | **partial** | Fixed-frame D0/D1 and first Doom hardware image pass; dynamic S2, 30-minute check and fps gate remain. |
 | P1-T9 | **open** | Measured conversion is 38.208 ms; optimize and remeasure against <=8 ms target. |
+| P3-W1..W5 | **open** | Enemy/pickup sprite development added in [14](14-world-sprites.md); feasibility, asset generation, transport, masking and hardware acceptance remain. |
 | P2-T1 / P2-T2 | **partial** | v2 ROM, local MD5/fix-bank and py65 cycle gates pass; remote boot-ROM CI result unrecorded ([I-13](../issues/I-13-bootrom-tree.md), [I-14](../issues/I-14-bootrom-nmi.md)). |
 | P2-T3 | **done** | v2 bus protocol runs on NES-001 at count=15554. |
 | P2-T4 | **partial** | S1 reflash passes in both directions and a hardware ROM UPDATE was observed; final `0002` stamp was not separately transcribed. |
@@ -300,6 +312,62 @@ the status table and implemented sources for the current commands and toolchain.
 
 ## Phase 3 -- Playable (milestone M3)
 
+### P3-W1 World-sprite feasibility, budgets and visibility seam
+
+- Spec: [14](14-world-sprites.md), [14a](14a-world-sprite-occlusion-research.md), [12](12-sprite-ui.md). Size: M. Depends: current engine/9016 UI baseline.
+- Deliver: shareware enemy/pickup scope; current versus proposed combined OAM,
+  scanline, CHR, palette, RAM/flash, transport and cycle budgets; comparison of
+  resident scale bands, RP2350 LUT scaling and the reference 6502 scaler; PD
+  visibility/background restoration design; traditional/homebrew mapper matrix.
+- Acceptance: crowded and close-up cases accounted for; explicit streamed
+  fallback, supported effects and expected sprite coverage; no assumed classic
+  drawseg lists or unsupported mapper capabilities; choose a bounded first probe
+  that fits UI/audio/converter deadlines or record the exact unresolved blocker.
+
+### P3-W2 WAD extraction, sprite sheets and LUT scaling
+
+- Spec: [14](14-world-sprites.md). Size: L. Depends: P3-W1.
+- Deliver: deterministic source/2bpp enemy and pickup sheets, patch/frame/rotation
+  and WHX identity manifest, anchor/flip metadata, palette candidates, scale
+  bands/cache experiment and per-frame resource report. Reuse validated WAD and
+  existing CHR tooling; adapt `reference/scaling-wip/` with attribution.
+- Acceptance: transparency and patch bounds validated; all scoped state/view
+  mappings complete; stable foot anchors and contiguous scaled slivers; exact
+  tile/mask reference checks; regeneration hashes match; reduced art visibly
+  distinguishes the chosen enemy and pickup at representative distances.
+
+### P3-W3 Bounded world-sprite transport and storage probe
+
+- Spec: [14](14-world-sprites.md), [03](03-protocol-v2.md), [07](07-bootrom.md). Size: L. Depends: P3-W1, P3-W2, proven P3-U3 transport/storage baseline.
+- Deliver: one enemy and pickup over the stream with combined UI OAM allocation,
+  reserved dynamic CHR, immutable generation and bounded upload/commit path.
+- Acceptance: worst-case CHR reception/writes, palettes and OAM DMA meet deadlines
+  with audio; repeated/stalled/malformed updates cannot mix generations; fixed
+  bank, calibrated counts, S0/D0/D1/S1 and UI regressions preserved. **HW**:
+  confirm runtime storage and upload behavior before expanding the cache.
+
+### P3-W4 Mixed actor rendering and geometry masks
+
+- Spec: [14](14-world-sprites.md), [14a](14a-world-sprite-occlusion-research.md). Size: XL. Depends: P3-W3.
+- Deliver: actor intent/visibility seam in the active PD renderer, clean geometry
+  behind migrated actors, LUT-scaled per-instance masked tiles, bounded admission
+  and whole-actor streamed fallback; no duplicate software/hardware actor draws.
+- Acceptance: corners, doors, steps, masked fences, actor depths and held-weapon
+  overlap match independent visibility expectations; all combined scanlines and
+  modes fit; native status remains stable; no holes where a suppressed actor had
+  clipped background geometry; pickup/removal/transitions clear stale sprites.
+
+### P3-W5 Dynamic world-sprite regression and acceptance **HW**
+
+- Spec: [14](14-world-sprites.md), [09](09-testing-ci.md). Size: L. Depends: P3-W4, P2-T7; P1-T9 for final performance gate.
+- Deliver: deterministic 3000-frame Mesen cases with real sprite limits, paired
+  baseline images, masks/CHR/OAM/generation logs, crowded/near-view fallback rates
+  and timing report; reproducible hardware request and artifact hashes.
+- Acceptance: useful scoped actor coverage and improved recognition at >=20 fps,
+  existing converter/UI/audio/bus gates green; NES-001 confirms edge occlusion,
+  palette stability, no sprite dropout and a 30-minute soak. Feasibility/probe
+  success alone does not close this task or add a completed milestone gate.
+
 ### P3-U1 Sprite UI feasibility and layout
 
 - Spec: [12](12-sprite-ui.md). Size: M. Depends: working P2-T3 and current frame-composition baseline.
@@ -410,6 +478,10 @@ or sprite UI implementation is deferred.
 | M5 | [P5-T1](10-workplan.md#p5-t1-overclock-evaluation----spec-01-rp2040-doomsrci_mainc-size-m-depends-p1-t9-steps-200250270-mhz-with-vreg-and-qmi-timing-pio-bus-validation-trace--stats-at-each-fps-gain-table-acceptance-chosen-clock-documented-hw-1-h-soak-at-that-clock), T5, T6 (+ optional); soak 1 h; release artifacts |
 
 ## Changelog
+
+- 2026-10-02: add P3-W1..W5 and plan 14 for WAD-derived enemy/pickup sprites,
+  LUT scaling, current UI/world budgets, PD visibility masks, streamed fallback
+  and traditional/homebrew mapper feasibility. Planning only.
 
 - 2026-10-01: complete P4-T3 host converters and real-shareware acceptance; correct the music list to exclude episode-3 `D_BUNNY`, and record the larger measured stream sizes in plan 06. Firmware placement and listening remain later gates.
 
