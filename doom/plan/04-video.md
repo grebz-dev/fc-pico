@@ -7,6 +7,9 @@ From RP2040 Doom's 320x200 palette-indexed frame to the bytes the PPU pulls off 
 - Current baseline: 256x240 background, 8x8 tiles, no scrolling, no visible sprites.
   Planned: native-resolution foreground sprites for status/HUD/menu UI, alongside
   the streamed world; see [12 -- Sprite UI](12-sprite-ui.md).
+  [14 -- World sprites](14-world-sprites.md) adds enemy/pickup extraction,
+  LUT scaling and geometry masking, with combined UI/world budgets and a
+  streamed actor fallback. This is planned work, not current renderer behavior.
 - Per pixel: 2 bits selecting one of four entries of a *sub-palette*.
 - Per 16x16 block: 2 bits selecting one of four sub-palettes (the attribute table, 64 bytes at
   `$23C0`; each byte covers a 32x32 area as four 2-bit quadrants).
