@@ -101,6 +101,7 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 10 | [plan/10-workplan.md](plan/10-workplan.md) | Phases and tasks with acceptance criteria -- **the execution checklist** |
 | 11 | [plan/11-risks.md](plan/11-risks.md) | Risk register, open questions, decisions that need a human |
 | 12 | [plan/12-sprite-ui.md](plan/12-sprite-ui.md) | Next feature: sprite UI design, capacity/timing gates, migration and Mesen validation |
+| 13 | [plan/13-upstream-contributions.md](plan/13-upstream-contributions.md) | Atomic upstream contributions: reusable cosimulation, buildchain, inspection tools, serial BOOTSEL, platform findings and agent workflows |
 | 14 | [plan/14-world-sprites.md](plan/14-world-sprites.md) | Enemy/pickup sprite development: automatic WAD sheets, LUT scaling, shared UI budgets, geometry masks, streamed fallback and mapper feasibility |
 
 ## Directory map
