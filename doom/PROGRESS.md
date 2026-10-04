@@ -4,6 +4,63 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## P3-W5a -- shared HUD palette and world sprite transport (2026-10-04)
+
+- Request: free the BG palette the 9016 native HUD reserves, validate, then
+  improve frame rate with native sprites on screen.
+- HUD palette: new preset `FCVIDEO_PRESET_SHARED_HUD` (default) is shadow detail
+  with its dark-red subpalette 2 replaced by the HUD's `00 30 16` in HUD index
+  order: `1D 00 30 / 08 18 30 / 00 30 16 / 09 19 30`. HUD cells use
+  `FCVIDEO_HUD_PALETTE` 2; world cells choose among all four palettes again, so
+  the green palette returns while the HUD is shown. The device/host override of
+  palette 3 is gone, so the HUD tints with the world during flashes (as Doom's
+  status bar does); the episode menu overlay uses palette 2. Chosen by the
+  converter's own block error over 300 demo 1..3 frames (shadow lift on):
+  current 6.52, shared HUD + green 6.51, shared HUD + red 6.48, full four
+  without HUD 6.46. Warm ramps (`06 16 36`, `07 17 37`) scored 5.56..5.59 but
+  dithered brown walls into olive in previews, so they were rejected.
+- Sprite tiles (`fcworld_bounds`/`fcworld_raster_actor`): rasters are sampled
+  in native pixels relative to the patch origin (left/top offsets, rounded to a
+  native pixel) at a scale snapped to `FCWORLD_SCALE_STEPS` (8) geometric steps
+  per octave, so tiles depend only on patch, step and flip. Sprites now end at
+  line 191 while the status bar is shown: a tile overhang reached the HUD face
+  sprites (9 sprites on line 201 in Mesen) after the layout change.
+- ROM `20DOOM-05-9031`: a new world packet outranks a pending OAM DMA, so HUD
+  and commit DMAs run in the heartbeat where the RP waits for the shown
+  generation instead of costing a resend. py65 NMI budgets (critical/total):
+  CHR 1699/2115, OAM 1209/2103, commit 1276/2183, DMA 1208+513/2137, tables
+  1782/2198 (limit 2200).
+- RP pipeline: `fcworld_submit_held` starts CHR and OAM staging before the 38 ms
+  conversion; the committing packet waits for `fcworld_release` at publication.
+- Mesen cosimulation, demo 1 recorded frames 100..249, 0 failures every run,
+  1200 stable heartbeats, NMI exits 251..257:
+
+  | Configuration | heartbeats/picture | tiles uploaded | cache hits | resends |
+  |---|---:|---:|---:|---:|
+  | 9030, exact Doom sampling (previous) | 6.89 | 1576 | 92 | 131 |
+  | anchored, scale-stepped raster | 5.80 | 991 | 672 | 131 |
+  | + ROM 9031 packet priority | 4.99 | 991 | 672 | 0 |
+  | 2-heartbeat conversion, submit after conversion | 6.98 | 991 | 672 | 0 |
+  | 2-heartbeat conversion, held submit (device order) | 5.62 | 991 | 672 | 0 |
+  | streamed baseline, 2-heartbeat conversion | 3.01 | - | - | - |
+
+  ```sh
+  doom/.venv/bin/python doom/sim/mesen2/run_world_runtime.py --engine <host> \
+    --first 100 --count 150 --output <dir> --convert-beats 2 --early
+  ```
+  The cart model logs the scheduler stage on each heartbeat row and models
+  conversion with `FCPICO_WORLD_CONVERT_BEATS` / `FCPICO_WORLD_EARLY`.
+- Verified: host CTest 15/15 plain and ASan/UBSan; Python 525 passed; boot ROM
+  36 passed; device build OK, firmware 312,148 bytes, RAM post-zone 26,360
+  bytes (minimum 24,576). Candidate
+  `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2` SHA-256
+  `b55cade4ab953b46e724bcdf3a50c16b4a5ee20460cef6e655687edf5b1a4597`, ROM
+  `ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135`. No
+  hardware run yet (HR-17 updated).
+- Remaining gap to streaming is CHR bandwidth (about 3.2 CHR heartbeats per
+  generation). Untried: five tiles per packet (needs NMI cycles), coarser scale
+  steps, a larger tile pool.
+
 ## P3-W3/W4 -- world sprite frame-rate measurement (2026-10-03)
 
 - Hardware (HR-17 first pass, [log](HARDWARE-LOG.md)): per-tile palette candidate

@@ -20,6 +20,9 @@
 #define FCVIDEO_ERR_BYTES (4 * 256)
 #define FCVIDEO_LUT_BYTES (4 * 256 * 16)
 #define FCVIDEO_PALETTE_SET_COUNT 14
+/* Native HUD cells use this subpalette with pixel values 0..3 as backdrop,
+ * grey, white, red; FCVIDEO_PRESET_SHARED_HUD shares it with the world. */
+#define FCVIDEO_HUD_PALETTE 2
 
 /* err[p][idx] and lut[p][idx][bayer] are generated from PLAYPAL and the
  * selected NES preset by the host reference. They remain immutable for a

@@ -11,6 +11,9 @@ The 9016 HUD source gains three console-side pieces (plan 14, P3-W3):
   last applied packet sequence (low nibble).
 * Main loop: WORLD_APPLY copies a committed generation into world slots 35..63
   and requests the next OAM DMA. Generation 0 hides those slots.
+* A new world packet outranks a pending OAM DMA. The RP sends nothing while it
+  waits for a commit to show, so HUD and world DMAs run in that gap instead of
+  costing a packet heartbeat each.
 * Menu/hide paths leave world slots alone while a world generation owns them.
 """
 
@@ -25,7 +28,7 @@ from build_sprite_probe import ROOT, SOURCE
 from native_status_art import (key_icon_art, menu_logo_art, resident_art,
                                resident_face_map, selected_plate_art)
 
-STAMP = "20DOOM-05-9030"
+STAMP = "20DOOM-05-9031"
 W_SHOWN_HI, W_SLOTS, W_SLOTS_HI, W_ACK = 0x0312, 0x0313, 0x0314, 0x0315
 W_POST, W_COMMIT, W_COMMIT_GEN = 0x0316, 0x0317, 0x0318
 W_STAGE = 0x0400
@@ -250,6 +253,13 @@ def native_world_source() -> str:
                            "        beq .menu_owned\n        rts\n.menu_owned:\n"
                            "        lda #$EF\n")
     source = _replace_once(source, "UI_APPLY:\n", world_apply() + "UI_APPLY:\n")
+    source = _replace_once(source, "        lda $0310\n        beq .ui_tables\n",
+        "        ; A new world packet outranks a pending DMA, which keeps $0310.\n"
+        "        lda <MBX_ZP_LO+MBX_FLAGS\n        and #MBX_FLAG_WORLD\n"
+        "        beq .dma_pending\n"
+        "        lda <MBX_ZP_LO+MBX_WORLD_SEQ\n"
+        f"        cmp ${W_ACK:04X}\n        bne .world_new\n"
+        ".dma_pending:\n        lda $0310\n        beq .ui_tables\n")
     return source
 
 

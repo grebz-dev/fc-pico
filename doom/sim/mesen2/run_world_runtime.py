@@ -111,6 +111,10 @@ def main() -> int:
                         help="record with every actor streamed (empty world generations)")
     parser.add_argument("--evaluate-only", action="store_true",
                         help="re-check an existing output directory's captures")
+    parser.add_argument("--convert-beats", type=int, default=0,
+                        help="heartbeats of device picture conversion before each publish")
+    parser.add_argument("--early", action="store_true",
+                        help="submit each world generation held before conversion (device order)")
     args = parser.parse_args()
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
@@ -167,7 +171,9 @@ def main() -> int:
                    FCPICO_CAPTURE_FROM=str(startup), FCPICO_NMI_RTI=nmi_rti,
                    FCPICO_WORLD_SEQUENCE=str(sequence), FCPICO_WORLD_FRAMES=str(args.count),
                    FCPICO_WORLD_LOG=str(out / "world_log.csv"), FCPICO_TRACE=str(out / "trace.csv"),
-                   FCPICO_CS1_MASK="0xf800", SDL_AUDIODRIVER="dummy")
+                   FCPICO_CS1_MASK="0xf800", SDL_AUDIODRIVER="dummy",
+                   FCPICO_WORLD_CONVERT_BEATS=str(args.convert_beats),
+                   FCPICO_WORLD_EARLY="1" if args.early else "0")
         if "DOTNET_ROOT" not in env and (Path.home() / ".dotnet/host/fxr").is_dir():
             env["DOTNET_ROOT"] = str(Path.home() / ".dotnet")
         run([staging / args.mesen.name, "--testRunner", HERE / "lua/world_runtime.lua", cosim,

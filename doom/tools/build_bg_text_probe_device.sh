@@ -17,7 +17,7 @@ if [[ $native_status == 2 ]]; then
       'from pathlib import Path; from build_world_sprite_rom import native_world_source; import sys; Path(sys.argv[1]).write_text(native_world_source())' \
       "$probe_source"
     export BUILD_DIR=${BUILD_DIR:-/tmp/fcpico-native-world-device}
-    expected_stamp=20DOOM-05-9030
+    expected_stamp=20DOOM-05-9031
     output_name=fcpico_doom_native_world_whx.uf2
 elif [[ $native_status == 1 ]]; then
     PYTHONPATH="$repo/doom/tools" python3 -c \

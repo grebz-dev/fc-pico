@@ -1,11 +1,14 @@
 # 14 -- Enemy and pickup sprites
 
-Date: 2026-10-03. Status: P3-W1..W4 partial. Review chose RP2350 LUT/DDA
-scaling. Protocol v5, the `20DOOM-05-9030` ROM, engine admission/masking, per-tile
+Date: 2026-10-04. Status: P3-W1..W4 partial. Review chose RP2350 LUT/DDA
+scaling. Protocol v5, the `20DOOM-05-9031` ROM, engine admission/masking, per-tile
 dynamic palettes and the full shareware atlas pass end-to-end Mesen and host
 gates. On hardware ([HR-17](../HARDWARE-REQUESTS.md) first pass) colours are good
-but frame rate drops with enemies on screen: CHR upload latency (about 8.7 fps
-native transport limit) is the open problem. P3-W5 and physical acceptance remain.
+but frame rate dropped with enemies on screen. The second candidate cuts the
+transport cost per picture in Mesen from 6.89 to 4.99 heartbeats (5.62 with
+modelled conversion, versus 3.01 streamed): anchored scale-stepped tiles that
+repeat, packets that outrank HUD DMAs, and uploads overlapping conversion. The
+HUD now shares BG palette 2 with the world. P3-W5 and physical acceptance remain.
 See [probe results](14b-world-sprite-probe-results.md) and
 [PROGRESS](../PROGRESS.md).
 
