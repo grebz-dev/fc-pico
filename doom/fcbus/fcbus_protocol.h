@@ -152,4 +152,35 @@
 #define VRAM_MAILBOX_OFF_V4  PPU_PICTURE_COUNT_V4
 #define MBX_FLAG_V4         0x20   // fixed native text geometry
 
+/* ------------------------------------------------------------------------ */
+/* @section v5            World sprite packets over the unchanged v4 stream   */
+/* ------------------------------------------------------------------------ */
+/* One acknowledged packet per heartbeat replaces the command list. CHR packets
+ * reuse the attribute bytes as four 16-byte tiles; OAM packets stage entries in
+ * console RAM and may commit a generation. Heartbeat pad2 reports the generation
+ * in OAM (high nibble) and the last applied packet sequence (low nibble). */
+#define FCBUS_PROTOCOL_V5    5
+#define FC_COM_BUF_SIZE_V5   FC_COM_BUF_SIZE_V4
+#define PPU_COUNT_VAL_V5     PPU_COUNT_VAL_V4  // 15122: no stream geometry change
+#define VRAM_MAILBOX_OFF_V5  VRAM_MAILBOX_OFF_V4
+#define MBX_FLAG_WORLD      0x10   // command area holds one world packet; excludes ATTR/PAL
+#define MBX_WORLD_OP        2      // WORLD_OP_CHR or WORLD_OP_OAM (MBX_CMD)
+#define MBX_WORLD_SEQ       3      // 1..15, echoed in heartbeat pad2 once applied
+#define MBX_WORLD_GEN       4      // generation the packet belongs to, 0..15
+#define MBX_WORLD_ARG       5      // CHR: 4 x (adrH, adrL); OAM: entry offset | commit bit
+#define MBX_WORLD_PAL       6      // OAM commit: sprite palettes 0 and 2, colours 1..3
+#define MBX_WORLD_PAL_LEN   6
+#define MBX_WORLD_PAYLOAD   MBX_ATTR
+#define WORLD_OP_CHR        0x57
+#define WORLD_OP_OAM        0x58
+#define WORLD_CHR_TILES     4      // tiles per CHR packet (MBX_ATTR_LEN / 16)
+#define WORLD_OAM_PACKET    16     // OAM entries per packet (MBX_ATTR_LEN / 4)
+#define WORLD_OAM_FIRST     35     // first world OAM slot; 0..34 remain native status
+#define WORLD_OAM_ENTRIES   29     // slots 35..63, shared with gameplay-hidden menu text
+#define WORLD_OAM_COMMIT    0x80   // MBX_WORLD_ARG: publish staged entries with this packet
+#define WORLD_OAM_NONE      0x7F   // MBX_WORLD_ARG offset: no payload (generation 0 clears)
+#define WORLD_GEN_MASK      0x0F
+#define WORLD_SEQ_MASK      0x0F
+#define WORLD_HB_GEN_SHIFT  4
+
 #endif /* FCBUS_PROTOCOL_H */

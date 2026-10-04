@@ -100,6 +100,45 @@ the result. The human fills in the result section and commits; the agent then co
 
 ## Open requests
 
+### HR-17 Native enemy and pickup sprites, protocol v5 (tasks P3-W3 / P3-W4)
+
+- Flash: `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
+  (firmware + WHX + audio archive + world sprite atlas at `0x10280000`), SHA-256
+  `7aed714dd786ab9df58b45fa72e6a0d282f5af718bb152a7ca1992ad4a2926be` (adds the
+  `world_us` serial timing line; colours as in the first pass); ROM
+  `5a91ddccab31ea1cf327420fc0e7bfebd7abeafa9030271489447705a3923eff`. Details in
+  [PROGRESS](PROGRESS.md#p3-w3w4----v5-native-world-sprite-runtime-2026-10-03).
+- Console ROM expected: `20DOOM-05-9030` (9016 HUD plus v5 world packets);
+  permanent fix bank unchanged. Count stays 15122.
+- Build reproduction: `FCPICO_AUDIO_WAD=/path/doom1.wad FCPICO_WORLD_WAD=/path/doom1.wad
+  BUILD_DIR=/tmp/fcpico-native-world-device doom/tools/build_bg_text_probe_device.sh
+  --native-world`.
+- What is new on the console: four sprite tiles per NMI are written to the
+  gameplay-unused sprite tiles `$1000-$112F`, `$1280-$12DF`, `$1310`, unused menu
+  glyphs and the face padding `$1F70-$1FFF`; OAM slots 35..63 hold enemies and
+  pickups during gameplay; sprite palettes 0/2 change while no menu is open. The
+  third heartbeat byte is now nonzero. None of these runtime CHR writes has run on
+  a physical board yet; P3-U3 storage remains partial.
+- Steps: 1. Flash and let the console self-update to 9030. 2. Title/menu: logo and
+  menu text colours as before. 3. Start E1M1: zombiemen (green/grey), imps (brown),
+  pickups (grey medikits with red crosses, green armour, brown ammo/rocket boxes)
+  should appear as crisp native sprites over the stream, using per-tile
+  palettes, hidden correctly behind door frames, pillars, steps and the
+  weapon. 4. Open/close the menu repeatedly during combat: menu text must be
+  intact and enemies must never disappear or appear twice. 5. Play 10 minutes;
+  then a 30-minute soak if the first pass is clean.
+- First pass 2026-10-03 ([log](HARDWARE-LOG.md)): colours good; frame rate drops
+  with enemies on screen. Still wanted: the items below, plus 60 s of serial in a
+  room with enemies and 60 s without, to separate engine time (`video ...
+  conversion_us`, `world_us resolve=avg/max build=avg/max`) from upload latency.
+- Record: USB serial at 115200 including `video`, `world` and `world_us` lines
+  (admitted, generations, packets, resends, stalls, errors) and `[DEBUG-hr3]`; photos or video
+  of a corner occlusion and a menu transition; any garbled sprites, flicker,
+  missing actors, HUD/menu glyph corruption, bus stops or slowdown. Add results to
+  [HARDWARE-LOG.md](HARDWARE-LOG.md) under HR-17 with console model and flashed hash.
+- Expected limits: native actors update at about 9 fps when they change every
+  frame (tile upload bandwidth); crowded or near views stream some actors.
+
 ### HR-15 Concrete native HUD and enlarged face (task P3-U4)
 - Flash: `/tmp/fcpico-native-status-device/artifacts/fcpico_doom_native_status_whx.uf2`,
   SHA-256 `871b65ac1ceaab462d0ffa09c3358493fa78546615af684565138187bd0b1ab8`.

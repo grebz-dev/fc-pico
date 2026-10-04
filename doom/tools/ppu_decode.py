@@ -54,7 +54,8 @@ class PpuDecodeError(Exception):
     """Raised for a malformed stream buffer, attribute table or palette."""
 
 
-def decode_to_rgb(stream: bytes, attr: bytes | None = None, pal: bytes | None = None) -> np.ndarray:
+def decode_to_rgb(stream: bytes, attr: bytes | None = None, pal: bytes | None = None,
+                  rgb_palette: np.ndarray | None = None) -> np.ndarray:
     """Decode a stream buffer to a ``(240, 256, 3)`` ``uint8`` RGB array.
 
     ``attr`` (64 bytes, ``$23C0-$23FF``) defaults to all zero. ``pal`` (16
@@ -87,12 +88,16 @@ def decode_to_rgb(stream: bytes, attr: bytes | None = None, pal: bytes | None = 
 
     pal_index = np.where(pix == 0, 0, sub_pal.astype(np.int64) * 4 + pix)
     nes_index = pal_arr[pal_index]  # (240, 256), 0..63
-    return nes_palette.NES_PALETTE_RGB_ARRAY[nes_index]  # (240, 256, 3)
+    palette_rgb = nes_palette.NES_PALETTE_RGB_ARRAY if rgb_palette is None else np.asarray(rgb_palette)
+    if palette_rgb.shape != (64, 3):
+        raise PpuDecodeError("RGB calibration must contain 64 RGB colors")
+    return palette_rgb[nes_index]  # (240, 256, 3)
 
 
 def decode_with_sprites(
     stream: bytes, oam: bytes, sprite_chr: bytes, sprite_pal: bytes,
     attr: bytes | None = None, pal: bytes | None = None,
+    rgb_palette: np.ndarray | None = None,
 ) -> np.ndarray:
     """Composite 8x8 NES sprites over a decoded background frame.
 
@@ -109,9 +114,9 @@ def decode_with_sprites(
     if len(sprite_pal) != 16:
         raise PpuDecodeError(f"sprite palette must be 16 bytes, got {len(sprite_pal)}")
 
-    rgb = decode_to_rgb(stream, attr, pal).copy()
+    rgb = decode_to_rgb(stream, attr, pal, rgb_palette).copy()
     bg = stream_mod.decode_frame(stream)
-    palette = nes_palette.NES_PALETTE_RGB_ARRAY
+    palette = nes_palette.NES_PALETTE_RGB_ARRAY if rgb_palette is None else np.asarray(rgb_palette)
     for y in range(240):
         selected = 0
         claimed = np.zeros(256, dtype=bool)

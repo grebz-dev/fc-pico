@@ -104,6 +104,12 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 13 | [plan/13-upstream-contributions.md](plan/13-upstream-contributions.md) | Atomic upstream contributions: reusable cosimulation, buildchain, inspection tools, serial BOOTSEL, platform findings and agent workflows |
 | 14 | [plan/14-world-sprites.md](plan/14-world-sprites.md) | Enemy/pickup sprite development: automatic WAD sheets, LUT scaling, shared UI budgets, geometry masks, streamed fallback and mapper feasibility |
 
+World sprites: enemies and pickups render as native NES sprites with per-tile
+dynamic palettes through protocol v5 and ROM `20DOOM-05-9030`
+([plan 14](plan/14-world-sprites.md)). Colours are confirmed on hardware; frame
+rate drops while enemies are on screen because each generation's CHR upload takes
+about 6.9 heartbeats. Reducing uploads is the next task.
+
 ## Directory map
 
 | Path | Contents |

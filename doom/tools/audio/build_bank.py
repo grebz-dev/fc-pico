@@ -50,7 +50,7 @@ def build_bank(wad: bytes, sounds: str, capacity: int):
         record = dict(name=name, offset=len(archive), size=len(data), **metadata)
         archive.extend(data)
         if len(archive) > capacity:
-            raise ValueError("audio bank exceeds FLASH_ASSETS_MAX")
+            raise ValueError("audio bank exceeds FLASH_AUDIO_MAX")
         return record
 
     for name in SHAREWARE_MUSIC:
@@ -75,7 +75,7 @@ def build_bank(wad: bytes, sounds: str, capacity: int):
     signature = hashlib.sha256(archive).digest()
     blob = signature + bytes(archive)
     if len(blob) > capacity:
-        raise ValueError("audio bank exceeds FLASH_ASSETS_MAX")
+        raise ValueError("audio bank exceeds FLASH_AUDIO_MAX")
     for record in music + effects:
         record['offset'] += len(signature)
     manifest = dict(version=1, size=len(blob), sha256=hashlib.sha256(blob).hexdigest(),
@@ -124,7 +124,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     try:
         layout = args.layout.read_text()
-        capacity = int(re.search(r'#define\s+FLASH_ASSETS_MAX\s+(0x[0-9a-fA-F]+)', layout)[1], 16)
+        capacity = int(re.search(r"#define\s+FLASH_AUDIO_MAX\s+(0x[0-9a-fA-F]+)", layout)[1], 16)
         blob, manifest = build_bank(args.wad.read_bytes(), args.sounds.read_text(), capacity)
         text = source(blob, manifest)
         args.output.mkdir(parents=True, exist_ok=True)

@@ -18,6 +18,7 @@ Requires the project-local Arm GCC 13.2 toolchain and Pico SDK 2.1.1.
 Overrides: BUILD_DIR, TOOLS_DIR, ARM_TOOLCHAIN_PATH, PICO_SDK_PATH,
            PICOTOOL_DIR (CMake package directory), NESASM_BIN, JOBS,
            FCPICO_AUDIO_WAD (optional local shareware WAD; enables audio).
+           FCPICO_WORLD_WAD (optional local IWAD; enables native world sprites).
 See doom/plan/08-build.md for prerequisites and hardware validation history.
 EOF
         exit 0 ;;
@@ -34,10 +35,16 @@ picotool_dir=${PICOTOOL_DIR:-$tools_dir/picotool-install/lib/cmake/picotool}
 export NESASM_BIN=${NESASM_BIN:-$tools_dir/nesasm/nesasm}
 jobs=${JOBS:-4}
 audio_wad=${FCPICO_AUDIO_WAD:-}
+world_wad=${FCPICO_WORLD_WAD:-}
 python_args=()
 if [[ -n $audio_wad ]]; then
     [[ -f $audio_wad ]] || fail "Missing audio WAD: $audio_wad"
     [[ -x $repo/doom/.venv/bin/python ]] || fail 'Audio conversion requires doom/.venv with numpy'
+    python_args=(-DPython3_EXECUTABLE="$repo/doom/.venv/bin/python")
+fi
+if [[ -n $world_wad ]]; then
+    [[ -f $world_wad ]] || fail "Missing world sprite WAD: $world_wad"
+    [[ -x $repo/doom/.venv/bin/python ]] || fail 'World atlas generation requires doom/.venv with numpy'
     python_args=(-DPython3_EXECUTABLE="$repo/doom/.venv/bin/python")
 fi
 for command in cmake ninja python3 git make; do
@@ -87,7 +94,7 @@ cmake -S "$repo/doom" -B "$build/device" -G Ninja \
     -DPICO_SDK_PATH="$PICO_SDK_PATH" -Dpicotool_DIR="$picotool_dir" \
     -DFCPICO_HOST_ONLY=OFF -DFCPICO_BUILD_ENGINE=ON -DFCPICO_DIAGNOSTIC_NO_ENGINE=OFF \
     -DFCPICO_DIAGNOSTIC_ENGINE_DELAY=ON -DPICO_NO_PICOTOOL=OFF -DPICO_NO_UF2=OFF \
-    -DFCPICO_AUDIO_WAD="$audio_wad" "${python_args[@]}"
+    -DFCPICO_AUDIO_WAD="$audio_wad" -DFCPICO_WORLD_WAD="$world_wad" "${python_args[@]}"
 cmake --build "$build/device" --target doom_tiny_fcpico -j "$jobs"
 firmware=$build/device/rp2040-doom/src
 python3 "$repo/doom/tools/flash_layout_check.py" "$firmware/fcpico_doom.elf"
@@ -100,6 +107,10 @@ if [[ -n $audio_wad ]]; then
     cp "$build/device/port/audio/audio.bin" "$build/device/port/audio/audio.json" "$output/"
     audio_args=(--audio "$output/audio.bin")
 fi
+if [[ -n $world_wad ]]; then
+    cp "$build/device/port/world/world_atlas.bin" "$build/device/port/world/world_atlas.json" "$output/"
+    audio_args+=(--world "$output/world_atlas.bin")
+fi
 python3 "$repo/doom/tools/whx2uf2.py" "$repo/doom/rp2040-doom/doom1.whx" \
     "$output/fcpico_doom_shadow_detail_delay_whx.uf2" --firmware "$output/fcpico_doom.uf2" "${audio_args[@]}"
 {
@@ -109,7 +120,7 @@ python3 "$repo/doom/tools/whx2uf2.py" "$repo/doom/rp2040-doom/doom1.whx" \
     printf 'SDK: '; git -C "$PICO_SDK_PATH" rev-parse HEAD
     "$arm/bin/arm-none-eabi-gcc" --version
     printf 'picotool_DIR=%s\nNESASM_BIN=%s\n' "$picotool_dir" "$NESASM_BIN"
-    printf 'FCPICO_AUDIO_WAD=%s\n' "$audio_wad"
+    printf 'FCPICO_AUDIO_WAD=%s\nFCPICO_WORLD_WAD=%s\n' "$audio_wad" "$world_wad"
     git -C "$repo" status --short
 } > "$output/build-info.txt"
 cp "$build/device/CMakeCache.txt" "$output/"
@@ -118,6 +129,9 @@ git -C "$repo" diff --binary HEAD > "$output/source.patch"
     fcpico_doom_shadow_detail_delay_whx.uf2 > SHA256SUMS)
 if [[ -n $audio_wad ]]; then
     (cd "$output" && sha256sum audio.bin audio.json >> SHA256SUMS)
+fi
+if [[ -n $world_wad ]]; then
+    (cd "$output" && sha256sum world_atlas.bin world_atlas.json >> SHA256SUMS)
 fi
 printf '\nFlash image: %s/fcpico_doom_shadow_detail_delay_whx.uf2\n' "$output"
 cat "$output/SHA256SUMS"

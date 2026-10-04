@@ -11,6 +11,29 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-10-03 -- HR-17 native world sprites, first hardware pass (partial)
+
+- Console: physical console tested by user; model and region not restated.
+- Cartridge firmware: HR-17 per-tile palette candidate
+  `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`, SHA-256
+  `f1e9e45db571d273342e155c996970be6c7ed1e1d5d88313ce1f284a2b703560`
+  (uncommitted tree on root `bf0280f` / engine `0e18c993`). Embedded ROM stamp
+  `20DOOM-05-9030`, SHA-256 `5a91ddccab31ea1cf327420fc0e7bfebd7abeafa9030271489447705a3923eff`.
+- Results: user reports the build runs on hardware and native enemy/pickup colours
+  are much better, matching the atlas review sheets in
+  `.build/doom-world-test/atlas-review/`. Frame rate drops noticeably while enemy
+  sprites are on screen.
+- Follow-up (same day, cosimulation): replaying recorded demo-1 frames 100..249
+  through the v5 ROM and cartridge scheduler takes 6.89 heartbeats per picture with
+  native actors (8.7 fps transport limit) against 1.02 with every actor streamed.
+  55% of those heartbeats carry CHR packets (12.4 new tiles per generation; 6%
+  cache hits). On the device this latency adds to render + conversion because the
+  next picture cannot be staged until the console shows the previous generation.
+  See [PROGRESS](PROGRESS.md#p3-w3w4----world-sprite-frame-rate-measurement-2026-10-03).
+- Attachments: user confirmation in this session; no serial capture, photos or
+  per-scene fps figures supplied. Occlusion corners, menu transitions and the soak
+  from HR-17 were not separately reported.
+
 ## 2026-10-02 -- HR-16 audio works on hardware
 
 - Console: physical console tested by user; model and region not restated.

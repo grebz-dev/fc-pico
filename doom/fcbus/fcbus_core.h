@@ -66,7 +66,20 @@ typedef enum {
     FCBUS_PROTO_V2 = 2,
     FCBUS_PROTO_V3 = 3,
     FCBUS_PROTO_V4 = 4,
+    FCBUS_PROTO_V5 = 5,
 } fcbus_proto_t;
+
+/**
+ * @brief Optional v5 heartbeat hook for the world sprite packet scheduler.
+ *
+ * Runs inside fcbus_core_heartbeat() on every ARM decision, after any swap and
+ * before `mailbox` is copied to the streamed buffer. `pad2` is the console's
+ * acknowledgement byte from this heartbeat; `swapped` reports a buffer swap.
+ * The hook may write one packet only when the mailbox has no commands and no
+ * ATTR/PAL tables (the packet payload shares those bytes).
+ */
+typedef void (*fcbus_mailbox_hook_t)(void *user, uint8_t *mailbox, uint8_t pad2,
+                                     bool swapped);
 
 typedef enum {
     FCBUS_ST_IDLE,
@@ -184,6 +197,11 @@ typedef struct fcbus_core {
     uint32_t stream[2][VRAM_BUF_BYTES_V3 / sizeof(uint32_t)];
     int front;               /**< Index (0/1) of the buffer currently "streamed". */
     bool publish_pending;    /**< fcbus_core_publish() was called; swap at the next ARM. */
+    bool publish_gated;      /**< v5: swap only when pad2 reports publish_gen in OAM. */
+    uint8_t publish_gen;     /**< v5: world generation the pending picture belongs to. */
+    uint8_t publish_tables;  /**< v5: ATTR/PAL flags replayed in the swap mailbox. */
+    fcbus_mailbox_hook_t mailbox_hook;
+    void *mailbox_hook_user;
 
     /* --- mailbox being built for the next heartbeat: rp_system::FC_COM_BUF --- */
     uint8_t mailbox_next[FC_COM_BUF_SIZE_V3];
@@ -288,6 +306,14 @@ bool fcbus_core_back_is_free(const fcbus_core_t *c);
  *  convVram() used to do inline, moved to the heartbeat so the swap only ever happens
  *  where the picture is not mid-stream (doom/plan/02-architecture.md, "Buffer ownership"). */
 void fcbus_core_publish(fcbus_core_t *c);
+/** v5: as fcbus_core_publish(), but the swap waits for a heartbeat whose pad2
+ *  reports `gen` in console OAM, so the picture and its native actors appear
+ *  together. ATTR/PAL staged for this picture are withheld until that swap. */
+void fcbus_core_publish_world(fcbus_core_t *c, uint8_t gen);
+/** v5: let a gated picture swap at the next heartbeat (scheduler stall recovery). */
+void fcbus_core_release_gate(fcbus_core_t *c);
+/** v5: install (or clear, with NULL) the heartbeat mailbox hook. */
+void fcbus_core_set_mailbox_hook(fcbus_core_t *c, fcbus_mailbox_hook_t hook, void *user);
 
 /* ------------------------------------------------------------------------ */
 /* Mailbox builder: rp_system::setPF_COM / setPF_VRAM / setPF_APU / update().     */

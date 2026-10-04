@@ -201,23 +201,23 @@ def format_report(elf_path: Path, defines: dict, segments, args_whx: str):
         whx_path = Path(args_whx)
         whx_size = whx_path.stat().st_size
         whx_end = whx_addr + whx_size
-        whx_cap = assets_addr - whx_addr
+        whx_cap = min(assets_addr, whx_addr + defines.get("FLASH_WHX_MAX", assets_addr - whx_addr)) - whx_addr
         whx_free = whx_cap - whx_size
 
         whx_lines.append(f"WHX file:       {whx_path} ({whx_size} bytes)")
         whx_lines.append(f"WHX end:        0x{whx_end:08x}  [FLASH_WHX_ADDR + size]")
         whx_lines.append(
             f"WHX cap:        0x{whx_cap:x} ({whx_cap} bytes)  "
-            "[FLASH_ASSETS_ADDR - FLASH_WHX_ADDR]"
+            "[FLASH_WHX_MAX, before FLASH_WORLD_ADDR / FLASH_ASSETS_ADDR]"
         )
         whx_lines.append(f"WHX bytes free: 0x{whx_free:x} ({whx_free} bytes)")
 
-        whx_ok = whx_end <= assets_addr
+        whx_ok = whx_size <= whx_cap
         if not whx_ok:
             whx_lines.append(
                 f"ERROR: FLASH_WHX_ADDR + WHX size ends at 0x{whx_end:08x}, which is "
-                f"past FLASH_ASSETS_ADDR (0x{assets_addr:08x}) by "
-                f"0x{whx_end - assets_addr:x} bytes"
+                f"past its reserved region (0x{whx_addr + whx_cap:08x}) by "
+                f"0x{whx_end - whx_addr - whx_cap:x} bytes"
             )
 
     return lines, ok, whx_lines, whx_ok

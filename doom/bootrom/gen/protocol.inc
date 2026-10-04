@@ -102,7 +102,7 @@ MBX_FLAG_V3	EQU	$40	; v3 mailbox signature alongside MBX_FLAG_V2
 ;
 ; --- v4: Fixed native BG text row, compacted picture stream ---
 FCBUS_PROTOCOL_V4	EQU	4
-NATIVE_TEXT_ROW	EQU	28	; BG tile row 28, NES scanlines 224..231
+NATIVE_TEXT_ROW	EQU	29	; BG tile row 29, NES scanlines 232..239
 NATIVE_TEXT_COL	EQU	2	; first native tile, x=16
 NATIVE_TEXT_TILES	EQU	28	; columns 2..29, x=16..239
 NATIVE_TEXT_BYTES	EQU	448	; skipped CS1 reads
@@ -112,6 +112,31 @@ PPU_COUNT_VAL_V4	EQU	15122	; 15122
 VRAM_BUF_BYTES_V4	EQU	17424
 VRAM_MAILBOX_OFF_V4	EQU	14978
 MBX_FLAG_V4	EQU	$20	; fixed native text geometry
+;
+; --- v5: World sprite packets over the unchanged v4 stream ---
+FCBUS_PROTOCOL_V5	EQU	5
+FC_COM_BUF_SIZE_V5	EQU	144
+PPU_COUNT_VAL_V5	EQU	15122	; 15122: no stream geometry change
+VRAM_MAILBOX_OFF_V5	EQU	14978
+MBX_FLAG_WORLD	EQU	$10	; command area holds one world packet; excludes ATTR/PAL
+MBX_WORLD_OP	EQU	2	; WORLD_OP_CHR or WORLD_OP_OAM (MBX_CMD)
+MBX_WORLD_SEQ	EQU	3	; 1..15, echoed in heartbeat pad2 once applied
+MBX_WORLD_GEN	EQU	4	; generation the packet belongs to, 0..15
+MBX_WORLD_ARG	EQU	5	; CHR: 4 x (adrH, adrL); OAM: entry offset | commit bit
+MBX_WORLD_PAL	EQU	6	; OAM commit: sprite palettes 0 and 2, colours 1..3
+MBX_WORLD_PAL_LEN	EQU	6
+MBX_WORLD_PAYLOAD	EQU	64
+WORLD_OP_CHR	EQU	$57
+WORLD_OP_OAM	EQU	$58
+WORLD_CHR_TILES	EQU	4	; tiles per CHR packet (MBX_ATTR_LEN / 16)
+WORLD_OAM_PACKET	EQU	16	; OAM entries per packet (MBX_ATTR_LEN / 4)
+WORLD_OAM_FIRST	EQU	35	; first world OAM slot; 0..34 remain native status
+WORLD_OAM_ENTRIES	EQU	29	; slots 35..63, shared with gameplay-hidden menu text
+WORLD_OAM_COMMIT	EQU	$80	; MBX_WORLD_ARG: publish staged entries with this packet
+WORLD_OAM_NONE	EQU	$7F	; MBX_WORLD_ARG offset: no payload (generation 0 clears)
+WORLD_GEN_MASK	EQU	$0F
+WORLD_SEQ_MASK	EQU	$0F
+WORLD_HB_GEN_SHIFT	EQU	4
 ;
 ; --- nesasm aliases (ASM_ALIAS in gen_protocol.py) ---
 PF_MAGIC_CODE	EQU	PF_MAGIC_NO

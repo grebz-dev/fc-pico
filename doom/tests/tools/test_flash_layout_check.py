@@ -242,7 +242,10 @@ def test_whx_within_cap_passes(tmp_path, capsys):
 
 def test_whx_over_cap_fails(tmp_path, capsys):
     elf_path = write_elf(tmp_path, [(FLASH_FIRMWARE_ADDR, FLASH_FIRMWARE_ADDR, 0x100)])
-    whx_cap = FLASH_ASSETS_ADDR - FLASH_WHX_ADDR
+    # The WHX reservation ends where the world sprite atlas begins.
+    layout = flc.parse_flash_layout(flc.FLASH_LAYOUT_H)
+    whx_cap = layout["FLASH_WHX_MAX"]
+    assert FLASH_WHX_ADDR + whx_cap == layout["FLASH_WORLD_ADDR"]
     whx_path = tmp_path / "doom1.whx"
     whx_path.write_bytes(b"\x00" * (whx_cap + 0x1000))
 
@@ -251,7 +254,7 @@ def test_whx_over_cap_fails(tmp_path, capsys):
 
     assert rc == 1
     assert "ERROR" in out
-    assert f"0x{FLASH_ASSETS_ADDR:08x}" in out
+    assert f"0x{FLASH_WHX_ADDR + whx_cap:08x}" in out
 
 
 # ---------------------------------------------------------------------------

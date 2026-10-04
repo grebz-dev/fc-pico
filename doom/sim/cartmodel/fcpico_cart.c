@@ -10,6 +10,7 @@
 #include <string.h>
 
 #include "fcbus_host.h"
+#include "fcworld.h"
 #include "testpattern.h"
 
 static bool g_initialized;
@@ -22,6 +23,19 @@ static bool g_stream_enabled;
 static bool g_rom_v2;
 static bool g_rom_v3;
 static bool g_rom_v4;
+static bool g_rom_v5;
+
+/* FCPICO_WORLD_SEQUENCE: replay recorded engine frames (stream/frameN.bin plus
+ * world/frameN.world) through the real v5 scheduler and gated publication,
+ * one recorded frame per free back buffer. FCPICO_WORLD_LOG records which
+ * recorded frame each heartbeat armed and the console's acknowledgement. */
+static const char *g_sequence;
+static unsigned g_seq_next, g_seq_count;
+static int g_buffer_frame[2] = {-1, -1};
+static fcworld_t g_world;
+static FILE *g_world_log;
+static uint32_t g_world_errors;
+static uint32_t g_stage_beats[4];   /* heartbeats spent in each scheduler stage */
 
 /* The console's PRG is flash and may be rewritten by the fix bank while the
  * firmware keeps serving its own compiled-in image, so the model keeps a copy. */
@@ -70,6 +84,87 @@ static bool publish_stream(bool init) {
     return true;
 }
 
+static bool sequence_path(char *path, size_t size, const char *kind, unsigned n,
+                          const char *suffix) {
+    return snprintf(path, size, "%s/%s/frame%06u.%s", g_sequence, kind, n, suffix) < (int)size;
+}
+
+static bool read_file(const char *path, uint8_t *data, size_t capacity, size_t *length) {
+    FILE *input = fopen(path, "rb");
+    if (input == NULL) return false;
+    *length = fread(data, 1, capacity, input);
+    bool valid = fgetc(input) == EOF;
+    return fclose(input) == 0 && valid;
+}
+
+static bool load_world_frame(unsigned n, fcworld_frame_t *frame) {
+    char path[1024];
+    uint8_t record[16 + FCWORLD_MAX_TILES * 16 + WORLD_OAM_ENTRIES * 4];
+    size_t length;
+    if (!sequence_path(path, sizeof path, "world", n, "world") ||
+        !read_file(path, record, sizeof record, &length) || length < 14 ||
+        memcmp(record, "FCWF", 4) != 0 || record[5] > FCWORLD_MAX_TILES ||
+        record[6] > WORLD_OAM_ENTRIES || length != 14u + record[5] * 16u + record[6] * 4u) {
+        return false;
+    }
+    frame->tile_count = record[5];
+    frame->oam_count = record[6];
+    frame->peak_line = record[7];
+    memcpy(frame->palettes, record + 8, MBX_WORLD_PAL_LEN);
+    memcpy(frame->tiles, record + 14, record[5] * 16u);
+    memcpy(frame->oam, record + 14 + record[5] * 16u, record[6] * 4u);
+    return true;
+}
+
+/* Publish the next recorded frame when its picture can be staged. */
+static void publish_sequence(void) {
+    fcbus_core_t *core = fcbus_host_core();
+    if (!fcbus_core_back_is_free(core) || g_seq_next >= g_seq_count ||
+        !fcworld_idle(&g_world)) {
+        return;
+    }
+    char path[1024];
+    fcworld_frame_t frame;
+    if (!sequence_path(path, sizeof path, "stream", g_seq_next, "bin") ||
+        !read_file(path, g_stream, sizeof g_stream, &g_stream_length) ||
+        g_stream_length != VRAM_BUF_BYTES_V4 || !load_world_frame(g_seq_next, &frame)) {
+        g_seq_count = g_seq_next;  /* end of the recording */
+        return;
+    }
+    const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V4;
+    memcpy(fcbus_core_stream_back(core), g_stream, g_stream_length);
+    fcbus_core_palette(core, mailbox + MBX_PAL);
+    fcbus_core_attr_table(core, mailbox + MBX_ATTR);
+    (void)fcbus_core_ui_snapshot(core, mailbox + MBX_UI);
+    uint8_t gen = fcworld_submit(&g_world, &frame);
+    if (gen == 0xFF) {
+        g_world_errors++;
+        gen = g_world.shown_gen;
+    }
+    fcbus_core_publish_world(core, gen);
+    g_buffer_frame[1 - core->front] = (int)g_seq_next;
+    if (g_world_log) {
+        fprintf(g_world_log, "publish,%u,%u,%u\n", core->stats.frames, g_seq_next, gen);
+    }
+    g_seq_next++;
+}
+
+static void world_hook(void *user, uint8_t *mailbox, uint8_t pad2, bool swapped) {
+    (void)user;
+    if (g_world.stage < 4) g_stage_beats[g_world.stage]++;
+    fcworld_heartbeat(&g_world, mailbox, pad2);
+    if (fcworld_take_stall(&g_world)) {
+        g_world_errors++;
+        fcbus_core_release_gate(fcbus_host_core());
+    }
+    if (g_world_log) {
+        /* The swap, if any, is already applied: front is the armed picture. */
+        const fcbus_core_t *core = fcbus_host_core();
+        fprintf(g_world_log, "heartbeat,%u,%d,%u,%u,%u\n", core->stats.frames,
+                g_buffer_frame[core->front], pad2 >> 4, pad2 & 15, (unsigned)swapped);
+    }
+}
+
 static void publish_pattern(uint32_t frame) {
     (void)frame;
     if (fcpico_testpattern_poll(&g_pattern_app, 0)) {
@@ -78,7 +173,11 @@ static void publish_pattern(uint32_t frame) {
 }
 
 static void handle_init(uint8_t stage) {
-    if (g_stream_enabled) {
+    if (g_sequence) {
+        fcworld_reset(&g_world);
+        g_buffer_frame[0] = g_buffer_frame[1] = -1;
+        publish_sequence();
+    } else if (g_stream_enabled) {
         (void)publish_stream(true);
     } else if (fcpico_testpattern_console_init(&g_pattern_app, stage, 0)) {
         g_metrics.pattern_frames++;
@@ -91,13 +190,18 @@ static void reset_link(void) {
     fcbus_config_t config = {
         .rom_image = g_prg,
         /* Match the device: the Doom firmware assumes v2 until told otherwise. */
-        .proto_default = g_rom_v4 ? FCBUS_PROTO_V4 :
+        .proto_default = g_rom_v5 ? FCBUS_PROTO_V5 :
+                         g_rom_v4 ? FCBUS_PROTO_V4 :
                          g_rom_v3 ? FCBUS_PROTO_V3 :
                          g_rom_v2 ? FCBUS_PROTO_V2 : FCBUS_PROTO_V1,
     };
     fcbus_host_init(&config);
     fcbus_host_set_bulk_lead_byte(g_stream_enabled && !g_rom_v2 && !g_rom_v3 && !g_rom_v4);
     fcpico_testpattern_init(&g_pattern_app, fcbus_host_core());
+    if (g_sequence) {
+        fcworld_reset(&g_world);
+        fcbus_core_set_mailbox_hook(fcbus_host_core(), world_hook, NULL);
+    }
     memset(&g_metrics, 0, sizeof g_metrics);
 }
 
@@ -143,6 +247,19 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
         return false;
     }
 
+    g_sequence = getenv("FCPICO_WORLD_SEQUENCE");
+    if (g_sequence != NULL && g_sequence[0] == '\0') g_sequence = NULL;
+    if (g_sequence) {
+        const char *count = getenv("FCPICO_WORLD_FRAMES");
+        g_seq_count = count ? (unsigned)strtoul(count, NULL, 10) : 100000u;
+        g_seq_next = 0;
+        const char *log = getenv("FCPICO_WORLD_LOG");
+        if (log && log[0]) {
+            g_world_log = fopen(log, "w");
+            if (g_world_log == NULL) return false;
+            fprintf(g_world_log, "event,heartbeat,a,b,c,d\n");
+        }
+    }
     const char *stream_path = getenv("FCPICO_STREAM_FILE");
     g_stream_enabled = stream_path != NULL && stream_path[0] != '\0';
     if (g_stream_enabled && !load_stream(stream_path)) return false;
@@ -155,6 +272,8 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
     g_rom_v2 = memcmp(g_prg + FCBUS_ROM_STAMP_OFF, "20DOOM-02-", 10) == 0;
     g_rom_v3 = memcmp(g_prg + FCBUS_ROM_STAMP_OFF, "20DOOM-03-", 10) == 0;
     g_rom_v4 = memcmp(g_prg + FCBUS_ROM_STAMP_OFF, "20DOOM-04-", 10) == 0;
+    g_rom_v5 = memcmp(g_prg + FCBUS_ROM_STAMP_OFF, "20DOOM-05-", 10) == 0;
+    if (g_sequence && !g_rom_v5) return false;
     if ((g_rom_v3 || g_rom_v4) && g_stream_enabled &&
         g_stream_length != VRAM_BUF_BYTES_V3) return false;
     reset_link();
@@ -168,6 +287,21 @@ void fcpico_cart_shutdown(void) {
     g_rom_v2 = false;
     g_rom_v3 = false;
     g_rom_v4 = false;
+    g_rom_v5 = false;
+    if (g_world_log) {
+        fprintf(g_world_log, "end,%u,%u,%u,%u,%u\n", g_seq_next, g_world.stats.generations,
+                g_world.stats.packets, g_world.stats.resends, g_world_errors);
+        const fcworld_stats_t *ws = &g_world.stats;
+        fprintf(g_world_log,
+                "stats,idle=%u,chr=%u,oam=%u,wait_shown=%u,chr_tiles=%u,cache_hits=%u,"
+                "commits=%u,deferred=%u,unchanged=%u,clears=%u,busy_max=%u\n",
+                g_stage_beats[FCWORLD_IDLE], g_stage_beats[FCWORLD_CHR], g_stage_beats[FCWORLD_OAM],
+                g_stage_beats[FCWORLD_WAIT_SHOWN], ws->chr_tiles, ws->cache_hits, ws->commits,
+                ws->deferred_heartbeats, ws->unchanged, ws->clears, ws->busy_heartbeats_max);
+        fclose(g_world_log);
+        g_world_log = NULL;
+    }
+    g_sequence = NULL;
     memset(&g_metrics, 0, sizeof g_metrics);
 }
 
@@ -200,7 +334,9 @@ void fcpico_cart_ppu_write(uint8_t value) {
      * fills the now-free back buffer for the next one.  Do the same on this
      * emulator thread; no count, state, or stream layout is adjusted here. */
     if (fcbus_core_stats(fcbus_host_core())->frames != frames_before) {
-        if (g_stream_enabled) {
+        if (g_sequence) {
+            publish_sequence();
+        } else if (g_stream_enabled) {
             (void)publish_stream(false);
         } else {
             publish_pattern(fcbus_core_stats(fcbus_host_core())->frames);

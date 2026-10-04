@@ -229,6 +229,60 @@ static void test_palette_v2_and_v1(void) {
     CHECK_EQ(c1.cmd_cursor, MBX_CMD + 4 * 3);
 }
 
+static int g_hook_calls;
+static uint8_t g_hook_pad2;
+static bool g_hook_swapped;
+
+static void record_hook(void *user, uint8_t *mailbox, uint8_t pad2, bool swapped) {
+    (void)user;
+    (void)mailbox;
+    g_hook_calls++;
+    g_hook_pad2 = pad2;
+    g_hook_swapped = swapped;
+}
+
+/* A v5 world picture swaps only once the console reports its generation in
+ * OAM; its tables ride in that swap mailbox, not in the repeated frames. */
+static void test_world_publish_gate_v5(void) {
+    fcbus_core_t c;
+    init_core(&c, FCBUS_PROTO_V5);
+    fcbus_core_set_mailbox_hook(&c, record_hook, NULL);
+    uint8_t attr[MBX_ATTR_LEN], pal[MBX_PAL_LEN];
+    for (int i = 0; i < MBX_ATTR_LEN; ++i) attr[i] = (uint8_t)(0x40 + i);
+    for (int i = 0; i < MBX_PAL_LEN; ++i) pal[i] = (uint8_t)(0x10 + i);
+    fcbus_core_palette(&c, pal);
+    fcbus_core_attr_table(&c, attr);
+    fcbus_core_publish_world(&c, 3);
+    int front = c.front;
+
+    c.pad2 = (2u << WORLD_HB_GEN_SHIFT) | 5u; /* previous generation still shown */
+    CHECK_EQ(fcbus_core_heartbeat(&c, PPU_COUNT_VAL_V5), FCBUS_ARM);
+    CHECK_EQ(c.front, front);
+    CHECK(!fcbus_core_back_is_free(&c));
+    CHECK_EQ(g_hook_calls, 1);
+    CHECK_EQ(g_hook_pad2, (2u << WORLD_HB_GEN_SHIFT) | 5u);
+    CHECK(!g_hook_swapped);
+    const uint8_t *tail = (const uint8_t *)fcbus_core_stream_front(&c) + VRAM_MAILBOX_OFF_V5;
+    CHECK_EQ(tail[MBX_FLAGS] & (MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID), 0);
+
+    c.pad2 = 3u << WORLD_HB_GEN_SHIFT;
+    CHECK_EQ(fcbus_core_heartbeat(&c, PPU_COUNT_VAL_V5), FCBUS_ARM);
+    CHECK_EQ(c.front, 1 - front);
+    CHECK(fcbus_core_back_is_free(&c));
+    CHECK(g_hook_swapped);
+    tail = (const uint8_t *)fcbus_core_stream_front(&c) + VRAM_MAILBOX_OFF_V5;
+    CHECK_EQ(tail[MBX_FLAGS] & (MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID),
+             MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID);
+    CHECK_MEM(tail + MBX_ATTR, attr, MBX_ATTR_LEN);
+    CHECK_MEM(tail + MBX_PAL, pal, MBX_PAL_LEN);
+
+    /* An ungated publish keeps the v4 swap-at-next-heartbeat behaviour. */
+    fcbus_core_publish(&c);
+    c.pad2 = 0;
+    CHECK_EQ(fcbus_core_heartbeat(&c, PPU_COUNT_VAL_V5), FCBUS_ARM);
+    CHECK_EQ(c.front, front);
+}
+
 int main(void) {
     test_reset_v1();
     test_reset_v2();
@@ -242,5 +296,6 @@ int main(void) {
     test_attr_table_v2();
     test_attr_table_v1_diff_and_carry_over();
     test_palette_v2_and_v1();
+    test_world_publish_gate_v5();
     return ctest_lite_result();
 }
