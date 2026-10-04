@@ -153,41 +153,116 @@ static int64_t ceil_div(int64_t a, int64_t b) {
     return (a % b != 0 && (a > 0) == (b > 0)) ? q + 1 : q;
 }
 
-static int texture_row(const fcworld_projection_t *p, int vy) {
-    int64_t frac = (int64_t)p->texturemid + (int64_t)(vy - p->centery) * (int64_t)p->iscale;
-    return (int)(frac >> 16);
+static int64_t floor_div(int64_t a, int64_t b) {
+    int64_t q = a / b;
+    return (a % b != 0 && (a < 0) != (b < 0)) ? q - 1 : q;
 }
 
-static int texture_column(const fcworld_projection_t *p, int vx) {
-    int64_t frac = (int64_t)p->startfrac + (int64_t)(vx - p->x1) * (int64_t)p->xiscale;
-    return (int)(frac >> 16);
+/* 65536 * 2^(j/96): scale steps are every 96/FCWORLD_SCALE_STEPS entries and
+ * the rounding midpoints halfway between them. */
+static const uint32_t octave96[97] = {
+    65536, 66011, 66489, 66971, 67456, 67945, 68438, 68933,
+    69433, 69936, 70443, 70953, 71468, 71985, 72507, 73032,
+    73562, 74095, 74632, 75172, 75717, 76266, 76819, 77375,
+    77936, 78501, 79069, 79642, 80220, 80801, 81386, 81976,
+    82570, 83169, 83771, 84378, 84990, 85606, 86226, 86851,
+    87480, 88114, 88752, 89396, 90043, 90696, 91353, 92015,
+    92682, 93354, 94030, 94711, 95398, 96089, 96785, 97487,
+    98193, 98905, 99621, 100343, 101070, 101803, 102540, 103283,
+    104032, 104786, 105545, 106310, 107080, 107856, 108638, 109425,
+    110218, 111017, 111821, 112631, 113448, 114270, 115098, 115932,
+    116772, 117618, 118470, 119329, 120194, 121065, 121942, 122825,
+    123715, 124612, 125515, 126425, 127341, 128263, 129193, 130129,
+    131072
+};
+#if 48 % FCWORLD_SCALE_STEPS != 0
+#error "FCWORLD_SCALE_STEPS must divide 48"
+#endif
+
+/* Scale snapped to FCWORLD_SCALE_STEPS geometric steps per octave. */
+static uint32_t quantise_scale(uint32_t v) {
+    if (v == 0) return 0;
+    int e = 0;
+    while ((v >> e) > 1) ++e;
+    uint64_t m = ((uint64_t)v << 16) >> e;   /* [65536, 131072) */
+    const int stride = 96 / FCWORLD_SCALE_STEPS;
+    int i = 0;
+    while (i < FCWORLD_SCALE_STEPS && m >= octave96[i * stride + stride / 2]) ++i;
+    return (uint32_t)(((uint64_t)octave96[i * stride] << e) >> 16);
+}
+
+/* Native-space sampling relative to the patch origin. Texels depend only on
+ * (patch, scale step, flip), never on screen position, so moving actors keep
+ * their tiles and the scheduler finds them resident. */
+typedef struct {
+    int64_t step_x, step_y;    /* texels per native column / line, 16.16 */
+    int64_t anchor_u, anchor_v;
+    int ax, ay;                /* native column / line of the patch origin */
+    int col_lo, col_hi, row_lo, row_hi;   /* relative to ax / ay, inclusive */
+    bool flip;
+} layout_t;
+
+static bool layout(const fcworld_projection_t *p, layout_t *l) {
+    if (p->iscale == 0 || p->xiscale == 0 || p->patch.width == 0 || p->patch.height == 0)
+        return false;
+    uint32_t q = quantise_scale(p->iscale);
+    l->step_x = (int64_t)q * 5 / 4;
+    l->step_y = (int64_t)q * 25 / 28;
+    l->flip = p->xiscale < 0;
+    l->anchor_u = (int64_t)p->patch.left << 16;
+    l->anchor_v = (int64_t)p->patch.top << 16;
+    int64_t xa = ((int64_t)(p->x1 + p->view_x) << 16) +
+                 ((l->anchor_u - p->startfrac) << 16) / p->xiscale;
+    int64_t ya = ((int64_t)(p->centery + p->view_y) << 16) +
+                 ((l->anchor_v - p->texturemid) << 16) / (int64_t)p->iscale;
+    l->ax = (int)floor_div(xa * 4 / 5 + 32768, 65536);
+    l->ay = FCWORLD_TOP_MARGIN + (int)floor_div(ya * 224 / 200 + 32768, 65536);
+    int64_t w = (int64_t)p->patch.width << 16, h = (int64_t)p->patch.height << 16;
+    int lo = (int)ceil_div(-l->anchor_u - l->step_x / 2, l->step_x);
+    int hi = (int)ceil_div(w - l->anchor_u - l->step_x / 2, l->step_x) - 1;
+    l->col_lo = l->flip ? -hi - 1 : lo;
+    l->col_hi = l->flip ? -lo - 1 : hi;
+    l->row_lo = (int)ceil_div(-l->anchor_v - l->step_y / 2, l->step_y);
+    l->row_hi = (int)ceil_div(h - l->anchor_v - l->step_y / 2, l->step_y) - 1;
+    return l->col_lo <= l->col_hi && l->row_lo <= l->row_hi;
+}
+
+static int layout_column(const layout_t *l, int n) {
+    int64_t r = n - l->ax;
+    if (l->flip) r = -r - 1;
+    return (int)((l->anchor_u + (2 * r + 1) * l->step_x / 2) >> 16);
+}
+
+static int layout_row(const layout_t *l, int line) {
+    int64_t r = line - l->ay;
+    return (int)((l->anchor_v + (2 * r + 1) * l->step_y / 2) >> 16);
 }
 
 bool fcworld_bounds(const fcworld_projection_t *p, fcworld_box_t *box) {
-    if (p->iscale == 0 || p->patch.width == 0 || p->patch.height == 0) return false;
-    int s1 = p->view_x + p->x1, s2 = p->view_x + p->x2;
+    layout_t l;
+    if (!layout(p, &l)) return false;
+    /* Native columns / lines whose source sample lies inside the view. */
+    int s1 = p->view_x, s2 = p->view_x + p->view_width - 1;
     if (s1 < 0) s1 = 0;
     if (s2 > 319) s2 = 319;
-    if (s1 > s2) return false;
     int n_lo = (s1 / 5) * 4 + (s1 % 5 == 4 ? 4 : s1 % 5);
     int n_hi = (s2 / 5) * 4 + (s2 % 5 > 3 ? 3 : s2 % 5);
     if (n_hi > 255) n_hi = 255;
-    if (n_lo > n_hi) return false;
-
-    int64_t vy_lo = p->centery + ceil_div(-(int64_t)p->texturemid, p->iscale);
-    int64_t vy_hi = p->centery +
-        ceil_div(((int64_t)p->patch.height << 16) - (int64_t)p->texturemid, p->iscale) - 1;
-    if (vy_lo < 0) vy_lo = 0;
-    if (vy_hi > p->view_height - 1) vy_hi = p->view_height - 1;
-    if (vy_lo > vy_hi) return false;
-    int64_t sy_lo = vy_lo + p->view_y, sy_hi = vy_hi + p->view_y;
-    int64_t d_lo = (sy_lo * 28 + 24) / 25, d_hi = ((sy_hi + 1) * 28 - 1) / 25;
+    int sy_lo = p->view_y, sy_hi = p->view_y + p->view_height - 1;
+    int d_lo = (sy_lo * 28 + 24) / 25 + FCWORLD_TOP_MARGIN;
+    int d_hi = ((sy_hi + 1) * 28 - 1) / 25;
     if (d_hi > 223) d_hi = 223;
-    if (d_lo > d_hi) return false;
-    int w = n_hi - n_lo + 1, h = (int)(d_hi - d_lo + 1);
+    d_hi += FCWORLD_TOP_MARGIN;
+    if (sy_hi < 199 && d_hi >= FCWORLD_STATUS_START) d_hi = FCWORLD_STATUS_START - 1;
+    if (n_lo < l.ax + l.col_lo) n_lo = l.ax + l.col_lo;
+    if (n_hi > l.ax + l.col_hi) n_hi = l.ax + l.col_hi;
+    if (d_lo < l.ay + l.row_lo) d_lo = l.ay + l.row_lo;
+    if (d_hi > l.ay + l.row_hi) d_hi = l.ay + l.row_hi;
+    if (n_lo > n_hi || d_lo > d_hi) return false;
+    int w = n_hi - n_lo + 1, h = d_hi - d_lo + 1;
     if (w > 248 || h > 216) return false;
     box->x = (int16_t)n_lo;
-    box->y = (int16_t)(d_lo + FCWORLD_TOP_MARGIN);
+    box->y = (int16_t)d_lo;
     box->w = (uint8_t)w;
     box->h = (uint8_t)h;
     return true;
@@ -201,20 +276,23 @@ void fcworld_raster_reset(fcworld_raster_t *raster) {
 bool fcworld_raster_actor(fcworld_raster_t *raster, const fcworld_projection_t *p,
                           const fcworld_box_t *box, fcworld_hidden_fn hidden, void *context) {
     unsigned area = (unsigned)box->w * box->h;
-    if (raster->count >= FCWORLD_MAX_ACTORS || area > (unsigned)FCWORLD_PIXEL_ARENA - raster->used) {
+    layout_t l;
+    if (raster->count >= FCWORLD_MAX_ACTORS || area > (unsigned)FCWORLD_PIXEL_ARENA - raster->used ||
+        !layout(p, &l)) {
         return false;
     }
     uint8_t *out = raster->pixels + raster->used;
     for (int row = 0; row < box->h; ++row) {
         int vy = fcworld_native_to_source_y(box->y + row) - p->view_y;
-        int ty = texture_row(p, vy);
+        int ty = layout_row(&l, box->y + row);
         for (int col = 0; col < box->w; ++col) {
-            int vx = fcworld_native_to_source_x(box->x + col) - p->view_x;
-            int tx = texture_column(p, vx);
+            int tx = layout_column(&l, box->x + col);
             uint8_t texel = 0;
             if (ty >= 0 && ty < p->patch.height && tx >= 0 && tx < p->patch.width) {
                 texel = fcworld_patch_texel(&p->patch, tx, ty);
-                if (texel != 0 && hidden != NULL && hidden(context, vx, vy)) texel = 0;
+                if (texel != 0 && hidden != NULL &&
+                    hidden(context, fcworld_native_to_source_x(box->x + col) - p->view_x, vy))
+                    texel = 0;
             }
             out[row * box->w + col] = texel;
         }
@@ -556,6 +634,14 @@ uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame) {
     return world->target_gen;
 }
 
+uint8_t fcworld_submit_held(fcworld_t *world, const fcworld_frame_t *frame) {
+    uint8_t gen = fcworld_submit(world, frame);
+    if (gen != 0xFF) world->hold_commit = world->stage != FCWORLD_IDLE;
+    return gen;
+}
+
+void fcworld_release(fcworld_t *world) { world->hold_commit = false; }
+
 static void FCWORLD_RAM(finish_packet)(fcworld_t *world) {
     if (world->packet_kind == WORLD_OP_CHR) {
         for (int i = 0; i < world->packet_tile_count; ++i) {
@@ -630,15 +716,19 @@ static bool FCWORLD_RAM(next_packet)(fcworld_t *world) {
     world->packet_kind = WORLD_OP_OAM;
     uint8_t arg = WORLD_OAM_NONE;
     bool commit = true;
+    int send = -1;
     if (!world->clear) {
-        for (int half = world->oam_half; half < 2; ++half) {
-            if (!half_needed(world, half)) continue;
-            arg = (uint8_t)(half * WORLD_OAM_PACKET);
-            copy(world->packet_payload, world->oam + half * 64, 64);
-            commit = half == 1 || !half_needed(world, 1);
-            world->oam_half = (uint8_t)(half + 1);
-            break;
+        for (int half = world->oam_half; half < 2 && send < 0; ++half) {
+            if (half_needed(world, half)) send = half;
         }
+        commit = send < 0 || send == 1 || !half_needed(world, 1);
+    }
+    /* Held: the last packet waits so that it still carries the commit. */
+    if (commit && world->hold_commit) return false;
+    if (send >= 0) {
+        arg = (uint8_t)(send * WORLD_OAM_PACKET);
+        copy(world->packet_payload, world->oam + send * 64, 64);
+        world->oam_half = (uint8_t)(send + 1);
     }
     if (commit) {
         arg |= WORLD_OAM_COMMIT;

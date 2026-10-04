@@ -144,18 +144,34 @@ def test_oam_packets_stage_and_commit_after_scroll(rom) -> None:
     check_budget(result)
 
 
-def test_pending_dma_defers_packet_and_reports_generation(rom) -> None:
+def test_new_packet_outranks_pending_dma(rom) -> None:
     prg, _ = rom
     preset = {0x0310: 1, w.W_SLOTS_HI: 5 << 4, w.W_SHOWN_HI: 4 << 4, w.W_ACK: 3}
     result = NmiHarness(prg).run_nmi(
         bytes(world_packet(p.WORLD_OP_CHR, 4, 5, bytes((0x10, 0) * 4), bytes(64))), preset)
     writes = [(a, v) for _, a, v in result.writes]
-    assert (0x4014, 2) in writes
-    assert result.memory[w.W_ACK] == 3, "a DMA frame must leave the packet for a resend"
-    assert result.memory[w.W_SHOWN_HI] == 5 << 4
-    assert not [a for a, _ in ppu_writes(result) if 0x1000 <= a < 0x2000]
-    assert heartbeat(result) == [p.FP_COM_KEY, 0, (5 << 4) | 3]
+    assert (0x4014, 2) not in writes
+    assert result.memory[0x0310] == 1, "the DMA stays pending for the next NMI"
+    assert result.memory[w.W_ACK] == 4
+    assert result.memory[w.W_SHOWN_HI] == 4 << 4
+    assert [a for a, _ in ppu_writes(result) if 0x1000 <= a < 0x2000]
+    assert heartbeat(result) == [p.FP_COM_KEY, 0, (4 << 4) | 4]
     check_budget(result)
+
+
+def test_pending_dma_runs_when_no_new_packet(rom) -> None:
+    prg, _ = rom
+    preset = {0x0310: 1, w.W_SLOTS_HI: 5 << 4, w.W_SHOWN_HI: 4 << 4, w.W_ACK: 4}
+    for data in (world_packet(p.WORLD_OP_CHR, 4, 5, bytes((0x10, 0) * 4), bytes(64)),
+                 mailbox()):
+        result = NmiHarness(prg).run_nmi(bytes(data), preset)
+        writes = [(a, v) for _, a, v in result.writes]
+        assert (0x4014, 2) in writes
+        assert result.memory[0x0310] == 0
+        assert result.memory[w.W_SHOWN_HI] == 5 << 4
+        assert not [a for a, _ in ppu_writes(result) if 0x1000 <= a < 0x2000]
+        assert heartbeat(result) == [p.FP_COM_KEY, 0, (5 << 4) | 4]
+        check_budget(result)
 
 
 def test_text_and_tables_keep_v4_behaviour(rom) -> None:

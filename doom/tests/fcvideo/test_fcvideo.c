@@ -83,15 +83,18 @@ static void test_vertical_source_rows(void) {
 }
 
 static void test_native_status_gray_palette(void) {
+    /* World pixels are cheapest in subpalette 3; the HUD must not reserve it. */
+    memset(err, 100, sizeof(err));
+    for (int index = 0; index < 256; index++) err[3 * 256 + index] = 0;
     fcvideo_frame_begin(&video);
     fcvideo_set_native_status(&video, true);
     fcvideo_blank_status(&video);
     fcvideo_convert_staged(&video, stream, attr, true);
-    for (int by = 12; by < 15; ++by) {
+    for (int by = 0; by < 15; ++by) {
         for (int bx = 0; bx < 16; ++bx) {
             int index = (bx >> 1) + ((by >> 1) << 3);
             int shift = ((bx & 1) + ((by & 1) << 1)) * 2;
-            CHECK_EQ((attr[index] >> shift) & 3, 3);
+            CHECK_EQ((attr[index] >> shift) & 3, by >= 12 ? FCVIDEO_HUD_PALETTE : 3);
         }
     }
     size_t first = (VRAM_HEAD_WORDS + FCVIDEO_STATUS_START * VRAM_TILE_COLS) * 2;
@@ -162,8 +165,9 @@ static void test_episode_menu_uses_full_width_font_without_sprite_rows(void) {
     uint8_t palette[MBX_PAL_LEN] = {0};
     memset(compact, 0, sizeof compact);
     fcvideo_overlay_episode_menu(compact, attributes, palette);
-    CHECK_EQ(palette[15], 0x16);
-    CHECK_EQ(palette[14], 0x30);
+    CHECK_EQ(palette[FCVIDEO_HUD_PALETTE * 4 + 3], 0x16);
+    CHECK_EQ(palette[FCVIDEO_HUD_PALETTE * 4 + 2], 0x30);
+    CHECK_EQ(palette[15], 0);
     /* First K, second T, third I occupy full-size centered rows. */
     for (int row = 0; row < 3; ++row) {
         int y = 88 + row * 32;
@@ -178,7 +182,7 @@ static void test_episode_menu_uses_full_width_font_without_sprite_rows(void) {
         CHECK(colored > 80);
     }
     CHECK_EQ(compact[(VRAM_HEAD_WORDS + 100 * VRAM_TILE_COLS + 16) * 2], 0);
-    CHECK_EQ((attributes[(5 / 2) * 8 + 2 / 2] >> (2 * ((2 & 1) + 2 * (5 & 1)))) & 3, 3);
+    CHECK_EQ((attributes[(5 / 2) * 8 + 2 / 2] >> (2 * ((2 & 1) + 2 * (5 & 1)))) & 3, FCVIDEO_HUD_PALETTE);
 }
 
 int main(void) {

@@ -16,6 +16,8 @@ const fcvideo_preset_t fcvideo_presets[FCVIDEO_PRESET_COUNT] = {
             {0x02, 0x01, 0x11}, {0x06, 0x16, 0x3d}}, 0},
     {0x0f, {{0x1d, 0x00, 0x30}, {0x08, 0x18, 0x30},
             {0x06, 0x16, 0x30}, {0x09, 0x19, 0x30}}, 1},
+    {0x0f, {{0x1d, 0x00, 0x30}, {0x08, 0x18, 0x30},
+            {0x00, 0x30, 0x16}, {0x09, 0x19, 0x30}}, 1},
 };
 
 /* Same NESDev example 2C02 RGB palette as tools/fcpico/nes_palette.py. */
@@ -168,7 +170,7 @@ static void choose_attributes(fcvideo_t *video, uint8_t attr[MBX_ATTR_LEN]) {
     for (int by = 0; by < VRAM_LINES / 16; by++) {
         for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++) {
             if (video->native_status && by >= FCVIDEO_STATUS_START / 16) {
-                attr_set(attr, bx, by, 3);
+                attr_set(attr, bx, by, FCVIDEO_HUD_PALETTE);
                 continue;
             }
             uint32_t costs[4] = {0};
@@ -179,15 +181,14 @@ static void choose_attributes(fcvideo_t *video, uint8_t attr[MBX_ATTR_LEN]) {
                 }
             }
             uint8_t best = 0;
-            uint8_t choices = video->native_status ? 3 : 4;
-            for (uint8_t p = 1; p < choices; p++) {
+            for (uint8_t p = 1; p < 4; p++) {
                 if (costs[p] < costs[best]) best = p;
             }
             if (video->have_previous) {
                 uint8_t old = attr_get(video->previous_attr, bx, by);
                 /* Python reference: retain old unless best is strictly more
                  * than 12% cheaper. Integer comparison avoids floating point. */
-                if (old < choices && best != old &&
+                if (best != old &&
                     costs[best] * 100u >= costs[old] * 88u) best = old;
             }
             attr_set(attr, bx, by, best);
@@ -413,15 +414,15 @@ void fcvideo_overlay_episode_menu(uint8_t stream[VRAM_BUF_BYTES_V4],
         "KNEE DEEP IN THE DEAD", "THE SHORES OF HELL", "INFERNO"
     };
     static const uint8_t top[3] = {88, 120, 152};
-    palette[12] = 0x0F; palette[13] = 0x00;
-    palette[14] = 0x30; palette[15] = 0x16;
+    uint8_t *hud = palette + FCVIDEO_HUD_PALETTE * 4;
+    hud[0] = 0x0F; hud[1] = 0x00; hud[2] = 0x30; hud[3] = 0x16;
     for (int row = 0; row < 3; ++row) {
         const char *name = names[row];
         int left = (FCVIDEO_WIDTH - (int)strlen(name) * 8) / 2;
         int right = left + (int)strlen(name) * 8;
         for (int by = top[row] / 16; by <= (top[row] + 8) / 16; ++by)
             for (int bx = left / 16; bx <= right / 16; ++bx)
-                attr_set(attr, bx, by, 3);
+                attr_set(attr, bx, by, FCVIDEO_HUD_PALETTE);
         /* Write the black offset first, then the red glyph on top. */
         for (int shadow = 1; shadow >= 0; --shadow)
             for (int letter = 0; name[letter]; ++letter) {

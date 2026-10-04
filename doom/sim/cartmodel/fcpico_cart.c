@@ -31,6 +31,11 @@ static bool g_rom_v5;
  * recorded frame each heartbeat armed and the console's acknowledgement. */
 static const char *g_sequence;
 static unsigned g_seq_next, g_seq_count;
+/* FCPICO_WORLD_CONVERT_BEATS: heartbeats between taking a frame and publishing
+ * its picture (device conversion); FCPICO_WORLD_EARLY=1 submits its world
+ * generation held at the start of that time, as the device does. */
+static unsigned g_seq_convert_beats;
+static bool g_seq_early;
 static int g_buffer_frame[2] = {-1, -1};
 static fcworld_t g_world;
 static FILE *g_world_log;
@@ -119,28 +124,38 @@ static bool load_world_frame(unsigned n, fcworld_frame_t *frame) {
 /* Publish the next recorded frame when its picture can be staged. */
 static void publish_sequence(void) {
     fcbus_core_t *core = fcbus_host_core();
-    if (!fcbus_core_back_is_free(core) || g_seq_next >= g_seq_count ||
-        !fcworld_idle(&g_world)) {
-        return;
+    static fcworld_frame_t frame;
+    static uint8_t gen;
+    static int converting = -1;   /* heartbeats of conversion left, -1 none */
+    if (converting < 0) {
+        if (!fcbus_core_back_is_free(core) || g_seq_next >= g_seq_count ||
+            !fcworld_idle(&g_world)) {
+            return;
+        }
+        char path[1024];
+        if (!sequence_path(path, sizeof path, "stream", g_seq_next, "bin") ||
+            !read_file(path, g_stream, sizeof g_stream, &g_stream_length) ||
+            g_stream_length != VRAM_BUF_BYTES_V4 || !load_world_frame(g_seq_next, &frame)) {
+            g_seq_count = g_seq_next;  /* end of the recording */
+            return;
+        }
+        /* The device submits held before converting the picture. */
+        if (g_seq_early) gen = fcworld_submit_held(&g_world, &frame);
+        converting = (int)g_seq_convert_beats;
     }
-    char path[1024];
-    fcworld_frame_t frame;
-    if (!sequence_path(path, sizeof path, "stream", g_seq_next, "bin") ||
-        !read_file(path, g_stream, sizeof g_stream, &g_stream_length) ||
-        g_stream_length != VRAM_BUF_BYTES_V4 || !load_world_frame(g_seq_next, &frame)) {
-        g_seq_count = g_seq_next;  /* end of the recording */
-        return;
-    }
+    if (converting-- > 0) return;
+    converting = -1;
     const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V4;
     memcpy(fcbus_core_stream_back(core), g_stream, g_stream_length);
     fcbus_core_palette(core, mailbox + MBX_PAL);
     fcbus_core_attr_table(core, mailbox + MBX_ATTR);
     (void)fcbus_core_ui_snapshot(core, mailbox + MBX_UI);
-    uint8_t gen = fcworld_submit(&g_world, &frame);
+    if (!g_seq_early) gen = fcworld_submit(&g_world, &frame);
     if (gen == 0xFF) {
         g_world_errors++;
         gen = g_world.shown_gen;
     }
+    fcworld_release(&g_world);
     fcbus_core_publish_world(core, gen);
     g_buffer_frame[1 - core->front] = (int)g_seq_next;
     if (g_world_log) {
@@ -151,7 +166,8 @@ static void publish_sequence(void) {
 
 static void world_hook(void *user, uint8_t *mailbox, uint8_t pad2, bool swapped) {
     (void)user;
-    if (g_world.stage < 4) g_stage_beats[g_world.stage]++;
+    unsigned stage = g_world.stage;
+    if (stage < 4) g_stage_beats[stage]++;
     fcworld_heartbeat(&g_world, mailbox, pad2);
     if (fcworld_take_stall(&g_world)) {
         g_world_errors++;
@@ -160,8 +176,8 @@ static void world_hook(void *user, uint8_t *mailbox, uint8_t pad2, bool swapped)
     if (g_world_log) {
         /* The swap, if any, is already applied: front is the armed picture. */
         const fcbus_core_t *core = fcbus_host_core();
-        fprintf(g_world_log, "heartbeat,%u,%d,%u,%u,%u\n", core->stats.frames,
-                g_buffer_frame[core->front], pad2 >> 4, pad2 & 15, (unsigned)swapped);
+        fprintf(g_world_log, "heartbeat,%u,%d,%u,%u,%u,%u\n", core->stats.frames,
+                g_buffer_frame[core->front], pad2 >> 4, pad2 & 15, (unsigned)swapped, stage);
     }
 }
 
@@ -253,6 +269,10 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
         const char *count = getenv("FCPICO_WORLD_FRAMES");
         g_seq_count = count ? (unsigned)strtoul(count, NULL, 10) : 100000u;
         g_seq_next = 0;
+        const char *convert = getenv("FCPICO_WORLD_CONVERT_BEATS");
+        g_seq_convert_beats = convert ? (unsigned)strtoul(convert, NULL, 10) : 0u;
+        const char *early = getenv("FCPICO_WORLD_EARLY");
+        g_seq_early = early != NULL && early[0] == '1';
         const char *log = getenv("FCPICO_WORLD_LOG");
         if (log && log[0]) {
             g_world_log = fopen(log, "w");

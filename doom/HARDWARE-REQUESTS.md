@@ -104,12 +104,15 @@ the result. The human fills in the result section and commits; the agent then co
 
 - Flash: `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
   (firmware + WHX + audio archive + world sprite atlas at `0x10280000`), SHA-256
-  `7aed714dd786ab9df58b45fa72e6a0d282f5af718bb152a7ca1992ad4a2926be` (adds the
-  `world_us` serial timing line; colours as in the first pass); ROM
-  `5a91ddccab31ea1cf327420fc0e7bfebd7abeafa9030271489447705a3923eff`. Details in
-  [PROGRESS](PROGRESS.md#p3-w3w4----v5-native-world-sprite-runtime-2026-10-03).
-- Console ROM expected: `20DOOM-05-9030` (9016 HUD plus v5 world packets);
-  permanent fix bank unchanged. Count stays 15122.
+  `b55cade4ab953b46e724bcdf3a50c16b4a5ee20460cef6e655687edf5b1a4597`; ROM
+  `ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135`. Second
+  candidate: the HUD shares BG palette 2 (the world regains its green palette),
+  anchored scale-stepped sprite tiles, packets outrank HUD DMA, uploads overlap
+  conversion. Details in
+  [PROGRESS](PROGRESS.md#p3-w5a----shared-hud-palette-and-world-sprite-transport-2026-10-04).
+- Console ROM expected: `20DOOM-05-9031` (9016 HUD plus v5 world packets; a new
+  world packet now takes priority over a pending OAM DMA); permanent fix bank
+  unchanged. Count stays 15122.
 - Build reproduction: `FCPICO_AUDIO_WAD=/path/doom1.wad FCPICO_WORLD_WAD=/path/doom1.wad
   BUILD_DIR=/tmp/fcpico-native-world-device doom/tools/build_bg_text_probe_device.sh
   --native-world`.
@@ -119,7 +122,7 @@ the result. The human fills in the result section and commits; the agent then co
   pickups during gameplay; sprite palettes 0/2 change while no menu is open. The
   third heartbeat byte is now nonzero. None of these runtime CHR writes has run on
   a physical board yet; P3-U3 storage remains partial.
-- Steps: 1. Flash and let the console self-update to 9030. 2. Title/menu: logo and
+- Steps: 1. Flash and let the console self-update to 9031. 2. Title/menu: logo and
   menu text colours as before. 3. Start E1M1: zombiemen (green/grey), imps (brown),
   pickups (grey medikits with red crosses, green armour, brown ammo/rocket boxes)
   should appear as crisp native sprites over the stream, using per-tile
@@ -136,8 +139,13 @@ the result. The human fills in the result section and commits; the agent then co
   of a corner occlusion and a menu transition; any garbled sprites, flicker,
   missing actors, HUD/menu glyph corruption, bus stops or slowdown. Add results to
   [HARDWARE-LOG.md](HARDWARE-LOG.md) under HR-17 with console model and flashed hash.
-- Expected limits: native actors update at about 9 fps when they change every
-  frame (tile upload bandwidth); crowded or near views stream some actors.
+- Second-candidate checks: HUD colours unchanged at rest (it now tints with the
+  world during damage/pickup flashes, like Doom's status bar); green walls and
+  nukage visible in the 3D view; HUD face/ammo updates still prompt with enemies
+  on screen; actors may step slightly in size (about 9%) while approaching.
+- Expected limits: Mesen cosimulation (2 heartbeats of modelled conversion)
+  gives about 10.7 pictures/s transport-limited with native actors versus 19.9
+  streamed; crowded or near views stream some actors.
 
 ### HR-15 Concrete native HUD and enlarged face (task P3-U4)
 - Flash: `/tmp/fcpico-native-status-device/artifacts/fcpico_doom_native_status_whx.uf2`,

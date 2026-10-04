@@ -105,10 +105,11 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 | 14 | [plan/14-world-sprites.md](plan/14-world-sprites.md) | Enemy/pickup sprite development: automatic WAD sheets, LUT scaling, shared UI budgets, geometry masks, streamed fallback and mapper feasibility |
 
 World sprites: enemies and pickups render as native NES sprites with per-tile
-dynamic palettes through protocol v5 and ROM `20DOOM-05-9030`
-([plan 14](plan/14-world-sprites.md)). Colours are confirmed on hardware; frame
-rate drops while enemies are on screen because each generation's CHR upload takes
-about 6.9 heartbeats. Reducing uploads is the next task.
+dynamic palettes through protocol v5 and ROM `20DOOM-05-9031`
+([plan 14](plan/14-world-sprites.md)). Colours are confirmed on hardware. The
+first candidate dropped frame rate with enemies on screen; the second (HR-17)
+cuts the Mesen transport cost per picture from 6.89 to 4.99 heartbeats, and the
+native HUD now shares its BG palette with the world.
 
 ## Directory map
 

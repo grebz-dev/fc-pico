@@ -42,12 +42,14 @@ static bool displayed_tile(const console_t *c, uint8_t tile) {
     return false;
 }
 
+/* ROM 9031: a new world packet outranks a pending OAM DMA. */
 static uint8_t console_nmi(console_t *c, const uint8_t *m) {
-    if (c->pending) {
+    bool packet = (m[MBX_FLAGS] & MBX_FLAG_WORLD) && m[MBX_WORLD_SEQ] != c->ack;
+    if (c->pending && !packet) {
         memcpy(c->oam, c->shadow, 256);
         c->shown = c->slots;
         c->pending = 0;
-    } else if ((m[MBX_FLAGS] & MBX_FLAG_WORLD) && m[MBX_WORLD_SEQ] != c->ack) {
+    } else if (packet) {
         if (m[MBX_WORLD_OP] == WORLD_OP_CHR) {
             for (int t = 0; t < WORLD_CHR_TILES; ++t) {
                 uint16_t address = (uint16_t)(m[MBX_WORLD_ARG + t * 2] << 8 |
@@ -206,6 +208,42 @@ static void test_scheduler_uploads_commits_and_protects(void) {
     CHECK(fcworld_quiescent(&w, menu_pal));
 }
 
+static void test_held_commit_waits_for_release(void) {
+    fcworld_t w;
+    console_t c;
+    fcworld_reset(&w);
+    console_init(&c);
+    fcworld_frame_t a;
+    make_frame(&a, 20, 21);
+    uint8_t gen = fcworld_submit_held(&w, &a);
+    CHECK(gen >= 1 && gen <= 15);
+    uint8_t mailbox[FC_COM_BUF_SIZE_V5];
+    uint8_t pad2 = 0;
+    for (int beat = 0; beat < 20; ++beat) {
+        memset(mailbox, 0, sizeof mailbox);
+        fcworld_heartbeat(&w, mailbox, pad2);
+        pad2 = console_nmi(&c, mailbox);
+        console_main(&c, beat % 3 == 0);
+    }
+    /* Every tile and the first OAM half are staged; the last half waits to
+     * carry the commit. */
+    CHECK_EQ(w.stats.chr_tiles, 20u);
+    CHECK_EQ(w.stage, FCWORLD_OAM);
+    CHECK_EQ(w.stats.commits, 0u);
+    CHECK_EQ(c.shown, 0);
+    CHECK_MEM(c.stage, w.oam, 64);
+    uint32_t packets = w.stats.packets;
+    fcworld_release(&w);
+    unsigned beats = drive(&w, &c, 5);
+    CHECK(beats <= 4);   /* committing half, DMA, shown */
+    CHECK_EQ(w.stats.packets, packets + 1);
+    CHECK_EQ(c.shown, gen);
+    check_displayed(&c, &a);
+    /* An idle or busy submit never leaves a hold behind. */
+    CHECK_EQ(fcworld_submit_held(&w, &a), gen);
+    CHECK(!w.hold_commit);
+}
+
 static void test_flipped_cache_reuse(void) {
     fcworld_t w;
     console_t c;
@@ -297,42 +335,83 @@ static void test_atlas_v2_lookup_and_family(void) {
 static bool hide_right(void *context, int vx, int vy) {
     (void)context;
     (void)vy;
-    return vx >= 8;
+    return vx >= 50;
 }
 
-static void test_raster_uses_fcvideo_sampling(void) {
+static void raster_one(const fcworld_projection_t *p, fcworld_box_t *box,
+                       fcworld_raster_t *raster, fcworld_hidden_fn hidden) {
+    CHECK(fcworld_bounds(p, box));
+    fcworld_raster_reset(raster);
+    CHECK(fcworld_raster_actor(raster, p, box, hidden, NULL));
+}
+
+static void test_raster_is_anchored_and_scale_quantised(void) {
     fcworld_atlas_t atlas;
     make_atlas(&atlas);
     fcworld_projection_t p = {0};
     bool flip;
     CHECK(fcworld_atlas_lookup(&atlas, 0, 0, 0, &flip, &p.patch));
-    p.x1 = 0; p.x2 = 15;
+    /* 16x8 patch with origin (8, 8): drawn at source x 40..55, y 20..27. */
+    p.x1 = 40; p.x2 = 55;
     p.startfrac = 0; p.xiscale = 1 << 16;
     p.texturemid = 0; p.iscale = 1 << 16;
     p.centery = 20; p.view_width = 320; p.view_height = 168;
     fcworld_box_t box;
-    CHECK(fcworld_bounds(&p, &box));
-    CHECK_EQ(box.x, 0);
-    CHECK_EQ(box.w, 13);                    /* source columns 4, 9, 14 drop */
-    CHECK_EQ(fcworld_native_to_source_y(box.y), 20);
-    CHECK_EQ(fcworld_native_to_source_y(box.y - 1), 19);
-    CHECK_EQ(fcworld_native_to_source_y(box.y + box.h), 28);
-    fcworld_raster_t raster;
-    fcworld_raster_reset(&raster);
-    CHECK(fcworld_raster_actor(&raster, &p, &box, hide_right, NULL));
+    static fcworld_raster_t raster, moved;
+    raster_one(&p, &box, &raster, hide_right);
+    /* Origin at source (48, 28) -> native column 38, line 8 + 31; native
+     * steps of 1.25 texels across and 25/28 down. */
+    CHECK_EQ(box.x, 32);
+    CHECK_EQ(box.w, 12);
+    CHECK_EQ(box.y, 30);
+    CHECK_EQ(box.h, 9);
     for (int row = 0; row < box.h; ++row) {
-        int ty = fcworld_native_to_source_y(box.y + row) - 20;
+        int ty = (int)(((int64_t)(8 << 16) + (int64_t)(2 * (box.y + row - 39) + 1) * 58514 / 2) >> 16);
         for (int col = 0; col < box.w; ++col) {
-            int tx = fcworld_native_to_source_x(col);
-            uint8_t want = tx >= 8 ? 0 : (uint8_t)((tx + ty) % 3 + 1);
+            int tx = (int)(((int64_t)(8 << 16) + (int64_t)(2 * (box.x + col - 38) + 1) * 81920 / 2) >> 16);
+            bool hidden = fcworld_native_to_source_x(box.x + col) >= 50;
+            uint8_t want = hidden ? 0 : (uint8_t)((tx + ty) % 3 + 1);
             CHECK_EQ(raster.pixels[row * box.w + col], want);
         }
     }
+
+    /* Moving the actor or changing its scale within one step keeps texels. */
+    raster_one(&p, &box, &raster, NULL);
+    fcworld_projection_t q = p;
+    q.x1 += 7; q.x2 += 7; q.centery += 3;
+    q.iscale = q.xiscale = 66847;   /* +2%: same scale step */
+    fcworld_box_t moved_box;
+    raster_one(&q, &moved_box, &moved, NULL);
+    CHECK(moved_box.x != box.x && moved_box.y != box.y);
+    CHECK_EQ(moved_box.w, box.w);
+    CHECK_EQ(moved_box.h, box.h);
+    CHECK_MEM(moved.pixels, raster.pixels, (size_t)box.w * box.h);
+
+    /* A flipped projection mirrors the same raster about the origin. */
+    q = p;
+    q.xiscale = -(1 << 16);
+    q.startfrac = (16 << 16) - 1;
+    raster_one(&q, &moved_box, &moved, NULL);
+    CHECK_EQ(moved_box.x, box.x);
+    CHECK_EQ(moved_box.w, box.w);
+    for (int row = 0; row < box.h; ++row)
+        for (int col = 0; col < box.w; ++col)
+            CHECK_EQ(moved.pixels[row * box.w + col], raster.pixels[row * box.w + box.w - 1 - col]);
+
+    /* Above the status bar, sprites end before the native HUD lines. */
+    q = p;
+    q.centery = 158;
+    CHECK(fcworld_bounds(&q, &moved_box));
+    CHECK_EQ(moved_box.y + moved_box.h - 1, FCWORLD_STATUS_START - 1);
+    q.view_height = 200;
+    CHECK(fcworld_bounds(&q, &moved_box));
+    CHECK(moved_box.y + moved_box.h - 1 > FCWORLD_STATUS_START);
+
     /* With the family's candidates loaded, tiles use palette 0 and keep indices. */
     fcworld_palette_state_t shown = {{0x0F, 0x16, 0x30, 0x0F, 0x1A, 0x27}, 0};
     fcworld_frame_t frame;
     CHECK(fcworld_frame_build(&frame, &raster, &atlas, &shown));
-    CHECK(frame.oam_count >= 1 && frame.oam_count <= 4);
+    CHECK(frame.oam_count >= 1 && frame.oam_count <= 6);
     CHECK_EQ(frame.oam[0][0], box.y - 1);
     CHECK_EQ(frame.oam[0][2] & 3, 0);
     uint8_t expected[16];
@@ -450,10 +529,11 @@ static void test_core_gate_matches_console_generation(void) {
 
 int main(void) {
     test_atlas_v2_lookup_and_family();
-    test_raster_uses_fcvideo_sampling();
+    test_raster_is_anchored_and_scale_quantised();
     test_plan_respects_shown_palettes();
     test_frame_dedupes_mirrors_and_limits_lines();
     test_scheduler_uploads_commits_and_protects();
+    test_held_commit_waits_for_release();
     test_flipped_cache_reuse();
     test_core_gate_matches_console_generation();
     return ctest_lite_result();

@@ -60,9 +60,11 @@ def library(tmp_path_factory):
          (0x06, 0x16, 0x30), (0x09, 0x19, 0x30))),
     (2, ((0x10, 0x09, 0x2D), (0x07, 0x28, 0x18),
          (0x02, 0x01, 0x11), (0x06, 0x16, 0x3D))),
+    (4, ((0x1D, 0x00, 0x30), (0x08, 0x18, 0x30),
+         (0x00, 0x30, 0x16), (0x09, 0x19, 0x30))),
 ])
 def test_c_table_builder_matches_python_reference(library, preset_index, entries):
-    presets = (Preset * 3).in_dll(library, "fcvideo_presets")
+    presets = (Preset * 5).in_dll(library, "fcvideo_presets")
     preset = presets[preset_index]
     assert preset.backdrop == 0x0F
     assert tuple(tuple(row) for row in preset.subpalettes) == entries
@@ -70,7 +72,8 @@ def test_c_table_builder_matches_python_reference(library, preset_index, entries
     rng = np.random.default_rng(23)
     playpal = rng.integers(0, 256, size=(256, 3), dtype=np.uint8)
     playpal[0] = (0, 0, 0)
-    expected_err, expected_lut = fcvideo_ref.build_err_and_lut(playpal, entries, 0x0F)
+    expected_err, expected_lut = fcvideo_ref.build_err_and_lut(
+        playpal, entries, 0x0F, bool(preset.shadow_lift))
     err = (U8 * (4 * 256))()
     lut = (U8 * (4 * 256 * 16))()
     palette = (U8 * protocol.MBX_PAL_LEN)()
@@ -82,7 +85,7 @@ def test_c_table_builder_matches_python_reference(library, preset_index, entries
 
 
 def test_c_built_tables_feed_full_stream(library):
-    presets = (Preset * 3).in_dll(library, "fcvideo_presets")
+    presets = (Preset * 5).in_dll(library, "fcvideo_presets")
     preset = presets[1]
     grey = np.arange(256, dtype=np.uint8)
     playpal = np.ascontiguousarray(np.column_stack((grey, grey, grey)))
@@ -110,7 +113,7 @@ def test_c_built_tables_feed_full_stream(library):
 
 @pytest.mark.parametrize("preset_index", range(3))
 def test_synthetic_flash_palette_sets_match_engine_tint(library, preset_index):
-    presets = (Preset * 3).in_dll(library, "fcvideo_presets")
+    presets = (Preset * 5).in_dll(library, "fcvideo_presets")
     preset = presets[preset_index]
     sets = (U8 * (14 * protocol.MBX_PAL_LEN))()
     library.fcvideo_build_palette_sets(ctypes.byref(preset), sets)

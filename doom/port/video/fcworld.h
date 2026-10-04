@@ -107,14 +107,25 @@ static inline uint8_t fcworld_patch_texel(const fcworld_patch_t *p, int x, int y
 /* Native coordinate mapping (fcvideo sampling)                               */
 /* ------------------------------------------------------------------------ */
 #define FCWORLD_TOP_MARGIN 8
+/** First native line of the HUD (FCVIDEO_STATUS_START). With the status bar
+ *  shown, world sprites end above it so a tile's overhang stays clear of the
+ *  HUD sprites from line 200. */
+#define FCWORLD_STATUS_START 192
+/** Actor scale snaps to this many geometric steps per octave so that tiles
+ *  repeat while an actor approaches; see fcworld_bounds. */
+#ifndef FCWORLD_SCALE_STEPS
+#define FCWORLD_SCALE_STEPS 8
+#endif
 static inline int fcworld_native_to_source_x(int n) { return (n >> 2) * 5 + (n & 3); }
 static inline int fcworld_native_to_source_y(int line) {
     return (line - FCWORLD_TOP_MARGIN) * 200 / 224;
 }
 
-/** Engine projection in view coordinates, exactly as the software renderer
- *  would draw it: texture column = (startfrac + (vx - x1) * xiscale) >> 16 and
- *  texture row = (texturemid + (vy - centery) * iscale) >> 16. */
+/** Engine projection in view coordinates as the software renderer computes
+ *  it: texture column = (startfrac + (vx - x1) * xiscale) >> 16 and texture
+ *  row = (texturemid + (vy - centery) * iscale) >> 16. Native rasters keep the
+ *  patch origin (left, top) at its projected position, rounded to a native
+ *  pixel, and sample at the quantised scale relative to it. */
 typedef struct {
     int16_t x1, x2;
     int32_t startfrac, xiscale;
@@ -127,7 +138,8 @@ typedef struct {
 
 typedef struct { int16_t x, y; uint8_t w, h; } fcworld_box_t;
 
-/** Native bounding box of the projected patch; false when nothing is on screen. */
+/** Native bounding box of the anchored, scale-quantised patch clipped to the
+ *  view; false when nothing is on screen. */
 bool fcworld_bounds(const fcworld_projection_t *projection, fcworld_box_t *box);
 static inline unsigned fcworld_box_tiles(const fcworld_box_t *box) {
     return (unsigned)((box->w + 7) / 8) * (unsigned)((box->h + 7) / 8);
@@ -237,6 +249,7 @@ typedef struct {
     uint32_t clock;
     uint32_t busy_heartbeats;
     bool stalled;
+    bool hold_commit;     /**< uploads may proceed; the commit waits */
     fcworld_stats_t stats;
 } fcworld_t;
 
@@ -247,6 +260,11 @@ bool fcworld_idle(const fcworld_t *world);
  *  matching picture must be published with: unchanged frames return the shown
  *  generation, empty frames generation 0. 0xFF when busy. */
 uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame);
+/** As fcworld_submit, but the committing packet waits for fcworld_release, so
+ *  tile and OAM staging overlap the conversion of the matching picture. */
+uint8_t fcworld_submit_held(fcworld_t *world, const fcworld_frame_t *frame);
+/** The matching picture is published (or abandoned): allow the commit. */
+void fcworld_release(fcworld_t *world);
 /** fcbus heartbeat hook: process pad2 and add at most one packet to `mailbox`. */
 void fcworld_heartbeat(fcworld_t *world, uint8_t *mailbox, uint8_t pad2);
 /** True once after the scheduler abandoned a generation (the caller must release
