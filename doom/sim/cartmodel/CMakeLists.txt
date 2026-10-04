@@ -21,7 +21,9 @@ if(NOT TARGET fcpico_testpattern_app)
                      "${CMAKE_CURRENT_BINARY_DIR}/testpattern")
 endif()
 
-add_library(fcpico_cartmodel STATIC fcpico_cart.c)
-target_include_directories(fcpico_cartmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
+# fcworld is compiled in directly: the Mesen makefile links a fixed library list.
+add_library(fcpico_cartmodel STATIC fcpico_cart.c ${CMAKE_CURRENT_LIST_DIR}/../../port/video/fcworld.c)
+target_include_directories(fcpico_cartmodel PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
+    ${CMAKE_CURRENT_LIST_DIR}/../../port/video)
 target_link_libraries(fcpico_cartmodel PUBLIC fcbus_host fcpico_testpattern_app)
 target_compile_options(fcpico_cartmodel PRIVATE -Wall -Wextra -Werror)

@@ -63,6 +63,8 @@ def main() -> int:
                         help="console ROM (tutorial v1 by default; use Doom ROM for v2)")
     parser.add_argument("--mesen", type=Path,
                         default=HERE / "Mesen2/bin/linux-x64/Release/linux-x64/publish/Mesen")
+    parser.add_argument("--lua-script", type=Path, default=HERE / "lua/D0.lua",
+                        help="capture script (default: standard frame checks)")
     parser.add_argument("--serve-rom", type=Path,
                         help="boot ROM the cartridge serves (default: the console ROM)")
     parser.add_argument("--frames", type=int, default=180,
@@ -151,7 +153,7 @@ def main() -> int:
         env["FCPICO_SERVE_ROM"] = str(served_source)
     with (run / "console.log").open("w") as log:
         completed = subprocess.run(
-            [str(staging / binary.name), "--testRunner", str(HERE / "lua/D0.lua"),
+            [str(staging / binary.name), "--testRunner", str(args.lua_script.resolve()),
              str(rom), f"--timeout={60 + args.frames // 30}"], cwd=run, env=env, stdout=log,
             stderr=subprocess.STDOUT, timeout=90 + args.frames // 30,
         )

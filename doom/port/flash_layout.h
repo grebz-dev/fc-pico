@@ -19,9 +19,12 @@
 #define FLASH_FIRMWARE_ADDR   0x10000000u   // code, boot ROM image, music, SFX
 #define FLASH_FIRMWARE_MAX    0x00080000u   // 512 KB cap
 #define FLASH_WHX_ADDR        0x10080000u   // doom1.whx (TINY_WAD_ADDR for the fcpico target)
-#define FLASH_WHX_MAX         0x00280000u   // 2.5 MB reserved (doom1.whx is 1,800,344 B)
+#define FLASH_WHX_MAX         0x00200000u   // 2 MB reserved (shareware doom1.whx is 1,800,344 B)
+#define FLASH_WORLD_ADDR      0x10280000u   // optional world sprite atlas (plan 14), after the WHX
+#define FLASH_WORLD_MAX       0x00080000u   // 512 KB, ends at FLASH_ASSETS_ADDR
 #define FLASH_ASSETS_ADDR     0x10300000u   // optional packed asset archive
 #define FLASH_ASSETS_MAX      0x00080000u   // 512 KB
+#define FLASH_AUDIO_MAX       0x00080000u   // generated audio archive: the whole asset region
 #define FLASH_SAVES_ADDR      0x10380000u   // RP2040 Doom save slots (from the top of flash down)
 #define FLASH_SAVES_MAX       0x00080000u   // 512 KB (7 slots x 64 KB + config)
 #define FLASH_CONFIG_ADDR     0x103FF000u   // last 4 KB sector: fcpico options (P3-T3)

@@ -1,8 +1,13 @@
 # 14 -- Enemy and pickup sprites
 
-Date: 2026-10-02. Status: proposed investigation and implementation sequence.
-This adds world-sprite development to [10-workplan.md](10-workplan.md); no
-renderer, protocol, ROM or firmware change is made by this planning update.
+Date: 2026-10-03. Status: P3-W1..W4 partial. Review chose RP2350 LUT/DDA
+scaling. Protocol v5, the `20DOOM-05-9030` ROM, engine admission/masking, per-tile
+dynamic palettes and the full shareware atlas pass end-to-end Mesen and host
+gates. On hardware ([HR-17](../HARDWARE-REQUESTS.md) first pass) colours are good
+but frame rate drops with enemies on screen: CHR upload latency (about 8.7 fps
+native transport limit) is the open problem. P3-W5 and physical acceptance remain.
+See [probe results](14b-world-sprite-probe-results.md) and
+[PROGRESS](../PROGRESS.md).
 
 ## Objective and starting design
 
@@ -255,3 +260,31 @@ fallback rate and palette stability. Establish useful migration coverage at the
 20 fps playability target and existing converter budget before broad adoption.
 Run NES-001 timing/visual checks and a 30-minute soak after Mesen passes. A single
 clear enemy demonstration is evidence for the probe, not completion of migration.
+
+## Implementation notes
+
+- 2026-10-02: add deterministic imp/stimpack extraction and resident-band, host
+  LUT/DDA and NES 6502 LUT cosimulation samples. Correct the atlas assumption:
+  the probe borrows gameplay-inactive menu glyph tiles at `$1380..$15FF`; these
+  require restoration before menus. Setup residency is not runtime upload proof.
+  P3-W1/W2 remain partial and W3/W4/W5 open; see the linked results and limits.
+- 2026-10-03: implement the runtime after review (RP2350 LUT/DDA). Corrections:
+  per-frame CHR cannot use the probe's menu-glyph borrowing; 53 tiles unused by
+  every HUD/menu/logo layout form the pool, so no restore exists. Sprite palette
+  writes belong to the commit packet, not OAM DMA (2213 > 2200 cycles). Admitted
+  actors are withheld from PD insertion and masked by resolved front-span depth,
+  not by owner sidecars. Native updates measure about 8.8 fps under motion;
+  bandwidth, not occlusion, is the limiting factor for the 20 fps target.
+- 2026-10-03 (colour review): one 3-colour palette per family cannot carry Doom
+  actors. Atlas v2 keeps 15 local colours per family; frames load per-family
+  candidate palettes into sprite palettes 0/2 (only into slots the displayed
+  generation does not use) and each 8x8 tile picks the best loaded palette.
+  The WHX reservation shrinks to 2 MB so the 408 KB atlas fits at `0x10280000`.
+- 2026-10-03 (hardware/performance): HR-17 confirms good colours on hardware but
+  lower fps with enemies. Cosimulation isolates the transport: 6.89 heartbeats per
+  native picture versus 1.02 streamed; 55% of heartbeats are CHR uploads with only
+  6% tile reuse. Next options, in expected payoff order: make tiles repeat
+  (native-space, translation-invariant sampling and quantised scale bands); raise
+  CHR per packet (five tiles via the PAL bytes, cycle budget permitting); cap new
+  tiles per generation to trade native coverage for fps; overlap conversion with
+  upload (needs a third 17 KB stream buffer, beyond current RAM headroom).

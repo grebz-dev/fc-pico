@@ -165,7 +165,7 @@ channel was not written in the previous frame (a new note) or when the period bi
 | Conversion scratch | 320 B line buffer x 2, 256 x 4 cost table, 4 x 256 x 16 dither LUT = 16 KB (or 4 KB with a 2x2 pattern), 64 B attribute shadow x 2, block cost accumulators 240 x 4 x 2 B | 04 |
 | Core 1 stack | RP2040 Doom sets `PICO_CORE1_STACK_SIZE=0x4f8` (1272 B) and notes it barely fits; raise to 4 KB on RP2350 (scratch X is free) | `src/CMakeLists.txt` |
 | CPU per frame at 150 MHz | 5.0 M cycles per 30 fps frame; the converter is estimated at 0.4-0.6 M | 04 |
-| Flash | 4 MB (inferred): firmware `0x10000000`-`0x1007FFFF` (512 KB cap, includes boot ROM image, music, SFX), WHX at `0x10080000` (1,800,344 B for `doom1.whx`, ends `0x10237898`), asset archive at `0x10300000`, save slots at the top of flash per RP2040 Doom's `get_end_of_flash()` | 08 |
+| Flash | 4 MB (inferred): firmware `0x10000000`-`0x1007FFFF` (512 KB cap, includes boot ROM image, music, SFX), WHX at `0x10080000` (2 MB reserved; 1,800,344 B for `doom1.whx`, ends `0x10237898`), world sprite atlas at `0x10280000` (512 KB, plan 14), asset archive at `0x10300000`, save slots at the top of flash per RP2040 Doom's `get_end_of_flash()` | 08 |
 | Flash timing | RP2040 Doom's `rp2` branch programs `QMI_M0_TIMING` clkdiv 3 / rxdelay 2 at 270 MHz; at 150 MHz the SDK default is fine | `i_main.c` |
 
 ## Engine facts that shape the port

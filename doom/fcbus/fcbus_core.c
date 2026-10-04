@@ -53,7 +53,7 @@ bool fcbus_core_pop_action(fcbus_core_t *c, fcbus_action_t *out) {
 static void reset_next_mailbox(fcbus_core_t *c) {
     memset(c->mailbox_next, 0, sizeof c->mailbox_next);
     c->mailbox_next[MBX_MAGIC] = PF_MAGIC_NO;
-    c->mailbox_next[MBX_FLAGS] = c->proto == FCBUS_PROTO_V4 ?
+    c->mailbox_next[MBX_FLAGS] = c->proto >= FCBUS_PROTO_V4 ?
         (MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_V4) : c->proto == FCBUS_PROTO_V3 ?
         (MBX_FLAG_V2 | MBX_FLAG_V3) : c->proto == FCBUS_PROTO_V2 ? MBX_FLAG_V2 : 0;
     c->cmd_cursor = MBX_CMD;
@@ -179,6 +179,24 @@ bool fcbus_core_back_is_free(const fcbus_core_t *c) {
 
 void fcbus_core_publish(fcbus_core_t *c) {
     c->publish_pending = true;
+    c->publish_gated = false;
+}
+
+void fcbus_core_publish_world(fcbus_core_t *c, uint8_t gen) {
+    c->publish_pending = true;
+    c->publish_gated = true;
+    c->publish_gen = (uint8_t)(gen & WORLD_GEN_MASK);
+    c->publish_tables = (uint8_t)(c->mailbox_next[MBX_FLAGS] &
+                                  (MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID));
+}
+
+void fcbus_core_release_gate(fcbus_core_t *c) {
+    c->publish_gated = false;
+}
+
+void fcbus_core_set_mailbox_hook(fcbus_core_t *c, fcbus_mailbox_hook_t hook, void *user) {
+    c->mailbox_hook = hook;
+    c->mailbox_hook_user = user;
 }
 
 /* ========================================================================== */
@@ -204,7 +222,7 @@ fcbus_sync_t fcbus_core_heartbeat(fcbus_core_t *c, uint32_t count) {
         c->state = FCBUS_ST_RUN;
     }
 
-    uint32_t expected = c->proto == FCBUS_PROTO_V4 ? PPU_COUNT_VAL_V4 :
+    uint32_t expected = c->proto >= FCBUS_PROTO_V4 ? PPU_COUNT_VAL_V4 :
         c->proto == FCBUS_PROTO_V3 ? PPU_COUNT_VAL_V3 :
         c->proto == FCBUS_PROTO_V2 ? PPU_COUNT_VAL_V2 : PPU_COUNT_VAL_V1;
     fcbus_sync_t decision = fcbus_sync_decide(count, expected);
@@ -230,14 +248,33 @@ fcbus_sync_t fcbus_core_heartbeat(fcbus_core_t *c, uint32_t count) {
         }
         c->stopped_last_heartbeat = false;
 
+        bool swapped = false;
         if (c->publish_pending) {
-            c->front = 1 - c->front;
-            c->publish_pending = false;
+            uint8_t shown = (uint8_t)((c->pad2 >> WORLD_HB_GEN_SHIFT) & WORLD_GEN_MASK);
+            if (!c->publish_gated || shown == c->publish_gen) {
+                c->front = 1 - c->front;
+                c->publish_pending = false;
+                swapped = true;
+                if (c->publish_gated) {
+                    /* The tables belong to this picture, not to the frames
+                     * repeated while its native actors were uploading. */
+                    memcpy(&c->mailbox_next[MBX_PAL], c->pal_want, MBX_PAL_LEN);
+                    memcpy(&c->mailbox_next[MBX_ATTR], c->attr_want, MBX_ATTR_LEN);
+                    c->mailbox_next[MBX_FLAGS] |= c->publish_tables;
+                }
+                c->publish_gated = false;
+            } else if (c->publish_gated) {
+                c->mailbox_next[MBX_FLAGS] &=
+                    (uint8_t)~(MBX_FLAG_ATTR_VALID | MBX_FLAG_PAL_VALID);
+            }
+        }
+        if (c->mailbox_hook != NULL) {
+            c->mailbox_hook(c->mailbox_hook_user, c->mailbox_next, c->pad2, swapped);
         }
 
         size_t mbx_len = c->proto >= FCBUS_PROTO_V3 ? FC_COM_BUF_SIZE_V3 :
             c->proto == FCBUS_PROTO_V2 ? FC_COM_BUF_SIZE_V2 : FC_COM_BUF_SIZE_V1;
-        size_t mbx_off = c->proto == FCBUS_PROTO_V4 ? VRAM_MAILBOX_OFF_V4 :
+        size_t mbx_off = c->proto >= FCBUS_PROTO_V4 ? VRAM_MAILBOX_OFF_V4 :
             c->proto == FCBUS_PROTO_V3 ? VRAM_MAILBOX_OFF_V3 :
             c->proto == FCBUS_PROTO_V2 ? VRAM_MAILBOX_OFF_V2 : VRAM_MAILBOX_OFF_V1;
         uint8_t *front_bytes = (uint8_t *)c->stream[c->front];
@@ -378,6 +415,7 @@ static void reset_frame_state(fcbus_core_t *c) {
     c->pad1 = 0;
     c->pad2 = 0;
     c->publish_pending = false;
+    c->publish_gated = false;
     c->data_mode_requested = false;
     c->dm_pal_pending = false;
     c->dm_attr_pending = false;
@@ -465,8 +503,8 @@ void fcbus_core_rx_byte(fcbus_core_t *c, uint8_t b) {
         return;
     case FCBUS_RXW_HELLO_VER:
         c->rxwait = FCBUS_RXW_NONE;
-        if (b == FCBUS_PROTOCOL_V4) {
-            c->proto = FCBUS_PROTO_V4;
+        if (b == FCBUS_PROTOCOL_V5 || b == FCBUS_PROTOCOL_V4) {
+            c->proto = b == FCBUS_PROTOCOL_V5 ? FCBUS_PROTO_V5 : FCBUS_PROTO_V4;
             c->mailbox_next[MBX_FLAGS] |= MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_V4;
         } else if (b == FCBUS_PROTOCOL_V3) {
             c->proto = FCBUS_PROTO_V3;

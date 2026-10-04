@@ -63,7 +63,7 @@ does not waive a task's remaining acceptance criteria.
 | P1-T6 | **partial** | Merged firmware/WHX UF2 boots; complete loading and layout acceptance remains. |
 | P1-T7 / P1-T8 | **partial** | Fixed-frame D0/D1 and first Doom hardware image pass; dynamic S2, 30-minute check and fps gate remain. |
 | P1-T9 | **open** | Measured conversion is 38.208 ms; optimize and remeasure against <=8 ms target. |
-| P3-W1..W5 | **open** | Enemy/pickup sprite development added in [14](14-world-sprites.md); feasibility, asset generation, transport, masking and hardware acceptance remain. |
+| P3-W1..W5 | **partial** | v5 transport, 9030 ROM, engine admission/masks, per-tile dynamic palettes and the 30-family atlas pass end-to-end Mesen (1200 frames, 0 failures). Hardware: colours good, fps drops with enemies (CHR upload: 6.9 heartbeats/picture vs 1.0 streamed). Upload reduction, HR-17 completion and W5 remain. |
 | P2-T1 / P2-T2 | **partial** | v2 ROM, local MD5/fix-bank and py65 cycle gates pass; remote boot-ROM CI result unrecorded ([I-13](../issues/I-13-bootrom-tree.md), [I-14](../issues/I-14-bootrom-nmi.md)). |
 | P2-T3 | **done** | v2 bus protocol runs on NES-001 at count=15554. |
 | P2-T4 | **partial** | S1 reflash passes in both directions and a hardware ROM UPDATE was observed; final `0002` stamp was not separately transcribed. |

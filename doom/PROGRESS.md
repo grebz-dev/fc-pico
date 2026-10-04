@@ -4,6 +4,206 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## P3-W3/W4 -- world sprite frame-rate measurement (2026-10-03)
+
+- Hardware (HR-17 first pass, [log](HARDWARE-LOG.md)): per-tile palette candidate
+  `f1e9e45d...` runs; colours much better; frame rate drops while enemy sprites
+  are on screen. No serial capture supplied.
+- Cosimulation, same ROM/cart model, demo 1 recorded frames 100..249:
+  ```sh
+  doom/.venv/bin/python doom/sim/mesen2/run_world_runtime.py --engine <host> \
+    --first 100 --count 150 --output /tmp/fcpico-world-runtime-150            # native
+  doom/.venv/bin/python doom/sim/mesen2/run_world_runtime.py --engine <host> \
+    --first 100 --count 150 --output /tmp/fcpico-world-runtime-base --baseline  # streamed
+  ```
+  Native: 0 failures over 1200 PPU frames, 6.89 heartbeats per picture (max 11),
+  8.7 fps transport limit. Streamed baseline (`--world-off` recording, empty
+  generations): 0 failures, 1.02 heartbeats per picture (58.9 fps limit).
+  Native heartbeat use (cart model `stats` line): CHR 677 (55%), OAM 213 (17%),
+  waiting for console OAM DMA 129 (10%), idle 215 (17%); 1,576 tiles uploaded for
+  127 generations (12.4 per generation), 92 cache hits (6%), 131 resends.
+- Interpretation: CHR upload bandwidth dominates. On hardware the gated picture
+  holds the back buffer, so render + conversion of the next frame (conversion
+  38 ms, P1-T9) only starts after the generation shows; native frames therefore
+  cost roughly upload latency plus engine time. Tiles rarely repeat because each
+  actor's scale and fcvideo's 4-of-5 column sampling phase change every frame.
+- Added for the next measurement: `world_us resolve=avg/max build=avg/max` device
+  serial line (raster/masks in `pd_end_frame`, palette plan + tiles at frame end);
+  `run_world_runtime.py --baseline` and `heartbeats_per_frame_*`; cart-model stage
+  counters. Candidate `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
+  SHA-256 `7aed714dd786ab9df58b45fa72e6a0d282f5af718bb152a7ca1992ad4a2926be`,
+  firmware 310,652 bytes, RAM post-zone 26,416 bytes.
+- Candidate improvements, not implemented (need a decision; see plan 14 notes):
+  translation-invariant native-space sampling plus quantised scale bands so tiles
+  repeat (cache hits); five tiles per CHR packet using the PAL bytes (+25%, needs
+  the 2200-cycle total budget relaxed or trimmed); overlap conversion with upload
+  via a third stream buffer (17 KB RAM, more than the 1.8 KB headroom); a lower
+  per-generation tile budget that streams more actors to keep fps up.
+
+## P3-W2/W4 -- dynamic per-tile world sprite palettes (2026-10-03)
+
+- User review of the first candidate: zombies colourless, pickups wrong
+  (stimpack/medkit red boxes, ARM1 grey, clips without brass, rockets grey, ...),
+  and a request to swap palettes per on-screen combination. Changes:
+  - Atlas format v2 (`tools/build_world_atlas.py`, 407,997 bytes): per family a
+    15-colour local palette clustered in chroma-boosted OKLab (near-greys stay
+    neutral; hue difference weighted so dark browns avoid NES olive), 4-bit
+    texels, two candidate 3-colour palettes and per-NES-colour u8 error tables.
+    Candidates come from reviewed `palette_overrides` in
+    `plan/world-sprite-scope.json` first, then a block-clustered exhaustive fit
+    that avoids NES olive/teal. `--review LUMPS` writes a 3x source/runtime sheet.
+  - Runtime (`fcworld_plan_palettes`, `fcworld_frame_build`): each frame loads
+    candidates of the nearest families into sprite palettes 0/2, replacing a slot
+    only when the generation still on screen does not use it (commits write
+    palettes before OAM DMA, so this prevents recolouring displayed sprites);
+    every 8x8 tile picks the loaded palette (0..3) with least weighted error.
+  - Flash: `FLASH_WHX_MAX` 2 MB; atlas at `FLASH_WORLD_ADDR` `0x10280000`
+    (512 KB); audio may use the whole 512 KB asset region again.
+- Verified: host CTest 15/15 plain and ASan/UBSan (`test_fcworld` 1254 checks,
+  synthetic v2 atlas, planner lock cases); Python 510 passed; demos 1..3 keep the
+  same admission counts with 0 metadata mismatches. Mesen end to end (demo 1,
+  frames 100..249): 1200 PPU frames, 0 failures, now also requiring every used
+  sprite palette to show its generation's colours; 1200 stable heartbeats, NMI
+  exits 251..257, 752 packets, 131 resends, 0 errors. Tiles by palette: 0: 652,
+  1: 246, 2: 776, 3: 3; 21 palette-set changes over 149 frames.
+- Device candidate `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
+  SHA-256 `f1e9e45db571d273342e155c996970be6c7ed1e1d5d88313ce1f284a2b703560`;
+  firmware 310,452 bytes; WHX 296,808 bytes below its reservation; atlas payload
+  byte-exact at `0x10280000`; RAM post-zone 26,448 bytes. Review sheets:
+  `.build/doom-world-test/atlas-review/world_atlas_review.png`,
+  `.build/doom-world-test/artifacts/mesen-world-samples.png`.
+- Background note: grey 3D views are pre-existing since the 9016 native HUD,
+  which takes BG subpalette 3 (`0F 00 30 16`) and leaves the converter grey
+  `1D 00 30`, olive `08 18 30` and red `06 16 30`; not changed here.
+- Limits: 3 colours per tile remain; previews assume a family owns both dynamic
+  slots, so crowded mixed scenes fall back more; colours need user review.
+
+## P3-W3/W4 -- v5 native world sprite runtime (2026-10-03)
+
+- User review decision: RP2350 LUT/DDA scaling, host+Mesen runtime this session,
+  full shareware enemy/pickup scope. Committed 2026-10-03 at user request:
+  engine `a141b433` (status-bar ammo placeholder) and `70442382` (world sprites),
+  then the root world-sprite commit following `d87b82d`, which pins `70442382`.
+- Protocol v5 (`fcbus_protocol.h`): unchanged v4 stream/mailbox geometry (count
+  15122). One acknowledged world packet per heartbeat in the command area; CHR
+  packets carry four tiles in the attribute bytes, OAM packets stage 16 entries
+  and may commit a generation with sprite palettes 0/2. Heartbeat pad2 = shown
+  generation << 4 | applied sequence. `fcbus_core_publish_world()` swaps a picture
+  only when the console reports its generation and replays its ATTR/PAL then.
+- ROM `20DOOM-05-9030` (`tools/build_world_sprite_rom.py`): py65 worst cases with
+  15 APU pairs: CHR 1707 critical / 2123 total; OAM stage 1217/2111; commit with
+  palettes 1284/2191; DMA (packet deferred) 1192+513/2121; tables 1774/2190.
+  Palette writes moved from the DMA path (measured 2213 > 2200) to the commit
+  packet. Main-loop `WORLD_APPLY`; menu/hide paths yield world slots 35..63.
+- CHR: 53 sprite tiles unused by every HUD/menu/logo layout (no glyph restore).
+- `port/video/fcworld.{h,c}`: atlas, fcvideo-sampled raster, flip-aware tiles,
+  scheduler (shown-generation tile protection, resend, OAM halves, stall release);
+  heartbeat path RAM-resident on device without libc.
+- Engine (`fcpico/world_sprites.c`, guarded hooks in `r_things.c`, `r_main.c`,
+  `pd_render.cpp`): eligible actors are deferred, ranked (monsters, pickups,
+  corpses; nearest first) and admitted whole within 26 tiles / 29 OAM / 8 per line;
+  rejected actors draw unchanged. Admitted actors never clip PD geometry; masks
+  use the resolved front-span depth (`pd_world_front_depth`) before visplanes.
+- Atlas (`tools/build_world_atlas.py`, `FCPICO_WORLD_WAD`): 30 families, 314
+  patches, 181,894 bytes at `FLASH_WORLD_ADDR` `0x10340000` (audio capped at
+  256 KB). Absent from the shareware IWAD: HEAD, SKUL, PINV, PSTR, MEGA, CELL, CELP,
+  BSKU, RSKU, YSKU, SGN2, PLAS, BFUG. Palettes 0/2 are fitted to reviewed family
+  groups in `plan/world-sprite-scope.json` (pure error minimisation collapsed all
+  families to dark browns); result P0 `08 2D 10`, P2 `0F 02 17`.
+- Commands and results:
+  ```sh
+  cmake -S doom -B build-engine -G Ninja -DFCPICO_BUILD_ENGINE=ON -DPICO_PLATFORM=host \
+    -DPICO_SDK_PATH=$HOME/.local/fcpico/pico-sdk -DFCPICO_WORLD_WAD=/tmp/fcpico-audio-doom1.wad \
+    -DPython3_EXECUTABLE=$PWD/doom/.venv/bin/python
+  cmake --build build-engine --target doom_tiny_fcpico
+  doom/sim/mesen2/build.sh          # with ~/.dotnet and SDL2 on PATH
+  doom/.venv/bin/python doom/sim/mesen2/run_world_runtime.py \
+    --engine build-engine/rp2040-doom/src/fcpico_doom_host --first 100 --count 150 \
+    --output /tmp/fcpico-world-runtime-150
+  FCPICO_AUDIO_WAD=/tmp/fcpico-audio-doom1.wad FCPICO_WORLD_WAD=/tmp/fcpico-audio-doom1.wad \
+    BUILD_DIR=/tmp/fcpico-native-world-device doom/tools/build_bg_text_probe_device.sh --native-world
+  ```
+  - Mesen end to end (demo 1, recorded frames 100..249, real sprite limit): 1200
+    captured PPU frames, 0 failures. Each screenshot (rows 0..231) equals the
+    independent decode of exactly one recorded picture with the console's OAM/CHR,
+    and world OAM 35..63 presents exactly that picture's generation. 1200 stable
+    heartbeats at 15122, no DMA stops, NMI exits scanlines 251..257, peak 6 world
+    sprites per line, 150 frames published, 127 generations, 741 packets, 128
+    resends (DMA frames), 0 scheduler errors. Native update rate: mean 6.79
+    heartbeats per generation (about 8.8 fps) with actors changing every frame.
+  - Host demos 1/2/3, 1200 frames each: admitted 4590/7865, 6301/12936,
+    6217/11466 eligible actors (rest streamed for budget); atlas/engine metadata
+    mismatches 0; raster overflow and frame build failures 0.
+  - Host CTest 15/15 plain and ASan/UBSan (`test_fcworld` 1350 checks; v5 gate,
+    hello and console model); Python bootrom/tools/protocol/fcvideo 497 passed with
+    `FCPICO_AUDIO_WAD`; Mesen tests 13 passed; v4 native status Mesen probe still
+    count 15122 / NMI scanline 256; `gen_protocol.py --check` and Markdown links pass.
+  - Device: firmware 309,228 bytes (215,060 free before WHX); WHX and atlas fit;
+    UF2 atlas payload verified byte-exact at `0x10340000`; RAM post-zone 26,452
+    bytes against the 24,576 minimum (was 34,632). Candidate
+    `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`, SHA-256
+    `b55b5cfe02425616e9c2ec8a53ea3749405d586cf17c5d580605f80ce92d4b2a`; ROM
+    `5a91ddccab31ea1cf327420fc0e7bfebd7abeafa9030271489447705a3923eff` is the one
+    Mesen ran. Built from the uncommitted tree on root `bf0280f` / engine
+    `0e18c993` (`source.patch` in the artifact directory); see HR-17. No hardware
+    flashed at that point; later HR-17 entries record the hardware pass.
+- Mesen capture note: `emu.takeScreenshot()` at `endFrame` returns the previous
+  picture; the runner pairs screenshot f with the state sampled at frame f-1 start.
+- Remaining limits: about 9 fps native updates under motion is below the 20 fps
+  target (CHR upload bandwidth: 4 tiles/NMI, resends on UI DMA frames); spectre
+  fuzz over a native actor and a one-frame glyph recolour when the menu closes are
+  approximate; physical runtime CHR writes unproven (HR-17); P3-W5 open.
+
+## P3-W1/W2 -- world sprite scaling cosimulation review gate (2026-10-02)
+
+- Serena activated for `/home/josh/Github/fc-pico`. User requested sample output
+  for candidate approaches before new device firmware. Implemented deterministic
+  shareware imp/stimpack extraction, global-phase LUT/DDA scaling, masked CHR,
+  whole-actor fixture admission and three isolated NES ROM candidates using the
+  current 9016 HUD. Root baseline `bf0280f89c231d4a3db869c08f31dabc4470a670`,
+  engine `0e18c993234d76d69f7a0be61b3f329a6b7c732c`; changes are uncommitted.
+  Preserved existing README/upstream-plan/memory work.
+- Exact generation and capture commands:
+  ```sh
+  doom/.venv/bin/python doom/sim/mesen2/run_native_status_probe.py \
+    --host-frame /tmp/fcpico-audio-engine-compare/guard-updated/stream/frame000300.bin \
+    --output /tmp/fcpico-world-background
+  doom/.venv/bin/python doom/sim/mesen2/run_world_sprite_probe.py \
+    --wad /tmp/fcpico-audio-doom1.wad \
+    --background /tmp/fcpico-world-background/frame.bin \
+    --output /tmp/fcpico-world-sprites
+  doom/.venv/bin/python doom/tools/build_world_sprite_art.py \
+    --wad /tmp/fcpico-audio-doom1.wad --output /tmp/fcpico-world-sprites-repro
+  doom/.venv/bin/python -m pytest doom/tests/mesen2/test_doom_frame.py \
+    doom/tests/tools/test_ppu_sprites.py -q
+  git diff --check
+  ```
+- Results: 54 patches / 176 frame-view mappings; all output hashes and manifests
+  identical on regeneration. WAD SHA-256
+  `1d7d43be501e67d927e415e0b8f3e29c3bf33075e859721816f652a526cac771`.
+  All 15 scene/approach runs pass exact CHR/OAM and paired-baseline sprite-mask
+  comparisons, three consecutive fixed-generation captures, 30 stable
+  heartbeats at count 15122 without DMA stops, and NMI on scanline 256.
+  Sprite-limit removal disabled; fixed banks unchanged. Relevant reference and
+  heartbeat regression tests: 12 passed. Whitespace check passes.
+- Samples: `/tmp/fcpico-world-sprites/comparison.png`, `review.html`, `review.md`
+  and `summary.json`; full PNG/baseline/ROM/source/mask/CHR/OAM/trace artifacts
+  under each scene/approach. The RP host LUT and NES CPU LUT produce identical
+  pictures; resident bands expose the requested 13px versus resident 12px size.
+  Open samples use 20/22 world OAM and 320/352 CHR bytes. Crowded samples admit
+  4/7 actors, consume 24 OAM / 384 CHR bytes and reach eight per scanline; the
+  remaining three use whole-actor fixture fallback. Near 64px actor falls back.
+  py65 independently executes the assembled CPU LUT/mask routine and measures
+  25043..60035 setup cycles, including PPU writes with rendering disabled.
+- Exact findings/remaining budgets: [14b](plan/14b-world-sprite-probe-results.md).
+  `$1380..$15FF` is gameplay borrowing of menu font tiles, requiring restoration;
+  it is not permanently free CHR. All mask scenes use controlled native-coordinate
+  visibility over a recorded Doom background; engine ownership, WHX identity,
+  geometry restoration, real legacy fallback and continuous tile uploads remain
+  open. Host Python timings are not RP2350 measurements; no audio sequence is
+  active in these fixed probe captures. P3-W1/W2 remain partial, W3/W4/W5 open.
+  No device firmware was built or flashed, and no physical acceptance is claimed.
+
 ## HR-16 -- hardware audio pass and merge handoff (2026-10-02)
 
 - User confirms the supplied native audio candidate works on hardware and things

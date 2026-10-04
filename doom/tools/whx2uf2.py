@@ -62,7 +62,7 @@ def write_blocks(blocks: list[tuple[int, int, int, bytes]]) -> bytes:
 
 
 def build(whx: bytes, firmware: bytes | None, address: int = WHX_ADDR,
-          audio: bytes | None = None) -> bytes:
+          audio: bytes | None = None, world: bytes | None = None) -> bytes:
     if address % 4096 or not FLASH_BASE <= address < FLASH_BASE + FLASH_BYTES:
         raise ValueError("WHX address must be sector-aligned inside the 4 MiB flash")
     if address + len(whx) > FLASH_BASE + FLASH_BYTES:
@@ -80,12 +80,22 @@ def build(whx: bytes, firmware: bytes | None, address: int = WHX_ADDR,
     if audio is not None:
         layout = parse_flash_layout(FLASH_LAYOUT_H)
         assets = layout['FLASH_ASSETS_ADDR']
-        cap = min(layout['FLASH_ASSETS_MAX'], layout['FLASH_SAVES_ADDR'] - assets)
+        cap = min(layout['FLASH_ASSETS_MAX'], layout['FLASH_AUDIO_MAX'],
+                  layout['FLASH_SAVES_ADDR'] - assets)
         if not audio or len(audio) > cap:
             raise ValueError("audio archive is empty or exceeds its reserved flash region")
         if address + len(whx) > assets:
             raise ValueError("WHX overlaps audio assets")
         merged += binary_blocks(audio, assets, family)
+    if world is not None:
+        layout = parse_flash_layout(FLASH_LAYOUT_H)
+        start = layout['FLASH_WORLD_ADDR']
+        cap = min(layout['FLASH_WORLD_MAX'], layout['FLASH_ASSETS_ADDR'] - start)
+        if not world or len(world) > cap or world[:4] != b'FCWA':
+            raise ValueError("world atlas is empty, invalid or exceeds its reserved flash region")
+        if address + len(whx) > start:
+            raise ValueError("WHX overlaps the world atlas")
+        merged += binary_blocks(world, start, family)
     return write_blocks(merged)
 
 
@@ -95,12 +105,14 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("output", type=Path)
     parser.add_argument("--firmware", type=Path, help="firmware UF2 to merge in front")
     parser.add_argument("--audio", type=Path, help="generated audio.bin at FLASH_ASSETS_ADDR")
+    parser.add_argument("--world", type=Path, help="generated world_atlas.bin at FLASH_WORLD_ADDR")
     parser.add_argument("--address", type=lambda v: int(v, 0), default=WHX_ADDR)
     args = parser.parse_args(argv)
     firmware = args.firmware.read_bytes() if args.firmware else None
     try:
         data = build(args.whx.read_bytes(), firmware, args.address,
-                     args.audio.read_bytes() if args.audio else None)
+                     args.audio.read_bytes() if args.audio else None,
+                     args.world.read_bytes() if args.world else None)
     except ValueError as error:
         parser.error(str(error))
     args.output.write_bytes(data)

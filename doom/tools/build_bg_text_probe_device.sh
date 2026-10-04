@@ -4,14 +4,22 @@ set -euo pipefail
 
 repo=$(cd "$(dirname "$0")/../.." && pwd)
 native_status=0
-if [[ ${1:-} == --native-status ]]; then native_status=1; shift; fi
-[[ $# == 0 ]] || { echo "usage: $0 [--native-status]" >&2; exit 2; }
+if [[ ${1:-} == --native-status ]]; then native_status=1; shift;
+elif [[ ${1:-} == --native-world ]]; then native_status=2; shift; fi
+[[ $# == 0 ]] || { echo "usage: $0 [--native-status|--native-world]" >&2; exit 2; }
 probe_source="$repo/doom/bootrom/src/PG_bg_text_device_tmp.asm"
 [[ ! -e $probe_source ]] || { echo "Temporary probe source already exists: $probe_source" >&2; exit 2; }
 cleanup() { rm -f "$probe_source"; }
 trap cleanup EXIT
 
-if [[ $native_status == 1 ]]; then
+if [[ $native_status == 2 ]]; then
+    PYTHONPATH="$repo/doom/tools" python3 -c \
+      'from pathlib import Path; from build_world_sprite_rom import native_world_source; import sys; Path(sys.argv[1]).write_text(native_world_source())' \
+      "$probe_source"
+    export BUILD_DIR=${BUILD_DIR:-/tmp/fcpico-native-world-device}
+    expected_stamp=20DOOM-05-9030
+    output_name=fcpico_doom_native_world_whx.uf2
+elif [[ $native_status == 1 ]]; then
     PYTHONPATH="$repo/doom/tools" python3 -c \
       'from pathlib import Path; from build_native_status_probe import native_status_source; import sys; Path(sys.argv[1]).write_text(native_status_source())' \
       "$probe_source"

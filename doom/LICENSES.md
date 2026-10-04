@@ -13,3 +13,11 @@ To be completed in task [P0-T13](plan/10-workplan.md#p0-t13-licensing-and-attrib
 | Mesen2 (co-simulation only) | pinned checkout under `sim/mesen2/` | GPL-3.0 | not part of the firmware |
 | rp2040-pio-emulator | pip | Apache-2.0 | test tooling |
 | FamiStudio | external tool | MIT | asset pipeline |
+
+World sprite extraction produces local derivatives of shareware Doom art under
+id Software shareware terms. Generated sheets/CHR and source WADs are not
+committed. The LUT probe uses the byte lookup concept studied in the locally
+pinned `reference/scaling-wip` project; its routing/DDA implementation is new
+BSD-3-Clause code, and no original assembly or generator code is copied.
+The runtime world atlas (`tools/build_world_atlas.py`) is generated locally from
+the user's IWAD into build outputs and the UF2 image; it is never committed.

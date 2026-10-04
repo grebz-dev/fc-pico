@@ -146,6 +146,20 @@ at boot, and (optional) uploading a splash nametable while Doom initialises.
 Timeouts: no heartbeat for 2 s in `RUN_*` -> log once, stop DMA, go to `INIT` (the console may
 have been reset; the next `FP_COM_INI` re-enters).
 
+## v5 world sprite packets (2026-10-03)
+
+v5 keeps the v4 stream, mailbox length and count (15122); constants live in
+`fcbus/fcbus_protocol.h` (`@section v5`). With `MBX_FLAG_WORLD`, the command area
+holds one packet (`op`, `seq`, `gen`, arguments) instead of commands and the
+attribute bytes are its payload, so ATTR/PAL never ride with it. `WORLD_OP_CHR`
+writes four tiles at the listed pattern addresses; `WORLD_OP_OAM` stages 16 OAM
+entries at console `$0400` and, with `WORLD_OAM_COMMIT`, publishes the staged
+generation and writes sprite palettes 0 and 2. A frame that performs OAM DMA or
+native text pokes leaves the packet unapplied. The third `FP_COM_KEY` byte,
+previously zero, reports `shown generation << 4 | last applied sequence`; the
+cartridge resends unacknowledged packets and swaps a world picture only at the
+heartbeat that reports its generation. See [14](14-world-sprites.md).
+
 ## Compatibility matrix
 
 | Console ROM | Firmware | Result |

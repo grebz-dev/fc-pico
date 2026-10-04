@@ -177,10 +177,18 @@ static void test_protocol_identification(void) {
     CHECK_EQ(g_c.proto, FCBUS_PROTO_V4);
     CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 0);
 
+    /* v5 keeps the v4 stream geometry and mailbox flags. */
+    init_core(FCBUS_PROTO_UNKNOWN);
+    fcbus_core_rx_byte(&g_c, FP_COM_HELLO);
+    fcbus_core_rx_byte(&g_c, FCBUS_PROTOCOL_V5);
+    CHECK_EQ(g_c.proto, FCBUS_PROTO_V5);
+    CHECK_EQ(g_c.mailbox_next[MBX_FLAGS], MBX_FLAG_V2 | MBX_FLAG_V3 | MBX_FLAG_V4);
+    CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 0);
+
     /* An unknown version is refused and leaves the protocol undecided. */
     init_core(FCBUS_PROTO_UNKNOWN);
     fcbus_core_rx_byte(&g_c, FP_COM_HELLO);
-    fcbus_core_rx_byte(&g_c, 5);
+    fcbus_core_rx_byte(&g_c, 6);
     CHECK_EQ(g_c.proto, FCBUS_PROTO_UNKNOWN);
     CHECK_EQ(fcbus_core_stats(&g_c)->proto_errors, 1);
     CHECK_EQ(count_actions(FCBUS_ACT_PROTO_ERROR), 1);
