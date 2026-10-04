@@ -4,6 +4,29 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
 
 ```
 
+## P3-W5b -- frame-rate reporting and performance plan (2026-10-04)
+
+- Hardware (HR-17 second candidate `b55cade4...`): better, still lags noticeably
+  with 2+ pickups or an enemy on screen. User asked for fps in every test and a
+  plan: [14c](plan/14c-world-sprite-performance.md).
+- Device: `video` serial line gains `fps=` (published pictures/s) and
+  `rendered=` (engine frames/s including drops). Candidate
+  `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2` SHA-256
+  `9d7caa2e4ede0d3dc4ce5d690a4e34d3cef11871bb1cfa62992095cbdfa41a80` (ROM 9031
+  unchanged), RAM post-zone 26,352 bytes.
+- Host: `--world-dump` writes `frameN.actors` (admitted monsters, pickups,
+  others, streamed). Cart model: device engine clock
+  (`FCPICO_WORLD_RENDER_TENTHS`, `FCPICO_WORLD_CONVERT_TENTHS`, drops when both
+  buffers are busy, `FCPICO_WORLD_WAIT`). `run_world_runtime.py --device`
+  (render 2.8 + conversion 2.3 heartbeats, calibrated to HR-15's 11.8 fps)
+  prints published/rendered fps overall and per scene; `--scenes-from` for
+  baselines; palette-only mismatches right after a dropped frame are counted as
+  `replay_palette_artifacts` (lockstep recording planned for a skipped picture).
+- Cosimulation, demos 1..3, recorded frames 100..399, device timing, 0 failures:
+  streamed 11.8/11.8/11.8 fps; native (current drop policy) 8.5/9.6/8.6;
+  native with wait-instead-of-drop 10.1/11.1/10.3. Per-scene tables in 14c.
+- Verified: host CTest 15/15, Python 525 passed, links OK.
+
 ## P3-W5a -- shared HUD palette and world sprite transport (2026-10-04)
 
 - Request: free the BG palette the 9016 native HUD reserves, validate, then

@@ -64,34 +64,55 @@ def present(stored: bytes, flags: int) -> bytes:
     return bytes(rows[0:8] + rows[8:16])
 
 
-def world_matches(world: dict, oam: bytes, chr_data: bytes, sprite_pal: bytes) -> bool:
+def world_mismatch(world: dict, oam: bytes, chr_data: bytes, sprite_pal: bytes) -> str | None:
     for n in range(ENTRIES):
         y, tile, attr, x = oam[(FIRST + n) * 4:(FIRST + n) * 4 + 4]
         if n >= len(world["oam"]):
             if y < 0xEF:
-                return False
+                return "oam"
             continue
         ey, et, ea, ex = world["oam"][n]
         if (y, x, attr & 3) != (ey, ex, ea & 3):
-            return False
+            return "oam"
         flips = (attr ^ ea) & 0xC0
         if present(chr_data[tile * 16:tile * 16 + 16], flips) != world["tiles"][et]:
-            return False
+            return "chr"
     # A commit may load the next generation's palettes before its OAM DMA, but
     # only into slots the displayed sprites do not use: every used slot must
     # show exactly this generation's colours.
     used = {entry[2] & 3 for entry in world["oam"]}
     if 0 in used and bytes(sprite_pal[1:4]) != world["pal"][0:3]:
-        return False
+        return "palette"
     if 2 in used and bytes(sprite_pal[9:12]) != world["pal"][3:6]:
-        return False
-    return True
+        return "palette"
+    return None
 
 
 def run(command: list, log: Path, **kwargs) -> None:
     with log.open("w") as out:
         subprocess.run([str(c) for c in command], check=True, stdout=out,
                        stderr=subprocess.STDOUT, **kwargs)
+
+
+def rendered_fps(log: list, publish_rows: list) -> float | None:
+    """Engine frames (published plus dropped) per second between the first
+    and last publication."""
+    if len(publish_rows) < 2:
+        return None
+    first, last = int(publish_rows[0][1]), int(publish_rows[-1][1])
+    drops = sum(1 for row in log if row[0] == "drop" and first < int(row[1]) <= last)
+    return 60.0988 * (len(publish_rows) - 1 + drops) / (last - first)
+
+
+def scene_census(record: Path, frame: int) -> str:
+    """Scene class of one recorded frame from the host's actor census."""
+    path = record / "world" / f"frame{frame:06d}.actors"
+    if not path.exists():
+        return "unknown"
+    monsters, pickups, _others, _streamed = map(int, path.read_text().split())
+    if monsters:
+        return "enemies"
+    return {0: "no actors", 1: "1 pickup"}.get(pickups, "2+ pickups")
 
 
 def main() -> int:
@@ -111,11 +132,24 @@ def main() -> int:
                         help="record with every actor streamed (empty world generations)")
     parser.add_argument("--evaluate-only", action="store_true",
                         help="re-check an existing output directory's captures")
-    parser.add_argument("--convert-beats", type=int, default=0,
-                        help="heartbeats of device picture conversion before each publish")
+    parser.add_argument("--convert-beats", type=float, default=0,
+                        help="heartbeats of blocking device conversion before each publish "
+                             "(hardware: 38 ms = 2.3)")
+    parser.add_argument("--render-beats", type=float, default=0,
+                        help="heartbeats per engine frame; frames finishing while both "
+                             "buffers are busy are dropped (0 = lockstep replay)")
+    parser.add_argument("--wait", action="store_true",
+                        help="a finished frame waits for the back buffer instead of dropping")
+    parser.add_argument("--device", action="store_true",
+                        help="device timing: --render-beats 2.8 --convert-beats 2.3 --early "
+                             "(HR-15: 11.8 fps streamed)")
     parser.add_argument("--early", action="store_true",
                         help="submit each world generation held before conversion (device order)")
+    parser.add_argument("--scenes-from", type=Path,
+                        help="classify scenes with another output's recording (for --baseline)")
     args = parser.parse_args()
+    if args.device:
+        args.render_beats, args.convert_beats, args.early = 2.8, 2.3, True
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
 
@@ -172,8 +206,10 @@ def main() -> int:
                    FCPICO_WORLD_SEQUENCE=str(sequence), FCPICO_WORLD_FRAMES=str(args.count),
                    FCPICO_WORLD_LOG=str(out / "world_log.csv"), FCPICO_TRACE=str(out / "trace.csv"),
                    FCPICO_CS1_MASK="0xf800", SDL_AUDIODRIVER="dummy",
-                   FCPICO_WORLD_CONVERT_BEATS=str(args.convert_beats),
-                   FCPICO_WORLD_EARLY="1" if args.early else "0")
+                   FCPICO_WORLD_RENDER_TENTHS=str(round(args.render_beats * 10)),
+                   FCPICO_WORLD_CONVERT_TENTHS=str(round(args.convert_beats * 10)),
+                   FCPICO_WORLD_EARLY="1" if args.early else "0",
+                   FCPICO_WORLD_WAIT="1" if args.wait else "0")
         if "DOTNET_ROOT" not in env and (Path.home() / ".dotnet/host/fxr").is_dir():
             env["DOTNET_ROOT"] = str(Path.home() / ".dotnet")
         run([staging / args.mesen.name, "--testRunner", HERE / "lua/world_runtime.lua", cosim,
@@ -185,7 +221,9 @@ def main() -> int:
 
     rgb = mesen_palette()
     shown, last = [], 0
-    failures = []
+    failures, replay_artifacts = [], []
+    replay_dropped = {int(row[2]) for row in csv.reader((out / "world_log.csv").open())
+                      if row[0] == "drop"}
     # Mesen's endFrame screenshot is the previously completed picture, so
     # screenshot f pairs with the PPU state sampled when frame f-1 started.
     for f in range(startup + 1, frames + 1):
@@ -209,9 +247,15 @@ def main() -> int:
         if match is None:
             failures.append({"ppu_frame": f, "reason": "no recorded picture explains the screenshot"})
             continue
-        if not world_matches(worlds[match], oam, chr_data, pal[16:32]):
+        mismatch = world_mismatch(worlds[match], oam, chr_data, pal[16:32])
+        if mismatch == "palette" and replay_dropped & set(range(match + 1, match + 4)):
+            # The host recording planned palettes in lockstep; after a dropped
+            # frame the next plan assumed a picture the console never showed.
+            # The device plans against the shown generation instead.
+            replay_artifacts.append({"ppu_frame": f, "frame": match})
+        elif mismatch is not None:
             failures.append({"ppu_frame": f, "frame": match,
-                             "reason": "world OAM/CHR differs from the picture's generation"})
+                             "reason": f"world {mismatch} differs from the picture's generation"})
         peak = max(sum(oam[n * 4] + 1 <= y < oam[n * 4] + 9 for n in range(64))
                    for y in range(240))
         if peak > 8:
@@ -226,11 +270,23 @@ def main() -> int:
     published = [int(row[1]) for row in log if row[0] == "publish"]
     gaps = [b - a for a, b in zip(published, published[1:])]
     used = [w for w in worlds if w["used"]]
+    # Frame rate per scene: the heartbeats before recorded frame n is published
+    # belong to n. Scenes come from the engine's admitted-actor census.
+    scene_record = (args.scenes_from.resolve() / "record") if args.scenes_from else record
+    fps_by_scene: dict[str, list[int]] = {}
+    publish_rows = [row for row in log if row[0] == "publish"]
+    for before, row in zip(publish_rows, publish_rows[1:]):
+        census = scene_census(scene_record, args.first + int(row[2]))
+        fps_by_scene.setdefault(census, []).append(int(row[1]) - int(before[1]))
+    scenes = {name: {"pictures": len(beats), "heartbeats_mean": float(np.mean(beats)),
+                     "fps": 60.0988 / float(np.mean(beats))}
+              for name, beats in sorted(fps_by_scene.items())}
     report = {
         "rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
         "recorded_frames": args.count, "first_recorded": args.first,
         "captured_ppu_frames": len(shown) + len(failures), "failures": failures[:50],
         "failure_count": len(failures), "distinct_frames_shown": len(distinct),
+        "replay_palette_artifacts": len(replay_artifacts),
         "last_frame_shown": max(shown) if shown else None,
         "ppu_frames_per_recorded_frame": (len(shown) / len(distinct)) if distinct else None,
         "native_frames": len(used),
@@ -241,12 +297,20 @@ def main() -> int:
         "heartbeats_per_frame_mean": float(np.mean(gaps)) if gaps else None,
         "heartbeats_per_frame_max": max(gaps) if gaps else None,
         "transport_fps_limit": 60.0988 / float(np.mean(gaps)) if gaps else None,
+        "fps_by_scene": scenes,
+        "dropped_frames": len([row for row in log if row[0] == "drop"]),
+        "rendered_fps": rendered_fps(log, publish_rows),
         "scheduler_stats": {k: int(v) for k, v in scheduler_stats.items()},
         "scheduler_end": dict(zip(("published", "generations", "packets", "resends", "errors"),
                                   map(int, end[1:6]))) if end else None,
     }
     (out / "report.json").write_text(json.dumps(report, indent=2) + "\n")
     print(json.dumps({k: v for k, v in report.items() if k != "failures"}, indent=2))
+    print(f"fps ({args.render_beats} render + {args.convert_beats} conversion heartbeats): "
+          f"{report['transport_fps_limit']:.1f} published, "
+          f"{report['rendered_fps']:.1f} rendered")
+    for name, scene in scenes.items():
+        print(f"  {name:12s} {scene['fps']:5.1f} fps over {scene['pictures']} pictures")
     if failures:
         print(f"FAILED: {len(failures)} frames; first: {failures[0]}")
         return 1

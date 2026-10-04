@@ -104,8 +104,10 @@ the result. The human fills in the result section and commits; the agent then co
 
 - Flash: `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
   (firmware + WHX + audio archive + world sprite atlas at `0x10280000`), SHA-256
-  `b55cade4ab953b46e724bcdf3a50c16b4a5ee20460cef6e655687edf5b1a4597`; ROM
-  `ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135`. Second
+  `9d7caa2e4ede0d3dc4ce5d690a4e34d3cef11871bb1cfa62992095cbdfa41a80`; ROM
+  `ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135`. Same as
+  the second candidate (`b55cade4...`, reported better but still lagging with
+  2+ pickups or enemies) plus `video fps=... rendered=...` serial fields. Second
   candidate: the HUD shares BG palette 2 (the world regains its green palette),
   anchored scale-stepped sprite tiles, packets outrank HUD DMA, uploads overlap
   conversion. Details in
@@ -134,6 +136,9 @@ the result. The human fills in the result section and commits; the agent then co
   with enemies on screen. Still wanted: the items below, plus 60 s of serial in a
   room with enemies and 60 s without, to separate engine time (`video ...
   conversion_us`, `world_us resolve=avg/max build=avg/max`) from upload latency.
+- Frame-rate capture (third flash): 60 s each standing in a room with no
+  actors, with 2+ pickups, and with enemies; the `video fps=/rendered=` lines
+  and `world_us` lines from each. See [plan 14c](plan/14c-world-sprite-performance.md).
 - Record: USB serial at 115200 including `video`, `world` and `world_us` lines
   (admitted, generations, packets, resends, stalls, errors) and `[DEBUG-hr3]`; photos or video
   of a corner occlusion and a menu transition; any garbled sprites, flicker,
