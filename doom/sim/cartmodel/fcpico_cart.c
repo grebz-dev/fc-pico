@@ -31,11 +31,16 @@ static bool g_rom_v5;
  * recorded frame each heartbeat armed and the console's acknowledgement. */
 static const char *g_sequence;
 static unsigned g_seq_next, g_seq_count;
-/* FCPICO_WORLD_CONVERT_BEATS: heartbeats between taking a frame and publishing
- * its picture (device conversion); FCPICO_WORLD_EARLY=1 submits its world
- * generation held at the start of that time, as the device does. */
-static unsigned g_seq_convert_beats;
+/* Device engine clock, in tenths of a heartbeat: FCPICO_WORLD_RENDER_TENTHS
+ * per rendered frame (0 = lockstep: every recorded frame is shown, none
+ * dropped) and FCPICO_WORLD_CONVERT_TENTHS of blocking conversion before each
+ * publish. FCPICO_WORLD_EARLY=1 submits the world generation held when
+ * conversion starts, as the device does. */
+static int g_seq_render_tenths, g_seq_convert_tenths;
 static bool g_seq_early;
+/* FCPICO_WORLD_WAIT=1: a finished frame waits for the back buffer instead of
+ * being dropped (candidate device policy). */
+static bool g_seq_wait;
 static int g_buffer_frame[2] = {-1, -1};
 static fcworld_t g_world;
 static FILE *g_world_log;
@@ -126,10 +131,22 @@ static void publish_sequence(void) {
     fcbus_core_t *core = fcbus_host_core();
     static fcworld_frame_t frame;
     static uint8_t gen;
-    static int converting = -1;   /* heartbeats of conversion left, -1 none */
-    if (converting < 0) {
-        if (!fcbus_core_back_is_free(core) || g_seq_next >= g_seq_count ||
-            !fcworld_idle(&g_world)) {
+    static bool converting;
+    static int remaining;   /* tenths of a heartbeat left in this engine step */
+    remaining -= 10;
+    if (remaining > 0) return;
+    if (!converting) {
+        /* The engine finished rendering recorded frame g_seq_next. */
+        if (g_seq_next >= g_seq_count) return;
+        if (!fcbus_core_back_is_free(core) || !fcworld_idle(&g_world)) {
+            if (g_seq_render_tenths == 0 || g_seq_wait) {   /* lockstep or waiting engine */
+                remaining = 0;
+                return;
+            }
+            /* Device: both buffers busy, the rendered frame is discarded. */
+            if (g_world_log) fprintf(g_world_log, "drop,%u,%u\n", core->stats.frames, g_seq_next);
+            g_seq_next++;
+            remaining += g_seq_render_tenths;
             return;
         }
         char path[1024];
@@ -141,10 +158,12 @@ static void publish_sequence(void) {
         }
         /* The device submits held before converting the picture. */
         if (g_seq_early) gen = fcworld_submit_held(&g_world, &frame);
-        converting = (int)g_seq_convert_beats;
+        converting = true;
+        remaining += g_seq_convert_tenths;
+        if (remaining > 0) return;
     }
-    if (converting-- > 0) return;
-    converting = -1;
+    converting = false;
+    remaining += g_seq_render_tenths;
     const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V4;
     memcpy(fcbus_core_stream_back(core), g_stream, g_stream_length);
     fcbus_core_palette(core, mailbox + MBX_PAL);
@@ -269,8 +288,12 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
         const char *count = getenv("FCPICO_WORLD_FRAMES");
         g_seq_count = count ? (unsigned)strtoul(count, NULL, 10) : 100000u;
         g_seq_next = 0;
-        const char *convert = getenv("FCPICO_WORLD_CONVERT_BEATS");
-        g_seq_convert_beats = convert ? (unsigned)strtoul(convert, NULL, 10) : 0u;
+        const char *render = getenv("FCPICO_WORLD_RENDER_TENTHS");
+        const char *convert = getenv("FCPICO_WORLD_CONVERT_TENTHS");
+        g_seq_render_tenths = render ? (int)strtol(render, NULL, 10) : 0;
+        g_seq_convert_tenths = convert ? (int)strtol(convert, NULL, 10) : 0;
+        const char *wait = getenv("FCPICO_WORLD_WAIT");
+        g_seq_wait = wait != NULL && wait[0] == '1';
         const char *early = getenv("FCPICO_WORLD_EARLY");
         g_seq_early = early != NULL && early[0] == '1';
         const char *log = getenv("FCPICO_WORLD_LOG");

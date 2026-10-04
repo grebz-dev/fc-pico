@@ -8,7 +8,9 @@ but frame rate dropped with enemies on screen. The second candidate cuts the
 transport cost per picture in Mesen from 6.89 to 4.99 heartbeats (5.62 with
 modelled conversion, versus 3.01 streamed): anchored scale-stepped tiles that
 repeat, packets that outrank HUD DMAs, and uploads overlapping conversion. The
-HUD now shares BG palette 2 with the world. P3-W5 and physical acceptance remain.
+HUD now shares BG palette 2 with the world. Hardware: better, still lags with 2+
+pickups or enemies; the measured fps and the options are in
+[14c](14c-world-sprite-performance.md). P3-W5 and physical acceptance remain.
 See [probe results](14b-world-sprite-probe-results.md) and
 [PROGRESS](../PROGRESS.md).
 
