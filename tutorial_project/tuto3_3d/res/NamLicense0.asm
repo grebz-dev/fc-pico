@@ -1,0 +1,36 @@
+TXT_LICENSE:
+	db "                                "
+	db "                                "
+	db "   NES Sound Driver & Library   "
+	db "    Copyright (c) 2012 S.W.     "
+	db "    All rights reserved.        "
+	db "                                "
+	db "  Redistribution  and  use  in  "
+	db "  source  and  binary   forms,  "
+	db "  with  or  without  modifica-  "
+	db "  tion, are permitted provided  "
+	db "  that  the  following  condi-  "
+	db "  tions are met:                "
+	db "                                "
+	db "  1. Redistributions of source  "
+	db "     code  must   retain   the  "
+	db "     above  copyright  notice,  "
+	db "     this list  of  conditions  "
+	db "     and  the  following  dis-  "
+	db "     claimer.                   "
+	db "  2. Redistributions in binary  "
+	db "     form must  reproduce  the  "
+	db "     above  copyright   notice  "
+	db "     this, list of  conditions  "
+	db "     and  the  following  dis-  "
+	db "     claimer in the documenta-  "
+	db "     tion and/or other materi-  "
+	db "     als  provided  with   the  "
+	db "     distribution.              "
+	db "                                "
+	db "                                "
+	dw $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+	dw $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+	dw $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+	dw $0000,$0000,$0000,$0000,$0000,$0000,$0000,$0000
+
