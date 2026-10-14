@@ -45,6 +45,29 @@ it does not independently validate every proposed extracted platform component.
 README summaries and some memories still describe older milestones: resolve
 claims against dated traces and current code before copying them upstream.
 
+## Branch status (2026-10-13)
+
+Upstream `impact-soft/fc-pico` `main` is `9e225f32`; `grebz-dev/fc-pico` `main`
+equals it. The four branches with no prerequisites were created from that commit
+and pushed to `origin`; they contain no changes yet:
+
+| ID | Branch on `origin` | Base |
+| --- | --- | --- |
+| U01 | `platform/shared-bus-core` | `9e225f32` |
+| U03 | `tools/native-rom-build` | `9e225f32` |
+| U09 | `firmware/serial-bootsel` | `9e225f32` |
+| U11 | `docs/platform-findings` | `9e225f32` |
+
+The dependent branches (U02, U04–U08, U10, U12, U13) are created when work
+starts, stacked on their prerequisites and rebased onto upstream after those
+merge. Never merge or cherry-pick `doom*` branches into these branches.
+
+The Doom port is moving to the `fc-pico` branch of `grebz-dev/rp2040-doom`
+([plan 15](15-rp2040-doom-restructure.md)). After that, the extraction sources
+named below as `doom/X` live at `rp2040-doom@fc-pico:fcpico/X`. Engine paths
+(`doom/rp2040-doom/src/…`) become `src/…` in that branch. Do the restructure
+first, then extract from the scrubbed tree.
+
 ## Architectural contract: one implementation of platform behavior
 
 The emulator executes NES CPU/PPU code and calls the native host C cartridge
