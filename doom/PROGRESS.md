@@ -3,6 +3,119 @@
 One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest first. Format:
 
 ```
+## <task id> -- <title>
+- Commits: <range or list>
+- Verified: <command> -> <result summary>
+- Measurements: <fps / cycles / bytes / ms, with the command>
+- Left out: <what and why>
+- Plan changes: <documents touched>
+```
+
+## P3-W5f -- distance-dependent stutter and IRQ latency (2026-10-13)
+
+- Hardware follow-up: user reports “Much better performance” after receiving
+  the distance-stability candidate. Qualitative improvement confirmed; measured
+  FPS, flash/desync elimination and extended soak acceptance remain open.
+  [Recorded feedback](HARDWARE-LOG.md#2026-10-13----hr-17-distance-stability-candidate-performance-improved).
+- Commit preparation: engine changes committed as `c1145f02`; host tic controls
+  also compile without world sprites. Both host configurations pass 110-frame,
+  three-tic demo smoke checks; CTest remains 16/16. Track benchmark sources and
+  JSON evidence; `.build/`, `build-host/` and `build-engine/` are generated output.
+- User reports stutter and occasional full-frame flashes/desync when actors are
+  still native near the streamed fallback size. Physical flashes cannot be
+  replayed without a bus/frame capture; no claim of hardware resolution.
+- M33 worst-case submission: 168,809 instructions under the old IRQ mask
+  (>=1.125 ms at 150 MHz). Added scheduler reservation and a protected preparation
+  state; expensive work now runs with IRQs enabled. Held commits are established
+  before the active stage becomes visible. Exact scheduler output is unchanged.
+- Function-boundary heartbeat injection reproduces premature commits when the
+  old submission is unmasked; fixed source passes 43 checks. All Release and
+  ASan/UBSan CTests 16/16; Python 525 passed / five skipped.
+- Actor-size hysteresis: enter sprites at <=12 bounding tiles, stay through 16,
+  stream above 16. This avoids the old 26-tile upload cliff and mode jitter.
+- Three-demo model: 12.7/13.8/12.5 -> 13.4/14.5/13.0 fps, 0 failures over
+  7,200 captured PPU frames. This model measures admission effects, not IRQ
+  deadline recovery. Replay palette artifacts 1/3/4 remain reported.
+- Candidate `.build/doom-world-distance/artifacts/fcpico_doom_native_world_whx.uf2`,
+  SHA-256 `eb6c439fe49dea577d2ae8d564ac6d626e73bb28ed7513f22d78c17aebf58f8c`;
+  RAM post-zone 33,548 bytes, ROM 9031/fix bank unchanged; flash/picotool checks pass.
+- [Diagnosis, results and limits](plan/14c-world-sprite-performance.md#distance-dependent-stutter-and-flash-follow-up-2026-10-13).
+  HR-17 updated for the troublesome distance; hardware acceptance remains open.
+
+## P3-W5e -- offline sprite CPU optimization (2026-10-13)
+
+- Hardware output unavailable; continued offline without closing hardware acceptance.
+- Raster columns computed once per actor, direct NES bitplane encoding, four-way
+  palette accumulation, and reuse of family tables across consecutive actors.
+  Fixed signed-shift undefined behavior in negative projection offsets.
+- Arm GCC 13.2.1 / Cortex-M33 benchmark: 5,108,680 -> 3,234,675 instructions
+  (36.7% less work), 72 cases / 37,050 bytes identical to the starting source.
+  The 3.4M regression gate fails before and passes after; individual stack use
+  reported, persistent RAM unchanged. This is not a measured hardware FPS gain.
+- Mesen demos 1..3: 12.7/13.8/12.5 modeled fps, zero failures across 7,200 PPU
+  frames; replay palette artifacts 4/3/3 remain explicitly reported. Old demo 1
+  timing policy: 9.3 fps. Current fixed timing model does not credit CPU savings.
+- Verified: CTest 15/15 Release and ASan/UBSan (LSan disabled for sandbox),
+  Python 525 passed / 5 skipped, explicit NESASM boot-ROM suite 36/36,
+  protocol freshness, flash layout, RAM and picotool inspection. Added exhaustive
+  partial-tile decoding tests. Background converter: 977,251 instructions,
+  exact picture, 7.9 ms estimated from old calibration.
+- Default candidate `.build/doom-world-perf/artifacts/fcpico_doom_native_world_whx.uf2`
+  SHA-256 `90739cc30b9acf843f33f6c0c738083486fff814aac26362be1f792c7804d8c4`;
+  315,572-byte firmware, 33,572 bytes post-zone heap; ROM 9031 unchanged.
+  Loose candidate `.build/doom-world-perf-loose/artifacts/fcpico_doom_native_world_whx.uf2`
+  SHA-256 `a7838702a289e4d9356c0d5640f9496c64253e318f4d2cdacf4bc2569b190b42`.
+- [Results and reproduction](plan/14c-world-sprite-performance.md#offline-optimization-follow-up-2026-10-13),
+  [benchmark instructions](tools/perf/README.md). HR-17 deferred; >=20 fps and
+  physical soak/visual acceptance remain open. Existing uncommitted work preserved.
+
+## P3-W5d -- plan 14c options 2..5 (2026-10-04)
+
+- User: implement options 2..5; hardware testing at the end.
+- Option 2a: packed converter tables (both bit-planes for four x phases per
+  byte; paired 16-bit error lanes), no per-pixel divides; byte-identical output.
+  Cortex-M33 (Unicorn, `tools/perf/m33_convert_cost.py`): 4.73M to 1.08M
+  instructions, 38.2 to about 8.8 ms. The 16 KB LUT is built in the converter's
+  frame buffer at init (device RAM post-zone 26,332 to 33,572 bytes).
+- Option 3: `fcworld_scale_step` hysteresis per actor (`mobj` identity) and
+  `fcworld_frame_limit` new-tile budget (default 8) reusing shown tiles at the
+  new patch origin for one generation when unoccluded and palettes are kept.
+- Option 4: generation submitted at resolve when the scheduler is idle
+  (`fcpico_world_resolved`); measured negligible (previous generation still
+  committing). ROM-side options rejected on the NMI cycle budget (tables path
+  2,198/2,200) and RAM (third stream buffer).
+- Option 5: `FCPICO_WORLD_LOOSE` variant (pictures ungated; cosim 17.7 fps,
+  sprite lag mean 1..2, max 6 pictures); passive PIO1 PA12/CS1 fetch probe
+  (`FCPICO_SPRITE_FETCH_PROBE`, `probe` serial line).
+- Cosimulation tooling: host `--tics-per-frame` (device game time per picture),
+  cart model `FCPICO_WORLD_SUBMIT_TENTHS` / `FCPICO_WORLD_LOOSE`, runner
+  `--device` (new firmware) / `--device-old` / `--loose`; identical consecutive
+  pictures resolved by the generation shown (removed demo 3 false failures,
+  present in the previous pipeline too); lagged palette-only mismatches counted
+  as replay artifacts.
+- Results (demos 1..3, frames 100..399, 3 tics/frame, 0 failures): streamed
+  11.8 to 17.7 fps; native previous 9.3/9.4/8.9, new 12.7/13.8/12.5 (budget 8),
+  loose 17.7/17.7/17.7. Full tables in [14c](plan/14c-world-sprite-performance.md).
+- Candidates: default `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
+  `31acf39d744fede5ac6253d82d88737601c1ed454049f2e4819a15b8360dead6` (315,444 bytes
+  firmware); loose `.build/doom-world-loose/artifacts/fcpico_doom_native_world_whx.uf2`
+  `88d49234f3592343d73305bfb2a10d3a4bab3148775e512f380167e2829f5281`; ROM 9031 unchanged.
+- Verified: host CTest 15/15 plain and ASan/UBSan; Python 525 passed; boot ROM
+  tests unchanged; protocol check clean. Hardware pending (HR-17).
+
+## P3-W5c -- wait instead of drop (plan 14c option 1, 2026-10-04)
+
+- Device `fcvideo_frame_end`: when a world generation (not idle) holds the back
+  buffer, poll the bus, BOOTSEL/serial and audio for up to 50 ms instead of
+  discarding the rendered frame; `world_wait count/avg_us/max_us/timeouts`
+  serial line. Cart model `FCPICO_WORLD_WAIT` uses the same 3-heartbeat bound.
+- Cosimulation (`--device --wait`, demos 1..3, frames 100..399): published fps
+  9.9 / 11.1 / 10.3 (was 8.5 / 9.6 / 8.6; streamed 11.8); enemies 9.7 / 11.1 /
+  10.0; 0 failures; drops 24 / 8 / 16.
+- Candidate `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
+  SHA-256 `c49de32ef9198b5d4a063b825e584b3a7f6e57a9aa02a87fdfc71dfc81d3c4b1`,
+  ROM 9031 unchanged, firmware 312,572 bytes, RAM post-zone 26,332 bytes.
+  Host CTest 15/15, Python 525 passed. Hardware pending (HR-17).
 
 ## P3-W5b -- frame-rate reporting and performance plan (2026-10-04)
 
@@ -447,13 +560,7 @@ One entry per task from [`plan/10-workplan.md`](plan/10-workplan.md), newest fir
   were not restated. The hardware log records the confirmation. The output
   manifest records root and engine commits plus source, ROM and UF2 hashes.
 
-## <task id> -- <title>
-- Commits: <range or list>
-- Verified: <command> -> <result summary>
-- Measurements: <fps / cycles / bytes / ms, with the command>
-- Left out: <what and why>
-- Plan changes: <documents touched>
-```
+
 
 ## I-05 / P4-T3 -- automatic music and synthesized effects complete (2026-10-01)
 

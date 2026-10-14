@@ -40,6 +40,39 @@ static uint32_t __not_in_flash_func(sample_read_count)(void) {
     return pio_sm_get(pio0, SM_TRCNT);
 }
 
+#if FCPICO_SPRITE_FETCH_PROBE
+#define SM_PA12 1
+#define SM_PA12_CS1 2
+static uint32_t probe_sample(uint sm) {
+    pio_sm_exec(pio1, sm, pio_encode_mov_not(pio_isr, pio_x));
+    pio_sm_exec(pio1, sm, pio_encode_push(false, false));
+    return pio_sm_get(pio1, sm);
+}
+
+void fcbus_device_probe_counts(uint32_t *pa12, uint32_t *pa12_cs1) {
+    *pa12 = probe_sample(SM_PA12);
+    *pa12_cs1 = probe_sample(SM_PA12_CS1);
+}
+
+static void probe_init(void) {
+    gpio_init(PI_PA12_BIT);
+    gpio_set_dir(PI_PA12_BIT, GPIO_IN);
+    uint offset = pio_add_program(pio1, &fcppu_pa12_count_program);
+    pio_sm_config config = fcppu_pa12_count_program_get_default_config(offset);
+    sm_config_set_jmp_pin(&config, PI_PA12_BIT);
+    pio_sm_init(pio1, SM_PA12, offset, &config);
+    offset = pio_add_program(pio1, &fcppu_pa12_cs1_count_program);
+    config = fcppu_pa12_cs1_count_program_get_default_config(offset);
+    sm_config_set_in_pins(&config, PI_CS1_BIT);
+    sm_config_set_in_shift(&config, false, false, 32);
+    pio_sm_init(pio1, SM_PA12_CS1, offset, &config);
+    pio_sm_set_enabled(pio1, SM_PA12, true);
+    pio_sm_set_enabled(pio1, SM_PA12_CS1, true);
+}
+#else
+void fcbus_device_probe_counts(uint32_t *pa12, uint32_t *pa12_cs1) { *pa12 = *pa12_cs1 = 0; }
+#endif
+
 #if FCPICO_DIAGNOSTIC_ENGINE_DELAY
 static uint32_t __not_in_flash_func(sample_raw_read_count)(void) {
     pio_sm_exec(pio1, 0, pio_encode_push(false, false));
@@ -172,6 +205,9 @@ bool fcbus_device_init(fcbus_device_t *device, const fcbus_config_t *config) {
     pio_enable_sm_mask_in_sync(pio0, 0x0fu);
 #if FCPICO_DIAGNOSTIC_ENGINE_DELAY
     pio_sm_set_enabled(pio1, 0, true);
+#endif
+#if FCPICO_SPRITE_FETCH_PROBE
+    probe_init();
 #endif
 
     /* Mirrors rp_system.cpp:171-173: make the version stream available at boot. */

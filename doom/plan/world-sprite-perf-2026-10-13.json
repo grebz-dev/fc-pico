@@ -1,0 +1,568 @@
+{
+  "date": "2026-10-13",
+  "hardware_measured": false,
+  "benchmark_before": {
+    "cases": 72,
+    "instructions": {
+      "fcworld_raster_actor": 1381203,
+      "fcworld_frame_build": 2942354,
+      "fcworld_frame_limit": 785123
+    },
+    "stack_bytes_excluding_callees": {
+      "fcworld_raster_actor": 128,
+      "fcworld_frame_build": 688,
+      "fcworld_frame_limit": 600
+    },
+    "total_instructions": 5108680,
+    "exact": true,
+    "completed": true,
+    "failed": 0,
+    "bytes": 37050,
+    "expected_bytes": 37050,
+    "compiler": "13.2.1",
+    "source_sha256": "79452a8e78773afa89c1922c8bf8c85716edfd58e6a895262bcaacb2e12f0ee1",
+    "reference_sha256": "79452a8e78773afa89c1922c8bf8c85716edfd58e6a895262bcaacb2e12f0ee1",
+    "output_sha256": "abad9f4b6aa1ae22e18443cb3947c947be69bd8c1724964e4673e6c1d765132e",
+    "atlas_sha256": "60720d36310772613521faaee5880e3ecb2a5efb04dad514d5ff13a839c990d8",
+    "within_budget": false
+  },
+  "benchmark_after": {
+    "cases": 72,
+    "instructions": {
+      "fcworld_raster_actor": 860405,
+      "fcworld_frame_build": 1589147,
+      "fcworld_frame_limit": 785123
+    },
+    "stack_bytes_excluding_callees": {
+      "fcworld_raster_actor": 384,
+      "fcworld_frame_build": 672,
+      "fcworld_frame_limit": 600
+    },
+    "total_instructions": 3234675,
+    "exact": true,
+    "completed": true,
+    "failed": 0,
+    "bytes": 37050,
+    "expected_bytes": 37050,
+    "compiler": "13.2.1",
+    "source_sha256": "d01379a3b80465109976e39cffc6b4ce8389986faac5a8a9ab67f53c3762da4a",
+    "reference_sha256": "79452a8e78773afa89c1922c8bf8c85716edfd58e6a895262bcaacb2e12f0ee1",
+    "output_sha256": "abad9f4b6aa1ae22e18443cb3947c947be69bd8c1724964e4673e6c1d765132e",
+    "atlas_sha256": "60720d36310772613521faaee5880e3ecb2a5efb04dad514d5ff13a839c990d8",
+    "within_budget": true
+  },
+  "cosimulation": {
+    "native_demo1": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 255,
+      "replay_palette_artifacts": 4,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 298,
+      "ppu_frames_per_recorded_frame": 9.411764705882353,
+      "native_frames": 300,
+      "native_entries_max": 26,
+      "native_entries_mean": 8.31,
+      "native_tiles_mean": 8.066666666666666,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 4.744186046511628,
+      "heartbeats_per_frame_max": 9,
+      "transport_fps_limit": 12.667884313725489,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 22,
+          "heartbeats_mean": 4.0,
+          "fps": 15.0247
+        },
+        "2+ pickups": {
+          "pictures": 78,
+          "heartbeats_mean": 4.628205128205129,
+          "fps": 12.985336288088641
+        },
+        "enemies": {
+          "pictures": 125,
+          "heartbeats_mean": 5.2,
+          "fps": 11.557461538461537
+        },
+        "no actors": {
+          "pictures": 33,
+          "heartbeats_mean": 3.787878787878788,
+          "fps": 15.866083199999998
+        }
+      },
+      "dropped_frames": 41,
+      "rendered_fps": 14.631897385620915,
+      "scheduler_stats": {
+        "idle": 1409,
+        "chr": 511,
+        "oam": 330,
+        "wait_shown": 184,
+        "chr_tiles": 1189,
+        "cache_hits": 552,
+        "commits": 201,
+        "deferred": 18,
+        "unchanged": 58,
+        "clears": 28,
+        "busy_max": 9
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 173,
+        "packets": 606,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "native_demo2": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 273,
+      "replay_palette_artifacts": 3,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 8.791208791208792,
+      "native_frames": 300,
+      "native_entries_max": 24,
+      "native_entries_mean": 5.08,
+      "native_tiles_mean": 4.99,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 4.359712230215828,
+      "heartbeats_per_frame_max": 10,
+      "transport_fps_limit": 13.785038283828381,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 18,
+          "heartbeats_mean": 4.444444444444445,
+          "fps": 13.522229999999999
+        },
+        "2+ pickups": {
+          "pictures": 40,
+          "heartbeats_mean": 4.75,
+          "fps": 12.65237894736842
+        },
+        "enemies": {
+          "pictures": 199,
+          "heartbeats_mean": 4.371859296482412,
+          "fps": 13.746737011494254
+        },
+        "no actors": {
+          "pictures": 21,
+          "heartbeats_mean": 3.4285714285714284,
+          "fps": 17.528816666666668
+        }
+      },
+      "dropped_frames": 21,
+      "rendered_fps": 14.826354125412541,
+      "scheduler_stats": {
+        "idle": 1382,
+        "chr": 456,
+        "oam": 422,
+        "wait_shown": 174,
+        "chr_tiles": 989,
+        "cache_hits": 263,
+        "commits": 228,
+        "deferred": 55,
+        "unchanged": 51,
+        "clears": 73,
+        "busy_max": 9
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 155,
+        "packets": 556,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "native_demo3": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 260,
+      "replay_palette_artifacts": 3,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 9.23076923076923,
+      "native_frames": 300,
+      "native_entries_max": 23,
+      "native_entries_mean": 7.73,
+      "native_tiles_mean": 7.516666666666667,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 4.797752808988764,
+      "heartbeats_per_frame_max": 10,
+      "transport_fps_limit": 12.526447775175644,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 17,
+          "heartbeats_mean": 4.117647058823529,
+          "fps": 14.595422857142857
+        },
+        "2+ pickups": {
+          "pictures": 35,
+          "heartbeats_mean": 4.771428571428571,
+          "fps": 12.595556886227545
+        },
+        "enemies": {
+          "pictures": 195,
+          "heartbeats_mean": 4.964102564102564,
+          "fps": 12.106679752066114
+        },
+        "no actors": {
+          "pictures": 20,
+          "heartbeats_mean": 3.8,
+          "fps": 15.815473684210525
+        }
+      },
+      "dropped_frames": 32,
+      "rendered_fps": 14.02774488680718,
+      "scheduler_stats": {
+        "idle": 1234,
+        "chr": 605,
+        "oam": 369,
+        "wait_shown": 226,
+        "chr_tiles": 1335,
+        "cache_hits": 385,
+        "commits": 245,
+        "deferred": 19,
+        "unchanged": 23,
+        "clears": 32,
+        "busy_max": 9
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 213,
+        "packets": 691,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "old_timing_demo1": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 2.3,
+        "submit_beats": 0,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": false,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 199,
+      "replay_palette_artifacts": 10,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 298,
+      "ppu_frames_per_recorded_frame": 12.06030150753769,
+      "native_frames": 300,
+      "native_entries_max": 26,
+      "native_entries_mean": 8.31,
+      "native_tiles_mean": 8.066666666666666,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 6.447761194029851,
+      "heartbeats_per_frame_max": 11,
+      "transport_fps_limit": 9.320878703703704,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 14,
+          "heartbeats_mean": 6.071428571428571,
+          "fps": 9.898625882352942
+        },
+        "2+ pickups": {
+          "pictures": 62,
+          "heartbeats_mean": 6.387096774193548,
+          "fps": 9.409408080808081
+        },
+        "enemies": {
+          "pictures": 93,
+          "heartbeats_mean": 6.881720430107527,
+          "fps": 8.733106874999999
+        },
+        "no actors": {
+          "pictures": 32,
+          "heartbeats_mean": 5.46875,
+          "fps": 10.989494857142857
+        }
+      },
+      "dropped_frames": 98,
+      "rendered_fps": 13.819014197530864,
+      "scheduler_stats": {
+        "idle": 1536,
+        "chr": 391,
+        "oam": 376,
+        "wait_shown": 131,
+        "chr_tiles": 937,
+        "cache_hits": 276,
+        "commits": 147,
+        "deferred": 16,
+        "unchanged": 55,
+        "clears": 25,
+        "busy_max": 9
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 122,
+        "packets": 462,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "loose_demo1": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": true,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 290,
+      "replay_palette_artifacts": 13,
+      "loose_sprite_lag_mean": 1.9153749476330122,
+      "loose_sprite_lag_max": 6,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 8.275862068965518,
+      "native_frames": 300,
+      "native_entries_max": 26,
+      "native_entries_mean": 8.31,
+      "native_tiles_mean": 8.066666666666666,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 3.4013377926421406,
+      "heartbeats_per_frame_max": 4,
+      "transport_fps_limit": 17.669165388397246,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 23,
+          "heartbeats_mean": 3.391304347826087,
+          "fps": 17.721441025641024
+        },
+        "2+ pickups": {
+          "pictures": 86,
+          "heartbeats_mean": 3.4186046511627906,
+          "fps": 17.579921088435373
+        },
+        "enemies": {
+          "pictures": 155,
+          "heartbeats_mean": 3.4064516129032256,
+          "fps": 17.642640151515153
+        },
+        "no actors": {
+          "pictures": 35,
+          "heartbeats_mean": 3.342857142857143,
+          "fps": 17.978273504273503
+        }
+      },
+      "dropped_frames": 0,
+      "rendered_fps": 17.669165388397246,
+      "scheduler_stats": {
+        "idle": 1638,
+        "chr": 432,
+        "oam": 263,
+        "wait_shown": 101,
+        "chr_tiles": 738,
+        "cache_hits": 209,
+        "commits": 118,
+        "deferred": 171,
+        "unchanged": 51,
+        "clears": 24,
+        "busy_max": 13
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 94,
+        "packets": 370,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "streamed_demo1": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 291,
+      "replay_palette_artifacts": 0,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 8.24742268041237,
+      "native_frames": 0,
+      "native_entries_max": 0,
+      "native_entries_mean": 0,
+      "native_tiles_mean": 0,
+      "stable_heartbeats": 2401,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 3.4013377926421406,
+      "heartbeats_per_frame_max": 4,
+      "transport_fps_limit": 17.669165388397246,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 23,
+          "heartbeats_mean": 3.391304347826087,
+          "fps": 17.721441025641024
+        },
+        "2+ pickups": {
+          "pictures": 86,
+          "heartbeats_mean": 3.383720930232558,
+          "fps": 17.76115738831615
+        },
+        "enemies": {
+          "pictures": 155,
+          "heartbeats_mean": 3.412903225806452,
+          "fps": 17.60928922495274
+        },
+        "no actors": {
+          "pictures": 35,
+          "heartbeats_mean": 3.4,
+          "fps": 17.676117647058824
+        }
+      },
+      "dropped_frames": 0,
+      "rendered_fps": 17.669165388397246,
+      "scheduler_stats": {
+        "idle": 2432,
+        "chr": 0,
+        "oam": 3,
+        "wait_shown": 0,
+        "chr_tiles": 0,
+        "cache_hits": 0,
+        "commits": 1,
+        "deferred": 1,
+        "unchanged": 299,
+        "clears": 1,
+        "busy_max": 2
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 0,
+        "packets": 1,
+        "resends": 0,
+        "errors": 0
+      }
+    }
+  },
+  "checks": {
+    "ctest_release": "15/15",
+    "ctest_asan_ubsan": "15/15, ASAN_OPTIONS=detect_leaks=0 UBSAN_OPTIONS=halt_on_error=1",
+    "pytest": "525 passed, 5 skipped",
+    "bootrom": "36/36 with NESASM",
+    "protocol": "passed",
+    "flash_layout": "passed",
+    "post_zone_heap_default": 33572,
+    "post_zone_heap_loose": 33568
+  },
+  "artifacts": {
+    "default": {
+      "path": ".build/doom-world-perf/artifacts/fcpico_doom_native_world_whx.uf2",
+      "sha256": "90739cc30b9acf843f33f6c0c738083486fff814aac26362be1f792c7804d8c4"
+    },
+    "loose": {
+      "path": ".build/doom-world-perf-loose/artifacts/fcpico_doom_native_world_whx.uf2",
+      "sha256": "a7838702a289e4d9356c0d5640f9496c64253e318f4d2cdacf4bc2569b190b42"
+    }
+  }
+}

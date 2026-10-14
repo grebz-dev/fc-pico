@@ -244,6 +244,90 @@ static void test_held_commit_waits_for_release(void) {
     CHECK(!w.hold_commit);
 }
 
+static void test_scale_step_hysteresis(void) {
+    CHECK_EQ(fcworld_scale_step(65536, 0), 65536u);
+    CHECK_EQ(fcworld_scale_step(68813, 0), 71468u);        /* nearest step */
+    CHECK_EQ(fcworld_scale_step(68813, 65536), 65536u);    /* within one step: keep */
+    CHECK_EQ(fcworld_scale_step(62000, 65536), 65536u);
+    CHECK_EQ(fcworld_scale_step(72090, 65536), 71468u);    /* a full step away */
+    CHECK_EQ(fcworld_scale_step(59000, 65536), 60097u);
+}
+
+static void test_actor_size_hysteresis(void) {
+    /* Approach the old 26-tile cliff, then move back through the boundary.
+     * Jitter in the 13..16 range must not alternate sprite/streamed modes. */
+    const unsigned sizes[] = {8, 12, 13, 16, 17, 16, 13, 12, 13, 16, 17, 26};
+    const bool native[] = {true, true, true, true, false, false, false, true,
+                           true, true, false, false};
+    bool was_native = false;
+    for (unsigned i = 0; i < sizeof sizes / sizeof sizes[0]; ++i) {
+        was_native = fcworld_actor_fits(sizes[i], was_native);
+        CHECK_EQ(was_native, native[i]);
+    }
+    CHECK(!fcworld_actor_fits(FCWORLD_MAX_TILES, true));
+}
+
+static void limit_actor(fcworld_frame_t *f, uint32_t id, unsigned tiles, unsigned seed,
+                        int x, int y) {
+    unsigned first = f->oam_count;
+    for (unsigned t = 0; t < tiles; ++t) {
+        make_tile(f->tiles[f->tile_count], seed + t);
+        uint8_t *e = f->oam[f->oam_count++];
+        e[0] = (uint8_t)(y + (int)(t / 2) * 8 - 1);
+        e[1] = f->tile_count++;
+        e[2] = 0;
+        e[3] = (uint8_t)(x + (int)(t % 2) * 8);
+    }
+    unsigned n = f->actor_count++;
+    f->actor[n].id = id;
+    f->actor[n].ax = (int16_t)(x + 8);
+    f->actor[n].ay = (int16_t)(y + 16);
+    f->actor[n].occluded = false;
+    f->actor[n].first = (uint8_t)first;
+    f->actor[n].count = (uint8_t)tiles;
+    f->actor[n].stale = 0;
+}
+
+static void test_frame_limit_reuses_previous_art(void) {
+    static fcworld_frame_t previous, frame, copy;
+    fcworld_frame_clear(&previous, world_pal);
+    limit_actor(&previous, 7, 4, 100, 60, 40);
+    limit_actor(&previous, 9, 4, 200, 120, 40);
+    fcworld_frame_clear(&frame, world_pal);
+    limit_actor(&frame, 7, 4, 300, 65, 43);    /* new art, moved by (5, 3) */
+    limit_actor(&frame, 9, 4, 400, 120, 40);
+    copy = frame;
+    /* Budget 4: actor 7 uploads its four tiles, actor 9 keeps its old art. */
+    CHECK_EQ(fcworld_frame_limit(&frame, &previous, 4), 1u);
+    CHECK_EQ(frame.oam_count, 8);
+    CHECK_EQ(frame.actor[1].stale, 1);
+    CHECK_MEM(frame.tiles[frame.oam[4][1]], previous.tiles[previous.oam[4][1]], 16);
+    CHECK_EQ(frame.oam[4][0], previous.oam[4][0]);
+    CHECK_EQ(frame.oam[4][3], previous.oam[4][3]);
+    CHECK_MEM(frame.tiles[frame.oam[0][1]], copy.tiles[copy.oam[0][1]], 16);
+    /* Budget 0, moved actor: old art follows the patch origin. */
+    frame = copy;
+    CHECK_EQ(fcworld_frame_limit(&frame, &previous, 0), 2u);
+    CHECK_EQ(frame.oam[0][0], previous.oam[0][0] + 3);
+    CHECK_EQ(frame.oam[0][3], previous.oam[0][3] + 5);
+    /* Never twice in a row. */
+    static fcworld_frame_t again;
+    again = copy;
+    CHECK_EQ(fcworld_frame_limit(&again, &frame, 0), 0u);
+    CHECK_MEM(&again, &copy, sizeof copy);
+    /* Not when occluded, nor when its palette slot changed. */
+    again = copy;
+    again.actor[0].occluded = again.actor[1].occluded = true;
+    CHECK_EQ(fcworld_frame_limit(&again, &previous, 0), 0u);
+    again = copy;
+    again.palettes[0] ^= 1;
+    CHECK_EQ(fcworld_frame_limit(&again, &previous, 0), 0u);
+    /* Within budget nothing changes. */
+    again = copy;
+    CHECK_EQ(fcworld_frame_limit(&again, &previous, 8), 0u);
+    CHECK_MEM(&again, &copy, sizeof copy);
+}
+
 static void test_flipped_cache_reuse(void) {
     fcworld_t w;
     console_t c;
@@ -487,6 +571,47 @@ static void test_frame_dedupes_mirrors_and_limits_lines(void) {
     CHECK_EQ(frame.oam_count, 0);
 }
 
+/* Decode the built OAM independently, including flipped deduplicated tiles.
+ * Every partial edge must be transparent outside the source rectangle. */
+static void test_frame_partial_tiles(void) {
+    fcworld_atlas_t atlas;
+    make_atlas(&atlas);
+    fcworld_palette_state_t shown = {{0x0F, 0x16, 0x30, 0x0F, 0x1A, 0x27}, 0};
+    static fcworld_raster_t r;
+    fcworld_frame_t f;
+    for (int h = 1; h <= 16; ++h) {
+        for (int w = 1; w <= 16; ++w) {
+            memset(&r, 0, sizeof r);
+            r.count = 1;
+            r.actor[0].box = (fcworld_box_t){10, 50, (uint8_t)w, (uint8_t)h};
+            r.used = (uint16_t)(w * h);
+            for (int y = 0; y < h; ++y)
+                for (int x = 0; x < w; ++x)
+                    r.pixels[y * w + x] = (uint8_t)((x * 7 + y * 3 + x * y) % 4);
+            CHECK(fcworld_frame_build(&f, &r, &atlas, &shown));
+            uint8_t decoded[24 * 24] = {0};
+            for (unsigned n = 0; n < f.oam_count; ++n) {
+                const uint8_t *o = f.oam[n], *tile = f.tiles[o[1]];
+                CHECK_EQ(o[2] & 3, 0);
+                int ox = o[3] - 10, oy = o[0] + 1 - 50;
+                CHECK(ox >= 0 && ox <= 16 && oy >= 0 && oy <= 16);
+                for (int y = 0; y < 8; ++y) {
+                    int row = o[2] & 0x80 ? 7 - y : y;
+                    for (int x = 0; x < 8; ++x) {
+                        int bit = o[2] & 0x40 ? x : 7 - x;
+                        decoded[(oy + y) * 24 + ox + x] =
+                            (uint8_t)(((tile[row] >> bit) & 1) |
+                                      (((tile[8 + row] >> bit) & 1) << 1));
+                    }
+                }
+            }
+            for (int y = 0; y < 24; ++y)
+                for (int x = 0; x < 24; ++x)
+                    CHECK_EQ(decoded[y * 24 + x], x < w && y < h ? r.pixels[y * w + x] : 0);
+        }
+    }
+}
+
 /* ---------------------------------------------------------------- gating */
 static fcworld_t g_world;
 static void hook(void *user, uint8_t *mailbox, uint8_t pad2, bool swapped) {
@@ -532,8 +657,12 @@ int main(void) {
     test_raster_is_anchored_and_scale_quantised();
     test_plan_respects_shown_palettes();
     test_frame_dedupes_mirrors_and_limits_lines();
+    test_frame_partial_tiles();
     test_scheduler_uploads_commits_and_protects();
     test_held_commit_waits_for_release();
+    test_scale_step_hysteresis();
+    test_actor_size_hysteresis();
+    test_frame_limit_reuses_previous_art();
     test_flipped_cache_reuse();
     test_core_gate_matches_console_generation();
     return ctest_lite_result();

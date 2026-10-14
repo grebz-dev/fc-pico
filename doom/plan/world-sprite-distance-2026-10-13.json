@@ -1,0 +1,327 @@
+{
+  "date": "2026-10-13",
+  "hardware_flash_reproduced": false,
+  "before": {
+    "cases": 72,
+    "instructions": {
+      "fcworld_raster_actor": 860405,
+      "fcworld_frame_build": 1589147,
+      "fcworld_frame_limit": 785123,
+      "fcworld_submit_held": 168809,
+      "fcworld_reserve": 0
+    },
+    "stack_bytes_excluding_callees": {
+      "fcworld_raster_actor": 384,
+      "fcworld_frame_build": 672,
+      "fcworld_frame_limit": 600,
+      "fcworld_submit_held": 8
+    },
+    "total_instructions": 3403484,
+    "irq_masked_instructions": 168809,
+    "exact": true,
+    "completed": true,
+    "failed": 0,
+    "bytes": 37596,
+    "expected_bytes": 37596,
+    "compiler": "13.2.1",
+    "source_sha256": "d01379a3b80465109976e39cffc6b4ce8389986faac5a8a9ab67f53c3762da4a",
+    "reference_sha256": "d01379a3b80465109976e39cffc6b4ce8389986faac5a8a9ab67f53c3762da4a",
+    "output_sha256": "a977397183b6953cc13f25ad6443482e0e7c66ac2337320e4d1b4d5742c3d3cf",
+    "atlas_sha256": "60720d36310772613521faaee5880e3ecb2a5efb04dad514d5ff13a839c990d8",
+    "irq_masked_within_budget": false
+  },
+  "after": {
+    "cases": 72,
+    "instructions": {
+      "fcworld_raster_actor": 860405,
+      "fcworld_frame_build": 1589147,
+      "fcworld_frame_limit": 785123,
+      "fcworld_submit_held": 168427,
+      "fcworld_reserve": 14
+    },
+    "stack_bytes_excluding_callees": {
+      "fcworld_raster_actor": 384,
+      "fcworld_frame_build": 672,
+      "fcworld_frame_limit": 600,
+      "fcworld_reserve": 8,
+      "fcworld_submit_held": 0
+    },
+    "total_instructions": 3403102,
+    "irq_masked_instructions": 14,
+    "exact": true,
+    "completed": true,
+    "failed": 0,
+    "bytes": 37596,
+    "expected_bytes": 37596,
+    "compiler": "13.2.1",
+    "source_sha256": "390dde055bf733aca2f7f24b71322f56a2babf6ebf1a2ef19919d94b2dc63cb2",
+    "reference_sha256": "d01379a3b80465109976e39cffc6b4ce8389986faac5a8a9ab67f53c3762da4a",
+    "output_sha256": "a977397183b6953cc13f25ad6443482e0e7c66ac2337320e4d1b4d5742c3d3cf",
+    "atlas_sha256": "60720d36310772613521faaee5880e3ecb2a5efb04dad514d5ff13a839c990d8",
+    "within_budget": true,
+    "irq_masked_within_budget": true
+  },
+  "cosimulation": {
+    "demo1": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 266,
+      "replay_palette_artifacts": 1,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 9.022556390977444,
+      "native_frames": 300,
+      "native_entries_max": 26,
+      "native_entries_mean": 7.183333333333334,
+      "native_tiles_mean": 6.97,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 4.4721189591078065,
+      "heartbeats_per_frame_max": 9,
+      "transport_fps_limit": 13.438551288445552,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 29,
+          "heartbeats_mean": 3.6551724137931036,
+          "fps": 16.442124528301886
+        },
+        "2+ pickups": {
+          "pictures": 75,
+          "heartbeats_mean": 4.266666666666667,
+          "fps": 14.08565625
+        },
+        "enemies": {
+          "pictures": 126,
+          "heartbeats_mean": 5.079365079365079,
+          "fps": 11.83195125
+        },
+        "no actors": {
+          "pictures": 39,
+          "heartbeats_mean": 3.5128205128205128,
+          "fps": 17.108417518248174
+        }
+      },
+      "dropped_frames": 30,
+      "rendered_fps": 14.937274480465502,
+      "scheduler_stats": {
+        "idle": 1440,
+        "chr": 458,
+        "oam": 360,
+        "wait_shown": 176,
+        "chr_tiles": 1010,
+        "cache_hits": 558,
+        "commits": 208,
+        "deferred": 33,
+        "unchanged": 62,
+        "clears": 41,
+        "busy_max": 9
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 167,
+        "packets": 555,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "demo2": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 282,
+      "replay_palette_artifacts": 3,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 8.51063829787234,
+      "native_frames": 300,
+      "native_entries_max": 22,
+      "native_entries_mean": 4.073333333333333,
+      "native_tiles_mean": 4.013333333333334,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 4.153310104529616,
+      "heartbeats_per_frame_max": 9,
+      "transport_fps_limit": 14.470096979865772,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 18,
+          "heartbeats_mean": 4.166666666666667,
+          "fps": 14.423711999999998
+        },
+        "2+ pickups": {
+          "pictures": 62,
+          "heartbeats_mean": 3.903225806451613,
+          "fps": 15.397213223140495
+        },
+        "enemies": {
+          "pictures": 181,
+          "heartbeats_mean": 4.331491712707182,
+          "fps": 13.874850510204082
+        },
+        "no actors": {
+          "pictures": 26,
+          "heartbeats_mean": 3.5,
+          "fps": 17.171085714285713
+        }
+      },
+      "dropped_frames": 12,
+      "rendered_fps": 15.075118456375838,
+      "scheduler_stats": {
+        "idle": 1432,
+        "chr": 408,
+        "oam": 430,
+        "wait_shown": 164,
+        "chr_tiles": 842,
+        "cache_hits": 214,
+        "commits": 228,
+        "deferred": 65,
+        "unchanged": 60,
+        "clears": 82,
+        "busy_max": 8
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 146,
+        "packets": 505,
+        "resends": 0,
+        "errors": 0
+      }
+    },
+    "demo3": {
+      "timing_model": {
+        "render_beats": 2.8,
+        "convert_beats": 0.6,
+        "submit_beats": 1.4,
+        "tics_per_frame": 3,
+        "early": true,
+        "wait": true,
+        "loose": false,
+        "hardware_measurement": false
+      },
+      "rom_sha256": "ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135",
+      "recorded_frames": 300,
+      "first_recorded": 100,
+      "captured_ppu_frames": 2400,
+      "failures": [],
+      "failure_count": 0,
+      "distinct_frames_shown": 268,
+      "replay_palette_artifacts": 4,
+      "loose_sprite_lag_mean": null,
+      "loose_sprite_lag_max": null,
+      "last_frame_shown": 299,
+      "ppu_frames_per_recorded_frame": 8.955223880597014,
+      "native_frames": 300,
+      "native_entries_max": 23,
+      "native_entries_mean": 6.84,
+      "native_tiles_mean": 6.6466666666666665,
+      "stable_heartbeats": 2400,
+      "nmi": {
+        "frames": 2560,
+        "nmi_count": 2400,
+        "nmi_min_scanline": 251,
+        "nmi_max_scanline": 257
+      },
+      "heartbeats_per_frame_mean": 4.625454545454545,
+      "heartbeats_per_frame_max": 9,
+      "transport_fps_limit": 12.993058176100629,
+      "fps_by_scene": {
+        "1 pickup": {
+          "pictures": 15,
+          "heartbeats_mean": 4.0,
+          "fps": 15.0247
+        },
+        "2+ pickups": {
+          "pictures": 37,
+          "heartbeats_mean": 4.945945945945946,
+          "fps": 12.15112349726776
+        },
+        "enemies": {
+          "pictures": 201,
+          "heartbeats_mean": 4.706467661691542,
+          "fps": 12.769406765327695
+        },
+        "no actors": {
+          "pictures": 22,
+          "heartbeats_mean": 3.772727272727273,
+          "fps": 15.929802409638553
+        }
+      },
+      "dropped_frames": 24,
+      "rendered_fps": 14.126997798742138,
+      "scheduler_stats": {
+        "idle": 1248,
+        "chr": 580,
+        "oam": 376,
+        "wait_shown": 230,
+        "chr_tiles": 1217,
+        "cache_hits": 407,
+        "commits": 251,
+        "deferred": 21,
+        "unchanged": 25,
+        "clears": 35,
+        "busy_max": 9
+      },
+      "scheduler_end": {
+        "published": 300,
+        "generations": 216,
+        "packets": 666,
+        "resends": 0,
+        "errors": 0
+      }
+    }
+  },
+  "actor_enter_tiles": 12,
+  "actor_stay_tiles": 16,
+  "candidate": {
+    "path": ".build/doom-world-distance/artifacts/fcpico_doom_native_world_whx.uf2",
+    "sha256": "eb6c439fe49dea577d2ae8d564ac6d626e73bb28ed7513f22d78c17aebf58f8c",
+    "post_zone_heap_bytes": 33548
+  },
+  "checks": {
+    "ctest_release": "16/16",
+    "ctest_asan_ubsan": "16/16, leak inspection disabled in sandbox",
+    "pytest": "525 passed, 5 skipped",
+    "interrupt_injection": "43 checks passed",
+    "old_unmasked_commit_injection": "fails: leaked_commits=2",
+    "flash_layout": "passed"
+  }
+}

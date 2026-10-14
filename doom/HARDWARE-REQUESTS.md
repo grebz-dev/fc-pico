@@ -102,16 +102,36 @@ the result. The human fills in the result section and commits; the agent then co
 
 ### HR-17 Native enemy and pickup sprites, protocol v5 (tasks P3-W3 / P3-W4)
 
-- Flash: `.build/doom-world-test/artifacts/fcpico_doom_native_world_whx.uf2`
-  (firmware + WHX + audio archive + world sprite atlas at `0x10280000`), SHA-256
-  `9d7caa2e4ede0d3dc4ce5d690a4e34d3cef11871bb1cfa62992095cbdfa41a80`; ROM
-  `ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135`. Same as
-  the second candidate (`b55cade4...`, reported better but still lagging with
-  2+ pickups or enemies) plus `video fps=... rendered=...` serial fields. Second
-  candidate: the HUD shares BG palette 2 (the world regains its green palette),
-  anchored scale-stepped sprite tiles, packets outrank HUD DMA, uploads overlap
-  conversion. Details in
-  [PROGRESS](PROGRESS.md#p3-w5a----shared-hud-palette-and-world-sprite-transport-2026-10-04).
+- **Latest distance-stability candidate (2026-10-13):**
+  `.build/doom-world-distance/artifacts/fcpico_doom_native_world_whx.uf2`, SHA-256
+  `eb6c439fe49dea577d2ae8d564ac6d626e73bb28ed7513f22d78c17aebf58f8c`.
+  **Result:** user reports “Much better performance” after receiving this
+  candidate. Qualitative hardware performance improvement confirmed; measured
+  FPS, explicit flash/desync resolution and soak results remain open. See
+  [the hardware log](HARDWARE-LOG.md#2026-10-13----hr-17-distance-stability-candidate-performance-improved).
+  Default coherent rendering: cache search now runs with bus IRQs enabled;
+  large actors stream above 16 bounding tiles and return to sprites at <=12.
+  Modeled demos: 13.4/14.5/13.0 fps, zero failures. Physical flash/desync
+  resolution is pending. Approach/recede around the formerly troublesome
+  distance and compare stutter, full-frame flashes and `stops/resyncs/errors`.
+  [Details](plan/14c-world-sprite-performance.md#distance-dependent-stutter-and-flash-follow-up-2026-10-13).
+- Prior fifth candidate, two variants; firmware + WHX + audio archive + world
+  sprite atlas at `0x10280000`; ROM
+  `ee7138fb008ab405355d41a56341e859f444551cb28417dbf0c02278598a0135` in both:
+  - Default (gated): `.build/doom-world-perf/artifacts/fcpico_doom_native_world_whx.uf2`,
+    SHA-256 `90739cc30b9acf843f33f6c0c738083486fff814aac26362be1f792c7804d8c4`.
+  - Loose gating (pictures never wait for sprites; sprites may trail):
+    `.build/doom-world-perf-loose/artifacts/fcpico_doom_native_world_whx.uf2`, SHA-256
+    `a7838702a289e4d9356c0d5640f9496c64253e318f4d2cdacf4bc2569b190b42`.
+  - Additional CPU optimization: 36.7% fewer M33 sprite instructions across
+    72 cases with identical output; fixed negative-offset undefined behavior.
+    This is not a measured hardware FPS gain. Default post-zone heap 33,572 bytes.
+  - Both: plan 14c options 1..5 (wait instead of drop, packed conversion,
+    scale hysteresis and a per-generation tile budget, submission at resolve,
+    passive sprite-fetch probe). Cosimulation: default 12.5..13.8 fps with
+    native actors (previous 8.9..9.4, streamed now 17.7); loose 17.7 with
+    sprite lag up to 6 pictures. Details in
+    [plan 14c](plan/14c-world-sprite-performance.md).
 - Console ROM expected: `20DOOM-05-9031` (9016 HUD plus v5 world packets; a new
   world packet now takes priority over a pending OAM DMA); permanent fix bank
   unchanged. Count stays 15122.
@@ -122,8 +142,10 @@ the result. The human fills in the result section and commits; the agent then co
   gameplay-unused sprite tiles `$1000-$112F`, `$1280-$12DF`, `$1310`, unused menu
   glyphs and the face padding `$1F70-$1FFF`; OAM slots 35..63 hold enemies and
   pickups during gameplay; sprite palettes 0/2 change while no menu is open. The
-  third heartbeat byte is now nonzero. None of these runtime CHR writes has run on
-  a physical board yet; P3-U3 storage remains partial.
+  third heartbeat byte is now nonzero. Earlier native candidates have run on
+  hardware as recorded below; no hash-specific acceptance has been recorded for
+  the fifth or distance-stability candidate.
+  P3-U3 storage validation remains partial.
 - Steps: 1. Flash and let the console self-update to 9031. 2. Title/menu: logo and
   menu text colours as before. 3. Start E1M1: zombiemen (green/grey), imps (brown),
   pickups (grey medikits with red crosses, green armour, brown ammo/rocket boxes)
@@ -136,9 +158,13 @@ the result. The human fills in the result section and commits; the agent then co
   with enemies on screen. Still wanted: the items below, plus 60 s of serial in a
   room with enemies and 60 s without, to separate engine time (`video ...
   conversion_us`, `world_us resolve=avg/max build=avg/max`) from upload latency.
-- Frame-rate capture (third flash): 60 s each standing in a room with no
-  actors, with 2+ pickups, and with enemies; the `video fps=/rendered=` lines
-  and `world_us` lines from each. See [plan 14c](plan/14c-world-sprite-performance.md).
+- Frame-rate capture (each variant): 60 s each standing in a room with no
+  actors, with 2+ pickups, and with enemies; the `video`, `world_early`,
+  `world_wait`, `world_us` and `probe` serial lines from each. Report whether
+  the loose build's sprites visibly trail the picture or slip off pillars and
+  doorways, and whether audio stutters in busy scenes on either build. The
+  `probe` line decides plan 14c option 5 (sprite fetches seen by the RP).
+
 - Record: USB serial at 115200 including `video`, `world` and `world_us` lines
   (admitted, generations, packets, resends, stalls, errors) and `[DEBUG-hr3]`; photos or video
   of a corner occlusion and a menu transition; any garbled sprites, flicker,

@@ -106,10 +106,14 @@ Doom sources on its `rp2` (RP2350-capable) branch.
 
 World sprites: enemies and pickups render as native NES sprites with per-tile
 dynamic palettes through protocol v5 and ROM `20DOOM-05-9031`
-([plan 14](plan/14-world-sprites.md)). Colours are confirmed on hardware. The
-first candidate dropped frame rate with enemies on screen; the second (HR-17)
-cuts the Mesen transport cost per picture from 6.89 to 4.99 heartbeats, and the
-native HUD now shares its BG palette with the world.
+([plan 14](plan/14-world-sprites.md)). Colours are confirmed on hardware; the
+native HUD shares its BG palette with the world. Frame-rate work is in
+[plan 14c](plan/14c-world-sprite-performance.md): device-timed cosimulation now gives
+13.0..14.5 fps with native actors (was 8.9..9.4) and 17.7 streamed (was 11.8).
+Large actors switch to streamed rendering earlier, and sprite preparation keeps
+bus IRQs enabled. The user reports much better performance on hardware; measured
+FPS, explicit flash/desync resolution and soak testing remain open. A loose-gating
+variant reaches 17.7 modeled fps with lagging sprites.
 
 ## Directory map
 

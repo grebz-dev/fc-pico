@@ -11,6 +11,35 @@ Appended by whoever runs a console session. Newest first.
 - Attachments: <paths>
 ```
 
+## 2026-10-13 -- HR-17 distance-stability candidate performance improved
+
+- User feedback after receiving the distance-stability candidate: “Much better
+  performance, thank you”. This establishes a qualitative hardware performance
+  improvement; no measured FPS was supplied.
+- Candidate provided immediately before that feedback:
+  `.build/doom-world-distance/artifacts/fcpico_doom_native_world_whx.uf2`, SHA-256
+  `eb6c439fe49dea577d2ae8d564ac6d626e73bb28ed7513f22d78c17aebf58f8c`.
+  The flashed hash, console model and region were not independently restated.
+- The candidate removes long IRQ masking from sprite submission and switches
+  large actors to streamed rendering with 12/16 bounding-tile hysteresis.
+- Flash/desync elimination, measured FPS, and extended soak results were not
+  explicitly reported. These remain open; the performance feedback does not
+  close all HR-17/P3-W5 acceptance checks.
+
+## 2026-10-13 -- HR-17 distance-dependent stutter and flashes (user report)
+
+- Console and firmware hash were not restated. The preceding provided candidate
+  was `90739cc30b9acf843f33f6c0c738083486fff814aac26362be1f792c7804d8c4`;
+  this does not independently identify the flashed firmware.
+- User reports the worst performance when pickups/enemies approach the size
+  cutoff while remaining native sprites. Closer actors return cleanly to the
+  streamed representation. Symptoms: stuttering and occasional full-frame
+  flashes/desync. No serial timing capture or screenshot/video was supplied.
+- Offline response: remove long IRQ masking from sprite submission and add
+  a 12/16 bounding-tile admission hysteresis. The new candidate and verification
+  are in [the performance plan](plan/14c-world-sprite-performance.md).
+  Physical elimination of the flashes remains unverified.
+
 ## 2026-10-03 -- HR-17 native world sprites, first hardware pass (partial)
 
 - Console: physical console tested by user; model and region not restated.
