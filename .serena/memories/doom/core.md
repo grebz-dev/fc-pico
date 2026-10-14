@@ -1,5 +1,7 @@
 # Doom port core
 
+- The port's clean home is `grebz-dev/rp2040-doom` branch `fc-pico` (engine at root, cartridge tree under `fcpico/`, pristine `impact-soft/fc-pico` submodule at `fcpico/external/fc-pico`). This fc-pico `doom*` tree is the historical source for plan 13 extraction; see `doom/plan/15-rp2040-doom-restructure.md` for the path mapping.
+
 - The active shareware Doom port lives under `doom/`: `fcbus/` bus and protocol, `port/` device glue, `bootrom/` 6502 bank, `tools/`, `sim/`, `tests/`, and `rp2040-doom/` engine submodule. `doom/sim/mesen2/Mesen2/` is another submodule.
 - `doom/README.md` indexes the human-facing plan. `doom/plan/00-overview.md`, `01-constraints.md`, and `02-architecture.md` establish the design; `10-workplan.md` and `doom/issues/README.md` define tasks and acceptance. Live status/evidence is in `doom/PROGRESS.md`; console requests and results are in `doom/HARDWARE-REQUESTS.md` and `doom/HARDWARE-LOG.md`. Do not copy their transient status into memory.
 - For measured PPU selection, stream layout, and protocol source of truth, read `mem:doom/bus_protocol`.

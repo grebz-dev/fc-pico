@@ -1,7 +1,67 @@
 # 15 — Restructure: DOOM as an rp2040-doom fork (`fc-pico` branch)
 
-Date: 2026-10-13. Status: proposed; nothing in this document has been executed.
+Date: 2026-10-13. Status: **executed 2026-10-14** (see the execution record below).
 Related: [13 — upstream FC PICO contributions](13-upstream-contributions.md).
+
+## Execution record (2026-10-14)
+
+| Repository | Branch | Head |
+| --- | --- | --- |
+| `grebz-dev/rp2040-doom` | `fc-pico` (on upstream `rp2` `29a453c9`) | `1371199a`: 12 curated commits plus one test fix |
+| `grebz-dev/MesenCE-FC-PICO` | `fc-pico` (on `9688726c`) | `65af1252`: makefile takes `FCPICO_DIR` |
+| `fcpico/external/fc-pico` pin | pristine `impact-soft/fc-pico` | `9e225f32` |
+
+Byte-identity evidence. A rebuild of this branch's source (`2deffb5`, the
+same code as `3183340`) reproduced the hardware-tested candidate exactly. The
+restructured tree then produced identical bytes:
+
+| Artifact | SHA-256 (prefix) | Result |
+| --- | --- | --- |
+| Merged flash UF2 | `eb6c439fe49dea57` | identical |
+| Firmware UF2 | `f32fb26e2b0f3ed8` | identical |
+| Console ROM `20DOOM-05-9031` | `ee7138fb008ab405` | identical |
+| Audio bank / manifest | `53b832ba1132c77d` / `9e2a82e755288de5` | identical |
+| World atlas / manifest | `60720d3631077261` / `8ad1d6b9c1756db4` | identical (palette now tracked data) |
+| Host engine: 600 DEMO1 indexed frames and NES streams (1206 files) | combined `3be08df83ed07f36` | identical |
+| Committed-source boot ROM (`PG_main.asm`) | — | identical |
+
+The ELF differs only in debug paths. The build used the same WAD
+(`1d7d43be…`), Arm GCC 13.2.1, Pico SDK 2.1.1 and picotool.
+
+Further checks:
+- Host checks: CTest 16/16; pytest 516 passed with the same 5 skips as before
+  (the 9 dropped tests are the Markdown link checker's); protocol fresh.
+- Engine CTest: same as before. `engine_input_walk` and `host_shim_test` pass;
+  the two golden tests were already stale.
+- MesenCE built from the fork branch: strict S0 passes; D1 passes (palette,
+  64/64 attributes, count 15554, NMI exits on scanline 255).
+- A fresh clone passes host tests with zero failures.
+- GitHub Actions host, boot ROM and device lanes pass.
+
+Deviations from this plan:
+- The cartridge build is entered with `cmake -S fcpico`, and
+  `fcpico/CMakeLists.txt` adds the engine root as a subdirectory. There is no
+  root `option(FCPICO)`. This keeps the build graph, and so the bytes, unchanged.
+- The MesenCE submodule stays at `fcpico/sim/mesen2/Mesen2` to avoid renaming
+  every runner path.
+- There is no single `build.sh`. The scripts were renamed by function:
+  `build_firmware.sh` (was `build_shadow_detail.sh`) and `build_device.sh`
+  (was `build_bg_text_probe_device.sh`, now current-ROM only). The
+  `build_*_probe.py` ROM generators are the production ROM chain, so they were
+  kept under their names.
+- Intermediate commits are grouped by subsystem with final file contents. They
+  were not checked with `rebase --exec`; only the final tree (identical to the
+  verified tree) is validated.
+- Test adjustments: the art round-trip test now exports and imports from
+  `.chr` in a temporary copy, since the edit PNGs are not committed. Two
+  ROM-assembling tests now skip without NESASM.
+- Environment note: local MesenCE linking needed
+  `SDL2LIB="-L/usr/lib/x86_64-linux-gnu -l:libSDL2-2.0.so.0"`, because
+  `~/.local/fcpico/sdl2/.../libSDL2.so` points at a missing
+  `libSDL2-2.0.so.0.18.2`.
+
+Nothing was deleted or force-pushed. The fc-pico `doom*` branches and the
+rp2040-doom `claude/doom-fc-pico-nes-2bb1bx` branch are untouched (D6).
 
 ## Decision and goal
 
