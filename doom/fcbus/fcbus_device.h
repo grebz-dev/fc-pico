@@ -28,6 +28,10 @@ void fcbus_device_poll(fcbus_device_t *device);
 uint16_t *fcbus_device_stream_back(fcbus_device_t *device);
 bool fcbus_device_back_is_free(const fcbus_device_t *device);
 void fcbus_device_publish(fcbus_device_t *device);
+/** Passive sprite-fetch probe (FCPICO_SPRITE_FETCH_PROBE): cumulative PPU reads
+ *  with A12 high, and with A12 high while CS1 selects the cartridge. Zero when
+ *  the probe is not built. */
+void fcbus_device_probe_counts(uint32_t *pa12, uint32_t *pa12_cs1);
 const fcbus_stats_t *fcbus_device_stats(const fcbus_device_t *device);
 const uint8_t *fcbus_device_attributes(const fcbus_device_t *device);
 const uint8_t *fcbus_device_palette(const fcbus_device_t *device);

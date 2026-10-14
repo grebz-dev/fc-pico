@@ -26,3 +26,4 @@ doom/bootrom/out/
 
 # Local host-test build products
 /build-host/
+/build-engine/

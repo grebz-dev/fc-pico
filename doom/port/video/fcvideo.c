@@ -135,8 +135,32 @@ void fcvideo_build_palette_sets(const fcvideo_preset_t *preset,
 }
 
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables) {
-    memset(video, 0, sizeof(*video));
-    video->tables = *tables;
+    /* tables->lut may live in video->frame (device scratch): derive the
+     * packed tables before clearing the frame. */
+    fcvideo_tables_t copy = *tables;
+    for (int p = 0; p < 4; p++)
+        for (int row = 0; row < 4; row++)
+            for (int index = 0; index < 256; index++) {
+                const uint8_t *phases = tables->lut + (p * 256 + index) * 16 + row * 4;
+                uint8_t bits = 0;
+                for (int k = 0; k < 4; k++) {
+                    unsigned pixel = phases[k] & 3u;
+                    bits |= (uint8_t)(((pixel & 1u) << (3 - k)) | ((pixel >> 1) << (7 - k)));
+                }
+                video->planes[(p * 4 + row) * 256 + index] = bits;
+            }
+    for (int index = 0; index < 256; index++) {
+        const uint8_t *e = tables->err;
+        video->err_pair[0][index] = e[index] | (uint32_t)e[256 + index] << 16;
+        video->err_pair[1][index] = e[512 + index] | (uint32_t)e[768 + index] << 16;
+    }
+    video->tables = copy;
+    video->tables.lut = NULL;
+    memset(video->frame, 0, sizeof video->frame);
+    memset(video->previous_attr, 0, sizeof video->previous_attr);
+    video->have_previous = false;
+    video->native_status = false;
+    memset(&video->status, 0, sizeof video->status);
 }
 
 size_t fcvideo_sizeof(void) { return sizeof(fcvideo_t); }
@@ -168,28 +192,45 @@ static void attr_set(uint8_t attr[MBX_ATTR_LEN], int bx, int by, uint8_t palette
 static void choose_attributes(fcvideo_t *video, uint8_t attr[MBX_ATTR_LEN]) {
     memset(attr, 0, MBX_ATTR_LEN);
     for (int by = 0; by < VRAM_LINES / 16; by++) {
-        for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++) {
-            if (video->native_status && by >= FCVIDEO_STATUS_START / 16) {
+        if (video->native_status && by >= FCVIDEO_STATUS_START / 16) {
+            for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++)
                 attr_set(attr, bx, by, FCVIDEO_HUD_PALETTE);
-                continue;
-            }
-            uint32_t costs[4] = {0};
-            for (int y = by * 16; y < by * 16 + 16; y++) {
-                for (int x = bx * 16; x < bx * 16 + 16; x++) {
-                    uint8_t index = video->frame[y * FCVIDEO_WIDTH + x];
-                    for (int p = 0; p < 4; p++) costs[p] += video->tables.err[p * 256 + index];
+            continue;
+        }
+        /* Row-major sums in paired 16-bit lanes: 16 rows x 16 pixels x 255
+         * stays below 65536 per lane. */
+        const uint32_t *pa = video->err_pair[0], *pb = video->err_pair[1];
+        uint32_t lanes[FCVIDEO_WIDTH / 16][2];
+        memset(lanes, 0, sizeof lanes);
+        for (int y = by * 16; y < by * 16 + 16; y++) {
+            const uint8_t *row = video->frame + y * FCVIDEO_WIDTH;
+            for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++, row += 16) {
+                uint32_t a = 0, b = 0;
+                for (int x = 0; x < 16; x++) {
+                    unsigned index = row[x];
+                    a += pa[index];
+                    b += pb[index];
                 }
+                lanes[bx][0] += a;
+                lanes[bx][1] += b;
             }
+        }
+        uint32_t costs[FCVIDEO_WIDTH / 16][4];
+        for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++) {
+            costs[bx][0] = lanes[bx][0] & 0xFFFFu; costs[bx][1] = lanes[bx][0] >> 16;
+            costs[bx][2] = lanes[bx][1] & 0xFFFFu; costs[bx][3] = lanes[bx][1] >> 16;
+        }
+        for (int bx = 0; bx < FCVIDEO_WIDTH / 16; bx++) {
+            const uint32_t *c = costs[bx];
             uint8_t best = 0;
             for (uint8_t p = 1; p < 4; p++) {
-                if (costs[p] < costs[best]) best = p;
+                if (c[p] < c[best]) best = p;
             }
             if (video->have_previous) {
                 uint8_t old = attr_get(video->previous_attr, bx, by);
                 /* Python reference: retain old unless best is strictly more
                  * than 12% cheaper. Integer comparison avoids floating point. */
-                if (best != old &&
-                    costs[best] * 100u >= costs[old] * 88u) best = old;
+                if (best != old && c[best] * 100u >= c[old] * 88u) best = old;
             }
             attr_set(attr, bx, by, best);
         }
@@ -346,28 +387,33 @@ void fcvideo_convert_staged(fcvideo_t *video,
     video->have_previous = true;
 
     memset(stream, 0, VRAM_BUF_BYTES_V2);
-    for (int y = 0; y < VRAM_LINES; y++) {
-        for (int tile = 0; tile < VRAM_TILE_COLS; tile++) {
-            uint8_t lo = 0, hi = 0;
-            for (int bit = 0; bit < 8; bit++) {
-                int flat = y * FCVIDEO_WIDTH + tile * 8 + bit;
-                if (flat >= FCVIDEO_FRAME_BYTES) continue;
-                int px = flat % FCVIDEO_WIDTH;
-                int py = flat / FCVIDEO_WIDTH;
-                if (py < FCVIDEO_TOP_MARGIN ||
-                    py >= FCVIDEO_TOP_MARGIN + FCVIDEO_SCALED_HEIGHT) continue;
-                uint8_t palette = attr_get(attr, px / 16, py / 16);
-                uint8_t index = video->frame[flat];
-                uint8_t position = (uint8_t)((px & 3) | ((py & 3) << 2));
-                uint8_t pixel = video->native_status && py >= FCVIDEO_STATUS_START
-                    ? video->frame[flat]
-                    : video->tables.lut[(palette * 256 + index) * 16 + position] & 3u;
-                lo |= (pixel & 1u) << (7 - bit);
-                hi |= (pixel >> 1) << (7 - bit);
+    for (int y = FCVIDEO_TOP_MARGIN; y < FCVIDEO_TOP_MARGIN + FCVIDEO_SCALED_HEIGHT; y++) {
+        const uint8_t *src = video->frame + y * FCVIDEO_WIDTH;
+        uint8_t *out = stream + (size_t)(VRAM_HEAD_WORDS + y * VRAM_TILE_COLS) * 2;
+        if (video->native_status && y >= FCVIDEO_STATUS_START) {
+            /* Native HUD pixels are already subpalette indices. */
+            for (int tile = 0; tile < VRAM_TILE_COLS; tile++, src += 8) {
+                unsigned lo = 0, hi = 0;
+                for (int bit = 0; bit < 8; bit++) {
+                    unsigned pixel = src[bit] & 3u;
+                    lo = lo << 1 | (pixel & 1u);
+                    hi = hi << 1 | (pixel >> 1);
+                }
+                *out++ = (uint8_t)lo;
+                *out++ = (uint8_t)hi;
             }
-            size_t offset = (size_t)(VRAM_HEAD_WORDS + y * VRAM_TILE_COLS + tile) * 2;
-            stream[offset] = lo;
-            stream[offset + 1] = hi;
+            continue;
+        }
+        /* One subpalette per 16 pixels; Bayer phase (x & 3) | (y & 3) << 2. */
+        const uint8_t *row_planes = video->planes + (y & 3) * 256;
+        for (int tile = 0; tile < VRAM_TILE_COLS; tile++, src += 8) {
+            const uint8_t *t = row_planes + attr_get(attr, tile >> 1, y >> 4) * 4 * 256;
+            unsigned left = (t[src[0]] & 0x88u) | (t[src[1]] & 0x44u) |
+                            (t[src[2]] & 0x22u) | (t[src[3]] & 0x11u);
+            unsigned right = (t[src[4]] & 0x88u) | (t[src[5]] & 0x44u) |
+                             (t[src[6]] & 0x22u) | (t[src[7]] & 0x11u);
+            *out++ = (uint8_t)((left & 0x0Fu) << 4 | (right & 0x0Fu));
+            *out++ = (uint8_t)((left & 0xF0u) | right >> 4);
         }
     }
 

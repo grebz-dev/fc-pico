@@ -138,18 +138,38 @@ def main() -> int:
     parser.add_argument("--render-beats", type=float, default=0,
                         help="heartbeats per engine frame; frames finishing while both "
                              "buffers are busy are dropped (0 = lockstep replay)")
+    parser.add_argument("--tics-per-frame", type=int, default=None,
+                        help="game tics per recorded frame (device: about 35/fps; "
+                             "--device uses 3, lockstep default 1)")
+    parser.add_argument("--submit-beats", type=float, default=0,
+                        help="with --early: the generation is ready this far into the "
+                             "render (device: at resolve); 0 = at frame end")
     parser.add_argument("--wait", action="store_true",
                         help="a finished frame waits for the back buffer instead of dropping")
+    parser.add_argument("--loose", action="store_true",
+                        help="loose gating: pictures publish ungated; the console may show "
+                             "the sprites of any of the previous 12 recorded pictures")
     parser.add_argument("--device", action="store_true",
-                        help="device timing: --render-beats 2.8 --convert-beats 2.3 --early "
-                             "(HR-15: 11.8 fps streamed)")
+                        help="current firmware estimate: render 2.8, conversion 0.6 (packed "
+                             "converter, M33 instruction count), submit at resolve after 1.4, "
+                             "wait instead of drop")
+    parser.add_argument("--device-old", action="store_true",
+                        help="HR-15 calibration of the previous firmware: render 2.8, "
+                             "conversion 2.3 (38 ms), submit at conversion, drops")
     parser.add_argument("--early", action="store_true",
                         help="submit each world generation held before conversion (device order)")
     parser.add_argument("--scenes-from", type=Path,
                         help="classify scenes with another output's recording (for --baseline)")
     args = parser.parse_args()
     if args.device:
+        args.render_beats, args.convert_beats, args.early = 2.8, 0.6, True
+        args.submit_beats, args.wait = 1.4, True
+        if args.tics_per_frame is None:
+            args.tics_per_frame = 3
+    if args.device_old:
         args.render_beats, args.convert_beats, args.early = 2.8, 2.3, True
+        if args.tics_per_frame is None:
+            args.tics_per_frame = 3
     out = args.output.resolve()
     out.mkdir(parents=True, exist_ok=True)
 
@@ -160,6 +180,8 @@ def main() -> int:
         command = [args.engine, "--whx", args.whx, "--demo", args.demo, "--frames",
                    args.first + args.count, "--lockstep", "--dump-stream", record / "stream"]
         command += ["--world-dump", record / "world"]
+        if args.tics_per_frame:
+            command += ["--tics-per-frame", args.tics_per_frame]
         # Baseline: identical recording format, every actor streamed.
         run(command + (["--world-off"] if args.baseline else []), out / "engine.log")
     sequence = out / "sequence"
@@ -208,8 +230,10 @@ def main() -> int:
                    FCPICO_CS1_MASK="0xf800", SDL_AUDIODRIVER="dummy",
                    FCPICO_WORLD_RENDER_TENTHS=str(round(args.render_beats * 10)),
                    FCPICO_WORLD_CONVERT_TENTHS=str(round(args.convert_beats * 10)),
+                   FCPICO_WORLD_SUBMIT_TENTHS=str(round(args.submit_beats * 10)),
                    FCPICO_WORLD_EARLY="1" if args.early else "0",
-                   FCPICO_WORLD_WAIT="1" if args.wait else "0")
+                   FCPICO_WORLD_WAIT="1" if args.wait else "0",
+                   FCPICO_WORLD_LOOSE="1" if args.loose else "0")
         if "DOTNET_ROOT" not in env and (Path.home() / ".dotnet/host/fxr").is_dir():
             env["DOTNET_ROOT"] = str(Path.home() / ".dotnet")
         run([staging / args.mesen.name, "--testRunner", HERE / "lua/world_runtime.lua", cosim,
@@ -221,7 +245,7 @@ def main() -> int:
 
     rgb = mesen_palette()
     shown, last = [], 0
-    failures, replay_artifacts = [], []
+    failures, replay_artifacts, loose_lags = [], [], []
     replay_dropped = {int(row[2]) for row in csv.reader((out / "world_log.csv").open())
                       if row[0] == "drop"}
     # Mesen's endFrame screenshot is the previously completed picture, so
@@ -244,10 +268,40 @@ def main() -> int:
             if np.array_equal(expected[:232], image[:232, :256]):
                 match = k
                 break
+        # Identical pictures (a still view with native actors) are ambiguous:
+        # prefer a following identical one whose generation the console shows.
+        if (match is not None and
+                world_mismatch(worlds[match], oam, chr_data, pal[16:32]) is not None):
+            for k in range(match + 1, min(args.count, match + 9)):
+                if world_mismatch(worlds[k], oam, chr_data, pal[16:32]) is not None:
+                    continue
+                expected = decode_with_sprites(streams[k], oam, chr_data, pal[16:32], attr,
+                                               pal[0:16], rgb)
+                if np.array_equal(expected[:232], image[:232, :256]):
+                    match = k
+                    break
         if match is None:
             failures.append({"ppu_frame": f, "reason": "no recorded picture explains the screenshot"})
             continue
         mismatch = world_mismatch(worlds[match], oam, chr_data, pal[16:32])
+        if mismatch is not None and args.loose:
+            # Sprites follow the picture when the transport catches up.
+            lag = next((d for d in range(1, 13) if match - d >= 0 and
+                        world_mismatch(worlds[match - d], oam, chr_data, pal[16:32]) is None),
+                       None)
+            if lag is not None:
+                loose_lags.append(lag)
+                mismatch = None
+            elif any(match - d >= 0 and world_mismatch(worlds[match - d], oam, chr_data,
+                                                         pal[16:32]) == "palette"
+                     for d in range(0, 13)):
+                # Skipped generations: the lockstep recording planned palettes
+                # for sprites that were never submitted (device plans against
+                # the submitted generation).
+                replay_artifacts.append({"ppu_frame": f, "frame": match})
+                mismatch = None
+        elif args.loose:
+            loose_lags.append(0)
         if mismatch == "palette" and replay_dropped & set(range(match + 1, match + 4)):
             # The host recording planned palettes in lockstep; after a dropped
             # frame the next plan assumed a picture the console never showed.
@@ -282,11 +336,19 @@ def main() -> int:
                      "fps": 60.0988 / float(np.mean(beats))}
               for name, beats in sorted(fps_by_scene.items())}
     report = {
+        "timing_model": {"render_beats": args.render_beats,
+                         "convert_beats": args.convert_beats,
+                         "submit_beats": args.submit_beats,
+                         "tics_per_frame": args.tics_per_frame or 1,
+                         "early": args.early, "wait": args.wait, "loose": args.loose,
+                         "hardware_measurement": False},
         "rom_sha256": hashlib.sha256(rom.read_bytes()).hexdigest(),
         "recorded_frames": args.count, "first_recorded": args.first,
         "captured_ppu_frames": len(shown) + len(failures), "failures": failures[:50],
         "failure_count": len(failures), "distinct_frames_shown": len(distinct),
         "replay_palette_artifacts": len(replay_artifacts),
+        "loose_sprite_lag_mean": float(np.mean(loose_lags)) if loose_lags else None,
+        "loose_sprite_lag_max": max(loose_lags) if loose_lags else None,
         "last_frame_shown": max(shown) if shown else None,
         "ppu_frames_per_recorded_frame": (len(shown) / len(distinct)) if distinct else None,
         "native_frames": len(used),

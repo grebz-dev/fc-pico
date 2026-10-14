@@ -37,10 +37,16 @@ static unsigned g_seq_next, g_seq_count;
  * publish. FCPICO_WORLD_EARLY=1 submits the world generation held when
  * conversion starts, as the device does. */
 static int g_seq_render_tenths, g_seq_convert_tenths;
+/* FCPICO_WORLD_SUBMIT_TENTHS: with FCPICO_WORLD_EARLY, the generation is
+ * ready this far into the render (device: at resolve); 0 = at frame end. */
+static int g_seq_submit_tenths;
 static bool g_seq_early;
 /* FCPICO_WORLD_WAIT=1: a finished frame waits for the back buffer instead of
  * being dropped (candidate device policy). */
 static bool g_seq_wait;
+/* FCPICO_WORLD_LOOSE=1: pictures publish ungated; a generation is submitted
+ * only when the scheduler is idle (candidate device policy, plan 14c). */
+static bool g_seq_loose;
 static int g_buffer_frame[2] = {-1, -1};
 static fcworld_t g_world;
 static FILE *g_world_log;
@@ -127,49 +133,94 @@ static bool load_world_frame(unsigned n, fcworld_frame_t *frame) {
 }
 
 /* Publish the next recorded frame when its picture can be staged. */
+static bool load_sequence_frame(unsigned n, fcworld_frame_t *frame) {
+    char path[1024];
+    return sequence_path(path, sizeof path, "stream", n, "bin") &&
+           read_file(path, g_stream, sizeof g_stream, &g_stream_length) &&
+           g_stream_length == VRAM_BUF_BYTES_V4 && load_world_frame(n, frame);
+}
+
 static void publish_sequence(void) {
     fcbus_core_t *core = fcbus_host_core();
     static fcworld_frame_t frame;
     static uint8_t gen;
-    static bool converting;
+    static bool converting, submitted, loaded;
     static int remaining;   /* tenths of a heartbeat left in this engine step */
+    static int elapsed;     /* tenths into the current render */
+    static int waited;      /* tenths spent waiting for the back buffer */
+    if (g_seq_next >= g_seq_count) return;
     remaining -= 10;
+    if (!converting) elapsed += 10;
+    /* Device: the generation is built at resolve, part-way through the
+     * render, and submitted held when the scheduler is idle. */
+    if (g_seq_early && !converting && !submitted && g_seq_submit_tenths > 0 &&
+        elapsed >= g_seq_submit_tenths && fcworld_idle(&g_world)) {
+        if (!load_sequence_frame(g_seq_next, &frame)) {
+            g_seq_count = g_seq_next;
+            return;
+        }
+        loaded = true;
+        gen = fcworld_submit_held(&g_world, &frame);
+        submitted = true;
+    }
     if (remaining > 0) return;
     if (!converting) {
         /* The engine finished rendering recorded frame g_seq_next. */
-        if (g_seq_next >= g_seq_count) return;
-        if (!fcbus_core_back_is_free(core) || !fcworld_idle(&g_world)) {
-            if (g_seq_render_tenths == 0 || g_seq_wait) {   /* lockstep or waiting engine */
+        bool free = fcbus_core_back_is_free(core) &&
+                    (g_seq_loose || submitted || fcworld_idle(&g_world));
+        if (!free) {
+            /* Device: wait up to 50 ms (3 heartbeats) while a world generation
+             * holds the buffer, then drop. */
+            bool world_busy = !fcworld_idle(&g_world);
+            if (g_seq_render_tenths == 0 || (g_seq_wait && world_busy && waited < 30)) {
+                waited += 10;
                 remaining = 0;
                 return;
             }
-            /* Device: both buffers busy, the rendered frame is discarded. */
+            waited = 0;
+            if (submitted) fcworld_release(&g_world);   /* commits without a picture */
             if (g_world_log) fprintf(g_world_log, "drop,%u,%u\n", core->stats.frames, g_seq_next);
             g_seq_next++;
+            submitted = loaded = false;
+            elapsed = 0;
             remaining += g_seq_render_tenths;
             return;
         }
-        char path[1024];
-        if (!sequence_path(path, sizeof path, "stream", g_seq_next, "bin") ||
-            !read_file(path, g_stream, sizeof g_stream, &g_stream_length) ||
-            g_stream_length != VRAM_BUF_BYTES_V4 || !load_world_frame(g_seq_next, &frame)) {
+        waited = 0;
+        if (!loaded && !load_sequence_frame(g_seq_next, &frame)) {
             g_seq_count = g_seq_next;  /* end of the recording */
             return;
         }
-        /* The device submits held before converting the picture. */
-        if (g_seq_early) gen = fcworld_submit_held(&g_world, &frame);
+        loaded = true;
+        /* Otherwise the device submits held when conversion starts. */
+        if (g_seq_early && !submitted && (!g_seq_loose || fcworld_idle(&g_world))) {
+            gen = fcworld_submit_held(&g_world, &frame);
+            submitted = true;
+        }
         converting = true;
         remaining += g_seq_convert_tenths;
         if (remaining > 0) return;
     }
     converting = false;
     remaining += g_seq_render_tenths;
+    elapsed = 0;
     const uint8_t *mailbox = g_stream + VRAM_MAILBOX_OFF_V4;
     memcpy(fcbus_core_stream_back(core), g_stream, g_stream_length);
     fcbus_core_palette(core, mailbox + MBX_PAL);
     fcbus_core_attr_table(core, mailbox + MBX_ATTR);
     (void)fcbus_core_ui_snapshot(core, mailbox + MBX_UI);
-    if (!g_seq_early) gen = fcworld_submit(&g_world, &frame);
+    if (g_seq_loose) {
+        if (!submitted && fcworld_idle(&g_world)) gen = fcworld_submit(&g_world, &frame);
+        submitted = loaded = false;
+        fcworld_release(&g_world);
+        fcbus_core_publish(core);
+        g_buffer_frame[1 - core->front] = (int)g_seq_next;
+        if (g_world_log) fprintf(g_world_log, "publish,%u,%u,%u\n", core->stats.frames, g_seq_next, 0u);
+        g_seq_next++;
+        return;
+    }
+    if (!submitted) gen = fcworld_submit(&g_world, &frame);
+    submitted = loaded = false;
     if (gen == 0xFF) {
         g_world_errors++;
         gen = g_world.shown_gen;
@@ -292,6 +343,10 @@ bool fcpico_cart_init(const uint8_t *prg, size_t prg_len) {
         const char *convert = getenv("FCPICO_WORLD_CONVERT_TENTHS");
         g_seq_render_tenths = render ? (int)strtol(render, NULL, 10) : 0;
         g_seq_convert_tenths = convert ? (int)strtol(convert, NULL, 10) : 0;
+        const char *submit = getenv("FCPICO_WORLD_SUBMIT_TENTHS");
+        g_seq_submit_tenths = submit ? (int)strtol(submit, NULL, 10) : 0;
+        const char *loose = getenv("FCPICO_WORLD_LOOSE");
+        g_seq_loose = loose != NULL && loose[0] == '1';
         const char *wait = getenv("FCPICO_WORLD_WAIT");
         g_seq_wait = wait != NULL && wait[0] == '1';
         const char *early = getenv("FCPICO_WORLD_EARLY");

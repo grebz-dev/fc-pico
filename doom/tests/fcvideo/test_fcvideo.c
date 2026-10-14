@@ -86,6 +86,8 @@ static void test_native_status_gray_palette(void) {
     /* World pixels are cheapest in subpalette 3; the HUD must not reserve it. */
     memset(err, 100, sizeof(err));
     for (int index = 0; index < 256; index++) err[3 * 256 + index] = 0;
+    fcvideo_tables_t tables = {.err = err, .lut = lut};
+    fcvideo_init(&video, &tables);   /* error tables are derived at init */
     fcvideo_frame_begin(&video);
     fcvideo_set_native_status(&video, true);
     fcvideo_blank_status(&video);
@@ -185,6 +187,24 @@ static void test_episode_menu_uses_full_width_font_without_sprite_rows(void) {
     CHECK_EQ((attributes[(5 / 2) * 8 + 2 / 2] >> (2 * ((2 & 1) + 2 * (5 & 1)))) & 3, FCVIDEO_HUD_PALETTE);
 }
 
+/* The device builds the 16 KB LUT inside the converter's frame buffer. */
+static void test_lut_may_alias_frame_buffer(void) {
+    static fcvideo_t aliased;
+    static uint8_t playpal[768], first[VRAM_BUF_BYTES_V2], palette[MBX_PAL_LEN];
+    for (int i = 0; i < 768; ++i) playpal[i] = (uint8_t)(i * 37 + i / 3);
+    for (size_t i = 0; i < sizeof source; ++i) source[i] = (uint8_t)(i * 7 + i / 320);
+    const fcvideo_preset_t *preset = &fcvideo_presets[FCVIDEO_DEFAULT_PRESET];
+    fcvideo_build_tables(playpal, preset, err, lut, palette);
+    fcvideo_tables_t tables = {.err = err, .lut = lut};
+    fcvideo_init(&video, &tables);
+    fcvideo_convert(&video, source, first, attr, true);
+    fcvideo_build_tables(playpal, preset, err, aliased.frame, palette);
+    tables.lut = aliased.frame;
+    fcvideo_init(&aliased, &tables);
+    fcvideo_convert(&aliased, source, stream, attr, true);
+    CHECK_MEM(stream, first, sizeof stream);
+}
+
 int main(void) {
     test_solid_frame_and_linear_stride();
     test_vertical_source_rows();
@@ -192,5 +212,6 @@ int main(void) {
     test_native_status_uses_live_values_and_max_ammo();
     test_native_text_compaction();
     test_episode_menu_uses_full_width_font_without_sprite_rows();
+    test_lut_may_alias_frame_buffer();
     return ctest_lite_result();
 }

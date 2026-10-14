@@ -191,6 +191,20 @@ static uint32_t quantise_scale(uint32_t v) {
     return (uint32_t)(((uint64_t)octave96[i * stride] << e) >> 16);
 }
 
+uint32_t fcworld_scale_step(uint32_t iscale, uint32_t previous) {
+    uint32_t q = quantise_scale(iscale);
+    if (previous == 0 || q == previous) return q;
+    /* Keep the previous step while iscale stays within one step of it. */
+    uint64_t step = octave96[96 / FCWORLD_SCALE_STEPS];
+    uint64_t a = (uint64_t)iscale << 16, b = (uint64_t)previous << 16;
+    if (a < previous * step && (uint64_t)iscale * step > b) return previous;
+    return q;
+}
+
+bool fcworld_actor_fits(unsigned tiles, bool was_native) {
+    return tiles <= (was_native ? FCWORLD_ACTOR_STAY_TILES : FCWORLD_ACTOR_ENTER_TILES);
+}
+
 /* Native-space sampling relative to the patch origin. Texels depend only on
  * (patch, scale step, flip), never on screen position, so moving actors keep
  * their tiles and the scheduler finds them resident. */
@@ -205,16 +219,17 @@ typedef struct {
 static bool layout(const fcworld_projection_t *p, layout_t *l) {
     if (p->iscale == 0 || p->xiscale == 0 || p->patch.width == 0 || p->patch.height == 0)
         return false;
-    uint32_t q = quantise_scale(p->iscale);
+    uint32_t q = p->scale_step ? p->scale_step : quantise_scale(p->iscale);
     l->step_x = (int64_t)q * 5 / 4;
     l->step_y = (int64_t)q * 25 / 28;
     l->flip = p->xiscale < 0;
-    l->anchor_u = (int64_t)p->patch.left << 16;
-    l->anchor_v = (int64_t)p->patch.top << 16;
-    int64_t xa = ((int64_t)(p->x1 + p->view_x) << 16) +
-                 ((l->anchor_u - p->startfrac) << 16) / p->xiscale;
-    int64_t ya = ((int64_t)(p->centery + p->view_y) << 16) +
-                 ((l->anchor_v - p->texturemid) << 16) / (int64_t)p->iscale;
+    l->anchor_u = (int64_t)p->patch.left * 65536;
+    l->anchor_v = (int64_t)p->patch.top * 65536;
+    /* Origins and clipped/flipped texture offsets can be negative. */
+    int64_t xa = (int64_t)(p->x1 + p->view_x) * 65536 +
+                 (l->anchor_u - p->startfrac) * 65536 / p->xiscale;
+    int64_t ya = (int64_t)(p->centery + p->view_y) * 65536 +
+                 (l->anchor_v - p->texturemid) * 65536 / (int64_t)p->iscale;
     l->ax = (int)floor_div(xa * 4 / 5 + 32768, 65536);
     l->ay = FCWORLD_TOP_MARGIN + (int)floor_div(ya * 224 / 200 + 32768, 65536);
     int64_t w = (int64_t)p->patch.width << 16, h = (int64_t)p->patch.height << 16;
@@ -282,17 +297,27 @@ bool fcworld_raster_actor(fcworld_raster_t *raster, const fcworld_projection_t *
         return false;
     }
     uint8_t *out = raster->pixels + raster->used;
+    /* A column samples the same texel in every row. Keep the 64-bit layout
+     * arithmetic outside the pixel loop; 255 is outside every u8 patch width. */
+    uint8_t columns[256];
+    for (int col = 0; col < box->w; ++col) {
+        int tx = layout_column(&l, box->x + col);
+        columns[col] = tx >= 0 && tx < p->patch.width ? (uint8_t)tx : 255;
+    }
+    bool occluded = false;
     for (int row = 0; row < box->h; ++row) {
         int vy = fcworld_native_to_source_y(box->y + row) - p->view_y;
         int ty = layout_row(&l, box->y + row);
         for (int col = 0; col < box->w; ++col) {
-            int tx = layout_column(&l, box->x + col);
+            int tx = columns[col];
             uint8_t texel = 0;
             if (ty >= 0 && ty < p->patch.height && tx >= 0 && tx < p->patch.width) {
                 texel = fcworld_patch_texel(&p->patch, tx, ty);
                 if (texel != 0 && hidden != NULL &&
-                    hidden(context, fcworld_native_to_source_x(box->x + col) - p->view_x, vy))
+                    hidden(context, fcworld_native_to_source_x(box->x + col) - p->view_x, vy)) {
                     texel = 0;
+                    occluded = true;
+                }
             }
             out[row * box->w + col] = texel;
         }
@@ -300,6 +325,10 @@ bool fcworld_raster_actor(fcworld_raster_t *raster, const fcworld_projection_t *
     raster->actor[raster->count].box = *box;
     raster->actor[raster->count].family = p->patch.family;
     raster->actor[raster->count].offset = raster->used;
+    raster->actor[raster->count].id = 0;
+    raster->actor[raster->count].occluded = occluded;
+    raster->actor[raster->count].ax = (int16_t)l.ax;
+    raster->actor[raster->count].ay = (int16_t)l.ay;
     raster->count++;
     raster->used = (uint16_t)(raster->used + area);
     return true;
@@ -348,6 +377,7 @@ void fcworld_frame_clear(fcworld_frame_t *frame, const uint8_t palettes[MBX_WORL
     frame->tile_count = 0;
     frame->oam_count = 0;
     frame->peak_line = 0;
+    frame->actor_count = 0;
     memcpy(frame->palettes, palettes, MBX_WORLD_PAL_LEN);
 }
 
@@ -425,39 +455,47 @@ bool fcworld_frame_build(fcworld_frame_t *frame, const fcworld_raster_t *raster,
     fcworld_frame_clear(frame, palettes);
     const uint8_t *loaded[4];
     loaded_palettes(palettes, loaded);
+    int cached_family = -1;
+    uint16_t planes[4][16], cost[4][16];
+    bool allowed[4] = {true, true, true, true};
     for (unsigned a = 0; a < raster->count; ++a) {
         const fcworld_box_t *box = &raster->actor[a].box;
         const uint8_t *pixels = raster->pixels + raster->actor[a].offset;
-        fcworld_family_t f;
-        if (!fcworld_atlas_family(atlas, raster->actor[a].family, &f)) goto overflow;
-        /* Per loaded palette: index and weighted cost of each local colour. */
-        uint8_t index[4][16];
-        uint16_t cost[4][16];
-        bool allowed[4] = {true, true, true, true};
-        if (f.flags & FCWORLD_FAMILY_EXCLUSIVE) {
-            bool any = false;
-            for (int p = 0; p < 4; ++p) {
-                allowed[p] = memcmp(loaded[p], f.candidates, 3) == 0 ||
-                             memcmp(loaded[p], f.candidates + 3, 3) == 0;
-                any = any || allowed[p];
-            }
-            if (!any) for (int p = 0; p < 4; ++p) allowed[p] = true;
-        }
-        for (int p = 0; p < 4; ++p) {
-            index[p][0] = 0;
-            cost[p][0] = 0;
-            for (unsigned v = 1; v < 16; ++v) {
-                unsigned row = (v <= f.count ? v : 1) - 1;
-                const uint8_t *sel = f.select + row * 64, *map = f.map + row * 64;
-                uint8_t best_sel = 255, best_map = 255, k = 0;
-                for (uint8_t c = 0; c < 3; ++c) {
-                    if (sel[loaded[p][c]] < best_sel) best_sel = sel[loaded[p][c]];
-                    if (map[loaded[p][c]] < best_map) { best_map = map[loaded[p][c]]; k = c; }
+        /* Per loaded palette: both NES bitplanes at column zero, and weighted
+         * cost of each local colour. Consecutive actors of the same family
+         * share these tables; loaded palettes stay fixed for the frame. */
+        if (cached_family != raster->actor[a].family) {
+            fcworld_family_t f;
+            if (!fcworld_atlas_family(atlas, raster->actor[a].family, &f)) goto overflow;
+            cached_family = raster->actor[a].family;
+            for (int p = 0; p < 4; ++p) allowed[p] = true;
+            if (f.flags & FCWORLD_FAMILY_EXCLUSIVE) {
+                bool any = false;
+                for (int p = 0; p < 4; ++p) {
+                    allowed[p] = memcmp(loaded[p], f.candidates, 3) == 0 ||
+                                 memcmp(loaded[p], f.candidates + 3, 3) == 0;
+                    any = any || allowed[p];
                 }
-                index[p][v] = (uint8_t)(k + 1);
-                cost[p][v] = (uint16_t)(f.weight[v] * best_sel);
+                if (!any) for (int p = 0; p < 4; ++p) allowed[p] = true;
+            }
+            for (int p = 0; p < 4; ++p) {
+                planes[p][0] = 0;
+                cost[p][0] = 0;
+                for (unsigned v = 1; v < 16; ++v) {
+                    unsigned row = (v <= f.count ? v : 1) - 1;
+                    const uint8_t *sel = f.select + row * 64, *map = f.map + row * 64;
+                    uint8_t best_sel = 255, best_map = 255, k = 0;
+                    for (uint8_t c = 0; c < 3; ++c) {
+                        if (sel[loaded[p][c]] < best_sel) best_sel = sel[loaded[p][c]];
+                        if (map[loaded[p][c]] < best_map) { best_map = map[loaded[p][c]]; k = c; }
+                    }
+                    unsigned colour = k + 1;
+                    planes[p][v] = (uint16_t)(((colour & 1) << 7) | ((colour & 2) << 14));
+                    cost[p][v] = (uint16_t)(f.weight[v] * best_sel);
+                }
             }
         }
+        uint8_t first_entry = frame->oam_count;
         for (int ty = 0; ty < box->h; ty += 8) {
             for (int tx = 0; tx < box->w; tx += 8) {
                 int w = box->w - tx < 8 ? box->w - tx : 8;
@@ -468,7 +506,10 @@ bool fcworld_frame_build(fcworld_frame_t *frame, const fcworld_raster_t *raster,
                     for (int x = 0; x < w; ++x) {
                         uint8_t v = pixels[(ty + y) * box->w + tx + x];
                         empty = empty && v == 0;
-                        for (int p = 0; p < 4; ++p) errors[p] += cost[p][v];
+                        errors[0] += cost[0][v];
+                        errors[1] += cost[1][v];
+                        errors[2] += cost[2][v];
+                        errors[3] += cost[3][v];
                     }
                 }
                 if (empty) continue;
@@ -476,15 +517,15 @@ bool fcworld_frame_build(fcworld_frame_t *frame, const fcworld_raster_t *raster,
                 for (int p = 0; p < 4; ++p) {
                     if (allowed[p] && (chosen < 0 || errors[p] < errors[chosen])) chosen = p;
                 }
-                uint8_t block[64];
-                for (int y = 0; y < 8; ++y) {
-                    for (int x = 0; x < 8; ++x) {
-                        block[y * 8 + x] = (y < h && x < w) ?
-                            index[chosen][pixels[(ty + y) * box->w + tx + x]] : 0;
-                    }
+                uint8_t tile[16] = {0};
+                for (int y = 0; y < h; ++y) {
+                    const uint8_t *row = pixels + (ty + y) * box->w + tx;
+                    uint16_t packed = 0;
+                    for (int x = 0; x < w; ++x)
+                        packed |= planes[chosen][row[x]] >> x;
+                    tile[y] = (uint8_t)packed;
+                    tile[8 + y] = (uint8_t)(packed >> 8);
                 }
-                uint8_t tile[16];
-                fcworld_encode_tile(tile, block, 8, 8, 8);
                 int slot = -1, flip = 0;
                 for (int t = 0; t < frame->tile_count && slot < 0; ++t) {
                     int m = flip_match(frame->tiles[t], tile);
@@ -508,6 +549,16 @@ bool fcworld_frame_build(fcworld_frame_t *frame, const fcworld_raster_t *raster,
                 entry[3] = (uint8_t)x;
             }
         }
+        if (frame->oam_count > first_entry) {
+            unsigned n = frame->actor_count++;
+            frame->actor[n].id = raster->actor[a].id;
+            frame->actor[n].ax = raster->actor[a].ax;
+            frame->actor[n].ay = raster->actor[a].ay;
+            frame->actor[n].occluded = raster->actor[a].occluded;
+            frame->actor[n].first = first_entry;
+            frame->actor[n].count = (uint8_t)(frame->oam_count - first_entry);
+            frame->actor[n].stale = 0;
+        }
     }
     return true;
 overflow:
@@ -518,6 +569,153 @@ overflow:
 /* ------------------------------------------------------------------------ */
 /* Scheduler                                                                  */
 /* ------------------------------------------------------------------------ */
+static int find_tile(const fcworld_frame_t *frame, const uint8_t tile[16], int *flip) {
+    for (int t = 0; t < frame->tile_count; ++t) {
+        int m = flip_match(frame->tiles[t], tile);
+        if (m >= 0) {
+            *flip = m;
+            return t;
+        }
+    }
+    return -1;
+}
+
+static bool palettes_kept(const fcworld_frame_t *frame, const fcworld_frame_t *previous,
+                          unsigned first, unsigned count) {
+    for (unsigned n = first; n < first + count; ++n) {
+        unsigned p = previous->oam[n][2] & 3u;
+        if (p == 0 && memcmp(frame->palettes, previous->palettes, 3) != 0) return false;
+        if (p == 2 && memcmp(frame->palettes + 3, previous->palettes + 3, 3) != 0) return false;
+    }
+    return true;
+}
+
+/* Append one actor's entries from `source` moved by (dx, dy). False (and
+ * `out` unchanged) if its tiles do not fit. */
+static bool append_actor(fcworld_frame_t *out, const fcworld_frame_t *source,
+                         unsigned first, unsigned count, int dx, int dy) {
+    uint8_t index[WORLD_OAM_ENTRIES], flips[WORLD_OAM_ENTRIES];
+    uint8_t added = 0;
+    for (unsigned n = 0; n < count; ++n) {
+        const uint8_t *tile = source->tiles[source->oam[first + n][1]];
+        int flip = 0;
+        int t = find_tile(out, tile, &flip);
+        if (t < 0) {
+            /* also look among tiles this actor already added */
+            for (int k = 0; k < added && t < 0; ++k) {
+                int m = flip_match(out->tiles[out->tile_count + k], tile);
+                if (m >= 0) { t = out->tile_count + k; flip = m; }
+            }
+        }
+        if (t < 0) {
+            if (out->tile_count + added >= FCWORLD_MAX_TILES) return false;
+            t = out->tile_count + added++;
+            memcpy(out->tiles[t], tile, 16);
+            flip = 0;
+        }
+        index[n] = (uint8_t)t;
+        flips[n] = (uint8_t)flip;
+    }
+    if (out->oam_count + count > WORLD_OAM_ENTRIES) return false;
+    out->tile_count = (uint8_t)(out->tile_count + added);
+    for (unsigned n = 0; n < count; ++n) {
+        const uint8_t *e = source->oam[first + n];
+        uint8_t *o = out->oam[out->oam_count++];
+        o[0] = (uint8_t)(e[0] + dy);
+        o[1] = index[n];
+        o[2] = (uint8_t)(e[2] ^ flips[n]);
+        o[3] = (uint8_t)(e[3] + dx);
+    }
+    return true;
+}
+
+static int lowest_line(const fcworld_frame_t *frame) {
+    int bottom = FCWORLD_STATUS_START - 1;
+    for (int n = 0; n < frame->oam_count; ++n)
+        if (frame->oam[n][0] + 8 > bottom) bottom = frame->oam[n][0] + 8;
+    return bottom;
+}
+
+unsigned fcworld_frame_limit(fcworld_frame_t *frame, const fcworld_frame_t *previous,
+                             unsigned budget) {
+    if (previous == NULL || previous->actor_count == 0 || frame->actor_count == 0) return 0;
+    static fcworld_frame_t out;
+    fcworld_frame_clear(&out, frame->palettes);
+    uint8_t lines[240];
+    memset(lines, 0, sizeof lines);
+    for (int n = 0; n < frame->oam_count; ++n)
+        for (int line = frame->oam[n][0] + 1; line < frame->oam[n][0] + 9 && line < 240; ++line)
+            lines[line]++;
+    int bottom = lowest_line(frame);
+    unsigned fresh_total = 0, held = 0;
+    for (unsigned a = 0; a < frame->actor_count; ++a) {
+        const unsigned first = frame->actor[a].first, count = frame->actor[a].count;
+        /* Tiles this actor would upload: absent from the shown generation. */
+        unsigned fresh = 0;
+        for (unsigned n = first; n < first + count; ++n) {
+            int flip;
+            const uint8_t *tile = frame->tiles[frame->oam[n][1]];
+            if (find_tile(previous, tile, &flip) >= 0) continue;
+            bool seen = false;
+            for (unsigned k = first; k < n && !seen; ++k)
+                seen = flip_match(frame->tiles[frame->oam[k][1]], tile) >= 0;
+            if (!seen) fresh++;
+        }
+        int reuse = -1;
+        if (fresh > 0 && fresh_total + fresh > budget && frame->actor[a].id != 0 &&
+            !frame->actor[a].occluded) {
+            for (unsigned b = 0; b < previous->actor_count && reuse < 0; ++b) {
+                if (previous->actor[b].id == frame->actor[a].id) reuse = (int)b;
+            }
+        }
+        int dx = 0, dy = 0;
+        if (reuse >= 0) {
+            unsigned pf = previous->actor[reuse].first, pc = previous->actor[reuse].count;
+            dx = frame->actor[a].ax - previous->actor[reuse].ax;
+            dy = frame->actor[a].ay - previous->actor[reuse].ay;
+            bool ok = previous->actor[reuse].stale == 0 && !previous->actor[reuse].occluded &&
+                      palettes_kept(frame, previous, pf, pc);
+            /* Stay on screen and inside the per-line sprite limit. */
+            uint8_t trial[240];
+            memcpy(trial, lines, sizeof trial);
+            for (unsigned n = first; ok && n < first + count; ++n)
+                for (int line = frame->oam[n][0] + 1; line < frame->oam[n][0] + 9 && line < 240; ++line)
+                    trial[line]--;
+            for (unsigned n = pf; ok && n < pf + pc; ++n) {
+                int y = previous->oam[n][0] + dy, x = previous->oam[n][3] + dx;
+                if (x < 0 || x > 248 || y + 1 < FCWORLD_TOP_MARGIN || y + 8 > bottom) ok = false;
+                for (int line = y + 1; ok && line < y + 9; ++line)
+                    if (++trial[line] > FCWORLD_MAX_LINE_SPRITES) ok = false;
+            }
+            uint8_t mark_tiles = out.tile_count, mark_oam = out.oam_count;
+            if (ok && append_actor(&out, previous, pf, pc, dx, dy)) {
+                memcpy(lines, trial, sizeof lines);
+                unsigned n = out.actor_count++;
+                out.actor[n] = frame->actor[a];
+                out.actor[n].first = mark_oam;
+                out.actor[n].count = (uint8_t)(out.oam_count - mark_oam);
+                out.actor[n].stale = (uint8_t)(previous->actor[reuse].stale + 1);
+                held++;
+                continue;
+            }
+            out.tile_count = mark_tiles;
+            out.oam_count = mark_oam;
+        }
+        uint8_t mark_oam = out.oam_count;
+        if (!append_actor(&out, frame, first, count, 0, 0)) return 0;  /* frame unchanged */
+        unsigned n = out.actor_count++;
+        out.actor[n] = frame->actor[a];
+        out.actor[n].first = mark_oam;
+        fresh_total += fresh;
+    }
+    if (held == 0) return 0;
+    uint8_t peak = 0;
+    for (int line = 0; line < 240; ++line) if (lines[line] > peak) peak = lines[line];
+    out.peak_line = peak;
+    *frame = out;
+    return held;
+}
+
 /* Non-const: .data is RAM, which the IRQ-time reset path may read. */
 static uint8_t pool_tiles[FCWORLD_POOL_TILES] = FCWORLD_TILE_POOL_INIT;
 static uint8_t menu_palettes[MBX_WORLD_PAL_LEN] = FCWORLD_MENU_PALETTES_INIT;
@@ -528,7 +726,15 @@ void FCWORLD_RAM(fcworld_reset)(fcworld_t *world) {
     copy(world->shown_pal, menu_palettes, sizeof menu_palettes);
 }
 
-bool fcworld_idle(const fcworld_t *world) { return world->stage == FCWORLD_IDLE; }
+bool fcworld_idle(const fcworld_t *world) {
+    return __atomic_load_n(&world->stage, __ATOMIC_ACQUIRE) == FCWORLD_IDLE;
+}
+
+bool fcworld_reserve(fcworld_t *world) {
+    if (!fcworld_idle(world)) return false;
+    __atomic_store_n(&world->stage, FCWORLD_PREPARING, __ATOMIC_RELEASE);
+    return true;
+}
 
 bool fcworld_quiescent(const fcworld_t *world, const uint8_t palettes[MBX_WORLD_PAL_LEN]) {
     return world->stage == FCWORLD_IDLE && world->shown_gen == 0 &&
@@ -564,8 +770,10 @@ static uint8_t next_generation(fcworld_t *world) {
     return gen;
 }
 
-uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame) {
-    if (world->stage != FCWORLD_IDLE) return 0xFF;
+static uint8_t submit(fcworld_t *world, const fcworld_frame_t *frame, bool held) {
+    if (world->stage != FCWORLD_PREPARING && !fcworld_reserve(world)) return 0xFF;
+    /* Publish hold before stage, including the all-cached commit-only path. */
+    world->hold_commit = held;
     world->stats.submits++;
     world->clock++;
     for (int i = 0; i < FCWORLD_POOL_TILES; ++i) world->slots[i].target = false;
@@ -578,12 +786,14 @@ uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame) {
     if (frame->oam_count == 0) {
         if (world->shown_gen == 0 && same_pal && world->shown_known) {
             world->stats.unchanged++;
+            world->hold_commit = false;
+            __atomic_store_n(&world->stage, FCWORLD_IDLE, __ATOMIC_RELEASE);
             return 0;
         }
         world->clear = true;
         world->target_gen = 0;
-        world->stage = FCWORLD_OAM;
         world->stats.clears++;
+        __atomic_store_n(&world->stage, FCWORLD_OAM, __ATOMIC_RELEASE);
         return 0;
     }
 
@@ -596,7 +806,11 @@ uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame) {
             world->stats.cache_hits++;
         } else {
             slot = allocate_slot(world);
-            if (slot < 0) return 0xFF;
+            if (slot < 0) {
+                world->hold_commit = false;
+                __atomic_store_n(&world->stage, FCWORLD_IDLE, __ATOMIC_RELEASE);
+                return 0xFF;
+            }
             fcworld_slot_t *s = &world->slots[slot];
             s->valid = false;
             memcpy(s->data, frame->tiles[t], 16);
@@ -625,19 +839,24 @@ uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame) {
         memcmp(world->oam, world->shown_oam, WORLD_OAM_ENTRIES * 4) == 0) {
         world->stats.unchanged++;
         for (int i = 0; i < FCWORLD_POOL_TILES; ++i) world->slots[i].target = false;
+        world->hold_commit = false;
+        __atomic_store_n(&world->stage, FCWORLD_IDLE, __ATOMIC_RELEASE);
         return world->shown_gen;
     }
     world->clear = false;
     world->target_gen = next_generation(world);
-    world->stage = world->upload_count ? FCWORLD_CHR : FCWORLD_OAM;
     world->stats.generations++;
+    __atomic_store_n(&world->stage, world->upload_count ? FCWORLD_CHR : FCWORLD_OAM,
+                     __ATOMIC_RELEASE);
     return world->target_gen;
 }
 
+uint8_t fcworld_submit(fcworld_t *world, const fcworld_frame_t *frame) {
+    return submit(world, frame, false);
+}
+
 uint8_t fcworld_submit_held(fcworld_t *world, const fcworld_frame_t *frame) {
-    uint8_t gen = fcworld_submit(world, frame);
-    if (gen != 0xFF) world->hold_commit = world->stage != FCWORLD_IDLE;
-    return gen;
+    return submit(world, frame, true);
 }
 
 void fcworld_release(fcworld_t *world) { world->hold_commit = false; }
@@ -676,11 +895,11 @@ static void FCWORLD_RAM(finalize_generation)(fcworld_t *world) {
         world->slots[i].shown = !world->clear && world->slots[i].target;
         world->slots[i].target = false;
     }
-    world->stage = FCWORLD_IDLE;
     world->stats.shown++;
     if (world->busy_heartbeats > world->stats.busy_heartbeats_max) {
         world->stats.busy_heartbeats_max = world->busy_heartbeats;
     }
+    __atomic_store_n(&world->stage, FCWORLD_IDLE, __ATOMIC_RELEASE);
 }
 
 static bool FCWORLD_RAM(half_needed)(const fcworld_t *world, int half) {
@@ -750,6 +969,7 @@ static void FCWORLD_RAM(stall)(fcworld_t *world) {
 }
 
 void FCWORLD_RAM(fcworld_heartbeat)(fcworld_t *world, uint8_t *mailbox, uint8_t pad2) {
+    if (__atomic_load_n(&world->stage, __ATOMIC_ACQUIRE) == FCWORLD_PREPARING) return;
     uint8_t ack = (uint8_t)(pad2 & WORLD_SEQ_MASK);
     uint8_t shown = (uint8_t)((pad2 >> WORLD_HB_GEN_SHIFT) & WORLD_GEN_MASK);
     if (world->outstanding != 0 && ack == world->outstanding) {

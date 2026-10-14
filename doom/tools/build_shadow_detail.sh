@@ -94,7 +94,8 @@ cmake -S "$repo/doom" -B "$build/device" -G Ninja \
     -DPICO_SDK_PATH="$PICO_SDK_PATH" -Dpicotool_DIR="$picotool_dir" \
     -DFCPICO_HOST_ONLY=OFF -DFCPICO_BUILD_ENGINE=ON -DFCPICO_DIAGNOSTIC_NO_ENGINE=OFF \
     -DFCPICO_DIAGNOSTIC_ENGINE_DELAY=ON -DPICO_NO_PICOTOOL=OFF -DPICO_NO_UF2=OFF \
-    -DFCPICO_AUDIO_WAD="$audio_wad" -DFCPICO_WORLD_WAD="$world_wad" "${python_args[@]}"
+    -DFCPICO_AUDIO_WAD="$audio_wad" -DFCPICO_WORLD_WAD="$world_wad" "${python_args[@]}" \
+    ${FCPICO_EXTRA_CMAKE_ARGS:-}
 cmake --build "$build/device" --target doom_tiny_fcpico -j "$jobs"
 firmware=$build/device/rp2040-doom/src
 python3 "$repo/doom/tools/flash_layout_check.py" "$firmware/fcpico_doom.elf"

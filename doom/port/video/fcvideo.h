@@ -34,14 +34,21 @@ typedef struct {
 } fcvideo_tables_t;
 
 typedef struct {
-    fcvideo_tables_t tables;
+    fcvideo_tables_t tables;   /* err/lut are read only by fcvideo_init */
     uint8_t frame[FCVIDEO_FRAME_BYTES + 16]; /* prefetch past line 239 is zero */
+    /* Derived by fcvideo_init. planes[p][y & 3][index]: for x & 3 == k, bit
+     * 3 - k is the low-plane bit and bit 7 - k the high-plane bit, so four
+     * pixels combine with masks only. err_pair[i][index] = err[2i] | err[2i+1] << 16. */
+    uint8_t planes[4 * 4 * 256];
+    uint32_t err_pair[2][256];
     uint8_t previous_attr[MBX_ATTR_LEN];
     bool have_previous;
     bool native_status;
     fcui_status_t status;
 } fcvideo_t;
 
+/* Reads tables->err and tables->lut once; lut may alias video->frame
+ * (FCVIDEO_LUT_BYTES of scratch). */
 void fcvideo_init(fcvideo_t *video, const fcvideo_tables_t *tables);
 size_t fcvideo_sizeof(void);
 /* Build immutable palette-0 tables once, outside the frame/ISR path. RGB is

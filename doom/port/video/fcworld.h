@@ -47,6 +47,11 @@ extern "C" {
 #define FCWORLD_MAX_TILES 26
 #define FCWORLD_MAX_ACTORS 16
 #define FCWORLD_MAX_LINE_SPRITES 8
+/* Upload cost, not just OAM capacity, limits useful native actor size. Keep
+ * an admitted actor through 16 bounding tiles; re-enter only at 12 or fewer. */
+#define FCWORLD_ACTOR_ENTER_TILES 12
+#define FCWORLD_ACTOR_STAY_TILES 16
+bool fcworld_actor_fits(unsigned tiles, bool was_native);
 /** Native pixels one generation can rasterize: every admitted bounding box is
  *  counted in whole tiles against FCWORLD_MAX_TILES first. */
 #define FCWORLD_PIXEL_ARENA (FCWORLD_MAX_TILES * 64)
@@ -134,6 +139,7 @@ typedef struct {
     int16_t centery;
     int16_t view_x, view_y, view_width, view_height;
     fcworld_patch_t patch;
+    uint32_t scale_step;   /**< quantised iscale to sample at; 0 = quantise iscale */
 } fcworld_projection_t;
 
 typedef struct { int16_t x, y; uint8_t w, h; } fcworld_box_t;
@@ -156,6 +162,9 @@ typedef struct {
         fcworld_box_t box;
         uint8_t family;   /**< pixels are that family's local colours 0..15 */
         uint16_t offset;
+        uint32_t id;      /**< caller's actor identity across frames, 0 none */
+        bool occluded;    /**< some opaque texel was hidden by nearer geometry */
+        int16_t ax, ay;   /**< native column / line of the patch origin */
     } actor[FCWORLD_MAX_ACTORS];
     uint8_t pixels[FCWORLD_PIXEL_ARENA];
 } fcworld_raster_t;
@@ -176,6 +185,16 @@ typedef struct {
     uint8_t oam[WORLD_OAM_ENTRIES][4];
     uint8_t palettes[MBX_WORLD_PAL_LEN];
     uint8_t peak_line;
+    /** Actors in OAM order: identity, native patch origin, occlusion, first
+     *  entry and entry count; stale = generations in a row that reused older
+     *  tiles (fcworld_frame_limit). */
+    uint8_t actor_count;
+    struct {
+        uint32_t id;
+        int16_t ax, ay;
+        bool occluded;
+        uint8_t first, count, stale;
+    } actor[FCWORLD_MAX_ACTORS];
 } fcworld_frame_t;
 
 void fcworld_frame_clear(fcworld_frame_t *frame, const uint8_t palettes[MBX_WORLD_PAL_LEN]);
@@ -200,6 +219,19 @@ void fcworld_frame_state(const fcworld_frame_t *frame, fcworld_palette_state_t *
  *  tiles are omitted. False (frame left empty) if a capacity limit is exceeded. */
 bool fcworld_frame_build(fcworld_frame_t *frame, const fcworld_raster_t *raster,
                          const fcworld_atlas_t *atlas, const fcworld_palette_state_t *shown);
+/** Per-generation new-tile budget: count tiles absent from `previous` (the
+ *  generation on screen). Over the budget, an actor that was unoccluded in
+ *  both frames, kept its palette slots and is not already stale reuses its
+ *  `previous` tiles at its new position for one generation. Returns the
+ *  number of actors held stale. */
+unsigned fcworld_frame_limit(fcworld_frame_t *frame, const fcworld_frame_t *previous,
+                             unsigned budget);
+#ifndef FCWORLD_TILE_BUDGET
+#define FCWORLD_TILE_BUDGET 8
+#endif
+/** Scale step for an actor whose previous step was `previous` (0 = none):
+ *  keeps `previous` until the scale moves a full step away (hysteresis). */
+uint32_t fcworld_scale_step(uint32_t iscale, uint32_t previous);
 /** Encode an 8x8 block of 2-bit palette indices as one NES tile. */
 void fcworld_encode_tile(uint8_t tile[16], const uint8_t *pixels, int stride, int w, int h);
 
@@ -222,7 +254,8 @@ typedef struct {
     uint8_t data[16];
 } fcworld_slot_t;
 
-enum { FCWORLD_IDLE = 0, FCWORLD_CHR, FCWORLD_OAM, FCWORLD_WAIT_SHOWN };
+#define FCWORLD_HAS_RESERVATION 1
+enum { FCWORLD_IDLE = 0, FCWORLD_CHR, FCWORLD_OAM, FCWORLD_WAIT_SHOWN, FCWORLD_PREPARING };
 
 typedef struct {
     fcworld_slot_t slots[FCWORLD_POOL_TILES];
@@ -256,6 +289,10 @@ typedef struct {
 /** Fresh link: console OAM holds no world generation, pool contents unknown. */
 void fcworld_reset(fcworld_t *world);
 bool fcworld_idle(const fcworld_t *world);
+/** Single foreground producer: reserve an idle scheduler under the caller's
+ *  short IRQ lock, then run submit/submit_held with IRQs enabled. Heartbeats
+ *  keep servicing the bus but do not inspect partially prepared world data. */
+bool fcworld_reserve(fcworld_t *world);
 /** Plan a new generation for `frame` (idle only). Returns the generation the
  *  matching picture must be published with: unchanged frames return the shown
  *  generation, empty frames generation 0. 0xFF when busy. */

@@ -37,7 +37,9 @@
 ;/// @brief PPU read strobe `/RD`, active low. GP20.
 .define public	PI_RD_BIT	20
 ;.define public	PI_PA13_BIT	19
-;.define public	PI_PA12_BIT	18
+;/// @brief PPU address line A12. GP18. Read only by the passive sprite-fetch
+;///        probe (plan 14c option 5); the stream never uses it.
+.define public	PI_PA12_BIT	18
 ;/// @brief PPU chip select for pattern-table space. GP17.
 ;/// @details Used as the `jmp PIN` predicate by every program: when it is high
 ;///          the access belongs to someone else and is ignored.
@@ -165,6 +167,45 @@ skip_ppu_data2:
 	mov  isr, !x
 	jmp  x-- raw_count_done
 raw_count_done:
+	wait 1 gpio PI_RD_BIT
+.wrap
+
+; Passive sprite-fetch probe (plan 14c option 5), PIO1. Neither program drives a
+; pin. fcppu_pa12_count counts PPU reads with A12 high (pattern table $1000);
+; its jmp pin is #PI_PA12_BIT. The count is ~X, read like fcppu_rna.
+.program fcppu_pa12_count
+	mov  x, ~null
+.wrap_target
+	wait 0 gpio PI_RD_BIT
+	jmp  PIN  pa12_high
+	jmp  pa12_done
+pa12_high:
+	jmp  x--  pa12_done
+pa12_done:
+	wait 1 gpio PI_RD_BIT
+.wrap
+
+; Counts reads with A12 high while CS1 is low: sprite-table fetches that select
+; this cartridge. Needs in_base = #PI_CS1_BIT (A12 is the next pin) and a
+; left-shifting ISR, so `in pins, 2` leaves CS1 in bit 0 and A12 in bit 1.
+.program fcppu_pa12_cs1_count
+	mov  x, ~null
+.wrap_target
+	wait 0 gpio PI_RD_BIT
+	mov  isr, null
+	in   pins, 2
+	mov  y, isr
+	jmp  !y   both_done   ; 0: A12 low, CS1 low
+	jmp  y--  both_one
+both_one:
+	jmp  !y   both_done   ; 1: A12 low, CS1 high
+	jmp  y--  both_two
+both_two:
+	jmp  !y   both_count  ; 2: A12 high, CS1 low
+	jmp  both_done        ; 3: A12 high, CS1 high
+both_count:
+	jmp  x--  both_done
+both_done:
 	wait 1 gpio PI_RD_BIT
 .wrap
 

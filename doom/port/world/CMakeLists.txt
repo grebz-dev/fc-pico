@@ -25,6 +25,16 @@ set(ENGINE_SRC ${CMAKE_CURRENT_LIST_DIR}/../../rp2040-doom/src)
 target_sources(doom_tiny_fcpico PRIVATE ${ENGINE_SRC}/fcpico/world_sprites.c)
 target_include_directories(doom_tiny_fcpico PRIVATE ${WORLD_OUTPUT} ${CMAKE_CURRENT_LIST_DIR}/..)
 target_compile_definitions(doom_tiny_fcpico PRIVATE FCPICO_WORLD_SPRITES=1)
+# Plan 14c option 5. The probe only reads PA12/CS1 on PIO1 (never drives a pin).
+# Loose gating publishes pictures without waiting for their sprites.
+option(FCPICO_SPRITE_FETCH_PROBE "Count PPU sprite-table fetches seen by the RP" ON)
+option(FCPICO_WORLD_LOOSE "Publish pictures without waiting for world sprites" OFF)
+if(FCPICO_SPRITE_FETCH_PROBE AND PICO_ON_DEVICE)
+    target_compile_definitions(doom_tiny_fcpico PRIVATE FCPICO_SPRITE_FETCH_PROBE=1)
+endif()
+if(FCPICO_WORLD_LOOSE)
+    target_compile_definitions(doom_tiny_fcpico PRIVATE FCPICO_WORLD_LOOSE=1)
+endif()
 if(PICO_ON_DEVICE)
     add_custom_target(fcpico_doom_world_uf2
         COMMAND ${Python3_EXECUTABLE} ${WORLD_TOOLS}/whx2uf2.py
