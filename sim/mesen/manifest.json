@@ -1,0 +1,15 @@
+{
+  "upstream": "MesenCE",
+  "repository": "https://github.com/SourMesen/Mesen2",
+  "commit": "20f497c9620a7f4e55b7752e1d22734f9d7492fa",
+  "archive_url": "https://github.com/SourMesen/Mesen2/archive/20f497c9620a7f4e55b7752e1d22734f9d7492fa.tar.gz",
+  "archive_sha256": "649a62297a9d45d04e66d4350c9d4a6775c689cf7ad9d7e3cf01d85808f45b2e",
+  "license": "GPL-3.0",
+  "patches": [
+    "0001-NES-Add-an-FC-PICO-host-cartridge-mapper.patch",
+    "0002-NES-Register-the-FC-PICO-mapper-as-private-NES-2.0-I.patch",
+    "0003-Build-Optionally-link-the-FC-PICO-cartridge-model.patch"
+  ],
+  "cart_abi": 1,
+  "mapper_id": 4093
+}

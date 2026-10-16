@@ -48,6 +48,49 @@ uploads them.
 
 To add one, fill in an `fcpico_provider_t` and pass it in `fcpico_cart_config_t`.
 
+## MesenCE
+
+`sim/mesen/` adds the cartridge to [MesenCE](https://github.com/SourMesen/Mesen2)
+without a fork. `manifest.json` pins the upstream commit and the SHA-256 of its
+source archive; `patches/` holds the FC PICO changes as an ordered series:
+
+| Patch | Change |
+|---|---|
+| 0001 | `Core/NES/Mappers/Homebrew/FcPico.h`: the mapper, which forwards selected PPU reads and writes to the cartridge model and models the PRG flash used for reflashing |
+| 0002 | Registers it as NES 2.0 mapper 4093 when built with `FCPICO` |
+| 0003 | `makefile`: optional `FCPICO_INCLUDE`/`FCPICO_LIBS`, and rebuilding the mapper factory when the mapper, the model's headers or those settings change |
+
+```sh
+python3 sim/mesen/mesen.py check-patches   # the series applies with no fuzz or offsets
+python3 sim/mesen/mesen.py build           # build/mesen/fcpico/src/bin/.../Mesen
+python3 sim/mesen/mesen.py build --stock   # the same source without the patches
+python3 sim/mesen/check_mapper.py          # headless check of the built emulator
+```
+
+`mesen.py` downloads the archive into `.cache/mesen/` (or takes `--archive` for
+offline builds), verifies the checksum, extracts it under `build/mesen/` and applies
+the patches. To change the integration, edit a git checkout of the pinned commit with
+the series applied as commits, then run `mesen.py regenerate CHECKOUT` to rewrite
+`patches/` and the manifest.
+
+The emulator needs an emulator-only copy of the boot ROM with the private mapper
+number: `python3 tools/nes/set_mapper.py rom.NES rom-fcpico.nes` keeps every PRG byte.
+Never flash that copy. 4093 is not an assigned mapper number. The mapper reads its
+configuration from the environment:
+
+| Variable | Meaning |
+|---|---|
+| `FCPICO_PROVIDER`, `FCPICO_PROVIDER_OPTIONS` | Application provider (default `pattern`) |
+| `FCPICO_SERVE_ROM` | iNES file whose PRG the firmware serves when the console reflashes (default: the loaded ROM) |
+| `FCPICO_CS1_MASK` | `0xf800` selects `$0800-$0FFF`, as measured on an NES-001; `0xf000`/`0xe000` are wider diagnostic masks |
+| `FCPICO_TRACE` | CSV of cartridge writes, flash operations and frames |
+
+`check_mapper.py` runs the tutorial boot ROM three times. With the calibrated mask, a
+plain run and a run that reads every pattern-table and nametable address through the
+debugger each frame must both settle at the 15490 read count with identical traces, so
+real fetches reach the cartridge once and debugger reads never do. The wider mask must
+change the count.
+
 ## Tests
 
 `sim/cartmodel/tests/test_cartmodel.c` drives a cartridge the way the tutorial boot
