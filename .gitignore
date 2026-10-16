@@ -15,3 +15,5 @@ CLAUDE.md
 # local build outputs and tool caches
 /build/
 /.cache/
+/.venv/
+/tools/*.egg-info/

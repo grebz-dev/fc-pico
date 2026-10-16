@@ -1,0 +1,37 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: build
+
+on:
+  push:
+    paths: ["tools/**", "platform/**", "sim/cartmodel/**", "tutorial_project/**", "tests/**", ".github/workflows/build.yml"]
+  pull_request:
+    paths: ["tools/**", "platform/**", "sim/cartmodel/**", "tutorial_project/**", "tests/**", ".github/workflows/build.yml"]
+  workflow_dispatch:
+
+jobs:
+  reproducible:
+    name: Host, boot ROM, resources and firmware, built twice
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/cache@v4
+        with:
+          path: .cache/arduino
+          key: arduino-${{ hashFiles('tools/build/arduino.json') }}
+      - name: Setup
+        run: python3 tools/build/fcpico_build.py setup --device
+      - name: Build twice and compare
+        run: python3 tools/build/fcpico_build.py host rom resources device --verify-twice
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: build
+          path: |
+            build/verify/report.json
+            build/verify/a/build/manifest.json
+            build/verify/a/build/device/out/tuto1_hw.ino.uf2
+            build/verify/a/build/rom/rom.NES
