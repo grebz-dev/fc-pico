@@ -9,7 +9,7 @@
 #include <string.h>
 
 #include "../fcpico_cart.h"
-#include "draw.h"
+#include "fcbus_pack.h"
 
 #define SQUARE 16
 
@@ -35,7 +35,7 @@ static void draw(demo_t *d) {
             bool inside = x >= d->x && x < d->x + SQUARE && y >= d->y && y < d->y + SQUARE;
             line[x] = inside ? 3 : grid;
         }
-        fcpico_draw_line(back, y, line);
+        fcbus_stream_put_line(back, y, line);
     }
     fcbus_core_publish(d->core);
 }

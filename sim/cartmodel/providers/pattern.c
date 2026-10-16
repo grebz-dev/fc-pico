@@ -8,7 +8,7 @@
 #include <string.h>
 
 #include "../fcpico_cart.h"
-#include "draw.h"
+#include "fcbus_pack.h"
 
 typedef struct {
     fcbus_core_t *core;
@@ -43,7 +43,7 @@ static void draw(pattern_t *p, uint32_t frame) {
         for (int x = 0; x < 256; x++) {
             line[x] = pixel(p->pattern, frame, x, y);
         }
-        fcpico_draw_line(back, y, line);
+        fcbus_stream_put_line(back, y, line);
     }
     fcbus_core_publish(p->core);
 }
