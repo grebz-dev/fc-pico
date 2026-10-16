@@ -1,0 +1,41 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: platform
+
+on:
+  push:
+    paths: ["platform/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+  pull_request:
+    paths: ["platform/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+  workflow_dispatch:
+
+jobs:
+  host:
+    name: Shared bus core
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake ninja-build
+          python3 -m pip install pytest
+      - name: Build and test (GCC)
+        run: |
+          cmake -S platform -B build/platform -G Ninja
+          cmake --build build/platform
+          ctest --test-dir build/platform --output-on-failure
+      - name: Build and test (ASan/UBSan)
+        run: |
+          cmake -S platform -B build/asan -G Ninja -DCMAKE_C_FLAGS="-fsanitize=address,undefined -fno-omit-frame-pointer -g"
+          cmake --build build/asan
+          ctest --test-dir build/asan --output-on-failure
+      - name: Build and test (Clang)
+        run: |
+          CC=clang cmake -S platform -B build/clang -G Ninja
+          cmake --build build/clang
+          ctest --test-dir build/clang --output-on-failure
+      - name: Protocol constants match the tutorial
+        run: python3 -m pytest platform/tests -q
