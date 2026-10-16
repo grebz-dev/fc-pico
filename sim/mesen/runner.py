@@ -77,6 +77,21 @@ def read_trace(directory: Path) -> list[dict]:
         return list(csv.DictReader(stream))
 
 
+def comparable_traces(first: Path, second: Path) -> tuple[str, str]:
+    """Both runs' traces up to the last end-of-frame event they share. emu.stop() in
+    an end-of-frame callback lets the emulator run on for up to a frame, so the rows
+    after that point vary between otherwise identical runs."""
+    def frames(directory: Path):
+        lines = (directory / "trace.csv").read_text().splitlines(keepends=True)
+        ends = {int(line.split(",")[1]): i for i, line in enumerate(lines) if line.startswith("frame,")}
+        return lines, ends
+    (a, a_ends), (b, b_ends) = frames(first), frames(second)
+    common = max(set(a_ends) & set(b_ends), default=None)
+    if common is None:
+        return "".join(a), "".join(b)
+    return "".join(a[:a_ends[common] + 1]), "".join(b[:b_ends[common] + 1])
+
+
 def heartbeats(rows: list[dict]) -> list[dict]:
     """Trace rows where a heartbeat completed (the heartbeat counter advanced)."""
     beats, last = [], 0

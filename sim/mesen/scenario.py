@@ -68,7 +68,15 @@ def steady_report(directory: Path, frames: int) -> dict:
 
 
 def same(a: Path, b: Path, *names: str) -> list[str]:
-    return [f"{n} differs between runs" for n in names if (a / n).read_bytes() != (b / n).read_bytes()]
+    differ = []
+    for name in names:
+        if name == "trace.csv":
+            first, second = runner.comparable_traces(a, b)
+        else:
+            first, second = (a / name).read_bytes(), (b / name).read_bytes()
+        if first != second:
+            differ.append(f"{name} differs between runs")
+    return differ
 
 
 def strict_errors(report: dict) -> list[str]:
