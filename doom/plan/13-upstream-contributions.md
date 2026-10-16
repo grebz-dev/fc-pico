@@ -46,18 +46,28 @@ it does not independently validate every proposed extracted platform component.
 README summaries and some memories still describe older milestones: resolve
 claims against dated traces and current code before copying them upstream.
 
-## Branch status (2026-10-13)
+## Branch status (2026-10-16)
 
 Upstream `impact-soft/fc-pico` `main` is `9e225f32`; `grebz-dev/fc-pico` `main`
-equals it. The four branches with no prerequisites were created from that commit
-and pushed to `origin`; they contain no changes yet:
+equals it. Branches are pushed to `origin` only; no PRs are open.
 
-| ID | Branch on `origin` | Base |
+| ID | Branch on `origin` | State |
 | --- | --- | --- |
-| U01 | `platform/shared-bus-core` | `9e225f32` |
-| U03 | `tools/native-rom-build` | `9e225f32` |
-| U09 | `firmware/serial-bootsel` | `9e225f32` |
-| U11 | `docs/platform-findings` | `9e225f32` |
+| U01 | `platform/shared-bus-core` | Ready for PR. This is the host-neutral library half: a v1-only core plus host backend under `platform/fcbus/`, C tests, a Python parity test against `rp_system.h`/`SysPico.asm`, `docs/pages/shared-bus-core.md` and CI (GCC, Clang, ASan/UBSan). The tutorial does not consume it yet; that is `platform/tutorial-bus-adapter`, which needs Arduino builds and a physical tutorial run. |
+| U03 | `tools/native-rom-build` | Ready for PR. `tools/build/{fetch_nesasm,build_rom}.sh` and `tools/nes/` rebuild the fix bank (MD5 `1A9A2AC8...`) and `rom.NES` (MD5 `B6CD6753...`) natively; there are tests, a docs section in `docs/pages/build-pipeline.md` and CI. |
+| U09 | `firmware/serial-bootsel` | Superseded upstream: `9e225f3` added `bin/arduino_picoboot.exe` (the 1200-baud touch) and rewrote every `upload.bat` to use it, so firmware already updates without the button. Pending a decision: drop U09, or narrow it to a non-Windows equivalent. |
+| U11 | `docs/platform-findings` | Not started. |
+
+Docs: `docs_jp/pages` mirrors `docs/pages` and is maintained upstream; feature
+branches change `docs/pages` only.
+
+Findings for later PRs:
+- `rp_system::convVram()` converts 240 x 34 words from the 256x240 canvas, so it
+  reads 3,840 bytes past the end of the frame buffer (the console never shows those
+  words). Record it in U11, and fix it in the adapter PR only with the maintainers'
+  agreement.
+- The tutorial's watchdog is fed by `WDT_update()` in `loop()` and the protocol
+  handlers; it stays device policy in the adapter, not in the shared core.
 
 The dependent branches (U02, U04–U08, U10, U12, U13) are created when work
 starts, stacked on their prerequisites and rebased onto upstream after those
