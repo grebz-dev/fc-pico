@@ -1,0 +1,50 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: grebz-dev <jgreb314@gmail.com>
+Date: Thu, 15 Oct 2026 23:47:41 -0400
+Subject: [PATCH] Build: Optionally link the FC PICO cartridge model
+
+FCPICO_INCLUDE and FCPICO_LIBS supply the model's headers and static
+libraries; when FCPICO_LIBS is empty the build is unchanged. The mapper
+factory object is rebuilt when the mapper, the model's headers or these
+settings change, since objects do not otherwise track headers.
+---
+ makefile | 17 +++++++++++++++--
+ 1 file changed, 15 insertions(+), 2 deletions(-)
+
+diff --git a/makefile b/makefile
+index b91a780..1687ca6 100644
+--- a/makefile
++++ b/makefile
+@@ -115,6 +115,13 @@ ifeq ($(MESENOS),osx)
+ endif
+ 
+ CXXFLAGS = -fPIC -Wall --std=c++17 $(MESENFLAGS) $(SDL2INC) -I $(realpath ./) -I $(realpath ./Core) -I $(realpath ./Utilities) -I $(realpath ./Sdl) -I $(realpath ./Linux) -I $(realpath ./MacOS)
++# Optional FC PICO cartridge model, from the FC PICO repository (sim/cartmodel).
++# FCPICO_INCLUDE lists its include directories and FCPICO_LIBS its static
++# libraries in link order. Ordinary builds leave both empty and are unchanged.
++ifneq ($(FCPICO_LIBS),)
++	CXXFLAGS += -DFCPICO $(addprefix -I,$(FCPICO_INCLUDE))
++endif
++
+ OBJCXXFLAGS = $(CXXFLAGS)
+ CFLAGS = -fPIC -Wall $(MESENFLAGS)
+ 
+@@ -225,10 +232,16 @@ pgohelper: InteropDLL/$(OBJFOLDER)/$(SHAREDLIB)
+ %.o: %.mm
+ 	$(CXX) $(OBJCXXFLAGS) -c $< -o $@
+ 
+-InteropDLL/$(OBJFOLDER)/$(SHAREDLIB): $(SEVENZIPOBJ) $(LUAOBJ) $(UTILOBJ) $(COREOBJ) $(SDLOBJ) $(LIBEVDEVOBJ) $(LINUXOBJ) $(DLLOBJ) $(MACOSOBJ)
++# Objects do not track header dependencies, so rebuild the mapper factory when
++# the FC PICO mapper, the cartridge model headers or the FC PICO settings change.
++FCPICO_STAMP := Core/NES/fcpico.settings
++$(shell echo '$(FCPICO_INCLUDE) $(FCPICO_LIBS)' | cmp -s - $(FCPICO_STAMP) 2>/dev/null || echo '$(FCPICO_INCLUDE) $(FCPICO_LIBS)' > $(FCPICO_STAMP))
++Core/NES/MapperFactory.o: Core/NES/Mappers/Homebrew/FcPico.h $(FCPICO_STAMP) $(foreach dir,$(FCPICO_INCLUDE),$(wildcard $(dir)/*.h))
++
++InteropDLL/$(OBJFOLDER)/$(SHAREDLIB): $(SEVENZIPOBJ) $(LUAOBJ) $(UTILOBJ) $(COREOBJ) $(SDLOBJ) $(LIBEVDEVOBJ) $(LINUXOBJ) $(DLLOBJ) $(MACOSOBJ) $(FCPICO_LIBS)
+ 	mkdir -p bin
+ 	mkdir -p InteropDLL/$(OBJFOLDER)
+-	$(CXX) $(CXXFLAGS) $(LINKOPTIONS) $(LINKCHECKUNRESOLVED) -shared -o $(SHAREDLIB) $(DLLOBJ) $(SEVENZIPOBJ) $(LUAOBJ) $(LINUXOBJ) $(MACOSOBJ) $(LIBEVDEVOBJ) $(UTILOBJ) $(SDLOBJ) $(COREOBJ) $(SDL2INC) -pthread $(FSLIB) $(SDL2LIB) $(LIBEVDEVLIB) $(X11LIB)
++	$(CXX) $(CXXFLAGS) $(LINKOPTIONS) $(LINKCHECKUNRESOLVED) -shared -o $(SHAREDLIB) $(DLLOBJ) $(SEVENZIPOBJ) $(LUAOBJ) $(LINUXOBJ) $(MACOSOBJ) $(LIBEVDEVOBJ) $(UTILOBJ) $(SDLOBJ) $(COREOBJ) $(FCPICO_LIBS) $(SDL2INC) -pthread $(FSLIB) $(SDL2LIB) $(LIBEVDEVLIB) $(X11LIB)
+ 	cp $(SHAREDLIB) bin/pgohelperlib.so
+ 	mv $(SHAREDLIB) InteropDLL/$(OBJFOLDER)
+ 
