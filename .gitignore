@@ -11,3 +11,7 @@ __pycache__/
 
 # working notes for AI assistants; internal, not part of the project
 CLAUDE.md
+
+# native ROM build outputs and pinned tool cache
+/build/
+/.cache/
