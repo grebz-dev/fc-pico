@@ -3,9 +3,9 @@ name: platform
 
 on:
   push:
-    paths: ["platform/**", "sim/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+    paths: ["platform/**", "sim/**", "tools/gen_protocol.py", "tools/fcpico/**", "tools/pyproject.toml", "tests/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
   pull_request:
-    paths: ["platform/**", "sim/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+    paths: ["platform/**", "sim/**", "tools/gen_protocol.py", "tools/fcpico/**", "tools/pyproject.toml", "tests/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
   workflow_dispatch:
 
 jobs:
@@ -21,7 +21,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y cmake ninja-build
-          python3 -m pip install pytest
+          python3 -m pip install -e "tools[test]"
       - name: Build and test (GCC)
         run: |
           cmake -S platform -B build/platform -G Ninja
@@ -43,3 +43,8 @@ jobs:
         run: |
           python3 tools/gen_protocol.py --check
           python3 -m pytest platform/tests -q
+      - name: Python tools against the native library
+        run: |
+          cmake -S platform -B build/platform -G Ninja
+          cmake --build build/platform
+          python3 -m pytest tests -q
