@@ -8,29 +8,23 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
+import gen_protocol
+
 ROOT = Path(__file__).resolve().parents[2]
 HEADER = ROOT / "platform/fcbus/fcbus_protocol.h"
 RP_SYSTEM = ROOT / "tutorial_project/tuto1_hw/sys/rp_system.h"
 SYS_PICO = ROOT / "tutorial_project/BOOTROM/SysPico.asm"
 
-DEFINE = re.compile(r"^#define\s+([A-Z_0-9]+)\s+([^/\n]+?)\s*(?://.*)?$", re.M)
-
-
 def _evaluate(expr: str, known: dict[str, int]) -> int:
     if not re.fullmatch(r"[\sA-Za-z_0-9x()+\-*/]+", expr):
         raise ValueError(f"unsupported expression: {expr!r}")
     expr = re.sub(r"sizeof\s*\(\s*uint32_t\s*\)", "4", expr)
-    value = eval(expr.replace("/", "//"), {"__builtins__": {}}, dict(known))
-    return int(value)
+    return int(eval(expr.replace("/", "//"), {"__builtins__": {}}, dict(known)))
 
 
 def header_constants() -> dict[str, int]:
-    known: dict[str, int] = {}
-    for name, expr in DEFINE.findall(HEADER.read_text()):
-        if name == "FCBUS_PROTOCOL_H":
-            continue
-        known[name] = _evaluate(expr, known)
-    return known
+    defs, _ = gen_protocol.parse_header(HEADER.read_text())
+    return {d.name: d.value for d in defs}
 
 
 def rp_system_constants() -> dict[str, int]:

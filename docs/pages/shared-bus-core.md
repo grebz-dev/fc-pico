@@ -44,6 +44,27 @@ deliberate:
   sound job stay in the firmware. The core adds diagnostic counters
   (`fcbus_core_t::stats`) that do not change behaviour.
 
+## Generated files
+
+`fcbus_protocol.h` is the only place the protocol constants are written.
+`tools/gen_protocol.py` renders it into:
+
+| Output | For |
+|---|---|
+| `platform/fcbus/gen/fcbus_protocol.inc` | nesasm `EQU` lines, including the boot ROM's spelling `PF_MAGIC_CODE` |
+| `tools/fcpico/protocol.py` | Python constants (`protocol.ALL` maps every name to its value) |
+| `platform/fcbus/gen/fcbus_layout.json` | Stream and mailbox geometry for tools, with a `layout_version` |
+
+Run `python3 tools/gen_protocol.py` after editing the header and commit the outputs.
+`--check` writes nothing and fails while any output is stale. The parser accepts only
+integer literals and expressions of earlier names (`+ - * / ( ) << >>`); anything
+else is an error, not a silently skipped line.
+
+Tools read geometry from the descriptor (`fcpico.layout.load()`) instead of
+hard-coding offsets, and reject a `layout_version` they do not know. The compiled
+core reports the same geometry through `fcbus_layout()`, and a test checks that the
+two agree.
+
 ## Building and testing
 
 The library builds on any C11 host compiler with CMake:
