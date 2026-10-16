@@ -1,0 +1,32 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: native-rom
+
+on:
+  push:
+    paths: ["tutorial_project/BOOTROM/**", "tutorial_project/BOOTROM_FIX/**", "tools/build/**", "tools/nes/**", "tests/**", ".github/workflows/native-rom.yml"]
+  pull_request:
+    paths: ["tutorial_project/BOOTROM/**", "tutorial_project/BOOTROM_FIX/**", "tools/build/**", "tools/nes/**", "tests/**", ".github/workflows/native-rom.yml"]
+  workflow_dispatch:
+
+jobs:
+  rom:
+    name: Reproduce the boot ROM with native NESASM CE
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install pytest
+        run: python3 -m pip install pytest
+      - name: Build pinned NESASM CE
+        run: tools/build/fetch_nesasm.sh
+      - name: Build and verify the boot ROM
+        run: tools/build/build_rom.sh
+      - name: Test the ROM tools
+        run: python3 -m pytest tests -q
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: boot-rom
+          path: build/rom/
