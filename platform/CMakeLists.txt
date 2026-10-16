@@ -1,6 +1,7 @@
 # SPDX-License-Identifier: BSD-3-Clause
 #
-# Host build of the shared platform libraries and their tests:
+# Host build of the shared platform libraries, the emulator cartridge model and
+# their tests:
 #   cmake -S platform -B build/platform && cmake --build build/platform
 #   ctest --test-dir build/platform --output-on-failure
 cmake_minimum_required(VERSION 3.16)
@@ -13,7 +14,12 @@ if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
     add_compile_options(-Wall -Wextra -Werror)
 endif()
 
-add_subdirectory(fcbus)
-
 enable_testing()
+
+# The libraries are also linked into emulator plugins (shared objects).
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
+add_subdirectory(fcbus)
+add_subdirectory(${PROJECT_SOURCE_DIR}/../sim/cartmodel cartmodel)
+
 add_subdirectory(tests)
