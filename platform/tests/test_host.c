@@ -101,6 +101,32 @@ static void test_log_entries(void) {
     CHECK_EQ(n, 0);
 }
 
+/* The console receives one extra byte before an attribute-table page, never before
+ * a palette page; the tutorial boot ROM's dummy read for $23C0 expects it. */
+static void test_attribute_page_arrives_one_byte_late(void) {
+    init();
+    fcbus_core_t *c = fcbus_host_core(&host);
+    uint8_t pal[FCBUS_PAL_LEN], attr[FCBUS_ATTR_LEN];
+    for (int i = 0; i < FCBUS_PAL_LEN; i++) pal[i] = (uint8_t)(0x20 + i);
+    for (int i = 0; i < FCBUS_ATTR_LEN; i++) attr[i] = (uint8_t)(0x80 + i);
+    fcbus_core_set_palette(c, pal);
+    fcbus_core_set_attr_table(c, attr);
+
+    fcbus_host_ppu_write(&host, FP_COM_DRQ);
+    reads(8);
+    fcbus_host_ppu_write(&host, FP_COM_DLD);
+    fcbus_host_ppu_write(&host, 0);
+    CHECK_EQ(fcbus_host_ppu_read(&host), 0x20); /* palette: no extra byte */
+
+    fcbus_host_ppu_write(&host, FP_COM_DRQ);
+    reads(8);
+    fcbus_host_ppu_write(&host, FP_COM_DLD);
+    fcbus_host_ppu_write(&host, 0);
+    CHECK_EQ(fcbus_host_ppu_read(&host), 0x00); /* the extra byte */
+    CHECK_EQ(fcbus_host_ppu_read(&host), 0x80);
+    CHECK_EQ(fcbus_host_ppu_read(&host), 0x81);
+}
+
 int main(void) {
     test_cold_start_locks_on();
     test_published_picture_and_mailbox_on_the_wire();
@@ -108,5 +134,6 @@ int main(void) {
     test_out_of_phase_stops_then_recovers();
     test_version_reply_then_filler();
     test_log_entries();
+    test_attribute_page_arrives_one_byte_late();
     return ctest_lite_result();
 }

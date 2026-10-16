@@ -8,6 +8,11 @@
  * Replaces PIO and DMA with function calls: fcbus_host_ppu_read() is one qualifying
  * PPU pattern fetch, fcbus_host_ppu_write() is one 6502 write to `$2007`. Use it for
  * tests and emulators. Each ::fcbus_host_t owns its own ::fcbus_core_t.
+ *
+ * It reproduces one observed hardware behaviour beyond the protocol: a data-mode page
+ * holding the attribute table ($23C0) arrives one byte late, so the backend serves an
+ * extra byte (0x00) first. The tutorial boot ROM expects this and discards one byte
+ * with a dummy read before attribute uploads only; the cause was never identified.
  */
 #ifndef FCBUS_HOST_H
 #define FCBUS_HOST_H
@@ -48,6 +53,7 @@ typedef struct {
     const uint8_t *resp;
     uint16_t resp_len;
     uint16_t resp_pos;
+    bool lead_byte;   /**< Serve the extra byte that precedes an attribute-table page. */
     uint32_t stream_pos;
     fcbus_host_log_entry_t log[FCBUS_HOST_LOG_CAP];
     size_t log_len;
