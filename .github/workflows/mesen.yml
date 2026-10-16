@@ -1,0 +1,45 @@
+# SPDX-License-Identifier: BSD-3-Clause
+name: mesen
+
+on:
+  push:
+    paths: ["sim/mesen/**", "sim/cartmodel/**", "platform/fcbus/**", "tools/nes/set_mapper.py", ".github/workflows/mesen.yml"]
+  pull_request:
+    paths: ["sim/mesen/**", "sim/cartmodel/**", "platform/fcbus/**", "tools/nes/set_mapper.py", ".github/workflows/mesen.yml"]
+  workflow_dispatch:
+
+jobs:
+  mapper:
+    name: MesenCE with the FC PICO cartridge model
+    runs-on: ubuntu-24.04
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: "10.0.x"
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y cmake libsdl2-dev patch xvfb
+      - uses: actions/cache@v4
+        with:
+          path: .cache/mesen
+          key: mesen-${{ hashFiles('sim/mesen/manifest.json') }}
+      - name: Patches apply exactly to the pristine source
+        run: python3 sim/mesen/mesen.py check-patches
+      - name: Stock build is unaffected
+        run: python3 sim/mesen/mesen.py build --stock
+      - name: Build with the cartridge model
+        run: python3 sim/mesen/mesen.py build
+      - name: Mapper check (fetches once, debugger reads never, mask decides)
+        run: xvfb-run -a python3 sim/mesen/check_mapper.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: mapper-check
+          path: |
+            build/mesen/check/report.json
+            build/mesen/check/*/console.log
+            build/mesen/check/*/trace.csv
+            build/mesen/check/*/final.png

@@ -1,0 +1,302 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: grebz-dev <jgreb314@gmail.com>
+Date: Thu, 15 Oct 2026 23:47:18 -0400
+Subject: [PATCH] NES: Add an FC PICO host cartridge mapper
+
+The mapper forwards CS1-qualified PPU reads and writes to the FC PICO host
+cartridge model (fcpico_cart.h, ABI 1) and models the cartridge's PRG flash
+so the boot ROM can reflash itself. It is only built when the FC PICO
+cartridge model is supplied (see the makefile change).
+---
+ Core/NES/Mappers/Homebrew/FcPico.h | 282 +++++++++++++++++++++++++++++
+ 1 file changed, 282 insertions(+)
+ create mode 100644 Core/NES/Mappers/Homebrew/FcPico.h
+
+diff --git a/Core/NES/Mappers/Homebrew/FcPico.h b/Core/NES/Mappers/Homebrew/FcPico.h
+new file mode 100644
+index 0000000..95802c2
+--- /dev/null
++++ b/Core/NES/Mappers/Homebrew/FcPico.h
+@@ -0,0 +1,282 @@
++// SPDX-License-Identifier: GPL-3.0-or-later
++#pragma once
++
++#include <cstdint>
++#include <cstdio>
++#include <cstdlib>
++#include <cstring>
++#include <fstream>
++#include <memory>
++#include <stdexcept>
++#include <string>
++#include <vector>
++#include "NES/BaseMapper.h"
++#include "NES/BaseNesPpu.h"
++#include "NES/NesConsole.h"
++#include "Shared/MessageManager.h"
++#include "Utilities/Serializer.h"
++#include "fcpico_cart.h"
++
++// FC PICO cartridge: the console side runs here, the cartridge side is the FC PICO
++// host cartridge model (fcpico_cart.h), which runs the shared bus core and an
++// application provider. It does not emulate the RP2350, its PIO timing or the bus.
++//
++// Configuration, from the environment:
++//   FCPICO_PROVIDER          application provider (default "pattern")
++//   FCPICO_PROVIDER_OPTIONS  provider options
++//   FCPICO_SERVE_ROM         iNES file whose PRG the firmware serves for reflashing
++//                            (default: the loaded ROM)
++//   FCPICO_CS1_MASK          0xf800 (default, $0800-$0FFF) or the wider diagnostic
++//                            masks 0xf000 / 0xe000
++//   FCPICO_TRACE             CSV of writes, flash operations and frames
++//   FCPICO_FETCH_TRACE, FCPICO_FETCH_FRAME  CSV of selected fetches in one frame
++//
++// Registered as NES 2.0 mapper 4093, a private number for emulation only.
++class FcPico : public BaseMapper
++{
++	struct CartDeleter { void operator()(fcpico_cart_t* c) const { fcpico_cart_destroy(c); } };
++	std::unique_ptr<fcpico_cart_t, CartDeleter> _cart;
++	uint16_t _cs1Mask = 0xF800;
++	uint32_t _renderReads = 0;
++	uint32_t _cpuReads = 0;
++	std::ofstream _trace;
++	std::ofstream _fetchTrace;
++	uint32_t _fetchFrame = 0;
++
++	// PRG flash (JEDEC, 4 KiB sectors, commands decoded on A10-A0). Operations
++	// complete at once apart from a short status phase, which the fix bank's
++	// DQ3/DQ6/DQ7 polling needs to observe.
++	enum class FlashState { Read, Unlock1, Unlock2, Command, EraseUnlock1, EraseUnlock2 };
++	FlashState _flash = FlashState::Read;
++	bool _eraseSetup = false;
++	uint32_t _busyReads = 0;
++	uint8_t _toggle = 0;
++
++	uint16_t GetPrgPageSize() override { return 0x8000; }
++	uint16_t GetChrPageSize() override { return 0x2000; }
++	uint32_t GetChrRamSize() override { return 0x2000; }
++	bool EnableCustomVramRead() override { return true; }
++	bool AllowRegisterRead() override { return true; }
++
++	uint8_t ReadRegister(uint16_t addr) override
++	{
++		if(_busyReads > 0) {
++			// Embedded-algorithm status: DQ6 toggles, DQ7 = 0, DQ3 = 0.
++			--_busyReads;
++			_toggle ^= 0x40;
++			return _toggle;
++		}
++		return _prgRom[addr & 0x7FFF];
++	}
++
++	void WriteRegister(uint16_t addr, uint8_t value) override
++	{
++		uint16_t cmd = addr & 0x7FF;
++		switch(_flash) {
++			case FlashState::Read:
++				_flash = (cmd == 0x555 && value == 0xAA) ? FlashState::Unlock1 : FlashState::Read;
++				return;
++			case FlashState::Unlock1:
++				_flash = (cmd == 0x2AA && value == 0x55) ? FlashState::Unlock2 : FlashState::Read;
++				return;
++			case FlashState::Unlock2:
++				if(cmd == 0x555 && value == 0x80) {
++					_flash = FlashState::EraseUnlock1;
++					_eraseSetup = true;
++				} else if(cmd == 0x555 && value == 0xA0) {
++					_flash = FlashState::Command;
++				} else {
++					_flash = FlashState::Read;
++				}
++				return;
++			case FlashState::EraseUnlock1:
++				_flash = (cmd == 0x555 && value == 0xAA) ? FlashState::EraseUnlock2 : FlashState::Read;
++				return;
++			case FlashState::EraseUnlock2:
++				if(cmd == 0x2AA && value == 0x55) {
++					_flash = FlashState::Command;
++				} else {
++					_flash = FlashState::Read;
++					_eraseSetup = false;
++				}
++				return;
++			case FlashState::Command:
++				if(_eraseSetup) {
++					if(value == 0x30) {
++						std::memset(_prgRom + (addr & 0x7000), 0xFF, 0x1000);
++						_busyReads = 64;
++						Trace("flash_erase", addr & 0xF000);
++					}
++				} else {
++					uint8_t& cell = _prgRom[addr & 0x7FFF];
++					if((cell & value) != value) {
++						Trace("flash_program_error", addr & 0x7FFF);
++					}
++					cell &= value; // programming can only clear bits
++					_busyReads = 2;
++				}
++				_eraseSetup = false;
++				_flash = FlashState::Read;
++				return;
++		}
++	}
++
++	static std::vector<uint8_t> ReadServedPrg(const char* path)
++	{
++		std::ifstream input(path, std::ios::binary);
++		std::vector<uint8_t> file((std::istreambuf_iterator<char>(input)), std::istreambuf_iterator<char>());
++		if(!input.good() && !input.eof()) {
++			throw std::runtime_error(std::string("FC PICO: cannot read FCPICO_SERVE_ROM ") + path);
++		}
++		if(file.size() != FCBUS_ROM_INES_HDR + FCBUS_ROM_PRG_BYTES || std::memcmp(file.data(), "NES\x1a", 4) != 0) {
++			throw std::runtime_error(std::string("FC PICO: FCPICO_SERVE_ROM must be a 32 KiB-PRG iNES file: ") + path);
++		}
++		return std::vector<uint8_t>(file.begin() + FCBUS_ROM_INES_HDR, file.end());
++	}
++
++	void InitMapper() override
++	{
++		SelectPrgPage(0, 0);
++		SelectChrPage(0, 0);
++		if(const char* mask = std::getenv("FCPICO_CS1_MASK")) {
++			char* end;
++			unsigned long value = std::strtoul(mask, &end, 0);
++			if(*end || (value != 0xF800 && value != 0xF000 && value != 0xE000)) {
++				throw std::runtime_error("FC PICO: FCPICO_CS1_MASK must be 0xf800, 0xf000 or 0xe000");
++			}
++			_cs1Mask = static_cast<uint16_t>(value);
++		}
++
++		if(_prgSize != FCBUS_ROM_PRG_BYTES) {
++			throw std::runtime_error("FC PICO: the console ROM must have 32 KiB of PRG");
++		}
++		std::vector<uint8_t> served(_prgRom, _prgRom + _prgSize);
++		if(const char* path = std::getenv("FCPICO_SERVE_ROM")) {
++			served = ReadServedPrg(path);
++		}
++		const char* providerName = std::getenv("FCPICO_PROVIDER");
++		if(providerName == nullptr || *providerName == 0) {
++			providerName = "pattern";
++		}
++		fcpico_cart_config_t config = {};
++		config.abi_version = FCPICO_CART_ABI_VERSION;
++		config.provider = fcpico_cart_find_provider(providerName);
++		config.provider_options = std::getenv("FCPICO_PROVIDER_OPTIONS");
++		config.served_prg = served.data();
++		config.served_prg_len = served.size();
++		if(config.provider == nullptr) {
++			throw std::runtime_error(std::string("FC PICO: unknown FCPICO_PROVIDER '") + providerName + "' (built in: pattern, demo)");
++		}
++		if(fcpico_cart_abi_version() != FCPICO_CART_ABI_VERSION) {
++			throw std::runtime_error("FC PICO: cartridge model library ABI does not match this build");
++		}
++		char error[256] = "";
++		_cart.reset(fcpico_cart_create(&config, error, sizeof(error)));
++		if(!_cart) {
++			throw std::runtime_error(std::string("FC PICO: ") + error);
++		}
++
++		if(const char* path = std::getenv("FCPICO_TRACE")) {
++			_trace.open(path, std::ios::trunc);
++			if(!_trace) {
++				throw std::runtime_error(std::string("FC PICO: cannot open FCPICO_TRACE ") + path);
++			}
++			_trace << "event,ppu_frame,scanline,cycle,value,heartbeats,last_count,dma_stops,resyncs,render_reads,cpu_reads,console_inits,open_bus_reads,provider_frames\n";
++		}
++		if(const char* path = std::getenv("FCPICO_FETCH_TRACE")) {
++			const char* frame = std::getenv("FCPICO_FETCH_FRAME");
++			char* end = nullptr;
++			unsigned long value = frame ? std::strtoul(frame, &end, 10) : 0;
++			if(!frame || *end || value > UINT32_MAX) {
++				throw std::runtime_error("FC PICO: FCPICO_FETCH_TRACE needs a numeric FCPICO_FETCH_FRAME");
++			}
++			_fetchFrame = static_cast<uint32_t>(value);
++			_fetchTrace.open(path, std::ios::trunc);
++			if(!_fetchTrace) {
++				throw std::runtime_error(std::string("FC PICO: cannot open FCPICO_FETCH_TRACE ") + path);
++			}
++			_fetchTrace << "ppu_frame,scanline,cycle,address,value\n";
++		}
++	}
++
++	void Trace(const char* event, unsigned value)
++	{
++		if(!_trace.is_open() || !_cart) {
++			return;
++		}
++		NesPpuState ppu;
++		_console->GetPpu()->GetState(ppu);
++		const fcbus_stats_t* stats = fcpico_cart_stats(_cart.get());
++		const fcpico_cart_metrics_t* metrics = fcpico_cart_metrics(_cart.get());
++		_trace << event << ',' << _console->GetPpu()->GetFrameCount() << ','
++			<< ppu.Scanline << ',' << ppu.Cycle << ',' << value << ',' << stats->frames
++			<< ',' << stats->last_count << ',' << stats->dma_stops << ',' << stats->resyncs
++			<< ',' << _renderReads << ',' << _cpuReads << ',' << metrics->console_inits
++			<< ',' << metrics->open_bus_reads << ',' << metrics->provider_frames << '\n';
++		_trace.flush();
++	}
++
++	bool IsSelectedAddress(uint16_t addr) const
++	{
++		// The tutorial selects the stream with tile $80 ($0800); its font tiles at
++		// $0000 and nametable 1's tile $00 stay in CHR RAM. This matches the NES-001
++		// trace without dropping any fetches. Wider masks are diagnostics only.
++		uint16_t base = _cs1Mask == 0xF800 ? 0x0800 : 0;
++		return (addr & _cs1Mask) == base;
++	}
++
++public:
++	uint8_t MapperReadVram(uint16_t addr, MemoryOperationType type) override
++	{
++		// Debugger reads go through DebugReadVram -> InternalReadVram and never reach
++		// this hook, so they do not consume cartridge bytes. Count renderer fetches
++		// and CPU $2007 reads once each.
++		if(IsSelectedAddress(addr) &&
++			(type == MemoryOperationType::PpuRenderingRead || type == MemoryOperationType::Read)) {
++			if(type == MemoryOperationType::PpuRenderingRead) {
++				++_renderReads;
++			} else {
++				++_cpuReads;
++			}
++			uint8_t value = fcpico_cart_ppu_read(_cart.get());
++			if(_fetchTrace.is_open() && type == MemoryOperationType::PpuRenderingRead &&
++				_console->GetPpu()->GetFrameCount() == _fetchFrame) {
++				NesPpuState ppu;
++				_console->GetPpu()->GetState(ppu);
++				_fetchTrace << _fetchFrame << ',' << ppu.Scanline << ',' << ppu.Cycle
++					<< ',' << addr << ',' << static_cast<unsigned>(value) << '\n';
++			}
++			return value;
++		}
++		return InternalReadVram(addr);
++	}
++
++	void MapperWriteVram(uint16_t addr, uint8_t value) override
++	{
++		if(IsSelectedAddress(addr)) {
++			uint32_t frames = fcpico_cart_stats(_cart.get())->frames;
++			fcpico_cart_ppu_write(_cart.get(), value);
++			Trace("write", value);
++			if(fcpico_cart_stats(_cart.get())->frames != frames) {
++				_renderReads = _cpuReads = 0;
++			}
++		} else {
++			InternalWriteVram(addr, value);
++		}
++	}
++
++	void EndFrame() override
++	{
++		Trace("frame", 0);
++	}
++
++	void Serialize(Serializer& s) override
++	{
++		BaseMapper::Serialize(s);
++		if(!s.IsSaving()) {
++			// Cartridge model ABI 1 has no state serialisation: the cartridge keeps
++			// running and the link resynchronises after a few frames.
++			MessageManager::DisplayMessage("FC PICO", "The cartridge model is not part of save states; the link will resynchronise.");
++		}
++	}
++};

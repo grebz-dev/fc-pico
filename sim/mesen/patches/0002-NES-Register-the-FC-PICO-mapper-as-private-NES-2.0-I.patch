@@ -1,0 +1,36 @@
+From 0000000000000000000000000000000000000000 Mon Sep 17 00:00:00 2001
+From: grebz-dev <jgreb314@gmail.com>
+Date: Thu, 15 Oct 2026 23:47:41 -0400
+Subject: [PATCH] NES: Register the FC PICO mapper as private NES 2.0 ID 4093
+
+Only when built with FCPICO. 4093 is not an assigned mapper number; it marks
+ROM copies prepared for the FC PICO emulator workflow.
+---
+ Core/NES/MapperFactory.cpp | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/Core/NES/MapperFactory.cpp b/Core/NES/MapperFactory.cpp
+index b5f6c5f..9307b83 100644
+--- a/Core/NES/MapperFactory.cpp
++++ b/Core/NES/MapperFactory.cpp
+@@ -5,6 +5,10 @@
+ #include "NES/Loaders/UnifBoards.h"
+ #include "NES/BaseMapper.h"
+ #include "NES/RomData.h"
++
++#ifdef FCPICO
++#include "NES/Mappers/Homebrew/FcPico.h"
++#endif
+ #include "Utilities/VirtualFile.h"
+ 
+ #include "NES/Mappers/Bandai/Bandai74161_7432.h"
+@@ -279,6 +283,9 @@ BaseMapper* MapperFactory::GetMapperFromID(RomData& romData)
+ {
+ 	// clang-format off
+ 	switch(romData.Info.MapperID) {
++#ifdef FCPICO
++		case 4093: return new FcPico(); // private emulator-only ID for the FC PICO cartridge model
++#endif
+ 		case 0: return new NROM();
+ 		case 1: return new MMC1();
+ 		case 2: return new UNROM();
