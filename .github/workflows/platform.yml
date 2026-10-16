@@ -3,9 +3,9 @@ name: platform
 
 on:
   push:
-    paths: ["platform/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+    paths: ["platform/**", "sim/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
   pull_request:
-    paths: ["platform/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+    paths: ["platform/**", "sim/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
   workflow_dispatch:
 
 jobs:
