@@ -17,7 +17,7 @@ deliberate behaviour differences are listed below.
 |---|---|
 | `fcbus_protocol.h` | Opcodes, mailbox layout, key bits, stream geometry |
 | `fcbus_core.h/.c` | The protocol state machine; no I/O, no allocation, one caller-owned struct per link |
-| `fcbus_host.h/.c` | A host backend that stands in for the PPU (`fcbus_host_ppu_read()`) and the 6502 (`fcbus_host_ppu_write()`) |
+| `fcbus_host.h/.c` | A host backend that stands in for the PPU (`fcbus_host_ppu_read()`) and the 6502 (`fcbus_host_ppu_write()`). It also reproduces the extra byte the console receives before an attribute-table data-mode page, which the boot ROM discards with a dummy read |
 
 `fcbus_core.h` maps each `rp_system` function to its counterpart. The core tells
 its backend what to do through a small queue of actions: serve a reply (version
