@@ -33,6 +33,10 @@ static void drain(fcbus_host_t *h) {
             h->resp_len = act.len;
             h->resp_pos = 0;
             h->mode = act.len > 0 ? FCBUS_HOST_RESPONSE : FCBUS_HOST_FILLER;
+            /* On hardware the console receives one extra byte before an attribute
+             * table page ($23C0); the tutorial boot ROM discards it with a dummy
+             * read ("cause never identified" in BOOTROM/SysPico.asm). */
+            h->lead_byte = act.data == h->core.dld_buf && h->core.drq_source == h->core.attr_want;
             break;
         case FCBUS_ACT_HEARTBEAT:
             /* A manual `out pins, 8` nudge consumes one buffer byte. */
@@ -61,6 +65,10 @@ int fcbus_host_ppu_read(fcbus_host_t *h) {
     h->read_count++;
     switch (h->mode) {
     case FCBUS_HOST_RESPONSE: {
+        if (h->lead_byte) {
+            h->lead_byte = false;
+            return 0x00;
+        }
         uint8_t b = h->resp[h->resp_pos++];
         if (h->resp_pos >= h->resp_len) {
             h->mode = FCBUS_HOST_FILLER;
