@@ -3,9 +3,9 @@ name: platform
 
 on:
   push:
-    paths: ["platform/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+    paths: ["platform/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
   pull_request:
-    paths: ["platform/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
+    paths: ["platform/**", "tools/gen_protocol.py", "tools/fcpico/**", "tutorial_project/tuto1_hw/sys/rp_system.h", "tutorial_project/BOOTROM/SysPico.asm", ".github/workflows/platform.yml"]
   workflow_dispatch:
 
 jobs:
@@ -37,5 +37,9 @@ jobs:
           CC=clang cmake -S platform -B build/clang -G Ninja
           cmake --build build/clang
           ctest --test-dir build/clang --output-on-failure
-      - name: Protocol constants match the tutorial
-        run: python3 -m pytest platform/tests -q
+      - name: Build pinned NESASM CE for the assembler include check
+        run: tools/build/fetch_nesasm.sh
+      - name: Generated files are fresh and match the tutorial
+        run: |
+          python3 tools/gen_protocol.py --check
+          python3 -m pytest platform/tests -q

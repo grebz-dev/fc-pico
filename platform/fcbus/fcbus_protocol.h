@@ -7,14 +7,21 @@
  *
  * Every value here is the one used by `tutorial_project/tuto1_hw/sys/rp_system.h`
  * and `tutorial_project/BOOTROM/SysPico.asm`; `platform/tests/test_protocol_v1.py`
- * checks them against those files. Keep each constant on one
- * `#define NAME value  // comment` line so that test can read it.
+ * checks them against those files.
+ *
+ * This header is the single source of the protocol constants. `tools/gen_protocol.py`
+ * renders it into `platform/fcbus/gen/fcbus_protocol.inc` (nesasm),
+ * `tools/fcpico/protocol.py` and `platform/fcbus/gen/fcbus_layout.json`; run it after
+ * any change, and `--check` fails while the outputs are stale. Rules for the generator:
+ * each exported constant is one `#define NAME value  // comment` line below an
+ * `@section` marker, and a value is an integer literal or an expression of earlier
+ * names using only `+ - * / ( ) << >>`.
  */
 #ifndef FCBUS_PROTOCOL_H
 #define FCBUS_PROTOCOL_H
 
 /* ------------------------------------------------------------------------ */
-/* Mailbox: cartridge -> console, on the tail of every frame stream          */
+/* @section mailbox  cartridge -> console, on the tail of every frame stream */
 /* ------------------------------------------------------------------------ */
 #define PF_MAGIC_NO          0xFC   // mailbox[1] validity sentinel (asm: PF_MAGIC_CODE)
 #define PF_COM_NONE          0x00   // end of command list
@@ -43,7 +50,7 @@
 #define FCBUS_PAL_LEN        32     // full palette $3F00-$3F1F
 
 /* ------------------------------------------------------------------------ */
-/* Opcodes: console -> cartridge, single bytes written to $2007              */
+/* @section opcodes  console -> cartridge, single bytes written to $2007 */
 /* ------------------------------------------------------------------------ */
 #define FP_COM_ACK           0x0F   // unused on both sides
 #define FP_COM_NAK           0x1F   // unused on both sides
@@ -57,7 +64,7 @@
 /* Any other byte is the controller state, and also the frame heartbeat. */
 
 /* ------------------------------------------------------------------------ */
-/* Controller byte bit layout                                                */
+/* @section keys  controller byte bit layout */
 /* ------------------------------------------------------------------------ */
 #define KEY_A                0x80
 #define KEY_B                0x40
@@ -69,7 +76,7 @@
 #define KEY_RIGHT            0x01
 
 /* ------------------------------------------------------------------------ */
-/* Frame stream geometry                                                     */
+/* @section stream  frame stream geometry */
 /* ------------------------------------------------------------------------ */
 #define PPU_PICTURE_COUNT    15426  // 66 pre-render + 240*64 visible qualifying reads
 #define PPU_COUNTER_REPORT_BIAS 1   // fcppu_rna reports the zero-based index of the last read
@@ -88,5 +95,10 @@
 #define FCBUS_ROM_PRG_BYTES  0x8000
 #define FCBUS_ROM_INES_HDR   16
 #define FCBUS_DRQ_MAGIC_BASE 0xFC00       // drq_ret(): word0 = base + com + (adr << 16), word1 = size
+
+/* ------------------------------------------------------------------------ */
+/* @section layout  descriptor version for generated layout consumers        */
+/* ------------------------------------------------------------------------ */
+#define FCBUS_LAYOUT_VERSION 1      // bump when a layout field changes meaning; readers reject unknown versions
 
 #endif /* FCBUS_PROTOCOL_H */
