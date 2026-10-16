@@ -159,14 +159,14 @@ static void test_demo_responds_to_input(void) {
     CHECK_EQ(pixel(&c, 140, 112), 3); /* moved 20 pixels right */
     CHECK_EQ(pixel(&c, 120, 112), 1);
 
-    /* Input at heartbeat N changes the mailbox sent at N+1, read in the frame after. */
+    /* A changes the colour through a data-mode upload; the link resyncs after it. */
+    int uploads = c.data_uploads;
     frame(&c, KEY_A);
-    frame(&c, 0);
-    frame(&c, 0);
-    CHECK_EQ(c.mailbox[MBX_CMD], PF_COM_VRAM | 0x3F);
-    CHECK_EQ(c.mailbox[MBX_CMD + 1], 0x03);
-    CHECK_EQ(c.mailbox[MBX_CMD + 2], 0x2A);
+    for (int i = 0; i < 8; i++) frame(&c, 0);
+    CHECK_EQ(c.data_uploads, uploads + 1);
+    CHECK_EQ(c.pal[3], 0x2A);
 
+    /* Input at heartbeat N changes the mailbox sent at N+1, read in the frame after. */
     frame(&c, KEY_B);
     frame(&c, 0);
     frame(&c, 0);

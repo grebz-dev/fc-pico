@@ -38,6 +38,14 @@ APU writes, as `rp_system::update()` and the sound job do.
 | `pattern` | `0`..`3` | Static and animated test patterns |
 | `demo` | none | A square moved with the D-pad; A changes its colour, B plays a tone |
 
+The tutorial boot ROM ships with its `PF_COM_VRAM`, `PF_COM_SE` and `PF_COM_BGM`
+handlers disabled (`.if 0` in `BOOTROM/SysPico.asm`), so on that ROM single-byte VRAM
+pokes, including the palette/attribute differences `fcbus_core_update_tables()` sends,
+have no effect. Like the tutorial, change the palette or attribute table with
+`fcbus_core_set_palette()`/`fcbus_core_set_attr_table()` followed by
+`fcbus_core_request_data_mode()`; the console blanks the display briefly while it
+uploads them.
+
 To add one, fill in an `fcpico_provider_t` and pass it in `fcpico_cart_config_t`.
 
 ## Tests

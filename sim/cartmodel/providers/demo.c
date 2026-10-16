@@ -1,11 +1,12 @@
 /* SPDX-License-Identifier: BSD-3-Clause */
 /*
  * "demo" provider: a minimal live application. The D-pad moves a 16x16 square
- * over a grid, A changes its colour with a single palette poke, and B plays a
- * short pulse-channel tone. It exercises dynamic frames, controller input,
- * per-frame table updates and APU writes without any external assets.
+ * over a grid, A changes its colour through a data-mode palette upload, and B
+ * plays a short pulse-channel tone. It exercises dynamic frames, controller input,
+ * data mode and APU writes without any external assets.
  */
 #include <stdlib.h>
+#include <string.h>
 
 #include "../fcpico_cart.h"
 #include "draw.h"
@@ -80,8 +81,14 @@ static void frame(void *state, uint8_t pad, uint32_t frame_number) {
     d->y = d->y < 0 ? 0 : d->y > 240 - SQUARE ? 240 - SQUARE : d->y;
 
     if (pressed & KEY_A) {
+        /* The tutorial boot ROM ships with its PF_COM_VRAM handler disabled, so
+         * like the tutorial, change colours with a bulk data-mode upload. */
+        uint8_t pal[FCBUS_PAL_LEN];
         d->colour = (uint8_t)((d->colour + 1) & 3);
-        fcbus_core_set_pal(d->core, 3, square_colours[d->colour]);
+        memcpy(pal, palette, sizeof pal);
+        pal[3] = square_colours[d->colour];
+        fcbus_core_set_palette(d->core, pal);
+        fcbus_core_request_data_mode(d->core);
     }
     if (pressed & KEY_B) {
         fcbus_core_apu_write(d->core, 0x15, 0x01); /* enable pulse 1 */
