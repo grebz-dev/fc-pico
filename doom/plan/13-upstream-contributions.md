@@ -16,8 +16,9 @@ This plan was checked against these local snapshots:
 | Repository | Source revision | Contribution destination |
 | --- | --- | --- |
 | FC PICO fork | `ce221d44639c89c50951f3d509015dbef63368ff`, branch `doom` | `impact-soft/fc-pico`; separate feature branches in `grebz-dev/fc-pico` |
-| MesenCE fork | `9688726c982c57cfbcb81bc6d519decfe82eff91` | Extract mapper source and integration patches into an FC PICO feature branch |
+| MesenCE fork | `9688726c982c57cfbcb81bc6d519decfe82eff91` (`fc-pico` branch `65af1252`) | Provenance only: U05 regenerates its changes as a patch series in FC PICO; the fork is never a build input |
 | RP2040 Doom fork | `84ecd1de89ebbb1b63f51f18b0e28e4c829d8d1d` | Extract reusable source into an FC PICO feature branch; omit engine/UI changes |
+| RP2040 Doom `fc-pico` branch | `1371199a` | Current, scrubbed extraction source (plan 15): `fcpico/X` here is `doom/X` below |
 
 These are source snapshots, not a claim about current upstream HEADs. Before
 starting a contribution, fetch each relevant upstream and record its actual base
@@ -28,10 +29,10 @@ identify extraction provenance only. Feature branches must not add, update or
 depend on gitlinks to supply contribution content. Existing Doom submodules may
 remain on the source branch, but the contributed features must work without them.
 
-Mesen integration is delivered here as tracked mapper source, patch files,
-configuration, tests and a manifest. Building may fetch a checksum-verified
-pristine upstream emulator archive into an ignored cache and apply those local
-patches. An upstream dependency revision in that manifest is allowed; a submodule
+Mesen integration is delivered here as a tracked patch series, configuration,
+tests and a manifest. Building fetches a checksum-verified pristine upstream
+MesenCE archive into an ignored cache and applies those patches; no MesenCE fork,
+fork branch or submodule is used. An upstream dependency revision in that manifest is allowed; a submodule
 commit pointer carrying our changes is not. A later submission to MesenCE itself
 is optional follow-up and is not required to deliver any feature in this plan.
 
@@ -123,7 +124,7 @@ prerequisites merge so the PR diff contains only that feature.
 | U02 | FC PICO: `platform/generated-protocol` | Protocol and layout exports for C/assembler/Python | U01 |
 | U03 | FC PICO: `tools/native-rom-build` | Native ROM assembly and verification chain | None |
 | U04 | FC PICO: `sim/native-cartmodel` | Application-independent native cartridge adapter | U01, U02 |
-| U05 | FC PICO: `mesen/fcpico-mapper` | Tracked optional mapper, PRG flash model and makefile patches | U04 ABI |
+| U05 | FC PICO: `mesen/fcpico-mapper` | MesenCE patch series (mapper with PRG flash model, registration, optional linkage) and manifest | U04 ABI |
 | U06 | FC PICO: `sim/mesen-workflow` | Mesen configuration, build/run integration, captures and CI | U03, U04, U05 tracked integration |
 | U07 | FC PICO: `tools/python-inspection` | Thin native bindings and reusable stream/trace/PPU inspection | U02, U04 |
 | U08 | FC PICO: `tools/reproducible-platform-build` | Unified host/emulator/device buildchain and manifests | U03, U06, U07 |
@@ -219,26 +220,36 @@ tests; host builds do not initialize the engine submodule or load WAD/WHX assets
 Record the ABI revision needed by U05. Save-state support must be implemented
 against all adapter/provider state or explicitly disabled for this first ABI.
 
-### U05 — repository-owned MesenCE mapper and makefile patches
+### U05 — MesenCE integration as an FC PICO patch series
 
-Source changes are only three files relative to local MesenCE baseline
-`20f497c9`: `Core/NES/Mappers/Homebrew/FcPico.h`,
-`Core/NES/MapperFactory.cpp`, and `makefile`. Source commits:
-`5c2de02e`, `7d87b7cb`, `af34ead8`, `9688726c`.
+The FC PICO changes to MesenCE are three files relative to upstream MesenCE
+`20f497c9`: the new `Core/NES/Mappers/Homebrew/FcPico.h`, a registration in
+`Core/NES/MapperFactory.cpp`, and optional linkage in `makefile`. Provenance:
+fork commits `5c2de02e`, `7d87b7cb`, `af34ead8`, `9688726c` and `65af1252`. The
+fork is not a dependency of this or any later feature.
 
-Keep the mapper and the minimal optional build linkage in one FC PICO PR:
-neither is useful alone. Store the mapper as an ordinary source file under
-`sim/mesen/integration/`, with ordered patches for `MapperFactory.cpp` and
-`makefile` under `sim/mesen/patches/`. A tracked manifest names the pristine
-upstream base archive, checksum, patch order and backend ABI. Copy the mapper
-into the temporary emulator source tree during the build; avoid keeping two
-hand-edited copies in the repository. Replace makefile references to
-`/doom/sim/cartmodel`, `/doom/fcbus`
-and fixed static-library lists with configurable include/library or package
-inputs from U04. Default emulator builds must remain independent of FC PICO.
-Fix dependency tracking for mapper headers and backend libraries; current
-`build.sh` forces `MapperFactory.cpp` to rebuild with `make -W` because normal
-header tracking is insufficient. Avoid stale objects when optional flags change.
+Deliver all of it as an ordered patch series under `sim/mesen/patches/`,
+generated with `git format-patch` against the pinned pristine upstream commit:
+one patch adding the mapper (a new-file patch, so there is no second hand-edited
+copy), one registering it, and one adding the optional build linkage. A tracked
+`sim/mesen/manifest` names the upstream repository, commit, archive checksum,
+patch order and backend ABI revision. The build script downloads (or takes an
+offline copy of) the pristine archive into an ignored cache, verifies its
+checksum, applies the series with `git apply --check` first (no fuzz, no
+offsets), then builds. A helper regenerates the series from a scratch checkout
+so edits are made in a real tree and exported, never hand-edited as diffs.
+
+Keep the mapper and the linkage in one FC PICO PR: neither is useful alone.
+The makefile patch takes configurable include/library inputs from U04
+(`FCPICO_DIR`-style variables or a package description), never fixed
+repository paths. Default emulator builds must remain independent of FC PICO.
+Fix dependency tracking for the mapper header and backend libraries (the current
+`build.sh` forces `MapperFactory.cpp` to rebuild with `make -W`), and avoid
+stale objects when optional flags change.
+
+The rp2040-doom `fc-pico` branch currently pins the MesenCE fork (plan 15 D2,
+interim). Once U05 merges, it switches to this patch series through its
+`fcpico/external/fc-pico` submodule and drops the MesenCE submodule.
 
 Retain physical address selection, CHR RAM for unselected reads, watchdog ticks,
 and the JEDEC PRG flash erase/program/status behavior required by reflash.
@@ -252,10 +263,10 @@ runner/CI descriptions call `0xf000` the calibrated mask. Resolve that mismatch
 against the measured address trace; retain wider masks as explicit diagnostics,
 not alternate silent production defaults. Do not compensate by skipping fetches.
 
-Done when optional and stock MesenCE builds both pass; real selected reads reach
-the backend once; debugger peeks do not; masks/flash/reload/reset are checked;
+Done when optional and stock MesenCE builds both pass from the pristine
+archive; real selected reads reach the backend once; debugger peeks do not; masks/flash/reload/reset are checked;
 and a mapper-header/backend change reliably rebuilds and relinks. Check that the
-local patch bundle applies to the verified pristine source without fuzz or
+patch series applies to the verified pristine source without fuzz or
 offsets, and that all FC PICO modifications come from tracked repository files.
 No emulator submodule pointer or separate feature branch is required.
 

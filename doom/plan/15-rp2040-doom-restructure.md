@@ -60,8 +60,10 @@ Deviations from this plan:
   `~/.local/fcpico/sdl2/.../libSDL2.so` points at a missing
   `libSDL2-2.0.so.0.18.2`.
 
-Nothing was deleted or force-pushed. The fc-pico `doom*` branches and the
-rp2040-doom `claude/doom-fc-pico-nes-2bb1bx` branch are untouched (D6).
+Nothing was deleted or force-pushed by this restructure. The user later removed
+the rp2040-doom `claude/doom-fc-pico-nes-2bb1bx` branch, so the fc-pico `doom*`
+branches' engine pin `c1145f02` no longer resolves from GitHub; extraction
+uses the rp2040-doom `fc-pico` branch instead.
 
 ## Decision and goal
 
