@@ -49,6 +49,9 @@ static void data_mode(console_t *c) {
         if (com != PF_DAT_VRAM) return;
         fcpico_cart_ppu_write(c->cart, FP_COM_DLD);
         fcpico_cart_ppu_write(c->cart, 0);
+        if (adr == 0x23C0) {
+            fcpico_cart_ppu_read(c->cart); /* xPF_DAT_VRAM's dummy read for attributes */
+        }
         uint8_t page[256];
         for (int i = 0; i < 256; i++) page[i] = fcpico_cart_ppu_read(c->cart);
         if (adr == 0x3F00) memcpy(c->pal, page, size);
@@ -138,7 +141,7 @@ static void test_pattern_boots_through_data_mode(void) {
     CHECK_EQ(c.data_uploads, 2);
     CHECK_EQ(c.pal[1], 0x00);
     CHECK_EQ(c.pal[5], 0x06);
-    CHECK_EQ(c.attr[0], 0xE4);
+    CHECK_EQ(c.attr[0], 0xE4); /* aligned only with the dummy read */
     CHECK_EQ(c.attr[1], 0x1B);
     CHECK_EQ(fcpico_cart_stats(c.cart)->resyncs, fcpico_cart_stats(c.cart)->dma_stops);
     CHECK_EQ(pixel(&c, 0, 0), 0);
