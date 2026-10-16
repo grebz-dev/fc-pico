@@ -55,7 +55,7 @@ equals it. Branches are pushed to `origin` only; no PRs are open.
 | --- | --- | --- |
 | U01 | `platform/shared-bus-core` | Ready for PR. This is the host-neutral library half: a v1-only core plus host backend under `platform/fcbus/`, C tests, a Python parity test against `rp_system.h`/`SysPico.asm`, `docs/pages/shared-bus-core.md` and CI (GCC, Clang, ASan/UBSan). The tutorial does not consume it yet; that is `platform/tutorial-bus-adapter`, which needs Arduino builds and a physical tutorial run. |
 | U03 | `tools/native-rom-build` | Ready for PR. `tools/build/{fetch_nesasm,build_rom}.sh` and `tools/nes/` rebuild the fix bank (MD5 `1A9A2AC8...`) and `rom.NES` (MD5 `B6CD6753...`) natively; there are tests, a docs section in `docs/pages/build-pipeline.md` and CI. |
-| U09 | `firmware/serial-bootsel` | Superseded upstream: `9e225f3` added `bin/arduino_picoboot.exe` (the 1200-baud touch) and rewrote every `upload.bat` to use it, so firmware already updates without the button. Pending a decision: drop U09, or narrow it to a non-Windows equivalent. |
+| U09 | `firmware/serial-bootsel` | Superseded upstream: `9e225f3` added `bin/arduino_picoboot.exe` (the 1200-baud touch) and rewrote every `upload.bat` to use it, so firmware already updates without the button. Dropped: the Linux and macOS equivalent (`stty` at 1200 baud) is documented in U11's `platform-findings.md` and the `fcpico-hardware-validation` skill instead. |
 | U11 | `docs/platform-findings` | Not started. |
 
 Docs: `docs_jp/pages` mirrors `docs/pages` and is maintained upstream; feature
@@ -138,13 +138,13 @@ prerequisites merge so the PR diff contains only that feature.
 | U06 | FC PICO: `sim/mesen-workflow` | Mesen configuration, build/run integration, captures and CI | U03, U04, U05 tracked integration |
 | U07 | FC PICO: `tools/python-inspection` | Thin native bindings and reusable stream/trace/PPU inspection | U02, U04 |
 | U08 | FC PICO: `tools/reproducible-platform-build` | Unified host/emulator/device buildchain and manifests | U03, U06, U07 |
-| U09 | FC PICO: `firmware/serial-bootsel` | Nonblocking USB serial reboot into BOOTSEL | None |
+| U09 | FC PICO: `firmware/serial-bootsel` | Dropped: superseded upstream by `9e225f3` | — |
 | U10 | FC PICO: `sim/pico-host-shim` | Optional multicore/timer shim for applications using Pico APIs | U01; separate from basic cosimulation |
-| U11 | FC PICO: `docs/platform-findings` | Verified, application-independent development findings | Can start now; finalize commands after U06–U09 |
+| U11 | FC PICO: `docs/platform-findings` | Verified, application-independent development findings | Can start now; finalize commands after U06–U08 |
 | U12 | FC PICO: `agents/development-guide` | Platform `AGENTS.md` | U11; accepted tool interfaces |
 | U13 | FC PICO: `agents/platform-skills` | Codex skill-creator workflow; Agent Skills standard and validation | U12; accepted tool interfaces |
 
-Suggested delivery: U09 and U03 first for immediate usability, then U01/U02/U04,
+Suggested delivery: U03 first for immediate usability, then U01/U02/U04,
 then U05/U06/U07/U08. Draft U11 alongside extraction. U10 is optional for the
 minimal platform demo and must not block it. Finish U12/U13 against real upstream
 commands instead of promising commands that only exist on `doom`.
@@ -376,7 +376,12 @@ device smoke run passes. Do not promote the Doom diagnostic startup countdown
 to a universal platform requirement: its necessity remains an unresolved
 application/build-profile observation.
 
-### U09 — serial BOOTSEL command
+### U09 — serial BOOTSEL command (dropped)
+
+Dropped: upstream `9e225f3` added `bin/arduino_picoboot.exe`, which reaches
+BOOTSEL through arduino-pico's 1200-baud touch with no firmware change. The
+non-Windows equivalent is documented on `docs/platform-findings`. The original
+plan follows for reference.
 
 Sources: `doom/port/cli.c` and
 `doom/rp2040-doom/src/fcpico/device_video_fcpico.c`, with polling call sites in
