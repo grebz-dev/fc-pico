@@ -15,8 +15,10 @@ sta $2007               ; write a byte TO   the cartridge
 
 @warning `$0800` is **not** video memory here. It is an address that causes the
 cartridge's chip select to assert, which is what routes the access to the RP2350 rather
-than to VRAM. Any pattern-space address would work; `$0800` is convention. Reading this
-code as "writing to CHR RAM" will mislead you completely.
+than to VRAM. Not every pattern-space address does: the measured selection is
+`$0800`-`$0FFF`, while the rest of the pattern tables is CHR RAM, where the tutorial
+keeps its font (see @ref platform_findings). Reading this code as "writing to CHR RAM"
+will mislead you completely.
 
 @warning The first read after setting the PPU address returns the stale internal read
 buffer. **Every** read sequence must discard one byte first. This is not defensive

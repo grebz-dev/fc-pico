@@ -36,9 +36,15 @@ for (f = 0; f < 8; f++) { dt <<= 1; dt |= conv_tbl[frame_buff[fidx++] & 3]; }
 The lookup splits a 2-bit colour into one bit for each plane: low byte becomes bitplane
 0, high byte bitplane 1 -- exactly the two bytes the PPU fetches per tile row.
 
-34 columns are emitted per line, not 32: the PPU pre-fetches two tiles of the next
-scanline to make scrolling seamless, and those fetches must be answered too.
-#VRAM_BUF_SIZE allocates 36 columns so the DMA has slack.
+The PPU consumes the stream as one flat sequence. Line `y`, tile `x` is word
+`31 + 32 * y + x`, and the console makes 66 selected fetches on the pre-render line
+and 64 on each visible line (measured on an NES-001; see @ref platform_findings).
+The loop above converts
+34 words per pass over a flat 256-pixel-wide canvas, so its passes do not line up with
+scanlines; the words still land where the PPU reads them, but the last passes read
+3,840 bytes past the end of the 61,440-byte canvas into words that are never displayed.
+#VRAM_BUF_SIZE allocates 36 columns per line, more than either needs. See
+@ref platform_findings.
 
 The buffers are then swapped -- rendering and transmission always use different
 buffers.
@@ -97,6 +103,12 @@ These do not travel in the pixel stream -- the console still owns them. The cart
 keeps shadow copies (`m_PAL_W`, `m_ATR_W`), and rp_system::update() diffs them each
 frame, emitting #PF_COM_VRAM pokes for whatever changed. Bulk changes go through data
 mode instead.
+
+@warning The shipped boot ROM has its #PF_COM_VRAM handler disabled (`.if 0` in
+`xPF_COM_VRAM`), so those per-frame pokes have no effect. With this ROM, palette and
+attribute changes reach the console only through data mode: rp_system::setPalData() or
+setAtrData() (or setPal()/setAtr()), then rp_system::startDataMode(). The console blanks
+the display while it uploads, and the frame link stops and resynchronises afterwards.
 
 rp_system::setAtr() packs a palette selector into the right two bits of the right
 attribute byte for a given tile coordinate.
