@@ -91,6 +91,38 @@ debugger each frame must both settle at the 15490 read count with identical trac
 real fetches reach the cartridge once and debugger reads never do. The wider mask must
 change the count.
 
+## Scenarios and interactive play
+
+`sim/mesen/scenario.py` runs complete scenarios headless in an isolated copy of the
+emulator: NTSC, game database off, all-zero RAM, fixed CPU/PPU alignment, no rewind
+or autosave, hardware sprite limits on, and Lua file access only for the test runner.
+Every scenario runs twice and requires identical traces, mailboxes and screenshots.
+
+```sh
+python3 sim/mesen/scenario.py run S0       # strict: test pattern on the tutorial boot ROM
+python3 sim/mesen/scenario.py run S1       # the console reflashes itself from the cartridge
+python3 sim/mesen/scenario.py run demo     # the live demo provider with scripted input
+python3 sim/mesen/scenario.py run S0 --diagnostic --cs1-mask 0xf000
+python3 sim/mesen/scenario.py play --provider demo
+```
+
+| Scenario | Passes when |
+|---|---|
+| S0 | After startup every heartbeat reports 15490 reads, the mailbox is valid on every frame, no DMA stops; results are identical with and without debugger reads; the screenshot matches the reviewed golden in `sim/mesen/goldens/` |
+| S1 | Booting the tutorial ROM while the cartridge serves a rebuilt ROM with a new stamp (`tools/build/build_rom.sh --stamp`), the console reflashes to exactly the served PRG with the permanent bank unchanged and then streams; the reverse direction restores the tutorial ROM |
+| demo | Scripted input moves the square and the A button's palette change reaches the console's palette RAM; after the data-mode upload the link streams again |
+
+`--diagnostic` reports the same measurements without failing on them, for example
+with a wider CS1 mask. Results go to `build/mesen/scenarios/<name>/`: screenshots
+(PNG and raw ARGB), palette RAM, the console PRG for S1, cartridge and mailbox
+traces, console logs, and `report.json` with the verdict and the hashes of the
+source tree, emulator, patch series, ROMs and settings.
+
+`play` launches the GUI with the same isolated settings and MesenCE's default key
+bindings (arrow keys, plus an Xbox pad) for the chosen provider. Scripted and
+interactive runs both keep the hardware sprite limits. The emulator models the
+protocol only; a passing scenario does not prove hardware timing.
+
 ## Tests
 
 `sim/cartmodel/tests/test_cartmodel.c` drives a cartridge the way the tutorial boot

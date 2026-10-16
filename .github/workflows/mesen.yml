@@ -3,16 +3,16 @@ name: mesen
 
 on:
   push:
-    paths: ["sim/mesen/**", "sim/cartmodel/**", "platform/fcbus/**", "tools/nes/set_mapper.py", ".github/workflows/mesen.yml"]
+    paths: ["sim/mesen/**", "sim/cartmodel/**", "platform/fcbus/**", "tools/nes/**", "tools/build/**", "tutorial_project/BOOTROM/**", "tutorial_project/BOOTROM_FIX/**", ".github/workflows/mesen.yml"]
   pull_request:
-    paths: ["sim/mesen/**", "sim/cartmodel/**", "platform/fcbus/**", "tools/nes/set_mapper.py", ".github/workflows/mesen.yml"]
+    paths: ["sim/mesen/**", "sim/cartmodel/**", "platform/fcbus/**", "tools/nes/**", "tools/build/**", "tutorial_project/BOOTROM/**", "tutorial_project/BOOTROM_FIX/**", ".github/workflows/mesen.yml"]
   workflow_dispatch:
 
 jobs:
-  mapper:
+  scenarios:
     name: MesenCE with the FC PICO cartridge model
     runs-on: ubuntu-24.04
-    timeout-minutes: 60
+    timeout-minutes: 75
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -25,21 +25,36 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: .cache/mesen
-          key: mesen-${{ hashFiles('sim/mesen/manifest.json') }}
+          key: mesen-source-${{ hashFiles('sim/mesen/manifest.json') }}
+      - uses: actions/cache@v4
+        with:
+          path: build/mesen/fcpico
+          key: mesen-build-${{ hashFiles('sim/mesen/manifest.json', 'sim/mesen/patches/*', 'sim/cartmodel/**', 'platform/fcbus/**', 'platform/CMakeLists.txt') }}
       - name: Patches apply exactly to the pristine source
         run: python3 sim/mesen/mesen.py check-patches
       - name: Stock build is unaffected
         run: python3 sim/mesen/mesen.py build --stock
       - name: Build with the cartridge model
         run: python3 sim/mesen/mesen.py build
-      - name: Mapper check (fetches once, debugger reads never, mask decides)
+      - name: Build pinned NESASM CE (for S1)
+        run: tools/build/fetch_nesasm.sh
+      - name: Mapper check
         run: xvfb-run -a python3 sim/mesen/check_mapper.py
+      - name: S0 (strict)
+        run: xvfb-run -a python3 sim/mesen/scenario.py run S0
+      - name: S1 (reflash)
+        run: xvfb-run -a python3 sim/mesen/scenario.py run S1
+      - name: demo (live input)
+        run: xvfb-run -a python3 sim/mesen/scenario.py run demo
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: mapper-check
+          name: mesen-results
           path: |
             build/mesen/check/report.json
             build/mesen/check/*/console.log
-            build/mesen/check/*/trace.csv
-            build/mesen/check/*/final.png
+            build/mesen/scenarios/*/report.json
+            build/mesen/scenarios/*/*/console.log
+            build/mesen/scenarios/*/*/trace.csv
+            build/mesen/scenarios/*/*/mailbox.csv
+            build/mesen/scenarios/*/*/final.png
