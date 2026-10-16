@@ -81,6 +81,21 @@ def heartbeats(rows: list[dict]) -> list[dict]:
     return beats
 
 
+def comparable_traces(first: Path, second: Path) -> tuple[str, str]:
+    """Both traces up to the last end-of-frame event they share. emu.stop() in an
+    end-of-frame callback lets the emulator run on for up to a frame, so the rows after
+    that point vary between otherwise identical runs."""
+    def frames(path: Path):
+        lines = path.read_text().splitlines(keepends=True)
+        ends = {int(line.split(",")[1]): i for i, line in enumerate(lines) if line.startswith("frame,")}
+        return lines, ends
+    (a, a_ends), (b, b_ends) = frames(first), frames(second)
+    common = max(set(a_ends) & set(b_ends), default=None)
+    if common is None:
+        return "".join(a), "".join(b)
+    return "".join(a[:a_ends[common] + 1]), "".join(b[:b_ends[common] + 1])
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--mesen", type=Path, default=DEFAULT_MESEN)
@@ -107,7 +122,8 @@ def main(argv: list[str] | None = None) -> int:
         errors.append(f"steady counts {sorted({int(r['last_count']) for r in steady})}, expected {EXPECTED_COUNT}")
     elif int(steady[-1]["dma_stops"]) != int(steady[0]["dma_stops"]):
         errors.append("DMA stops after startup")
-    if (output / "plain/trace.csv").read_bytes() != (output / "peeks/trace.csv").read_bytes():
+    first, second = comparable_traces(output / "plain/trace.csv", output / "peeks/trace.csv")
+    if first != second:
         errors.append("debugger reads changed the cartridge trace")
     wide_counts = {int(r["last_count"]) for r in heartbeats(wide)[STARTUP_HEARTBEATS:]}
     if wide_counts == {EXPECTED_COUNT}:
